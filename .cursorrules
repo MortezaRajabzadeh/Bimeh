@@ -1,0 +1,17 @@
+include:
+  - .cursor/rules/laravel.mdc
+  - .cursor/rules/telegram-bot.mdc
+  - .cursor/rules/payment-flow.mdc
+  - .cursor/rules/otp-auth.mdc
+
+tags:
+  - laravel
+  - otp
+  - telegram
+  - ecommerce
+  - payment
+  - laravel
+  - php
+  - javascript
+  - html
+  - css

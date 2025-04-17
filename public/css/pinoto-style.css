@@ -1,0 +1,339 @@
+/* تنظیمات کلی */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    line-height: 1.6;
+    direction: rtl;
+}
+
+.container {
+    max-width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* نوار وضعیت بالای صفحه */
+.status-bar {
+    background-color: #f2f2f2;
+    height: 30px;
+    width: 100%;
+    position: relative;
+    padding: 5px 10px;
+}
+
+.status-bar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.time {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.icons {
+    display: flex;
+    gap: 8px;
+}
+
+.wifi-icon, .signal-icon, .battery-icon {
+    width: 16px;
+    height: 16px;
+    background-color: #333;
+    display: inline-block;
+    opacity: 0.7;
+}
+
+/* محتوای اصلی */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    gap: 25px;
+}
+
+/* لوگو و عنوان */
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 15px;
+    transform: scale(0.85);
+}
+
+.logo {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.map-pin {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.pin-outer {
+    position: absolute;
+    width: 65px;
+    height: 65px;
+    background-color: #e20613;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    top: 8px;
+    left: 8px;
+}
+
+.pin-inner {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    background-color: white;
+    border-radius: 50%;
+    top: 28px;
+    left: 28px;
+    z-index: 1;
+}
+
+.brand-name {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #e20613;
+    margin-bottom: 2px;
+}
+
+.tagline {
+    font-size: 1rem;
+    color: #003366;
+    font-weight: normal;
+}
+
+/* فرم ورود */
+.form-container {
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.form-label {
+    font-size: 1rem;
+    color: #003366;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.phone-input {
+    width: 100%;
+    height: 50px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px 15px;
+    font-size: 16px;
+    text-align: left;
+    direction: ltr;
+    font-family: 'Vazirmatn', sans-serif;
+}
+
+.check-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.check-icon::before {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 6px;
+    border-left: 2.5px solid white;
+    border-bottom: 2.5px solid white;
+    transform: rotate(-45deg);
+}
+
+.submit-button {
+    background-color: #ffc107;
+    color: #333;
+    border: none;
+    border-radius: 18px;
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: 'Vazirmatn', sans-serif;
+    align-self: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.submit-button:hover {
+    background-color: #ffb300;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.submit-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+}
+
+/* دکمه بازگشت */
+.back-button {
+    background-color: #f2f2f2;
+    color: #333;
+    border: none;
+    border-radius: 18px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: 'Vazirmatn', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #e6e6e6;
+}
+
+/* گروه دکمه‌ها */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* دکمه ارسال مجدد */
+.resend-button {
+    background: none;
+    border: none;
+    color: #003366;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-top: 15px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* تایمر ارسال مجدد */
+.resend-timer {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.resend-timer span {
+    color: #e20613;
+    font-weight: bold;
+}
+
+/* اعلان‌ها */
+.alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.alert-error {
+    background-color: #FEECEC;
+    color: #E20613;
+}
+
+.alert-success {
+    background-color: #ECFAEC;
+    color: #28a745;
+}
+
+.error-message {
+    color: #E20613;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+/* رسپانسیو */
+@media (max-width: 480px) {
+    .brand-name {
+        font-size: 2.5rem;
+    }
+    
+    .tagline {
+        font-size: 1rem;
+    }
+}
+
+@media (max-height: 600px) {
+    .content {
+        gap: 20px;
+    }
+    
+    .logo {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .pin-outer {
+        width: 60px;
+        height: 60px;
+        top: 10px;
+        left: 10px;
+    }
+    
+    .pin-inner {
+        width: 25px;
+        height: 25px;
+        top: 25px;
+        left: 25px;
+    }
+}
+
+/* فیلدهای OTP */
+.otp-inputs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 15px 0;
+    direction: ltr;
+}
+
+.otp-digit {
+    width: 45px;
+    height: 50px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 1.5rem;
+    background-color: #f9f9f9;
+    caret-color: #e20613;
+}
+
+.otp-digit:focus {
+    border-color: #e20613;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(226, 6, 19, 0.2);
+} 

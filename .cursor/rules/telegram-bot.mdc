@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🤖 Telegram Bot Integration Rule
+
+This module uses `php-telegram-bot/core` (not the Laravel wrapper) for direct Telegram Bot API integration.
+
+## 🔧 Setup
+- Config values in `.env`:
+  ```env
+  TELEGRAM_BOT_TOKEN=xxx
+  TELEGRAM_BOT_USERNAME=MyBot
+
+A TelegramChannel service handles message sending.
+
+## 📁 Related Files
+@app/Services/Notification/TelegramChannel.php
+
+@routes/telegram.php (for webhook)
+
+@config/telegram.php
+
+## 📌 Features
+Sending messages to users/chat_ids
+
+Handling simple webhook commands
+
+Modular service, reusable across project
+
+## 💡 Notes
+Avoid long polling (prefer webhook)
+
+For advanced logic, move to BotController classes
+
+---

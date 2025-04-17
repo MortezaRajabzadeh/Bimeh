@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 💳 Payment Flow Rule
+
+Payment system is powered by `shetabit/payment`, integrated with Zarinpal gateway.
+
+## 🔧 Setup
+- Config values in `.env`:
+  ```env
+  PAYMENT_GATEWAY=zarinpal
+  ZARINPAL_MERCHANT_ID=your_merchant_id
+## 📁 Related Files
+@app/Services/PaymentService.php
+
+@routes/web.php → /checkout /payment/callback
+
+@config/payment.php
+
+## 🔁 Flow
+User initiates payment
+
+Redirects to Zarinpal
+
+On return, system verifies and updates order
+
+## ⚠️ Considerations
+Always log transaction_id and reference_id
+
+Separate sandbox/live configs
+
+Handle failed/canceled transactions clearly
+
+✅ Done
+PaymentService handles all integration
+
+Order updates on verification
+
+Toast shown to user on success/fail

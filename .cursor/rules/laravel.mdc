@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# 🧠 Laravel Project Rule (.mdc)
+
+This project uses **Laravel** with modern architecture and PSR/SOLID principles.  
+The codebase is modular, layered, and follows clean structure.
+
+## ✅ Coding Standards
+- Follow PSR-12, SOLID principles
+- Use service layer + repository pattern
+- Keep controllers thin, delegate logic to services
+- Use DTOs or array objects for request/response transformation
+- Always validate input with FormRequest
+- Blade components should be reusable and simple
+- Livewire is used for frontend interaction
+
+## 🔐 Auth & Security
+- Laravel Breeze is used with Livewire stack
+- Supports both password login and OTP-based login via mobile
+- Sanctum is used for API authentication
+- spatie/laravel-permission handles roles & permissions
+
+## 💳 Features
+- OTP login system integrated with SMS
+- Payment gateway handled by shetabit/payment
+- Telegram bot connected via php-telegram-bot/core (no Laravel bridge)
+- Toast-style notifications with Livewire + Alpine
+
+## 🧪 Testing
+- Use Feature tests for endpoints
+- Use mocks/fakes for external services like SMS or Telegram
+
+## ✏️ Notes
+- You can `@` reference files and paths
+- You may use emoji (✅ ❌ ⚠️ 💡) for status markers
+- Prefer Persian in responses, but English in code
+
+---
+
+📌 فایل‌های `.mdc` در این پروژه برای مستندات توسعه شخصی هستن.
