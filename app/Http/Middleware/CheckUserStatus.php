@@ -25,7 +25,7 @@ class CheckUserStatus
                 ], 403);
             }
             
-            return redirect()->route('login.otp')->with('error', 'حساب شما غیرفعال است.');
+            return redirect()->route('login')->with('error', 'حساب شما غیرفعال است.');
         }
 
         return $next($request);
