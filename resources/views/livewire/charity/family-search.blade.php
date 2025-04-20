@@ -153,7 +153,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($families as $family)
-                <tr class="hover:bg-gray-50">
+                <tr class="{{ $expandedFamily === $family->id ? 'bg-blue-50' : 'hover:bg-gray-50' }}">
                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $loop->iteration }}
                     </td>
@@ -209,7 +209,7 @@
                                 </svg>
                             </span>
                             
-                            <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-100 hover:bg-green-200 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out">
+                            <button wire:click="toggleFamily({{ $family->id }})" class="{{ $expandedFamily === $family->id ? 'bg-blue-300 hover:bg-blue-400 text-blue-900' : 'bg-green-100 hover:bg-green-200 text-green-800' }} text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transform {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
