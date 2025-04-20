@@ -220,11 +220,11 @@
                 
                 @if($expandedFamily === $family->id)
                 <tr class="bg-transparent">
-                    <td colspan="12" class="px-0 py-4">
-                        <div class="bg-green-50 rounded-lg overflow-x-auto p-4">
-                            <table class="w-full">
+                    <td colspan="12" class="px-0 py-0">
+                        <div class="overflow-x-auto">
+                            <table class="w-full bg-white border border-gray-100">
                                 <thead>
-                                    <tr class="border-b border-green-200">
+                                    <tr class="border-b border-gray-200">
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">سرپرست؟</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">اعضای خانواده</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام</th>
@@ -241,12 +241,10 @@
                                 </thead>
                                 <tbody>
                                     @forelse($familyMembers as $member)
-                                    <tr class="bg-green-50 border-b border-green-100">
+                                    <tr class="border-b border-gray-100 hover:bg-gray-50">
                                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
                                             @if($member->is_head)
-                                                <span class="inline-block w-5 h-5 bg-white rounded-full border border-gray-300 flex items-center justify-center">
-                                                    <span class="text-blue-500">✓</span>
-                                                </span>
+                                                <span class="text-blue-500 inline-block">✓</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
@@ -263,11 +261,11 @@
                                                     از کار افتادگی
                                                 </span>
                                             @elseif($member->has_chronic_disease)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                                     بیماری خاص
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     اعتیاد
                                                 </span>
                                             @endif
@@ -276,10 +274,7 @@
                                             درمان تکمیلی
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/20" alt="بیمه" class="w-5 h-5 ml-2">
-                                                درمان تکمیلی
-                                            </div>
+                                            درمان تکمیلی
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">۱۰۰٪</td>
                                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
@@ -288,7 +283,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-green-100">
+                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
                                             عضوی برای این خانواده ثبت نشده است.
                                         </td>
                                     </tr>
@@ -296,21 +291,17 @@
                                 </tbody>
                             </table>
                             
-                            <div class="grid grid-cols-2 gap-4 mt-4">
-                                <div class="bg-white p-4 rounded-lg flex justify-between items-center">
-                                    <span class="text-sm font-medium text-gray-700">شماره موبایل سرپرست:</span>
-                                    <div class="flex items-center">
-                                        <span id="mobile_{{ $family->id }}" class="text-sm ltr">{{ $familyMembers->first(fn($m) => $m->is_head)?->mobile ?? '09347964873' }}</span>
-                                        <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 mr-2 text-sm">کپی</button>
-                                    </div>
+                            <div class="flex justify-between py-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
+                                    <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
+                                    <a onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
                                 </div>
                                 
-                                <div class="bg-white p-4 rounded-lg flex justify-between items-center">
-                                    <span class="text-sm font-medium text-gray-700">شماره شبا جهت پرداخت خسارت:</span>
-                                    <div class="flex items-center">
-                                        <span id="sheba_{{ $family->id }}" class="text-sm ltr">IR056216845813188</span>
-                                        <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 mr-2 text-sm">کپی</button>
-                                    </div>
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
+                                    <span id="sheba_{{ $family->id }}" class="text-sm text-gray-800 ltr">IR056216845813188</span>
+                                    <a onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
                                 </div>
                             </div>
                             
