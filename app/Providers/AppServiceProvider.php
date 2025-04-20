@@ -11,6 +11,9 @@ use App\Helpers\DateHelper;
 use App\Models\Family;
 use App\Models\Member;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
+use App\Http\Livewire\Charity\DashboardStats;
+use App\Http\Livewire\Charity\FamilySearch;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -127,5 +130,9 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
         });
+
+        // ثبت کامپوننت‌های لایوویر
+        Livewire::component('charity.dashboard-stats', DashboardStats::class);
+        Livewire::component('charity.family-search', FamilySearch::class);
     }
 }

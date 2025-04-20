@@ -82,15 +82,13 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
 
 // مسیرهای خیریه
 Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix('charity')->name('charity.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('charity.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\Charity\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/insured-families', [App\Http\Controllers\Charity\DashboardController::class, 'insuredFamilies'])->name('insured-families');
+    Route::get('/uninsured-families', [App\Http\Controllers\Charity\DashboardController::class, 'uninsuredFamilies'])->name('uninsured-families');
+    Route::get('/add-family', [App\Http\Controllers\Charity\DashboardController::class, 'addFamily'])->name('add-family');
     
-    // مسیرهای جدید برای منوی کناری
-    Route::get('/insured-families', [\App\Http\Controllers\Charity\FamilyController::class, 'insuredFamilies'])->name('insured-families');
-    Route::get('/uninsured-families', [\App\Http\Controllers\Charity\FamilyController::class, 'uninsuredFamilies'])->name('uninsured-families');
-    Route::get('/add-family', [\App\Http\Controllers\Charity\FamilyController::class, 'create'])->name('add-family');
-    Route::get('/settings', [\App\Http\Controllers\Charity\SettingsController::class, 'index'])->name('settings');
+    // جستجوی خانواده‌ها - استفاده می‌شد قبل از طراحی لایوویر
+    Route::get('/search', [App\Http\Controllers\Charity\FamilyController::class, 'search'])->name('search');
     
     // مدیریت خانواده‌ها
     Route::middleware('can:view families')->get('/families', [\App\Http\Controllers\Charity\FamilyController::class, 'index'])->name('families.index');

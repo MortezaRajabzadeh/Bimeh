@@ -9,6 +9,8 @@ use App\Models\Region;
 use App\Services\FamilyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Member;
+use Illuminate\Support\Facades\Auth;
 
 class FamilyController extends Controller
 {
@@ -185,5 +187,87 @@ class FamilyController extends Controller
         /*
         return Excel::download(new FamiliesExport(request()->user()->organization_id), 'families.xlsx');
         */
+    }
+
+    /**
+     * نمایش داشبورد خیریه
+     */
+    public function dashboard()
+    {
+        $charity_id = Auth::user()->organization_id;
+        
+        $insuredFamilies = Family::where('charity_id', $charity_id)
+            ->where('is_insured', true)
+            ->count();
+            
+        $insuredMembers = Member::whereHas('family', function($query) use ($charity_id) {
+            $query->where('charity_id', $charity_id)
+                ->where('is_insured', true);
+        })->count();
+        
+        $uninsuredFamilies = Family::where('charity_id', $charity_id)
+            ->where('is_insured', false)
+            ->count();
+            
+        $uninsuredMembers = Member::whereHas('family', function($query) use ($charity_id) {
+            $query->where('charity_id', $charity_id)
+                ->where('is_insured', false);
+        })->count();
+        
+        return view('charity.dashboard', compact(
+            'insuredFamilies', 
+            'insuredMembers', 
+            'uninsuredFamilies', 
+            'uninsuredMembers'
+        ));
+    }
+
+    /**
+     * نمایش فرم افزودن خانواده جدید
+     */
+    public function addFamily()
+    {
+        return view('charity.add-family');
+    }
+
+    /**
+     * جستجوی خانواده‌ها
+     */
+    public function search(Request $request)
+    {
+        $charity_id = Auth::user()->organization_id;
+        $query = $request->input('q');
+        $status = $request->input('status');
+        
+        $families = Family::where('charity_id', $charity_id);
+        
+        // جستجو بر اساس وضعیت بیمه
+        if ($status === 'insured') {
+            $families->where('is_insured', true);
+        } elseif ($status === 'uninsured') {
+            $families->where('is_insured', false);
+        }
+        
+        // جستجو بر اساس کلیدواژه
+        if (!empty($query)) {
+            $families->where(function($q) use ($query) {
+                // جستجو در کد خانواده
+                $q->where('family_code', 'like', "%{$query}%");
+                
+                // جستجو در نام/کد ملی سرپرست
+                $q->orWhereHas('members', function($member) use ($query) {
+                    $member->where('is_head', true)
+                        ->where(function($m) use ($query) {
+                            $m->where('first_name', 'like', "%{$query}%")
+                              ->orWhere('last_name', 'like', "%{$query}%")
+                              ->orWhere('national_code', 'like', "%{$query}%");
+                        });
+                });
+            });
+        }
+        
+        $results = $families->paginate(10);
+        
+        return view('charity.search-results', compact('results', 'query', 'status'));
     }
 } 
