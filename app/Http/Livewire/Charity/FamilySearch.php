@@ -4,7 +4,6 @@ namespace App\Http\Livewire\Charity;
 
 use App\Models\Family;
 use App\Models\Region;
-use App\Models\Member;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -44,17 +43,11 @@ class FamilySearch extends Component
     {
         $regions = Region::all();
         
-        // آمار خانواده‌ها و اعضا
+        // آمار خانواده‌ها
         $insuredFamilies = Family::where('is_insured', true)->count();
         $uninsuredFamilies = Family::where('is_insured', false)->count();
-        $insuredMembers = Member::whereHas('family', function($q) {
-            $q->where('is_insured', true);
-        })->count();
-        $uninsuredMembers = Member::whereHas('family', function($q) {
-            $q->where('is_insured', false);
-        })->count();
         
-        $query = Family::query()->with(['region', 'members']);
+        $query = Family::query()->with(['region']);
         
         if ($this->search) {
             $query->where(function ($q) {
@@ -64,13 +57,14 @@ class FamilySearch extends Component
                         ->orWhere('national_code', 'like', '%' . $this->search . '%');
                 })
                 ->orWhere('id', 'like', '%' . $this->search . '%')
-                ->orWhere('custom_id', 'like', '%' . $this->search . '%');
+                ->orWhere('family_code', 'like', '%' . $this->search . '%')
+                ->orWhere('address', 'like', '%' . $this->search . '%');
             });
         }
         
-        if ($this->statusFilter === '1') {
+        if ($this->statusFilter === 'insured') {
             $query->where('is_insured', true);
-        } elseif ($this->statusFilter === '0') {
+        } elseif ($this->statusFilter === 'uninsured') {
             $query->where('is_insured', false);
         }
         
@@ -78,15 +72,13 @@ class FamilySearch extends Component
             $query->where('region_id', $this->regionFilter);
         }
         
-        $families = $query->paginate(10);
+        $families = $query->latest()->paginate(10);
         
         return view('livewire.charity.family-search', [
             'families' => $families,
             'regions' => $regions,
             'insuredFamilies' => $insuredFamilies,
             'uninsuredFamilies' => $uninsuredFamilies,
-            'insuredMembers' => $insuredMembers,
-            'uninsuredMembers' => $uninsuredMembers,
         ]);
     }
 } 
