@@ -2,7 +2,9 @@
 
 namespace App\Http\Livewire\Charity;
 
+use App\Http\Livewire\BaseComponent;
 use App\Models\Family;
+use App\Models\Member;
 use App\Models\Region;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -33,6 +35,15 @@ class FamilySearch extends Component
     #[Url]
     public $sortDirection = 'desc';
     
+    // تعداد آیتم‌ها در هر صفحه
+    public $perPage = 10;
+    
+    // ذخیره شناسه خانواده‌ای که توسط کاربر باز شده است
+    public $expandedFamily = null;
+    
+    // اطلاعات اعضای خانواده باز شده
+    public $familyMembers = [];
+    
     // امکان آپدیت پارامترها به صورت URI
     protected $queryString = [
         'search' => ['except' => ''],
@@ -47,6 +58,39 @@ class FamilySearch extends Component
     {
         if (in_array($name, ['search', 'statusFilter', 'regionFilter'])) {
             $this->resetPage();
+        }
+    }
+    
+    /**
+     * باز یا بسته کردن نمایش اعضای خانواده
+     *
+     * @param int $familyId شناسه خانواده‌
+     * @return void
+     */
+    public function toggleFamily($familyId)
+    {
+        if ($this->expandedFamily === $familyId) {
+            // اگر روی همان خانواده کلیک شده، آن را ببند
+            $this->expandedFamily = null;
+            $this->familyMembers = [];
+        } else {
+            // در غیر این صورت، اطلاعات اعضای خانواده را لود کن
+            $this->expandedFamily = $familyId;
+            $this->loadFamilyMembers($familyId);
+        }
+    }
+    
+    public function loadFamilyMembers($familyId)
+    {
+        $family = Family::with(['members' => function($query) {
+            // اعضا را مرتب‌سازی می‌کنیم، ابتدا سرپرست و سپس بقیه بر اساس نام
+            $query->orderByDesc('is_head')
+                  ->orderBy('first_name')
+                  ->orderBy('last_name');
+        }])->find($familyId);
+        
+        if ($family) {
+            $this->familyMembers = $family->members;
         }
     }
     
@@ -278,7 +322,7 @@ class FamilySearch extends Component
             $query->latest();
         }
         
-        return $query->paginate(10);
+        return $query->paginate($this->perPage);
     }
     
     #[Computed]
@@ -295,11 +339,19 @@ class FamilySearch extends Component
     
     public function render()
     {
+        // آمار خانواده‌ها و اعضا برای نمایش در بالای صفحه
+        $insuredFamilies = $this->insuredFamilies();
+        $uninsuredFamilies = $this->uninsuredFamilies();
+        
+        $insuredMembers = Member::where('has_insurance', true)->count();
+        $uninsuredMembers = Member::where('has_insurance', false)->count();
+
         return view('livewire.charity.family-search', [
-            'regions' => $this->regions(),
             'families' => $this->families(),
-            'insuredFamilies' => $this->insuredFamilies(),
-            'uninsuredFamilies' => $this->uninsuredFamilies(),
+            'insuredFamilies' => $insuredFamilies,
+            'uninsuredFamilies' => $uninsuredFamilies,
+            'insuredMembers' => $insuredMembers,
+            'uninsuredMembers' => $uninsuredMembers,
         ]);
     }
 } 
