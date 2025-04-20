@@ -52,6 +52,25 @@
         </div>
     </div>
 
+    <!-- آمار تجمیعی -->
+    <div class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded shadow">
+            <div class="text-sm font-medium text-gray-500">خانواده‌های بیمه شده</div>
+            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $insuredFamilies }}</div>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+            <div class="text-sm font-medium text-gray-500">خانواده‌های بدون بیمه</div>
+            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $uninsuredFamilies }}</div>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+            <div class="text-sm font-medium text-gray-500">اعضای بیمه شده</div>
+            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $insuredMembers }}</div>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+            <div class="text-sm font-medium text-gray-500">اعضای بدون بیمه</div>
+            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $uninsuredMembers }}</div>
+        </div>
+    </div>
 
     <!-- جدول خانواده‌ها -->
     <div class="w-full overflow-x-auto">
@@ -126,7 +145,7 @@
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('verified_at')" class="flex items-center justify-end w-full">
-                            تاییدیه
+                            تاییدیه / اعضا
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
@@ -183,13 +202,75 @@
                         </div>
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                        <button class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs py-1 px-2 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </button>
+                        <div class="flex space-x-2 space-x-reverse">
+                            <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </span>
+                            
+                            <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-100 hover:bg-green-200 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transform {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 </tr>
+                
+                @if($expandedFamily === $family->id)
+                <tr class="bg-gray-50">
+                    <td colspan="12" class="px-5 py-3">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 border">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">نقش</th>
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">نام</th>
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">کد ملی</th>
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">تاریخ تولد</th>
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">جنسیت</th>
+                                        <th class="px-3 py-2 text-xs font-medium text-gray-600 text-right">وضعیت بیمه</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @forelse($familyMembers as $member)
+                                    <tr>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            {{ $member->is_head ? 'سرپرست' : 'عضو' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            {{ $member->full_name }}
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            {{ $member->national_code ?? '-' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            {{ $member->birth_date ? jdate($member->birth_date)->format('Y/m/d') : '-' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            {{ $member->gender == 'male' ? 'مرد' : 'زن' }}
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-gray-800">
+                                            <span class="{{ $member->has_insurance ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ $member->has_insurance ? 'دارای بیمه' : 'بدون بیمه' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="6" class="px-3 py-2 text-xs text-gray-500 text-center">
+                                            عضوی برای این خانواده ثبت نشده است.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                @endif
+                
                 @empty
                 <tr>
                     <td colspan="12" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
