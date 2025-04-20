@@ -201,6 +201,28 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
+                                
+                                {{-- اطلاعات دیباگ --}}
+                                @if(isset($families))
+                                <tr class="bg-gray-100">
+                                    <td colspan="13" class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        <div class="bg-yellow-50 p-4 rounded border border-yellow-200 text-yellow-800">
+                                            <h3 class="font-bold mb-2">اطلاعات دیباگ:</h3>
+                                            <p>تعداد خانواده‌ها: {{ $families->count() }} از {{ $families->total() }}</p>
+                                            <p>صفحه: {{ $families->currentPage() }} از {{ $families->lastPage() }}</p>
+                                            <p>نوع متغیر $families: {{ get_class($families) }}</p>
+                                            <p>آیا خالی است؟ {{ $families->isEmpty() ? 'بله' : 'خیر' }}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @else
+                                <tr>
+                                    <td colspan="13" class="px-5 py-4 text-sm text-red-500 border-b border-gray-200 text-center">
+                                        متغیر $families تعریف نشده است!
+                                    </td>
+                                </tr>
+                                @endif
+                                
                                 @forelse($families ?? [] as $index => $family)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
