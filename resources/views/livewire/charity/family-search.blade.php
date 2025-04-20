@@ -35,97 +35,73 @@
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('id')" class="flex items-center justify-end w-full">
                             رتبه
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('province')" class="flex items-center justify-end w-full">
                             استان
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('city')" class="flex items-center justify-end w-full">
                             شهر/روستا
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('is_insured')" class="flex items-center justify-end w-full">
                             تعداد بیمه ها
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('acceptance_criteria')" class="flex items-center justify-end w-full">
                             معیار پذیرش
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('members_count')" class="flex items-center justify-end w-full">
                             تعداد اعضا
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('head_name')" class="flex items-center justify-end w-full">
                             سرپرست خانوار
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('consumption_coefficient')" class="flex items-center justify-end w-full">
                             ضریبه مصرف
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">
                             تاریخ عضویت
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('payer')" class="flex items-center justify-end w-full">
                             پرداخت کننده حق بیمه
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('participation_percentage')" class="flex items-center justify-end w-full">
                             درصد مشارکت
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('verified_at')" class="flex items-center justify-end w-full">
                             تاییدیه
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                            <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
                 </tr>
