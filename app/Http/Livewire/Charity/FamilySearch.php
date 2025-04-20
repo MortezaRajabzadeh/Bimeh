@@ -348,6 +348,7 @@ class FamilySearch extends Component
 
         return view('livewire.charity.family-search', [
             'families' => $this->families(),
+            'regions' => $this->regions(),
             'insuredFamilies' => $insuredFamilies,
             'uninsuredFamilies' => $uninsuredFamilies,
             'insuredMembers' => $insuredMembers,
