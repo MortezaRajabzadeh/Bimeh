@@ -222,9 +222,9 @@
                 <tr class="bg-transparent">
                     <td colspan="12" class="px-0 py-0">
                         <div class="overflow-x-auto">
-                            <table class="w-full bg-white border border-gray-100">
+                            <table class="w-full bg-blue-50 border border-gray-100">
                                 <thead>
-                                    <tr class="border-b border-gray-200">
+                                    <tr class="border-b border-gray-200 bg-blue-100">
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">سرپرست؟</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">اعضای خانواده</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام</th>
@@ -241,7 +241,7 @@
                                 </thead>
                                 <tbody>
                                     @forelse($familyMembers as $member)
-                                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                    <tr class="border-b border-gray-100 hover:bg-blue-100">
                                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
                                             @if($member->is_head)
                                                 <span class="text-blue-500 inline-block">✓</span>
@@ -291,7 +291,7 @@
                                 </tbody>
                             </table>
                             
-                            <div class="flex justify-between py-4">
+                            <div class="flex justify-between py-4 bg-blue-50 px-4 rounded-b border-r border-l border-b border-gray-100">
                                 <div class="flex items-center">
                                     <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
                                     <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
