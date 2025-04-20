@@ -33,6 +33,7 @@ class Family extends Model
         'additional_info',
         'verified_at',
         'is_insured',
+        'acceptance_criteria',
     ];
 
     /**
@@ -43,6 +44,7 @@ class Family extends Model
     protected $casts = [
         'poverty_confirmed' => 'boolean',
         'verified_at' => 'datetime',
+        'acceptance_criteria' => 'array',
     ];
 
     /**

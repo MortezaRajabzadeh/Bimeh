@@ -122,9 +122,17 @@
                         {{ $family->is_insured ? $family->members->count() : 0 }}
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1">
-                            {{ $family->acceptance_criteria ?? 'از کار افتادگی' }}
-                        </span>
+                        @if(is_array($family->acceptance_criteria) || $family->acceptance_criteria instanceof \Illuminate\Support\Collection)
+                            @foreach($family->acceptance_criteria as $criteria)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">
+                                    {{ $criteria }}
+                                </span>
+                            @endforeach
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1">
+                                {{ $family->acceptance_criteria ?? 'از کار افتادگی' }}
+                            </span>
+                        @endif
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->members->count() ?? 0 }}
