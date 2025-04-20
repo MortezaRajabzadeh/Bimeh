@@ -42,6 +42,17 @@
                 background-color: #22C55E;
                 width: 50px;
             }
+            
+            /* CSS برای حالت باز/بسته بودن منو */
+            .main-with-normal-sidebar {
+                margin-right: 16rem; /* 64px */
+                transition: margin 0.3s ease-in-out;
+            }
+            
+            .main-with-collapsed-sidebar {
+                margin-right: 4rem; /* 16px */
+                transition: margin 0.3s ease-in-out;
+            }
         </style>
     </head>
     <body class="font-vazirmatn antialiased">
@@ -62,12 +73,53 @@
             </a>
 
             <!-- Page Content -->
-            <main x-data="{}"
-                x-bind:class="document.querySelector('.sidebar-menu').classList.contains('collapsed') ? 'mr-16 transition-all duration-300' : 'mr-64 transition-all duration-300'">
+            <main id="main-content" class="main-with-normal-sidebar">
                 {{ $slot }}
             </main>
         </div>
 
         @livewireScripts
+        
+        <script>
+            // بررسی وضعیت منو با JavaScript خالص بدون استفاده از Alpine.js
+            document.addEventListener('DOMContentLoaded', function() {
+                const sidebarMenu = document.querySelector('.sidebar-menu');
+                const mainContent = document.getElementById('main-content');
+                
+                // تابع بررسی وضعیت منو و تنظیم کلاس مناسب
+                function checkSidebarState() {
+                    if (sidebarMenu && mainContent) {
+                        if (sidebarMenu.classList.contains('collapsed')) {
+                            mainContent.classList.remove('main-with-normal-sidebar');
+                            mainContent.classList.add('main-with-collapsed-sidebar');
+                        } else {
+                            mainContent.classList.remove('main-with-collapsed-sidebar');
+                            mainContent.classList.add('main-with-normal-sidebar');
+                        }
+                    }
+                }
+                
+                // بررسی اولیه
+                checkSidebarState();
+                
+                // گوش دادن به تغییرات در کلاس منو
+                if (sidebarMenu) {
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.attributeName === 'class') {
+                                checkSidebarState();
+                            }
+                        });
+                    });
+                    
+                    observer.observe(sidebarMenu, { attributes: true });
+                }
+                
+                // گوش دادن به رویداد سفارشی برای تغییر وضعیت منو
+                document.addEventListener('sidebar-toggle', function() {
+                    checkSidebarState();
+                });
+            });
+        </script>
     </body>
 </html>

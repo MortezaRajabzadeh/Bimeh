@@ -73,10 +73,12 @@ class DatabaseSeeder extends Seeder
         
         // اجرای سیدر خانواده‌ها
         // بعداً به صورت جداگانه اجرا خواهد شد
-        /*
         $this->call([
+            DefaultUsersSeeder::class,
+            AdminUserSeeder::class,
+            PermissionSeeder::class,
+            OrganizationSeeder::class,
             FamilySeeder::class,
         ]);
-        */
     }
 }

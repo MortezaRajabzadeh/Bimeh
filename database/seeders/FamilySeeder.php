@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class FamilySeeder extends Seeder
 {
@@ -16,14 +17,22 @@ class FamilySeeder extends Seeder
      */
     public function run(): void
     {
+        // پاک کردن داده‌های قبلی با حفظ Foreign Keys
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Member::query()->delete();
+        Family::query()->delete();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
         // ایجاد یک منطقه نمونه
-        $region = Region::create([
-            'name' => 'منطقه ۱',
-            'province' => 'تهران',
-            'city' => 'تهران',
-            'description' => 'منطقه یک تهران',
-            'is_active' => true,
-        ]);
+        $region = Region::firstOrCreate(
+            ['name' => 'منطقه ۱'],
+            [
+                'province' => 'تهران',
+                'city' => 'تهران',
+                'description' => 'منطقه یک تهران',
+                'is_active' => true,
+            ]
+        );
 
         // دریافت سازمان خیریه و بیمه
         $charity = Organization::where('type', 'charity')->first();
@@ -61,7 +70,7 @@ class FamilySeeder extends Seeder
                 'birth_date' => now()->subYears(40 + $i % 10),
                 'gender' => 'male',
                 'marital_status' => 'married',
-                'relationship' => 'father',
+                'relationship' => 'head',
                 'is_head' => true,
                 'has_insurance' => true,
                 'mobile' => '0912' . str_pad($i, 7, '0', STR_PAD_LEFT),
@@ -77,7 +86,7 @@ class FamilySeeder extends Seeder
                 'birth_date' => now()->subYears(35 + $i % 10),
                 'gender' => 'female',
                 'marital_status' => 'married',
-                'relationship' => 'mother',
+                'relationship' => 'spouse',
                 'is_head' => false,
                 'has_insurance' => true,
             ]);
@@ -126,7 +135,7 @@ class FamilySeeder extends Seeder
                 'birth_date' => now()->subYears(45 + $i % 15),
                 'gender' => 'male',
                 'marital_status' => 'married',
-                'relationship' => 'father',
+                'relationship' => 'head',
                 'is_head' => true,
                 'has_insurance' => false,
                 'mobile' => '0913' . str_pad($i, 7, '0', STR_PAD_LEFT),
@@ -142,7 +151,7 @@ class FamilySeeder extends Seeder
                 'birth_date' => now()->subYears(40 + $i % 15),
                 'gender' => 'female',
                 'marital_status' => 'married',
-                'relationship' => 'mother',
+                'relationship' => 'spouse',
                 'is_head' => false,
                 'has_insurance' => false,
             ]);
