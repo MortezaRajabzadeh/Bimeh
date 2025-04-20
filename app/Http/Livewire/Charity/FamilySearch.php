@@ -9,6 +9,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class FamilySearch extends Component
 {
@@ -70,56 +71,94 @@ class FamilySearch extends Component
         $query = Family::query()->with(['region', 'members']);
         
         if ($this->search) {
-            $query->where(function ($q) {
-                // جستجو در سرتیترهای مختلف جدول - فقط فیلدهایی که در دیتابیس وجود دارند
-                $q->whereHas('members', function ($sub) {
-                    $sub->where('first_name', 'like', '%' . $this->search . '%')
-                        ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                        ->orWhere('national_code', 'like', '%' . $this->search . '%');
+            $searchTerm = $this->search;
+            $query->where(function ($q) use ($searchTerm) {
+                // جستجو در تمام سرتیترهای جدول
+                
+                // 1. جستجو در اطلاعات اعضای خانواده
+                $q->whereHas('members', function ($sub) use ($searchTerm) {
+                    $sub->where('first_name', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('national_code', 'like', '%' . $searchTerm . '%');
                     
-                    // اگر ستون موبایل و تاریخ تولد در جدول members وجود دارند، اضافه شوند
+                    // جستجو در فیلدهای اضافی اعضا در صورت وجود
                     if (in_array('mobile', Schema::getColumnListing('members'))) {
-                        $sub->orWhere('mobile', 'like', '%' . $this->search . '%');
+                        $sub->orWhere('mobile', 'like', '%' . $searchTerm . '%');
                     }
                     
                     if (in_array('birth_date', Schema::getColumnListing('members'))) {
-                        $sub->orWhere('birth_date', 'like', '%' . $this->search . '%');
+                        $sub->orWhere('birth_date', 'like', '%' . $searchTerm . '%');
                     }
-                })
-                ->orWhere('id', 'like', '%' . $this->search . '%')
-                ->orWhere('family_code', 'like', '%' . $this->search . '%')
-                ->orWhere('address', 'like', '%' . $this->search . '%');
+                });
                 
-                // اضافه کردن وضعیت بیمه
-                if ($this->search === 'بیمه شده' || $this->search === 'بدون بیمه') {
-                    $q->orWhere('is_insured', $this->search === 'بیمه شده' ? 1 : 0);
+                // 2. جستجوی خاص برای سرپرست خانوار
+                $q->orWhereHas('members', function ($sub) use ($searchTerm) {
+                    $sub->where('is_head', true)
+                        ->where(function ($s) use ($searchTerm) {
+                            $s->where('first_name', 'like', '%' . $searchTerm . '%')
+                              ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
+                              ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', '%' . $searchTerm . '%');
+                        });
+                });
+                
+                // 3. جستجو در فیلدهای اصلی خانواده
+                $q->orWhere('id', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('family_code', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('address', 'like', '%' . $searchTerm . '%');
+                
+                // 4. جستجو بر اساس تعداد اعضا
+                if (is_numeric($searchTerm)) {
+                    $familiesWithMemberCount = DB::table('families')
+                        ->join('members', 'families.id', '=', 'members.family_id')
+                        ->select('families.id', DB::raw('count(*) as member_count'))
+                        ->groupBy('families.id')
+                        ->having('member_count', '=', (int)$searchTerm)
+                        ->pluck('families.id')
+                        ->toArray();
+                    
+                    if (!empty($familiesWithMemberCount)) {
+                        $q->orWhereIn('id', $familiesWithMemberCount);
+                    }
                 }
                 
-                // اضافه کردن جستجو در تاریخ ایجاد
-                $q->orWhere('created_at', 'like', '%' . $this->search . '%');
+                // 5. جستجو بر اساس وضعیت بیمه
+                if (in_array(mb_strtolower($searchTerm, 'UTF-8'), ['بیمه شده', 'بیمه', 'بیمه دارد'])) {
+                    $q->orWhere('is_insured', true);
+                } elseif (in_array(mb_strtolower($searchTerm, 'UTF-8'), ['بدون بیمه', 'بیمه ندارد'])) {
+                    $q->orWhere('is_insured', false);
+                }
                 
-                // بررسی وجود ستون‌های دیگر قبل از استفاده
+                // 6. جستجو در تاریخ ایجاد
+                $q->orWhere('created_at', 'like', '%' . $searchTerm . '%');
+                
+                // 7. بررسی وجود ستون‌های دیگر قبل از جستجو
                 if (in_array('acceptance_criteria', Schema::getColumnListing('families'))) {
-                    $q->orWhere('acceptance_criteria', 'like', '%' . $this->search . '%');
+                    $q->orWhere('acceptance_criteria', 'like', '%' . $searchTerm . '%');
                 }
                 
                 if (in_array('payer', Schema::getColumnListing('families'))) {
-                    $q->orWhere('payer', 'like', '%' . $this->search . '%');
+                    $q->orWhere('payer', 'like', '%' . $searchTerm . '%');
                 }
                 
                 if (in_array('participation_percentage', Schema::getColumnListing('families'))) {
-                    $q->orWhere('participation_percentage', 'like', '%' . $this->search . '%');
+                    $q->orWhere('participation_percentage', 'like', '%' . $searchTerm . '%');
                 }
                 
                 if (in_array('verified_at', Schema::getColumnListing('families'))) {
-                    $q->orWhere('verified_at', 'like', '%' . $this->search . '%');
+                    $q->orWhere('verified_at', 'like', '%' . $searchTerm . '%');
                 }
                 
-                // جستجو در منطقه
-                $q->orWhereHas('region', function ($sub) {
-                    $sub->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('province', 'like', '%' . $this->search . '%');
+                // 8. جستجو در اطلاعات منطقه
+                $q->orWhereHas('region', function ($sub) use ($searchTerm) {
+                    $sub->where('name', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('province', 'like', '%' . $searchTerm . '%');
                 });
+                
+                // 9. جستجو برای ضریبه مصرف (اگر در دیتابیس نیست، می‌توانیم در مقادیر هاردکد شده جستجو کنیم)
+                if ($searchTerm == '۵۰٪' || $searchTerm == '50%' || $searchTerm == '50') {
+                    // این یک بررسی خاص است که چون ضریبه مصرف در دیتابیس نیست و ثابت است
+                    $q->orWhere('id', '>', 0); // این شرط همیشه برقرار است و همه رکوردها را برمی‌گرداند
+                }
             });
         }
         
