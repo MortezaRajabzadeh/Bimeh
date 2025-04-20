@@ -106,6 +106,12 @@ class FamilySearch extends Component
             } elseif ($this->sortField === 'members_count') {
                 $query->withCount('members')
                       ->orderBy('members_count', $this->sortDirection);
+            } elseif ($this->sortField === 'consumption_coefficient') {
+                // از آنجا که این ستون در دیتابیس وجود ندارد، از ترتیب اولیه استفاده می‌کنیم
+                $query->latest('id');
+            } elseif ($this->sortField === 'payer' || $this->sortField === 'participation_percentage' || $this->sortField === 'verified_at') {
+                // این ستون‌ها نیز ممکن است در دیتابیس وجود نداشته باشند
+                $query->latest('id');
             } else {
                 $query->orderBy($this->sortField, $this->sortDirection);
             }
