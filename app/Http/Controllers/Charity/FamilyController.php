@@ -143,6 +143,21 @@ class FamilyController extends Controller
         unset($validated['insurance_id']);
         unset($validated['verified_at']);
         
+        // پردازش معیارهای پذیرش
+        if (isset($validated['acceptance_criteria_array'])) {
+            // تبدیل معیارهای وارد شده به آرایه
+            // مثال: اگر فرم به صورت رشته با جداکننده کاما باشد
+            $criteria = explode(',', $validated['acceptance_criteria_array']);
+            $criteria = array_map('trim', $criteria); // حذف فاصله‌های اضافی
+            $criteria = array_filter($criteria); // حذف مقادیر خالی
+            
+            // ذخیره به صورت آرایه
+            $validated['acceptance_criteria'] = $criteria;
+            
+            // حذف فیلد اضافی از داده‌های اصلی
+            unset($validated['acceptance_criteria_array']);
+        }
+        
         $family->update($validated);
         
         return redirect()->route('charity.families.show', $family)
