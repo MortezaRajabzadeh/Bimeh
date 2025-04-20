@@ -221,10 +221,10 @@
                 @if($expandedFamily === $family->id)
                 <tr class="bg-transparent">
                     <td colspan="12" class="px-0 py-4">
-                        <div class="rounded-lg overflow-x-auto p-0 pb-4">
-                            <table class="w-full bg-white border border-gray-100 rounded-lg">
+                        <div class="bg-purple-100 rounded-lg overflow-x-auto p-4 border border-purple-200">
+                            <table class="w-full">
                                 <thead>
-                                    <tr class="border-b border-gray-200 bg-gray-50">
+                                    <tr class="border-b border-purple-200">
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">سرپرست؟</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">اعضای خانواده</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام</th>
@@ -241,7 +241,7 @@
                                 </thead>
                                 <tbody>
                                     @forelse($familyMembers as $member)
-                                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                    <tr class="border-b border-purple-100 hover:bg-purple-200 transition-colors">
                                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
                                             {{ $member->is_head ? '✓' : '' }}
                                         </td>
@@ -250,7 +250,7 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->first_name }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->last_name }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-800 font-mono">{{ $member->national_code ?? '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->birth_date ? jdate($member->birth_date)->format('Y/m/d') : '-' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
@@ -269,19 +269,19 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            درمان تکمیلی
+                                            {{ $member->has_insurance ? 'درمان تکمیلی' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            درمان تکمیلی
+                                            {{ $member->has_insurance ? 'درمان تکمیلی' : '-' }}
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-800">۱۰۰٪</td>
-                                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->has_insurance ? '۱۰۰٪' : '۵۰٪' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">
                                             ✓
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-purple-100">
                                             عضوی برای این خانواده ثبت نشده است.
                                         </td>
                                     </tr>
@@ -290,16 +290,16 @@
                             </table>
                             
                             @if(count($familyMembers) > 0)
-                            <div class="flex flex-row justify-between mt-4 gap-4">
-                                <div class="flex items-center gap-2">
+                            <div class="flex flex-row justify-between mt-4 gap-4 bg-white rounded-lg p-4 border border-purple-200">
+                                <div class="flex flex-row items-center gap-2 w-1/2">
                                     <div class="text-sm text-gray-600">شماره موبایل سرپرست:</div>
-                                    <div class="text-sm font-medium" id="mobile_{{ $family->id }}">09347964873</div>
-                                    <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 hover:text-blue-700 ml-2 text-xs">کپی</button>
+                                    <div class="text-sm font-medium text-purple-600" id="mobile_{{ $family->id }}">{{ $familyMembers->first(fn($m) => $m->is_head)?->mobile ?? '۰۹۱۲۳۴۵۶۷۸۹' }}</div>
+                                    <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-purple-500 hover:text-purple-700 ml-2 text-xs">کپی</button>
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex flex-row items-center gap-2 w-1/2">
                                     <div class="text-sm text-gray-600">شماره شبا جهت پرداخت خسارت:</div>
-                                    <div class="text-sm font-medium ltr" id="sheba_{{ $family->id }}">IR056216845813188</div>
-                                    <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 hover:text-blue-700 ml-2 text-xs">کپی</button>
+                                    <div class="text-sm font-medium text-purple-600 ltr" id="sheba_{{ $family->id }}">IR۰۵۶۲۱۶۸۴۵۸۱۳۱۸۸۴</div>
+                                    <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-purple-500 hover:text-purple-700 ml-2 text-xs">کپی</button>
                                 </div>
                             </div>
                             
