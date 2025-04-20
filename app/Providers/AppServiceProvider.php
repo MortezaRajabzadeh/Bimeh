@@ -56,28 +56,54 @@ class AppServiceProvider extends ServiceProvider
             if (Auth::check()) {
                 $user = Auth::user();
                 
-                // بررسی اینکه کاربر از نوع خیریه باشد
-                if ($user->user_type === 'charity' && $user->organization_id) {
-                    $charity_id = $user->organization_id;
+                // بررسی اینکه کاربر از نوع خیریه یا ادمین باشد
+                if ($user->user_type === 'charity' || $user->user_type === 'admin') {
+                    $charity_id = null;
+                    
+                    if ($user->user_type === 'charity') {
+                        $charity_id = $user->organization_id;
+                    }
                     
                     // بررسی مستقیم آمار با SQL برای اطمینان از صحت داده
-                    $insuredStats = DB::select("
-                        SELECT 
-                            COUNT(DISTINCT f.id) as family_count,
-                            COUNT(DISTINCT m.id) as member_count
-                        FROM families f
-                        LEFT JOIN members m ON m.family_id = f.id
-                        WHERE f.charity_id = ? AND f.is_insured = 1
-                    ", [$charity_id]);
-                    
-                    $uninsuredStats = DB::select("
-                        SELECT 
-                            COUNT(DISTINCT f.id) as family_count,
-                            COUNT(DISTINCT m.id) as member_count
-                        FROM families f
-                        LEFT JOIN members m ON m.family_id = f.id
-                        WHERE f.charity_id = ? AND f.is_insured = 0
-                    ", [$charity_id]);
+                    if ($user->user_type === 'admin') {
+                        // ادمین تمام آمار خانواده‌ها را می‌بیند
+                        $insuredStats = DB::select("
+                            SELECT 
+                                COUNT(DISTINCT f.id) as family_count,
+                                COUNT(DISTINCT m.id) as member_count
+                            FROM families f
+                            LEFT JOIN members m ON m.family_id = f.id
+                            WHERE f.is_insured = 1
+                        ");
+                        
+                        $uninsuredStats = DB::select("
+                            SELECT 
+                                COUNT(DISTINCT f.id) as family_count,
+                                COUNT(DISTINCT m.id) as member_count
+                            FROM families f
+                            LEFT JOIN members m ON m.family_id = f.id
+                            WHERE f.is_insured = 0
+                        ");
+                    } else {
+                        // خیریه فقط آمار خانواده‌های خودش را می‌بیند
+                        $insuredStats = DB::select("
+                            SELECT 
+                                COUNT(DISTINCT f.id) as family_count,
+                                COUNT(DISTINCT m.id) as member_count
+                            FROM families f
+                            LEFT JOIN members m ON m.family_id = f.id
+                            WHERE f.charity_id = ? AND f.is_insured = 1
+                        ", [$charity_id]);
+                        
+                        $uninsuredStats = DB::select("
+                            SELECT 
+                                COUNT(DISTINCT f.id) as family_count,
+                                COUNT(DISTINCT m.id) as member_count
+                            FROM families f
+                            LEFT JOIN members m ON m.family_id = f.id
+                            WHERE f.charity_id = ? AND f.is_insured = 0
+                        ", [$charity_id]);
+                    }
                     
                     $insuredFamilies = isset($insuredStats[0]) ? $insuredStats[0]->family_count : 0;
                     $insuredMembers = isset($insuredStats[0]) ? $insuredStats[0]->member_count : 0;
@@ -93,7 +119,7 @@ class AppServiceProvider extends ServiceProvider
                     ]);
                     
                     // چاپ آمار در خروجی برای دیباگ
-                    Log::info('Charity Stats', [
+                    Log::info('Stats for ' . $user->user_type, [
                         'charity_id' => $charity_id,
                         'insured' => $insuredFamilies . ' families, ' . $insuredMembers . ' members',
                         'uninsured' => $uninsuredFamilies . ' families, ' . $uninsuredMembers . ' members',
