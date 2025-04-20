@@ -1,59 +1,53 @@
 <div>
     {{-- Knowing others is intelligence; knowing yourself is true wisdom. --}}
-    <!-- نشانگر بارگذاری صفحه -->
-    <div wire:loading.delay.longer class="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <div class="flex items-center justify-center">
-                <svg class="animate-spin h-8 w-8 text-blue-600 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <h3 class="text-lg font-semibold">در حال بارگذاری اطلاعات...</h3>
-            </div>
-            <p class="mt-2 text-sm text-gray-600 text-center">این عملیات ممکن است چند لحظه طول بکشد.</p>
-        </div>
-    </div>
     
     <!-- جستجو و فیلتر -->
     <div class="mb-6 flex gap-2">
         <div class="w-full flex flex-wrap items-center gap-2">
             <div class="relative flex-grow">
-                <input wire:model.debounce.300ms="search" type="text" placeholder="جستجو..." class="border border-gray-300 rounded p-2 w-full">
-                <div wire:loading wire:target="search" class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <svg class="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
+                <input wire:model.live="search" type="text" placeholder="جستجو در تمام فیلدها..." class="border border-gray-300 rounded p-2 w-full">
             </div>
             
             <div class="relative">
-                <select wire:model.debounce.300ms="statusFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                <select wire:model.live="statusFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
                     <option value="">همه وضعیت‌ها</option>
                     <option value="insured">بیمه شده</option>
                     <option value="uninsured">بدون بیمه</option>
                 </select>
-                <div wire:loading wire:target="statusFilter" class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <svg class="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
             </div>
             
             <div class="relative">
-                <select wire:model.debounce.300ms="regionFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                <select wire:model.live="regionFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
                     <option value="">همه مناطق</option>
                     @foreach($regions as $r)
                         <option value="{{ $r->id }}">{{ $r->name }}</option>
                     @endforeach
                 </select>
-                <div wire:loading wire:target="regionFilter" class="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <svg class="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
+            </div>
+            
+            <div class="relative">
+                <select wire:model.live="sortField" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                    <option value="created_at">مرتب‌سازی بر اساس...</option>
+                    <option value="id">رتبه</option>
+                    <option value="province">استان</option>
+                    <option value="city">شهر/روستا</option>
+                    <option value="is_insured">تعداد بیمه ها</option>
+                    <option value="acceptance_criteria">معیار پذیرش</option>
+                    <option value="members_count">تعداد اعضا</option>
+                    <option value="head_name">سرپرست خانوار</option>
+                    <option value="consumption_coefficient">ضریبه مصرف</option>
+                    <option value="created_at">تاریخ عضویت</option>
+                    <option value="payer">پرداخت کننده حق بیمه</option>
+                    <option value="participation_percentage">درصد مشارکت</option>
+                    <option value="verified_at">تاییدیه</option>
+                </select>
+            </div>
+            
+            <div class="relative">
+                <select wire:model.live="sortDirection" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                    <option value="asc">صعودی</option>
+                    <option value="desc">نزولی</option>
+                </select>
             </div>
         </div>
     </div>
@@ -61,16 +55,7 @@
 
     <!-- جدول خانواده‌ها -->
     <div class="w-full overflow-x-auto">
-        <div wire:loading wire:target="search, statusFilter, regionFilter, gotoPage, previousPage, nextPage, sortBy" class="w-full flex justify-center items-center py-4">
-            <div class="flex items-center justify-center space-x-2 rtl:space-x-reverse">
-                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="text-gray-700">در حال بارگذاری...</span>
-            </div>
-        </div>
-        <table class="w-full border border-gray-200" wire:loading.class="opacity-50">
+        <table class="w-full border border-gray-200">
             <thead>
                 <tr class="bg-gray-50 text-xs text-gray-700">
                     <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">

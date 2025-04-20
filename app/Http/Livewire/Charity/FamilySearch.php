@@ -6,6 +6,9 @@ use App\Models\Family;
 use App\Models\Region;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\Url;
+use Livewire\Attributes\Computed;
+use Illuminate\Support\Facades\Schema;
 
 class FamilySearch extends Component
 {
@@ -13,10 +16,19 @@ class FamilySearch extends Component
     
     protected $paginationTheme = 'tailwind';
     
+    #[Url]
     public $search = '';
+    
+    #[Url]
     public $statusFilter = '';
+    
+    #[Url]
     public $regionFilter = '';
+    
+    #[Url]
     public $sortField = 'created_at';
+    
+    #[Url]
     public $sortDirection = 'desc';
     
     // امکان آپدیت پارامترها به صورت URI
@@ -28,19 +40,12 @@ class FamilySearch extends Component
         'sortDirection' => ['except' => 'desc'],
     ];
     
-    public function updatingSearch()
+    // این متد برای مطابقت با لایوایر ۳ اضافه می‌شود
+    public function updating($name, $value)
     {
-        $this->resetPage();
-    }
-    
-    public function updatingStatusFilter()
-    {
-        $this->resetPage();
-    }
-    
-    public function updatingRegionFilter()
-    {
-        $this->resetPage();
+        if (in_array($name, ['search', 'statusFilter', 'regionFilter'])) {
+            $this->resetPage();
+        }
     }
     
     public function sortBy($field)
@@ -53,26 +58,68 @@ class FamilySearch extends Component
         }
     }
     
-    public function render()
+    #[Computed]
+    public function regions()
     {
-        $regions = Region::all();
-        
-        // آمار خانواده‌ها
-        $insuredFamilies = Family::where('is_insured', true)->count();
-        $uninsuredFamilies = Family::where('is_insured', false)->count();
-        
+        return Region::all();
+    }
+    
+    #[Computed]
+    public function families()
+    {
         $query = Family::query()->with(['region', 'members']);
         
         if ($this->search) {
             $query->where(function ($q) {
+                // جستجو در سرتیترهای مختلف جدول - فقط فیلدهایی که در دیتابیس وجود دارند
                 $q->whereHas('members', function ($sub) {
                     $sub->where('first_name', 'like', '%' . $this->search . '%')
                         ->orWhere('last_name', 'like', '%' . $this->search . '%')
                         ->orWhere('national_code', 'like', '%' . $this->search . '%');
+                    
+                    // اگر ستون موبایل و تاریخ تولد در جدول members وجود دارند، اضافه شوند
+                    if (in_array('mobile', Schema::getColumnListing('members'))) {
+                        $sub->orWhere('mobile', 'like', '%' . $this->search . '%');
+                    }
+                    
+                    if (in_array('birth_date', Schema::getColumnListing('members'))) {
+                        $sub->orWhere('birth_date', 'like', '%' . $this->search . '%');
+                    }
                 })
                 ->orWhere('id', 'like', '%' . $this->search . '%')
                 ->orWhere('family_code', 'like', '%' . $this->search . '%')
                 ->orWhere('address', 'like', '%' . $this->search . '%');
+                
+                // اضافه کردن وضعیت بیمه
+                if ($this->search === 'بیمه شده' || $this->search === 'بدون بیمه') {
+                    $q->orWhere('is_insured', $this->search === 'بیمه شده' ? 1 : 0);
+                }
+                
+                // اضافه کردن جستجو در تاریخ ایجاد
+                $q->orWhere('created_at', 'like', '%' . $this->search . '%');
+                
+                // بررسی وجود ستون‌های دیگر قبل از استفاده
+                if (in_array('acceptance_criteria', Schema::getColumnListing('families'))) {
+                    $q->orWhere('acceptance_criteria', 'like', '%' . $this->search . '%');
+                }
+                
+                if (in_array('payer', Schema::getColumnListing('families'))) {
+                    $q->orWhere('payer', 'like', '%' . $this->search . '%');
+                }
+                
+                if (in_array('participation_percentage', Schema::getColumnListing('families'))) {
+                    $q->orWhere('participation_percentage', 'like', '%' . $this->search . '%');
+                }
+                
+                if (in_array('verified_at', Schema::getColumnListing('families'))) {
+                    $q->orWhere('verified_at', 'like', '%' . $this->search . '%');
+                }
+                
+                // جستجو در منطقه
+                $q->orWhereHas('region', function ($sub) {
+                    $sub->where('name', 'like', '%' . $this->search . '%')
+                        ->orWhere('province', 'like', '%' . $this->search . '%');
+                });
             });
         }
         
@@ -106,11 +153,8 @@ class FamilySearch extends Component
             } elseif ($this->sortField === 'members_count') {
                 $query->withCount('members')
                       ->orderBy('members_count', $this->sortDirection);
-            } elseif ($this->sortField === 'consumption_coefficient') {
-                // از آنجا که این ستون در دیتابیس وجود ندارد، از ترتیب اولیه استفاده می‌کنیم
-                $query->latest('id');
-            } elseif ($this->sortField === 'payer' || $this->sortField === 'participation_percentage' || $this->sortField === 'verified_at') {
-                // این ستون‌ها نیز ممکن است در دیتابیس وجود نداشته باشند
+            } elseif ($this->sortField === 'consumption_coefficient' || $this->sortField === 'payer' || $this->sortField === 'participation_percentage' || $this->sortField === 'verified_at') {
+                // این ستون‌ها ممکن است در دیتابیس وجود نداشته باشند
                 $query->latest('id');
             } else {
                 $query->orderBy($this->sortField, $this->sortDirection);
@@ -119,13 +163,28 @@ class FamilySearch extends Component
             $query->latest();
         }
         
-        $families = $query->paginate(10);
-        
+        return $query->paginate(10);
+    }
+    
+    #[Computed]
+    public function insuredFamilies()
+    {
+        return Family::where('is_insured', true)->count();
+    }
+    
+    #[Computed]
+    public function uninsuredFamilies()
+    {
+        return Family::where('is_insured', false)->count();
+    }
+    
+    public function render()
+    {
         return view('livewire.charity.family-search', [
-            'families' => $families,
-            'regions' => $regions,
-            'insuredFamilies' => $insuredFamilies,
-            'uninsuredFamilies' => $uninsuredFamilies,
+            'regions' => $this->regions(),
+            'families' => $this->families(),
+            'insuredFamilies' => $this->insuredFamilies(),
+            'uninsuredFamilies' => $this->uninsuredFamilies(),
         ]);
     }
 } 
