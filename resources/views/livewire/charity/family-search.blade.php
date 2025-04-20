@@ -26,17 +26,6 @@
         </div>
     </div>
 
-    <!-- آمار کلی -->
-    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 class="text-lg font-semibold text-green-700">خانواده‌های بیمه شده</h3>
-            <div class="text-2xl font-bold">{{ $insuredFamilies }} خانواده</div>
-        </div>
-        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-            <h3 class="text-lg font-semibold text-red-700">خانواده‌های بدون بیمه</h3>
-            <div class="text-2xl font-bold">{{ $uninsuredFamilies }} خانواده</div>
-        </div>
-    </div>
 
     <!-- جدول خانواده‌ها -->
     <div class="w-full overflow-x-auto">
