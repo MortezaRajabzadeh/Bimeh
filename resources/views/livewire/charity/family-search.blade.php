@@ -221,10 +221,10 @@
                 @if($expandedFamily === $family->id)
                 <tr class="bg-transparent">
                     <td colspan="12" class="px-0 py-4">
-                        <div class="bg-green-50 rounded-lg overflow-x-auto p-4 border border-green-200">
+                        <div class="bg-blue-50 rounded-lg overflow-x-auto p-4 border border-blue-200">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="border-b border-green-200">
+                                    <tr class="border-b border-blue-200">
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">سرپرست؟</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">اعضای خانواده</th>
                                         <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام</th>
@@ -241,29 +241,12 @@
                                 </thead>
                                 <tbody>
                                     @forelse($familyMembers as $member)
-                                    <tr class="border-b border-green-100 hover:bg-green-100 transition-colors">
-                                        <td class="px-4 py-3 text-sm text-gray-800 ">
-                                            @if($member->is_head)
-                                                <div class="flex items-center justify-center">
-                                                    <div class="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            @endif
+                                    <tr class="border-b border-blue-100 hover:bg-blue-100 transition-colors">
+                                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
+                                            {{ $member->is_head ? '✓' : '' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            <div class="flex items-center space-x-1 space-x-reverse">
-                                                <span class="inline-block w-8 h-8 overflow-hidden rounded-full bg-gray-200">
-                                                    <svg class="h-full w-full text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
-                                                    </svg>
-                                                </span>
-                                                <div class="mx-2">
-                                                    {{ $member->is_head ? 'پدر' : ($member->gender == 'male' ? 'پسر' : 'مادر') }}
-                                                </div>
-                                            </div>
+                                            {{ $member->is_head ? 'پدر' : ($member->gender == 'male' ? 'پسر' : 'مادر') }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->first_name }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->last_name }}</td>
@@ -286,43 +269,19 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            @if($member->has_insurance)
-                                                <span>درمان تکمیلی</span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
+                                            {{ $member->has_insurance ? 'درمان تکمیلی' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            <div class="flex items-center space-x-1 space-x-reverse">
-                                                <span class="inline-block p-1 rounded-full {{ $member->has_insurance ? 'bg-blue-100' : 'bg-gray-100' }}">
-                                                    @if($member->has_insurance)
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    @else
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    @endif
-                                                </span>
-                                                <span>{{ $member->has_insurance ? 'درمان تکمیلی' : '-' }}</span>
-                                            </div>
+                                            {{ $member->has_insurance ? 'درمان تکمیلی' : '-' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->has_insurance ? '۱۰۰٪' : '۵۰٪' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
-                                            <div class="flex items-center space-x-1 space-x-reverse">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
+                                            ✓
                                         </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-green-100">
+                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-blue-100">
                                             عضوی برای این خانواده ثبت نشده است.
                                         </td>
                                     </tr>
@@ -330,28 +289,29 @@
                                 </tbody>
                             </table>
                             
-                            @if(count($familyMembers) > 0 && $familyMembers->first()?->is_head)
-                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="bg-white rounded-lg p-3 border border-green-100 flex items-center justify-between">
-                                    <span class="text-sm text-gray-600">شماره موبایل سرپرست</span>
-                                    <span class="text-sm font-medium flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                                        </svg>
-                                        {{ $familyMembers->first(fn($m) => $m->is_head)?->mobile ?? '۰۹۱۲۳۴۵۶۷۸۹' }}
-                                    </span>
+                            @if(count($familyMembers) > 0)
+                            <div class="flex flex-row justify-between mt-4 gap-4 bg-white rounded-lg p-4 border border-blue-100">
+                                <div class="flex flex-row items-center gap-2 w-1/2">
+                                    <div class="text-sm text-gray-600">شماره موبایل سرپرست:</div>
+                                    <div class="text-sm font-medium text-blue-600" id="mobile_{{ $family->id }}">{{ $familyMembers->first(fn($m) => $m->is_head)?->mobile ?? '۰۹۱۲۳۴۵۶۷۸۹' }}</div>
+                                    <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 hover:text-blue-700 ml-2 text-xs">کپی</button>
                                 </div>
-                                <div class="bg-white rounded-lg p-3 border border-green-100 flex items-center justify-between">
-                                    <span class="text-sm text-gray-600">شماره شبا جهت پرداخت خسارت</span>
-                                    <span class="text-sm font-medium flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                                            <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
-                                        </svg>
-                                        IR۰۵۶۲۱۶۸۴۵۸۱۳۱۸۸۴
-                                    </span>
+                                <div class="flex flex-row items-center gap-2 w-1/2">
+                                    <div class="text-sm text-gray-600">شماره شبا جهت پرداخت خسارت:</div>
+                                    <div class="text-sm font-medium text-blue-600 ltr" id="sheba_{{ $family->id }}">IR۰۵۶۲۱۶۸۴۵۸۱۳۱۸۸۴</div>
+                                    <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 hover:text-blue-700 ml-2 text-xs">کپی</button>
                                 </div>
                             </div>
+                            
+                            <script>
+                            function copyToClipboard(elementId) {
+                                const text = document.getElementById(elementId).innerText;
+                                navigator.clipboard.writeText(text).then(() => {
+                                    // اختیاری: نمایش پیام موفقیت آمیز
+                                    alert('متن کپی شد: ' + text);
+                                });
+                            }
+                            </script>
                             @endif
                         </div>
                     </td>
