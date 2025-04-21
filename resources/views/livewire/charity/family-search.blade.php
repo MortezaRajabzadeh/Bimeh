@@ -300,7 +300,7 @@
                                     <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
                                     <div class="bg-white rounded px-3 py-2 flex items-center">
                                         <span class="text-sm text-gray-800">{{ $family->head()?->mobile ?? '09347964873' }}</span>
-                                        <button type="button" wire:click="copyText('{{ $family->head()?->mobile ?? '09347964873' }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                        <button type="button" wire:click="copyText('09347964873')" class="text-blue-500 mr-2 cursor-pointer">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                             </svg>
@@ -312,7 +312,7 @@
                                     <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
                                     <div class="bg-white rounded px-3 py-2 flex items-center">
                                         <span class="text-sm text-gray-800 ltr">{{ $family->head()?->sheba ?? 'IR056216845813188' }}</span>
-                                        <button type="button" wire:click="copyText('{{ $family->head()?->sheba ?? 'IR056216845813188' }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                        <button type="button" wire:click="copyText('IR056216845813188')" class="text-blue-500 mr-2 cursor-pointer">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                             </svg>
@@ -345,15 +345,14 @@
     
     <script>
     document.addEventListener('livewire:initialized', function () {
-        Livewire.on('copy-text', params => {
-            const text = params.text;
+        Livewire.on('copy-text', text => {
+            console.log('دریافت متن برای کپی:', text);
             
             // روش 1: استفاده از Clipboard API
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(text)
                     .then(() => {
-                        console.log('متن با موفقیت کپی شد.');
-                        // الرت حذف شد - از توست لایوایر استفاده می‌شود
+                        console.log('متن با موفقیت کپی شد:', text);
                     })
                     .catch(err => {
                         console.error('خطا در کپی متن: ', err);
@@ -387,8 +386,7 @@
             try {
                 var successful = document.execCommand('copy');
                 if (successful) {
-                    console.log('متن با موفقیت کپی شد.');
-                    // الرت حذف شد - از توست لایوایر استفاده می‌شود
+                    console.log('متن با موفقیت کپی شد (روش جایگزین):', text);
                 } else {
                     console.error('کپی متن با شکست مواجه شد.');
                 }

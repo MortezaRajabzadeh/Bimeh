@@ -339,7 +339,7 @@ class FamilySearch extends Component
     
     public function copyText($text)
     {
-        $this->dispatch('copy-text', ['text' => $text]);
+        $this->dispatch('copy-text', text: $text);
         $this->dispatch('show-toast', [
             'title' => 'کپی شد!',
             'message' => 'متن مورد نظر با موفقیت کپی شد.',
