@@ -345,23 +345,41 @@
     
     <script>
     document.addEventListener('livewire:initialized', function () {
-        Livewire.on('copy-text', text => {
-            console.log('دریافت متن برای کپی:', text);
+        Livewire.on('copy-text', params => {
+            console.log('دریافت متن برای کپی:', params);
+            
+            // استخراج متن از پارامتر دریافتی - آبجکت است نه رشته
+            let textToCopy = '';
+            
+            if (typeof params === 'object' && params !== null) {
+                // اگر دارای ویژگی text است، از آن استفاده کن
+                if (params.hasOwnProperty('text')) {
+                    textToCopy = params.text;
+                } else {
+                    // استفاده از تبدیل رشته‌ای استاندارد
+                    textToCopy = String(params);
+                }
+            } else {
+                // اگر پارامتر ارسالی مستقیماً رشته یا عدد یا اینهاست، از آن استفاده می‌کنیم
+                textToCopy = String(params);
+            }
+            
+            console.log('متن نهایی برای کپی:', textToCopy);
             
             // روش 1: استفاده از Clipboard API
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(text)
+                navigator.clipboard.writeText(textToCopy)
                     .then(() => {
-                        console.log('متن با موفقیت کپی شد:', text);
+                        console.log('متن با موفقیت کپی شد:', textToCopy);
                     })
                     .catch(err => {
                         console.error('خطا در کپی متن: ', err);
                         // استفاده از روش دوم در صورت خطا
-                        fallbackCopyTextToClipboard(text);
+                        fallbackCopyTextToClipboard(textToCopy);
                     });
             } else {
                 // استفاده از روش دوم اگر Clipboard API پشتیبانی نشود
-                fallbackCopyTextToClipboard(text);
+                fallbackCopyTextToClipboard(textToCopy);
             }
         });
         
