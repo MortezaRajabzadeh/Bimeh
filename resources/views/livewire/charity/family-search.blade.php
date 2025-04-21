@@ -261,15 +261,15 @@
                                         <td class="px-4 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
                                             @if($member->has_disability)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <span class="px-2 py-0.5 rounded-md text-xs bg-red-100 text-red-800">
                                                     از کار افتادگی
                                                 </span>
                                             @elseif($member->has_chronic_disease)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                                <span class="px-2 py-0.5 rounded-md text-xs bg-pink-100 text-pink-800">
                                                     بیماری خاص
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
                                                     اعتیاد
                                                 </span>
                                             @endif
