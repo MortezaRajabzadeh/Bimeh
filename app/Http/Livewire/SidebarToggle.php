@@ -19,8 +19,8 @@ class SidebarToggle extends Component
         // ذخیره وضعیت در session برای استفاده در سمت سرور
         session(['sidebar_collapsed' => $value]);
 
-        // ارسال رویداد به سایر کامپوننت‌ها
-        $this->emit('sidebarToggled', $value);
+        // ارسال رویداد به سایر کامپوننت‌ها (Livewire 3)
+        $this->dispatch('sidebarToggled', $value);
     }
 
     public function render()
