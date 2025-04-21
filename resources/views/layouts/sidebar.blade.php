@@ -1,219 +1,132 @@
 <!-- منوی اصلی سایت -->
-<div class="flex relative">
-    <!-- اصل منو -->
-    <div 
-        id="sidebar-menu" 
-        x-data="{ 
-            collapsed: localStorage.getItem('sidebar-collapsed') === 'true',
-            toggle() {
-                this.collapsed = !this.collapsed;
-                localStorage.setItem('sidebar-collapsed', this.collapsed);
-                
-                // اعمال تغییرات روی المان‌های DOM
-                if (this.collapsed) {
-                    this.$refs.menuContainer.classList.add('menu-collapsed');
-                    this.$refs.menuContainer.classList.remove('menu-expanded');
-                } else {
-                    this.$refs.menuContainer.classList.add('menu-expanded');
-                    this.$refs.menuContainer.classList.remove('menu-collapsed');
-                }
-            },
-            init() {
-                // تنظیم اولیه بر اساس وضعیت ذخیره شده
-                if (this.collapsed) {
-                    this.$refs.menuContainer.classList.add('menu-collapsed');
-                    this.$refs.menuContainer.classList.remove('menu-expanded');
-                } else {
-                    this.$refs.menuContainer.classList.add('menu-expanded');
-                    this.$refs.menuContainer.classList.remove('menu-collapsed');
-                }
-            }
-        }"
-        x-ref="menuContainer"
-        :class="{'menu-collapsed': collapsed, 'menu-expanded': !collapsed}"
-        x-init="init()"
-    >
-        <div class="sidebar-header sticky top-0 z-[50] bg-white dark:bg-slate-800 h-[85px] flex items-center ps-8 pe-6">
-            <div class="logo-segment flex items-center justify-between w-full">
-                <a href="{{ route('home') }}" class="flex items-center space-x-2 rtl:space-x-reverse">
-                    <div class="logo-icon">
-                        <img
-                            class="h-10"
-                            src="{{ getSettings('app_logo') }}"
-                            alt="{{ getSettings('app_name') }}"
-                        >
-                    </div>
-                    <span
-                        class="text-xl font-Inter font-bold text-slate-900 dark:text-slate-100 transition-all duration-150 text-center logo-title"
-                        :class="{'opacity-0 text-[0px]': collapsed}"
-                    >{{ getSettings('app_name') }}</span>
-                </a>
+<div class="sidebar-menu" id="sidebar-menu">
+    <div class="fixed h-screen right-0 top-0 w-64 bg-white shadow-md py-5 z-40 transition-all duration-300">
+        <!-- Logo Section -->
+        <div class="flex flex-col items-center justify-center py-6 border-b border-gray-200">
+            <div class="w-20 h-20 transition-all duration-300">
+                <img src="{{ asset('images/image.png') }}" alt="لوگو خیریه" class="w-full">
             </div>
         </div>
-        <div class="sidebar-body h-[calc(100%-70px)] overflow-hidden hover:overflow-auto relative rtl:border-r ltr:border-l border-slate-200 dark:border-slate-700">
-            <div class="sidebar-body-wrapper w-full">
-                <div class="nav-wrapper mb-10">
-                    <div class="flex items-center">
-                        <div class="nav-header-title pe-3 ps-8 tracking-wide my-4 font-semibold uppercase text-sm text-slate-600 dark:text-slate-300" :class="{'opacity-0 text-[0px]': collapsed}">
-                            مدیریت سیستم
-                        </div>
-                    </div>
-                    <ul class="sidebar-menu relative">
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('admin.dashboard') }}"
-                                class="navItem {{ Request::is('admin/dashboard*') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="7" height="9"></rect>
-                                            <rect x="14" y="3" width="7" height="5"></rect>
-                                            <rect x="14" y="12" width="7" height="9"></rect>
-                                            <rect x="3" y="16" width="7" height="5"></rect>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">داشبورد</span>
-                            </a>
-                        </li>
+
+        <!-- Menu Items -->
+        <div class="flex-grow">
+            <a href="{{ route('dashboard') }}" class="flex items-center py-4 px-6 hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+                <span class="menu-text">داشبورد</span>
+            </a>
+
+            <!-- منوی مخصوص خیریه -->
+            @if(auth()->check() && (auth()->user()->user_type === 'charity' || auth()->user()->user_type === 'admin'))
+                <a href="{{ route('charity.insured-families') }}" class="flex items-center py-4 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.insured-families') ? 'bg-green-500 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-3 menu-icon {{ request()->routeIs('charity.insured-families') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <div class="flex flex-col menu-text">
+                        <span>خانواده‌های بیمه شده</span>
                         
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('admin.users.index') }}"
-                                class="navItem {{ Request::is('admin/users*') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">کاربران</span>
-                            </a>
-                        </li>
-
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('admin.roles.index') }}"
-                                class="navItem {{ Request::is('admin/roles*') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path
-                                                d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71">
-                                            </path>
-                                            <path
-                                                d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71">
-                                            </path>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">نقش‌ها</span>
-                            </a>
-                        </li>
-
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('admin.permissions.index') }}"
-                                class="navItem {{ Request::is('admin/permissions*') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">مجوزها</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="nav-wrapper mb-10">
-                    <div class="flex items-center">
-                        <div class="nav-header-title pe-3 ps-8 tracking-wide my-4 font-semibold uppercase text-sm text-slate-600 dark:text-slate-300" :class="{'opacity-0 text-[0px]': collapsed}">
-                            خیریه
-                        </div>
+                        <span class="text-xs {{ request()->routeIs('charity.insured-families') ? 'text-white' : 'text-gray-500' }}">
+                            @if(isset($insuredFamilies) && isset($insuredMembers))
+                                ({{ $insuredFamilies }} خانواده - {{ $insuredMembers }} نفر)
+                            @else
+                                (۰ خانواده - ۰ نفر)
+                            @endif
+                        </span>
                     </div>
-                    <ul class="sidebar-menu relative">
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('charity.index') }}"
-                                class="navItem {{ Request::is('charity') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="7" height="9"></rect>
-                                            <rect x="14" y="3" width="7" height="5"></rect>
-                                            <rect x="14" y="12" width="7" height="9"></rect>
-                                            <rect x="3" y="16" width="7" height="5"></rect>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">داشبورد خیریه</span>
-                            </a>
-                        </li>
+                </a>
+                
+                <a href="{{ route('charity.uninsured-families') }}" class="flex items-center py-4 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.uninsured-families') ? 'bg-red-500 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-3 menu-icon {{ request()->routeIs('charity.uninsured-families') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    <div class="flex flex-col menu-text">
+                        <span>خانواده‌های بدون پوشش</span>
+                        
+                        <span class="text-xs {{ request()->routeIs('charity.uninsured-families') ? 'text-white' : 'text-gray-500' }}">
+                            @if(isset($uninsuredFamilies) && isset($uninsuredMembers))
+                                ({{ $uninsuredFamilies }} خانواده - {{ $uninsuredMembers }} نفر)
+                            @else
+                                (۰ خانواده - ۰ نفر)
+                            @endif
+                        </span>
+                    </div>
+                </a>
 
-                        <li class="sidebar-menu-title">
-                            <a href="{{ route('charity.family.index') }}"
-                                class="navItem {{ Request::is('charity/family*') ? 'active' : '' }}" :class="{'before:w-[230px] before:h-[36px] before:absolute before:top-[50%] before:translate-y-[-50%]': !collapsed}">
-                                <span class="flex items-center space-x-1">
-                                    <i class="w-6 h-6 text-center text-xl leading-[1.6]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[24px] w-[24px]" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                        </svg>
-                                    </i>
-                                </span>
-                                <span class="transition-all duration-100 ml-[11px]" :class="{'opacity-0 text-[0px]': collapsed}">مدیریت خانواده‌ها</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+                <a href="{{ route('charity.add-family') }}" class="flex items-center py-4 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.add-family') ? 'bg-blue-500 text-white' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-3 menu-icon {{ request()->routeIs('charity.add-family') ? 'text-white' : 'text-green-500' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span class="menu-text">افزودن خانواده جدید</span>
+                </a>
+            @endif
+
+            <!-- منوی مخصوص بیمه -->
+            @if(auth()->check() && (auth()->user()->user_type === 'insurance' || auth()->user()->user_type === 'admin'))
+                <a href="#" id="insurance-requests-menu-item" class="flex items-center py-4 px-6 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span class="menu-text">درخواست‌های بیمه</span>
+                </a>
+            @endif
+
+            <!-- منوی فقط مخصوص ادمین -->
+            @if(auth()->check() && auth()->user()->user_type === 'admin')
+                <a href="#" class="flex items-center py-4 px-6 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span class="menu-text">مدیریت کاربران</span>
+                </a>
+
+                <a href="#" class="flex items-center py-4 px-6 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span class="menu-text">سازمان‌ها</span>
+                </a>
+            @endif
         </div>
-        <!-- کنترل باز و بسته شدن منو -->
-        <button 
-            @click="toggle()"
-            class="absolute left-5 top-1/2 -translate-y-1/2 z-[1] h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center justify-center text-slate-900 dark:text-white transition-all duration-150"
-        >
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="h-5 w-5" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor" 
-                :class="{'rotate-180': !collapsed}"
-            >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-        </button>
+        
+        <!-- Footer Menu Items -->
+        <div class="border-t border-gray-200 py-2">
+            @if(auth()->check() && auth()->user()->user_type === 'charity')
+                <a href="{{ route('charity.settings') }}" class="flex items-center py-4 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.settings') ? 'bg-gray-100' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="menu-text">تنظیمات</span>
+                </a>
+            @endif
+
+            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                @csrf
+                <button type="submit" class="w-full flex items-center py-4 px-6 hover:bg-gray-100 text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-3 menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span class="menu-text">خروج</span>
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
+<!-- دکمه‌ی باز/بسته کردن منو - خارج از DOM منو -->
+<button id="sidebar-toggle-btn" class="fixed z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300 pointer-events-auto top-1/2 -translate-y-1/2 right-64 sidebar-toggle-btn">
+    <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+    <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+</button>
+
 <style>
     /* استایل‌های مربوط به آیکون‌ها در حالت بسته منو */
-    #sidebar-menu[x-data] .menu-icon {
-        transition: all 0.3s ease;
-    }
-    
-    /* کاهش پدینگ در حالت جمع شده */
-    #sidebar-menu[x-data] .w-16 a, 
-    #sidebar-menu[x-data] .w-16 button {
-        padding-left: 0;
-        padding-right: 0;
-        justify-content: center;
-    }
-    
-    /* موقعیت آیکون‌ها در حالت بسته */
-    #sidebar-menu[x-data] .w-16 .menu-icon {
+    .sidebar-menu.collapsed .menu-icon {
         margin-left: 0;
         margin-right: 0;
         display: flex;
@@ -221,8 +134,151 @@
         width: 100%;
     }
     
-    /* استایل متن‌ها */
-    .menu-text {
-        transition: opacity 0.2s ease;
+    /* تنظیم عرض آیتم‌های منو در حالت بسته */
+    .sidebar-menu.collapsed a, 
+    .sidebar-menu.collapsed button {
+        padding-left: 0;
+        padding-right: 0;
+        justify-content: center;
     }
-</style> 
+    
+    /* مرکز کردن آیکون‌ها در حالت بسته منو */
+    .sidebar-menu.collapsed .fixed.w-16 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    /* استایل های جدید برای مطمئن شدن از عملکرد درست */
+    .sidebar-menu .menu-text {
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+    
+    .sidebar-transition {
+        transition: all 0.3s ease;
+    }
+    
+    /* تنظیم دکمه باز/بسته کردن منو - دقیقاً کنار منو */
+    .sidebar-toggle-btn {
+        transition: all 0.3s ease;
+    }
+    
+    /* در حالت بسته منو، جای دکمه هم باید تغییر کند */
+    .sidebar-menu.collapsed ~ .sidebar-toggle-btn,
+    .sidebar-menu.collapsed + .sidebar-toggle-btn {
+        right: 16px !important;
+    }
+    
+    /* استایل برای المان های LTR */
+    .ltr-element {
+        direction: ltr;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarMenu = document.getElementById('sidebar-menu');
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const collapseIcon = document.getElementById('collapse-icon');
+        const expandIcon = document.getElementById('expand-icon');
+        const menuTexts = document.querySelectorAll('.menu-text');
+        
+        // خواندن وضعیت قبلی منو از localStorage
+        const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        
+        function collapseSidebar() {
+            // تنظیم کلاس برای منو
+            sidebarMenu.classList.add('collapsed');
+            
+            // تغییر عرض به 16px در حالت بسته
+            const sidebarContainer = sidebarMenu.querySelector('.fixed');
+            if (sidebarContainer.classList.contains('w-64')) {
+                sidebarContainer.classList.remove('w-64');
+                sidebarContainer.classList.add('w-16', 'sidebar-transition');
+            }
+            
+            // مخفی کردن متن‌ها
+            menuTexts.forEach(el => {
+                el.style.display = 'none';
+                el.style.opacity = '0';
+            });
+            
+            // تغییر آیکون دکمه
+            collapseIcon.classList.add('hidden');
+            expandIcon.classList.remove('hidden');
+            
+            // کوچک کردن لوگو
+            const logoContainer = document.querySelector('.transition-all');
+            if (logoContainer.classList.contains('w-20')) {
+                logoContainer.classList.remove('w-20', 'h-20');
+                logoContainer.classList.add('w-10', 'h-10', 'sidebar-transition');
+            }
+            
+            // تغییر موقعیت دکمه toggle
+            toggleBtn.style.right = '16px';
+            
+            // ذخیره وضعیت
+            localStorage.setItem('sidebarCollapsed', 'true');
+            
+            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
+            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: true } }));
+        }
+        
+        function expandSidebar() {
+            // تنظیم کلاس برای منو
+            sidebarMenu.classList.remove('collapsed');
+            
+            // تغییر عرض به 64px در حالت باز
+            const sidebarContainer = sidebarMenu.querySelector('.fixed');
+            if (sidebarContainer.classList.contains('w-16')) {
+                sidebarContainer.classList.remove('w-16');
+                sidebarContainer.classList.add('w-64', 'sidebar-transition');
+            }
+            
+            // نمایش متن‌ها
+            menuTexts.forEach(el => {
+                el.style.display = 'inline-block';
+                el.style.opacity = '1';
+            });
+            
+            // تغییر آیکون دکمه
+            expandIcon.classList.add('hidden');
+            collapseIcon.classList.remove('hidden');
+            
+            // بزرگ کردن لوگو
+            const logoContainer = document.querySelector('.transition-all');
+            if (logoContainer.classList.contains('w-10')) {
+                logoContainer.classList.remove('w-10', 'h-10');
+                logoContainer.classList.add('w-20', 'h-20', 'sidebar-transition');
+            }
+            
+            // تغییر موقعیت دکمه toggle
+            toggleBtn.style.right = '64px';
+            
+            // ذخیره وضعیت
+            localStorage.setItem('sidebarCollapsed', 'false');
+            
+            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
+            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: false } }));
+        }
+        
+        // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
+        if (isSidebarCollapsed) {
+            collapseSidebar();
+        } else {
+            expandSidebar();
+        }
+        
+        // افزودن رویداد کلیک به دکمه
+        if (toggleBtn && sidebarMenu) {
+            toggleBtn.addEventListener('click', function() {
+                if (sidebarMenu.classList.contains('collapsed')) {
+                    expandSidebar();
+                } else {
+                    collapseSidebar();
+                }
+            });
+        }
+    });
+</script> 
