@@ -161,8 +161,8 @@
     
     /* تنظیم دکمه باز/بسته کردن منو */
     #sidebar-toggle-btn {
-        top: 50%;
-        transform: translateY(-50%);
+        top: calc(100% - 150px); /* موقعیت تقریبی روبروی آخرین آیتم‌های منو */
+        transform: translateY(0);
     }
 </style>
 
