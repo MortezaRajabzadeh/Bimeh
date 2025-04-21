@@ -265,7 +265,7 @@
                                                     از کار افتادگی
                                                 </span>
                                             @elseif($member->has_chronic_disease)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
                                                     بیماری خاص
                                                 </span>
                                             @else
