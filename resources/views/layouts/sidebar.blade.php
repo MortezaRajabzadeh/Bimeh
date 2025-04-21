@@ -115,7 +115,7 @@
 </div>
 
 <!-- دکمه‌ی باز/بسته کردن منو - خارج از DOM منو -->
-<button id="sidebar-toggle-btn" class="fixed z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300 pointer-events-auto ltr-element">
+<button id="sidebar-toggle-btn" class="fixed z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300 pointer-events-auto ltr-element right-64 top-1/2 -translate-y-1/2 sidebar-toggle-btn">
     <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
     </svg>
@@ -159,11 +159,15 @@
         transition: all 0.3s ease;
     }
     
-    /* تنظیم دکمه باز/بسته کردن منو - دقیقاً در کنار آیکون درخواست های بیمه */
-    #sidebar-toggle-btn {
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
+    /* تنظیم دکمه باز/بسته کردن منو - دقیقاً کنار منو */
+    .sidebar-toggle-btn {
+        transition: all 0.3s ease;
+    }
+    
+    /* در حالت بسته منو، جای دکمه هم باید تغییر کند */
+    .sidebar-menu.collapsed ~ .sidebar-toggle-btn,
+    .sidebar-menu.collapsed + .sidebar-toggle-btn {
+        right: 16px !important;
     }
     
     /* استایل برای المان های LTR */
@@ -211,6 +215,9 @@
                 logoContainer.classList.add('w-10', 'h-10', 'sidebar-transition');
             }
             
+            // تغییر موقعیت دکمه toggle
+            toggleBtn.style.right = '16px';
+            
             // ذخیره وضعیت
             localStorage.setItem('sidebarCollapsed', 'true');
             
@@ -245,6 +252,9 @@
                 logoContainer.classList.remove('w-10', 'h-10');
                 logoContainer.classList.add('w-20', 'h-20', 'sidebar-transition');
             }
+            
+            // تغییر موقعیت دکمه toggle
+            toggleBtn.style.right = '64px';
             
             // ذخیره وضعیت
             localStorage.setItem('sidebarCollapsed', 'false');
