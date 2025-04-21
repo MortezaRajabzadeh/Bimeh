@@ -345,34 +345,61 @@
     
     <script>
     document.addEventListener('livewire:initialized', function () {
-        Livewire.on('copy-text', event => {
-            const text = event.text;
+        Livewire.on('copy-text', params => {
+            const text = params.text;
             
+            // روش 1: استفاده از Clipboard API
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        console.log('متن با موفقیت کپی شد.');
+                        // نمایش اعلان موفقیت
+                        alert('متن کپی شد: ' + text);
+                    })
+                    .catch(err => {
+                        console.error('خطا در کپی متن: ', err);
+                        // استفاده از روش دوم در صورت خطا
+                        fallbackCopyTextToClipboard(text);
+                    });
+            } else {
+                // استفاده از روش دوم اگر Clipboard API پشتیبانی نشود
+                fallbackCopyTextToClipboard(text);
+            }
+        });
+        
+        // روش جایگزین برای مرورگرهایی که از Clipboard API پشتیبانی نمی‌کنند
+        function fallbackCopyTextToClipboard(text) {
             // ایجاد یک عنصر textarea موقت
             const textarea = document.createElement('textarea');
             textarea.value = text;
+            
+            // تنظیم موقعیت خارج از دید
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
             
             // اضافه کردن به DOM
             document.body.appendChild(textarea);
             
             // انتخاب متن
+            textarea.focus();
             textarea.select();
-            textarea.setSelectionRange(0, 99999);
             
             // کپی متن
             try {
-                document.execCommand('copy');
-                // نمایش اعلان موفقیت
-                if (!Livewire.find('show-toast')) {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    console.log('متن با موفقیت کپی شد.');
                     alert('متن کپی شد: ' + text);
+                } else {
+                    console.error('کپی متن با شکست مواجه شد.');
                 }
             } catch (err) {
-                console.error('خطا در کپی: ', err);
+                console.error('خطا در کپی متن: ', err);
             }
             
             // حذف عنصر موقت
             document.body.removeChild(textarea);
-        });
+        }
     });
     </script>
 </div>
