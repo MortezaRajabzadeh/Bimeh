@@ -344,9 +344,9 @@
     @endif
     
     <script>
-    document.addEventListener('livewire:load', function () {
-        window.addEventListener('copy-text', event => {
-            const text = event.detail.text;
+    document.addEventListener('livewire:initialized', function () {
+        Livewire.on('copy-text', event => {
+            const text = event.text;
             
             // ایجاد یک عنصر textarea موقت
             const textarea = document.createElement('textarea');
@@ -362,6 +362,10 @@
             // کپی متن
             try {
                 document.execCommand('copy');
+                // نمایش اعلان موفقیت
+                if (!Livewire.find('show-toast')) {
+                    alert('متن کپی شد: ' + text);
+                }
             } catch (err) {
                 console.error('خطا در کپی: ', err);
             }
