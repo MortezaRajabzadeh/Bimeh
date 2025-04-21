@@ -336,6 +336,14 @@
         </table>
     </div>
     
+    <!-- اعلان کپی -->
+    <div id="copy-notification" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 flex items-center opacity-0 transition-opacity duration-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="copy-notification-text">متن با موفقیت کپی شد</span>
+    </div>
+    
     <!-- پیجینیشن -->
     @if($families->hasPages())
     <div class="mt-4">
@@ -371,6 +379,7 @@
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
                         console.log('متن با موفقیت کپی شد:', textToCopy);
+                        showCopyNotification(textToCopy);
                     })
                     .catch(err => {
                         console.error('خطا در کپی متن: ', err);
@@ -405,6 +414,7 @@
                 var successful = document.execCommand('copy');
                 if (successful) {
                     console.log('متن با موفقیت کپی شد (روش جایگزین):', text);
+                    showCopyNotification(text);
                 } else {
                     console.error('کپی متن با شکست مواجه شد.');
                 }
@@ -415,6 +425,43 @@
             // حذف عنصر موقت
             document.body.removeChild(textarea);
         }
+        
+        // نمایش نوتیفیکیشن کپی
+        function showCopyNotification(text) {
+            const notification = document.getElementById('copy-notification');
+            const notificationText = document.getElementById('copy-notification-text');
+            
+            // تنظیم متن نوتیفیکیشن
+            notificationText.textContent = 'متن با موفقیت کپی شد: ' + text;
+            
+            // نمایش نوتیفیکیشن
+            notification.classList.add('opacity-100');
+            notification.classList.remove('opacity-0');
+            
+            // مخفی کردن نوتیفیکیشن بعد از ۲ ثانیه
+            setTimeout(() => {
+                notification.classList.remove('opacity-100');
+                notification.classList.add('opacity-0');
+            }, 2000);
+        }
     });
     </script>
+    
+    <style>
+    @keyframes slideInDown {
+        from {
+            transform: translate(-50%, -20px);
+            opacity: 0;
+        }
+        to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+    }
+    
+    #copy-notification {
+        animation: slideInDown 0.3s ease-out forwards;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    </style>
 </div>
