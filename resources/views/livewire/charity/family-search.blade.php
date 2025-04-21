@@ -298,14 +298,14 @@
                             <div class="flex justify-between py-4 bg-green-50 px-4 rounded-b border-r border-l border-b border-green-100">
                                 <div class="flex items-center">
                                     <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
-                                    <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
-                                    <a onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
+                                    <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">{{ $family->head()?->mobile ?? '09347964873' }}</span>
+                                    <a wire:click="copyText('{{ $family->head()?->mobile ?? '09347964873' }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
                                 </div>
                                 
                                 <div class="flex items-center">
                                     <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
-                                    <span id="sheba_{{ $family->id }}" class="text-sm text-gray-800 ltr">IR056216845813188</span>
-                                    <a onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
+                                    <span id="sheba_{{ $family->id }}" class="text-sm text-gray-800 ltr">{{ $family->head()?->sheba ?? 'IR056216845813188' }}</span>
+                                    <a wire:click="copyText('{{ $family->head()?->sheba ?? 'IR056216845813188' }}')" class="text-blue-500 text-sm mr-2 cursor-pointer">کپی</a>
                                 </div>
                             </div>
                             
