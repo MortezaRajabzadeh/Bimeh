@@ -219,58 +219,83 @@
                 </tr>
                 
                 @if($expandedFamily === $family->id)
-                    @forelse($familyMembers as $member)
-                    <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200">
-                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
-                            @if($member->is_head)
-                                <span class="text-blue-500 inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </span>
-                            @endif
-                        </td>
-                        <td colspan="2" class="px-4 py-3 text-sm text-gray-800">
-                            {{ $member->is_head ? 'پدر' : ($member->gender == 'male' ? 'پسر' : 'مادر') }}
-                        </td>
-                        <td colspan="2" class="px-4 py-3 text-sm text-gray-800">{{ $member->first_name }} {{ $member->last_name }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->birth_date ? jdate($member->birth_date)->format('Y/m/d') : '-' }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-800">
-                            @if($member->has_disability)
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    از کار افتادگی
-                                </span>
-                            @elseif($member->has_chronic_disease)
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    بیماری خاص
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    اعتیاد
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-800">
-                            درمان تکمیلی
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-800">۱۰۰٪</td>
-                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
-                            ✓
-                        </td>
-                    </tr>
-                    @empty
-                    <tr class="bg-green-100 border-b border-green-200">
-                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center">
-                            عضوی برای این خانواده ثبت نشده است.
-                        </td>
-                    </tr>
-                    @endforelse
-                    
-                    <tr class="bg-green-100 border-b border-green-200">
-                        <td colspan="12" class="px-4 py-3">
-                            <div class="flex justify-between">
+                <tr class="bg-transparent">
+                    <td colspan="12" class="px-0 py-0">
+                        <div class="overflow-x-auto">
+                            <table class="w-full bg-green-50 border border-green-100">
+                                <thead>
+                                    <tr class="bg-green-100 border-b border-green-200">
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">سرپرست؟</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">اعضای خانواده</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نام خانوادگی</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">کد ملی</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">تاریخ تولد</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">شغل</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نوع مشکل</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">نوع بیمه</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">پرداخت کننده حق بیمه</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">درصد مشارکت</th>
+                                        <th class="px-4 py-3 text-sm font-medium text-gray-700 text-right">تاییدیه</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($familyMembers as $member)
+                                    <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200">
+                                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
+                                            @if($member->is_head)
+                                                <span class="text-blue-500 inline-block">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">
+                                            {{ $member->is_head ? 'پدر' : ($member->gender == 'male' ? 'پسر' : 'مادر') }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->first_name }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->last_name }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->birth_date ? jdate($member->birth_date)->format('Y/m/d') : '-' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">
+                                            @if($member->has_disability)
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    از کار افتادگی
+                                                </span>
+                                            @elseif($member->has_chronic_disease)
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    بیماری خاص
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    اعتیاد
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">
+                                            درمان تکمیلی
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">
+                                            درمان تکمیلی
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-800">۱۰۰٪</td>
+                                        <td class="px-4 py-3 text-sm text-gray-800 text-center">
+                                            ✓
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="12" class="px-4 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                            عضوی برای این خانواده ثبت نشده است.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                            
+                            <div class="flex justify-between py-4 bg-green-50 px-4 rounded-b border-r border-l border-b border-green-100">
                                 <div class="flex items-center">
                                     <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
                                     <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
@@ -293,8 +318,9 @@
                                 });
                             }
                             </script>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                </tr>
                 @endif
                 
                 @empty
