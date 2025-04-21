@@ -112,9 +112,11 @@
             </form>
         </div>
     </div>
-    
-    <!-- دکمه‌ی باز/بسته کردن منو -->
-    <button id="sidebar-toggle-btn" class="fixed left-0 z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300">
+</div>
+
+<!-- دکمه‌ی باز/بسته کردن منو - کاملاً خارج از منو -->
+<div id="sidebar-toggle-container" class="fixed left-0 top-0 z-50 h-full pointer-events-none">
+    <button id="sidebar-toggle-btn" class="absolute bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300 pointer-events-auto">
         <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -162,7 +164,6 @@
     /* تنظیم دکمه باز/بسته کردن منو */
     #sidebar-toggle-btn {
         top: 56%;
-        transform: translateY(0);
     }
 </style>
 
