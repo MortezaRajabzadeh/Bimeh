@@ -1,9 +1,32 @@
 <!-- منوی اصلی سایت -->
-<div class="sidebar-menu" id="sidebar-menu">
-    <div class="fixed h-screen right-0 top-0 w-64 bg-white shadow-md py-5 z-40 transition-all duration-300">
+<div 
+    id="sidebar-menu" 
+    class="sidebar-menu" 
+    x-data="{ 
+        collapsed: JSON.parse(localStorage.getItem('sidebarCollapsed')) || false
+    }"
+    x-init="
+        $watch('collapsed', value => {
+            document.querySelectorAll('.menu-text').forEach(el => {
+                el.style.display = value ? 'none' : 'inline-block';
+                el.style.opacity = value ? 0 : 1;
+            });
+        });
+        
+        // رویداد دریافتی از کامپوننت لایوایر
+        window.addEventListener('sidebar-toggle', event => {
+            collapsed = event.detail.collapsed;
+        });
+    "
+    :class="{ 'collapsed': collapsed }"
+>
+    <div 
+        class="fixed h-screen right-0 top-0 bg-white shadow-md py-5 z-40 transition-all duration-300"
+        :class="collapsed ? 'w-16' : 'w-64'"
+    >
         <!-- Logo Section -->
         <div class="flex flex-col items-center justify-center py-6 border-b border-gray-200">
-            <div class="w-20 h-20 transition-all duration-300">
+            <div class="transition-all duration-300" :class="collapsed ? 'w-10 h-10' : 'w-20 h-20'">
                 <img src="{{ asset('images/image.png') }}" alt="لوگو خیریه" class="w-full">
             </div>
         </div>
@@ -114,15 +137,8 @@
     </div>
 </div>
 
-<!-- دکمه‌ی باز/بسته کردن منو - خارج از DOM منو -->
-<button id="sidebar-toggle-btn" class="fixed z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300 pointer-events-auto top-1/2 -translate-y-1/2 right-64 sidebar-toggle-btn">
-    <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-    </svg>
-    <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-    </svg>
-</button>
+<!-- کامپوننت دکمه‌ی باز/بسته کردن منو -->
+<livewire:sidebar-toggle />
 
 <style>
     /* استایل‌های مربوط به آیکون‌ها در حالت بسته منو */
@@ -154,131 +170,4 @@
         display: inline-block;
         transition: all 0.2s ease;
     }
-    
-    .sidebar-transition {
-        transition: all 0.3s ease;
-    }
-    
-    /* تنظیم دکمه باز/بسته کردن منو - دقیقاً کنار منو */
-    .sidebar-toggle-btn {
-        transition: all 0.3s ease;
-    }
-    
-    /* در حالت بسته منو، جای دکمه هم باید تغییر کند */
-    .sidebar-menu.collapsed ~ .sidebar-toggle-btn,
-    .sidebar-menu.collapsed + .sidebar-toggle-btn {
-        right: 16px !important;
-    }
-    
-    /* استایل برای المان های LTR */
-    .ltr-element {
-        direction: ltr;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarMenu = document.getElementById('sidebar-menu');
-        const toggleBtn = document.getElementById('sidebar-toggle-btn');
-        const collapseIcon = document.getElementById('collapse-icon');
-        const expandIcon = document.getElementById('expand-icon');
-        const menuTexts = document.querySelectorAll('.menu-text');
-        
-        // خواندن وضعیت قبلی منو از localStorage
-        const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        
-        function collapseSidebar() {
-            // تنظیم کلاس برای منو
-            sidebarMenu.classList.add('collapsed');
-            
-            // تغییر عرض به 16px در حالت بسته
-            const sidebarContainer = sidebarMenu.querySelector('.fixed');
-            if (sidebarContainer.classList.contains('w-64')) {
-                sidebarContainer.classList.remove('w-64');
-                sidebarContainer.classList.add('w-16', 'sidebar-transition');
-            }
-            
-            // مخفی کردن متن‌ها
-            menuTexts.forEach(el => {
-                el.style.display = 'none';
-                el.style.opacity = '0';
-            });
-            
-            // تغییر آیکون دکمه
-            collapseIcon.classList.add('hidden');
-            expandIcon.classList.remove('hidden');
-            
-            // کوچک کردن لوگو
-            const logoContainer = document.querySelector('.transition-all');
-            if (logoContainer.classList.contains('w-20')) {
-                logoContainer.classList.remove('w-20', 'h-20');
-                logoContainer.classList.add('w-10', 'h-10', 'sidebar-transition');
-            }
-            
-            // تغییر موقعیت دکمه toggle
-            toggleBtn.style.right = '16px';
-            
-            // ذخیره وضعیت
-            localStorage.setItem('sidebarCollapsed', 'true');
-            
-            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
-            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: true } }));
-        }
-        
-        function expandSidebar() {
-            // تنظیم کلاس برای منو
-            sidebarMenu.classList.remove('collapsed');
-            
-            // تغییر عرض به 64px در حالت باز
-            const sidebarContainer = sidebarMenu.querySelector('.fixed');
-            if (sidebarContainer.classList.contains('w-16')) {
-                sidebarContainer.classList.remove('w-16');
-                sidebarContainer.classList.add('w-64', 'sidebar-transition');
-            }
-            
-            // نمایش متن‌ها
-            menuTexts.forEach(el => {
-                el.style.display = 'inline-block';
-                el.style.opacity = '1';
-            });
-            
-            // تغییر آیکون دکمه
-            expandIcon.classList.add('hidden');
-            collapseIcon.classList.remove('hidden');
-            
-            // بزرگ کردن لوگو
-            const logoContainer = document.querySelector('.transition-all');
-            if (logoContainer.classList.contains('w-10')) {
-                logoContainer.classList.remove('w-10', 'h-10');
-                logoContainer.classList.add('w-20', 'h-20', 'sidebar-transition');
-            }
-            
-            // تغییر موقعیت دکمه toggle
-            toggleBtn.style.right = '64px';
-            
-            // ذخیره وضعیت
-            localStorage.setItem('sidebarCollapsed', 'false');
-            
-            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
-            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: false } }));
-        }
-        
-        // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
-        if (isSidebarCollapsed) {
-            collapseSidebar();
-        } else {
-            expandSidebar();
-        }
-        
-        // افزودن رویداد کلیک به دکمه
-        if (toggleBtn && sidebarMenu) {
-            toggleBtn.addEventListener('click', function() {
-                if (sidebarMenu.classList.contains('collapsed')) {
-                    expandSidebar();
-                } else {
-                    collapseSidebar();
-                }
-            });
-        }
-    });
-</script> 
+</style> 
