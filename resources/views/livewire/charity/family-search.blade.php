@@ -74,76 +74,76 @@
 
     <!-- جدول خانواده‌ها -->
     <div class="w-full overflow-x-auto">
-        <table class="w-full border border-green-200">
+        <table class="w-full border border-gray-200">
             <thead>
-                <tr class="bg-green-200 text-xs text-gray-700">
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                <tr class="bg-gray-50 text-xs text-gray-700">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('id')" class="flex items-center justify-end w-full">
                             رتبه
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('province')" class="flex items-center justify-end w-full">
                             استان
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('city')" class="flex items-center justify-end w-full">
                             شهر/روستا
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('is_insured')" class="flex items-center justify-end w-full">
                             تعداد بیمه ها
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('acceptance_criteria')" class="flex items-center justify-end w-full">
                             معیار پذیرش
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('members_count')" class="flex items-center justify-end w-full">
                             تعداد اعضا
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('head_name')" class="flex items-center justify-end w-full">
                             سرپرست خانوار
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('consumption_coefficient')" class="flex items-center justify-end w-full">
                             ضریبه مصرف
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">
                             تاریخ عضویت
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('payer')" class="flex items-center justify-end w-full">
                             پرداخت کننده حق بیمه
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('participation_percentage')" class="flex items-center justify-end w-full">
                             درصد مشارکت
                             <span class="mr-1 text-[0.5rem]">▼</span>
                         </button>
                     </th>
-                    <th scope="col" class="px-5 py-3 text-right border-b border-green-200 font-medium">
+                    <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                         <button wire:click="sortBy('verified_at')" class="flex items-center justify-end w-full">
                             تاییدیه / اعضا
                             <span class="mr-1 text-[0.5rem]">▼</span>
@@ -151,22 +151,22 @@
                     </th>
                 </tr>
             </thead>
-            <tbody class="bg-green-100 divide-y divide-green-200">
+            <tbody class="bg-white divide-y divide-gray-200">
                 @forelse($families as $family)
-                <tr class="hover:bg-green-200">
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                <tr class="hover:bg-gray-50">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $loop->iteration }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->region->province ?? 'نامشخص' }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->region->name ?? 'نامشخص' }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->is_insured ? $family->members->count() : 0 }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         @if(is_array($family->acceptance_criteria) || $family->acceptance_criteria instanceof \Illuminate\Support\Collection)
                             @foreach($family->acceptance_criteria as $criteria)
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">
@@ -179,29 +179,29 @@
                             </span>
                         @endif
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->members->count() ?? 0 }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->head()?->full_name ?? 'نامشخص' }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         ۵۰٪
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         {{ $family->created_at ? jdate($family->created_at)->format('Y/m/d') : '-' }}
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         <div class="flex items-center">
                             <span>{{ $family->payer ?? 'خیریه' }}</span>
                         </div>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         <div class="flex items-center">
                             <span class="ml-2">{{ $family->participation_percentage ?? '۵۰٪' }}</span>
                         </div>
                     </td>
-                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-green-200">
+                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         <div class="flex space-x-2 space-x-reverse">
                             <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,7 +220,7 @@
                 
                 @if($expandedFamily === $family->id)
                     @forelse($familyMembers as $member)
-                    <tr class="bg-green-100 border-b border-green-200">
+                    <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200">
                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
                             @if($member->is_head)
                                 <span class="text-blue-500 inline-block">
@@ -299,7 +299,7 @@
                 
                 @empty
                 <tr>
-                    <td colspan="12" class="px-5 py-4 text-sm text-gray-500 border-b border-green-200 text-center">
+                    <td colspan="12" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
                         هیچ خانواده‌ای یافت نشد.
                     </td>
                 </tr>
