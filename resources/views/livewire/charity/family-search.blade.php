@@ -210,7 +210,7 @@
                             </span>
                             
                             <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transform {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block {{ $expandedFamily === $family->id ? 'icon-rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
@@ -494,6 +494,12 @@
     
     #copy-notification {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* اضافه کردن استایل جدید برای چرخش ایکون */
+    .icon-rotate-180 {
+        transform: rotate(180deg);
+        transition: transform 0.3s ease;
     }
     </style>
 </div>
