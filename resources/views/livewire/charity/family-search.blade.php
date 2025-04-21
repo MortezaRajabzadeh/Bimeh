@@ -300,7 +300,7 @@
                                     <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
                                     <div class="bg-white rounded px-3 py-2 flex items-center">
                                         <span id="sheba_{{ $family->id }}" class="text-sm text-gray-800 ltr">IR056216845813188</span>
-                                        <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                        <button type="button" class="copy-btn text-blue-500 mr-2 cursor-pointer" data-text="IR056216845813188">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                             </svg>
@@ -312,7 +312,7 @@
                                     <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
                                     <div class="bg-white rounded px-3 py-2 flex items-center">
                                         <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
-                                        <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                        <button type="button" class="copy-btn text-blue-500 mr-2 cursor-pointer" data-text="09347964873">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                             </svg>
@@ -322,13 +322,43 @@
                             </div>
                             
                             <script>
-                            function copyToClipboard(elementId) {
-                                const text = document.getElementById(elementId).innerText;
-                                navigator.clipboard.writeText(text).then(() => {
-                                    // اختیاری: نمایش پیام موفقیت آمیز
-                                    alert('متن کپی شد: ' + text);
+                            document.addEventListener('DOMContentLoaded', function() {
+                                // انتخاب تمام دکمه‌های کپی
+                                const copyButtons = document.querySelectorAll('.copy-btn');
+                                
+                                // اضافه کردن event listener به هر دکمه
+                                copyButtons.forEach(function(button) {
+                                    button.addEventListener('click', function() {
+                                        const textToCopy = this.getAttribute('data-text');
+                                        copyTextToClipboard(textToCopy);
+                                    });
                                 });
-                            }
+                                
+                                // تابع کپی متن
+                                function copyTextToClipboard(text) {
+                                    // ایجاد یک عنصر textarea موقت
+                                    const textarea = document.createElement('textarea');
+                                    textarea.value = text;
+                                    
+                                    // اضافه کردن به DOM
+                                    document.body.appendChild(textarea);
+                                    
+                                    // انتخاب متن
+                                    textarea.select();
+                                    textarea.setSelectionRange(0, 99999);
+                                    
+                                    // کپی متن
+                                    try {
+                                        document.execCommand('copy');
+                                        alert('متن کپی شد: ' + text);
+                                    } catch (err) {
+                                        console.error('خطا در کپی: ', err);
+                                    }
+                                    
+                                    // حذف عنصر موقت
+                                    document.body.removeChild(textarea);
+                                }
+                            });
                             </script>
                         </div>
                     </td>
