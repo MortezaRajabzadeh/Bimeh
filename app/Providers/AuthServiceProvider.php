@@ -98,6 +98,10 @@ class AuthServiceProvider extends ServiceProvider
             return $user->hasPermissionTo('change family status');
         });
         
+        Gate::define('verify-family', function ($user) {
+            return $user->hasPermissionTo('verify family');
+        });
+        
         // اعضای خانواده
         Gate::define('view members', function ($user) {
             return $user->hasPermissionTo('view members');

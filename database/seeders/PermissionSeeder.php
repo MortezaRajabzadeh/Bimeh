@@ -49,6 +49,7 @@ class PermissionSeeder extends Seeder
             'edit family',
             'delete family',
             'change family status',
+            'verify family',
         ];
 
         // تعریف دسترسی‌های اعضای خانواده
@@ -101,6 +102,7 @@ class PermissionSeeder extends Seeder
         $insuranceRole->givePermissionTo([
             'view families',
             'change family status',
+            'verify family',
             'view members',
             'view regions',
             'view dashboard',

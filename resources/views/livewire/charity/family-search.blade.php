@@ -9,7 +9,7 @@
             </div>
             
             <div class="relative">
-                <select wire:model.live="statusFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                <select wire:model.live="status" class="border border-gray-300 rounded p-2 bg-white pr-8">
                     <option value="">همه وضعیت‌ها</option>
                     <option value="insured">بیمه شده</option>
                     <option value="uninsured">بدون بیمه</option>
@@ -17,7 +17,7 @@
             </div>
             
             <div class="relative">
-                <select wire:model.live="regionFilter" class="border border-gray-300 rounded p-2 bg-white pr-8">
+                <select wire:model.live="region" class="border border-gray-300 rounded p-2 bg-white pr-8">
                     <option value="">همه مناطق</option>
                     @foreach($regions as $r)
                         <option value="{{ $r->id }}">{{ $r->name }}</option>
@@ -49,26 +49,6 @@
                     <option value="desc">نزولی</option>
                 </select>
             </div>
-        </div>
-    </div>
-
-    <!-- آمار تجمیعی -->
-    <div class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded shadow">
-            <div class="text-sm font-medium text-gray-500">خانواده‌های بیمه شده</div>
-            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $insuredFamilies }}</div>
-        </div>
-        <div class="bg-white p-4 rounded shadow">
-            <div class="text-sm font-medium text-gray-500">خانواده‌های بدون بیمه</div>
-            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $uninsuredFamilies }}</div>
-        </div>
-        <div class="bg-white p-4 rounded shadow">
-            <div class="text-sm font-medium text-gray-500">اعضای بیمه شده</div>
-            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $insuredMembers }}</div>
-        </div>
-        <div class="bg-white p-4 rounded shadow">
-            <div class="text-sm font-medium text-gray-500">اعضای بدون بیمه</div>
-            <div class="mt-1 text-3xl font-semibold text-gray-800">{{ $uninsuredMembers }}</div>
         </div>
     </div>
 
@@ -203,14 +183,33 @@
                     </td>
                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                         <div class="flex space-x-2 space-x-reverse">
-                            <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </span>
+                            @if($family->verified_at)
+                                <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>تایید شده</span>
+                                </span>
+                            @else
+                                <span class="bg-orange-100 text-orange-800 text-xs py-1 px-2 rounded-full flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>در انتظار تایید</span>
+                                </span>
+                                
+                                @can('verify-family')
+                                <button wire:click="verifyFamily({{ $family->id }})" class="bg-green-100 hover:bg-green-200 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>تایید</span>
+                                </button>
+                                @endcan
+                            @endif
                             
                             <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transform {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block {{ $expandedFamily === $family->id ? 'icon-rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
@@ -243,12 +242,23 @@
                                     @forelse($familyMembers as $member)
                                     <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200">
                                         <td class="px-4 py-3 text-sm text-gray-800 text-center">
-                                            @if($member->is_head)
-                                                <span class="text-blue-500 inline-block">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                </span>
+                                            @if($family->verified_at)
+                                                @if($member->is_head)
+                                                    <span class="text-blue-500 inline-block">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <input 
+                                                    type="radio" 
+                                                    name="family_head_{{ $family->id }}" 
+                                                    value="{{ $member->id }}" 
+                                                    wire:click="setFamilyHead({{ $family->id }}, {{ $member->id }})" 
+                                                    {{ $member->is_head ? 'checked' : '' }}
+                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
+                                                >
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-800">
@@ -351,16 +361,57 @@
     </div>
     @endif
     
+    <!-- اعلان toast -->
+    <div id="toast-notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-md shadow-lg z-50 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span id="toast-notification-text"></span>
+    </div>
+    
     <script>
     document.addEventListener('livewire:initialized', function () {
         // متغیر برای نگه داشتن شناسه تایمر
         let notificationTimeout = null;
+        let toastTimeout = null;
         
-        // واکنش به رویداد family-toggled
-        window.addEventListener('family-toggled', event => {
-            const familyId = event.detail.familyId;
-            const isExpanded = event.detail.isExpanded;
-            console.log('وضعیت نمایش خانواده تغییر کرد:', familyId, isExpanded);
+        // نمایش toast notification
+        Livewire.on('show-toast', params => {
+            const toast = document.getElementById('toast-notification');
+            const toastText = document.getElementById('toast-notification-text');
+            
+            // تنظیم متن toast
+            toastText.textContent = params.message;
+            
+            // تنظیم رنگ toast بر اساس نوع آن
+            if (params.type === 'success') {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.classList.remove('bg-red-500');
+            } else if (params.type === 'error') {
+                toast.classList.add('bg-red-500', 'text-white');
+                toast.classList.remove('bg-green-500');
+            }
+            
+            // پاک کردن تایمر قبلی اگر وجود داشته باشد
+            if (toastTimeout !== null) {
+                clearTimeout(toastTimeout);
+            }
+            
+            // نمایش toast
+            toast.classList.remove('hidden');
+            toast.classList.add('toast-show');
+            
+            // مخفی کردن toast بعد از ۳ ثانیه
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('toast-show');
+                toast.classList.add('toast-hide');
+                
+                // اضافه کردن hidden بعد از پایان انیمیشن
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('toast-hide');
+                }, 300); // زمان انیمیشن
+            }, 3000);
         });
         
         Livewire.on('copy-text', params => {
@@ -500,6 +551,25 @@
     }
     
     #copy-notification {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* اضافه کردن استایل جدید برای چرخش ایکون */
+    .icon-rotate-180 {
+        transform: rotate(180deg);
+        transition: transform 0.3s ease;
+    }
+    
+    /* انیمیشن‌های مربوط به toast */
+    .toast-show {
+        animation: slideIn 0.3s ease forwards;
+    }
+    
+    .toast-hide {
+        animation: slideOut 0.3s ease forwards;
+    }
+    
+    #toast-notification {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
     }
     </style>
