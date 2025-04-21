@@ -2,7 +2,7 @@
 <div class="sidebar-menu" id="sidebar-menu">
     <div class="fixed h-screen right-0 top-0 w-64 bg-white shadow-md py-5 z-40 transition-all duration-300">
         <!-- دکمه‌ی باز/بسته کردن منو -->
-        <button id="sidebar-toggle-btn" class="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full p-3 bg-green-500 text-white hover:bg-green-600 rounded-r-lg shadow-md focus:outline-none transition-all duration-300">
+        <button id="sidebar-toggle-btn" class="absolute top-28 left-0 transform -translate-x-full p-3 bg-green-500 text-white hover:bg-green-600 rounded-r-lg shadow-md focus:outline-none transition-all duration-300">
             <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
