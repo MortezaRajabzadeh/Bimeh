@@ -4,16 +4,27 @@
         toggle() {
             this.collapsed = !this.collapsed;
             localStorage.setItem('sidebarCollapsed', this.collapsed);
-            this.$dispatch('sidebar-toggle', { collapsed: this.collapsed });
+            
+            // ارسال رویداد به Alpine.js
+            const event = new CustomEvent('sidebar-toggle', { 
+                detail: { collapsed: this.collapsed }
+            });
+            window.dispatchEvent(event);
+            
+            // ارسال به Livewire
+            this.$wire.set('collapsed', this.collapsed);
         }
     }"
-    x-init="$watch('collapsed', value => $wire.set('collapsed', value))"
+    x-init="() => {
+        // به روزرسانی اولیه وضعیت
+        $wire.set('collapsed', collapsed);
+    }"
 >
     <!-- دکمه‌ی باز و بسته کردن -->
     <button
         @click="toggle"
         class="fixed z-50 top-1/2 -translate-y-1/2 transition-all duration-300 bg-green-500 text-white p-2 rounded-l-md shadow-md hover:bg-green-600"
-        :class="collapsed ? 'right-18' : 'right-64'"
+        :class="collapsed ? 'right-16' : 'right-64'"
         aria-label="باز و بسته کردن منو"
         :aria-expanded="!collapsed"
     >

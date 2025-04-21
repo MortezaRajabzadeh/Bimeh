@@ -6,16 +6,51 @@
         collapsed: JSON.parse(localStorage.getItem('sidebarCollapsed')) || false
     }"
     x-init="
-        $watch('collapsed', value => {
-            document.querySelectorAll('.menu-text').forEach(el => {
-                el.style.display = value ? 'none' : 'inline-block';
-                el.style.opacity = value ? 0 : 1;
-            });
+        $nextTick(() => {
+            if (collapsed) {
+                document.querySelector('.fixed').classList.remove('w-64');
+                document.querySelector('.fixed').classList.add('w-16');
+                
+                document.querySelectorAll('.menu-text').forEach(el => {
+                    el.style.display = 'none';
+                    el.style.opacity = 0;
+                });
+            }
         });
         
-        // رویداد دریافتی از کامپوننت لایوایر
         window.addEventListener('sidebar-toggle', event => {
             collapsed = event.detail.collapsed;
+            
+            const sidebarContainer = document.querySelector('.fixed');
+            if (collapsed) {
+                sidebarContainer.classList.remove('w-64');
+                sidebarContainer.classList.add('w-16');
+                
+                document.querySelectorAll('.menu-text').forEach(el => {
+                    el.style.display = 'none';
+                    el.style.opacity = '0';
+                });
+                
+                const logoContainer = document.querySelector('.transition-all');
+                if (logoContainer && logoContainer.classList.contains('w-20')) {
+                    logoContainer.classList.remove('w-20', 'h-20');
+                    logoContainer.classList.add('w-10', 'h-10');
+                }
+            } else {
+                sidebarContainer.classList.remove('w-16');
+                sidebarContainer.classList.add('w-64');
+                
+                document.querySelectorAll('.menu-text').forEach(el => {
+                    el.style.display = 'inline-block';
+                    el.style.opacity = '1';
+                });
+                
+                const logoContainer = document.querySelector('.transition-all');
+                if (logoContainer && logoContainer.classList.contains('w-10')) {
+                    logoContainer.classList.remove('w-10', 'h-10');
+                    logoContainer.classList.add('w-20', 'h-20');
+                }
+            }
         });
     "
     :class="{ 'collapsed': collapsed }"
@@ -169,5 +204,10 @@
     .sidebar-menu .menu-text {
         display: inline-block;
         transition: all 0.2s ease;
+    }
+
+    /* اطمینان از اینکه انتقال‌ها نرم باشند */
+    .transition-all {
+        transition: all 0.3s ease-in-out;
     }
 </style> 
