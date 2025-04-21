@@ -2,11 +2,11 @@
 <div class="sidebar-menu" id="sidebar-menu">
     <div class="fixed h-screen right-0 top-0 w-64 bg-white shadow-md py-5 z-40 transition-all duration-300">
         <!-- دکمه‌ی باز/بسته کردن منو -->
-        <button id="sidebar-toggle-btn" class="absolute top-5 left-0 transform -translate-x-full p-2 bg-white rounded-r-lg shadow-md">
-            <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button id="sidebar-toggle-btn" class="absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-full p-3 bg-green-500 text-white hover:bg-green-600 rounded-r-lg shadow-md focus:outline-none transition-all duration-300">
+            <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         </button>
@@ -35,7 +35,7 @@
                     </svg>
                     <div class="flex flex-col menu-text">
                         <span>خانواده‌های بیمه شده</span>
-
+                        
                         <span class="text-xs {{ request()->routeIs('charity.insured-families') ? 'text-white' : 'text-gray-500' }}">
                             @if(isset($insuredFamilies) && isset($insuredMembers))
                                 ({{ $insuredFamilies }} خانواده - {{ $insuredMembers }} نفر)
