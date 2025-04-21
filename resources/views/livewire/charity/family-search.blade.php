@@ -353,8 +353,7 @@
                 navigator.clipboard.writeText(text)
                     .then(() => {
                         console.log('متن با موفقیت کپی شد.');
-                        // نمایش اعلان موفقیت
-                        alert('متن کپی شد: ' + text);
+                        // الرت حذف شد - از توست لایوایر استفاده می‌شود
                     })
                     .catch(err => {
                         console.error('خطا در کپی متن: ', err);
@@ -389,7 +388,7 @@
                 var successful = document.execCommand('copy');
                 if (successful) {
                     console.log('متن با موفقیت کپی شد.');
-                    alert('متن کپی شد: ' + text);
+                    // الرت حذف شد - از توست لایوایر استفاده می‌شود
                 } else {
                     console.error('کپی متن با شکست مواجه شد.');
                 }
