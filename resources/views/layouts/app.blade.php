@@ -99,25 +99,19 @@
                     }
                 }
                 
+                // بررسی اولیه بر اساس localStorage
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed && sidebarMenu) {
+                    sidebarMenu.classList.add('collapsed');
+                }
+                
                 // بررسی اولیه
                 checkSidebarState();
                 
-                // گوش دادن به تغییرات در کلاس منو
-                if (sidebarMenu) {
-                    const observer = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(mutation) {
-                            if (mutation.attributeName === 'class') {
-                                checkSidebarState();
-                            }
-                        });
-                    });
-                    
-                    observer.observe(sidebarMenu, { attributes: true });
-                }
-                
                 // گوش دادن به رویداد سفارشی برای تغییر وضعیت منو
-                document.addEventListener('sidebar-toggle', function() {
+                document.addEventListener('sidebar-toggle', function(event) {
                     checkSidebarState();
+                    console.log('وضعیت منو تغییر کرد:', event.detail ? event.detail.collapsed : 'نامشخص');
                 });
             });
         </script>

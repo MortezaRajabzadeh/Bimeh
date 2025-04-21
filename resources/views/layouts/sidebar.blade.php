@@ -148,6 +148,16 @@
         flex-direction: column;
         align-items: center;
     }
+    
+    /* استایل های جدید برای مطمئن شدن از عملکرد درست */
+    .sidebar-menu .menu-text {
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+    
+    .sidebar-transition {
+        transition: all 0.3s ease;
+    }
 </style>
 
 <script>
@@ -161,69 +171,91 @@
         // خواندن وضعیت قبلی منو از localStorage
         const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
         
-        // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
-        if (isSidebarCollapsed) {
+        function collapseSidebar() {
+            // تنظیم کلاس برای منو
             sidebarMenu.classList.add('collapsed');
+            
             // تغییر عرض به 16px در حالت بسته
-            sidebarMenu.querySelector('.w-64').classList.remove('w-64');
-            sidebarMenu.querySelector('.fixed').classList.add('w-16');
+            const sidebarContainer = sidebarMenu.querySelector('.fixed');
+            if (sidebarContainer.classList.contains('w-64')) {
+                sidebarContainer.classList.remove('w-64');
+                sidebarContainer.classList.add('w-16', 'sidebar-transition');
+            }
             
             // مخفی کردن متن‌ها
-            menuTexts.forEach(el => el.style.display = 'none');
+            menuTexts.forEach(el => {
+                el.style.display = 'none';
+                el.style.opacity = '0';
+            });
             
             // تغییر آیکون دکمه
             collapseIcon.classList.add('hidden');
             expandIcon.classList.remove('hidden');
             
             // کوچک کردن لوگو
-            document.querySelector('.w-20.h-20').classList.remove('w-20', 'h-20');
-            document.querySelector('.transition-all').classList.add('w-10', 'h-10');
+            const logoContainer = document.querySelector('.transition-all');
+            if (logoContainer.classList.contains('w-20')) {
+                logoContainer.classList.remove('w-20', 'h-20');
+                logoContainer.classList.add('w-10', 'h-10', 'sidebar-transition');
+            }
+            
+            // ذخیره وضعیت
+            localStorage.setItem('sidebarCollapsed', 'true');
+            
+            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
+            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: true } }));
         }
         
+        function expandSidebar() {
+            // تنظیم کلاس برای منو
+            sidebarMenu.classList.remove('collapsed');
+            
+            // تغییر عرض به 64px در حالت باز
+            const sidebarContainer = sidebarMenu.querySelector('.fixed');
+            if (sidebarContainer.classList.contains('w-16')) {
+                sidebarContainer.classList.remove('w-16');
+                sidebarContainer.classList.add('w-64', 'sidebar-transition');
+            }
+            
+            // نمایش متن‌ها
+            menuTexts.forEach(el => {
+                el.style.display = 'inline-block';
+                el.style.opacity = '1';
+            });
+            
+            // تغییر آیکون دکمه
+            expandIcon.classList.add('hidden');
+            collapseIcon.classList.remove('hidden');
+            
+            // بزرگ کردن لوگو
+            const logoContainer = document.querySelector('.transition-all');
+            if (logoContainer.classList.contains('w-10')) {
+                logoContainer.classList.remove('w-10', 'h-10');
+                logoContainer.classList.add('w-20', 'h-20', 'sidebar-transition');
+            }
+            
+            // ذخیره وضعیت
+            localStorage.setItem('sidebarCollapsed', 'false');
+            
+            // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
+            document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: false } }));
+        }
+        
+        // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
+        if (isSidebarCollapsed) {
+            collapseSidebar();
+        } else {
+            expandSidebar();
+        }
+        
+        // افزودن رویداد کلیک به دکمه
         if (toggleBtn && sidebarMenu) {
             toggleBtn.addEventListener('click', function() {
-                sidebarMenu.classList.toggle('collapsed');
-                
                 if (sidebarMenu.classList.contains('collapsed')) {
-                    // تغییر عرض به 16px در حالت بسته
-                    sidebarMenu.querySelector('.w-64').classList.remove('w-64');
-                    sidebarMenu.querySelector('.fixed').classList.add('w-16');
-                    
-                    // مخفی کردن متن‌ها
-                    menuTexts.forEach(el => el.style.display = 'none');
-                    
-                    // تغییر آیکون دکمه
-                    collapseIcon.classList.add('hidden');
-                    expandIcon.classList.remove('hidden');
-                    
-                    // کوچک کردن لوگو
-                    document.querySelector('.w-20.h-20').classList.remove('w-20', 'h-20');
-                    document.querySelector('.transition-all').classList.add('w-10', 'h-10');
-                    
-                    // ذخیره وضعیت بسته منو
-                    localStorage.setItem('sidebarCollapsed', 'true');
+                    expandSidebar();
                 } else {
-                    // تغییر عرض به 64px در حالت باز
-                    sidebarMenu.querySelector('.w-16').classList.remove('w-16');
-                    sidebarMenu.querySelector('.fixed').classList.add('w-64');
-                    
-                    // نمایش متن‌ها
-                    menuTexts.forEach(el => el.style.display = 'inline-block');
-                    
-                    // تغییر آیکون دکمه
-                    expandIcon.classList.add('hidden');
-                    collapseIcon.classList.remove('hidden');
-                    
-                    // بزرگ کردن لوگو
-                    document.querySelector('.transition-all').classList.remove('w-10', 'h-10');
-                    document.querySelector('.transition-all').classList.add('w-20', 'h-20');
-                    
-                    // ذخیره وضعیت باز منو
-                    localStorage.setItem('sidebarCollapsed', 'false');
+                    collapseSidebar();
                 }
-                
-                // ارسال رویداد تغییر وضعیت منو به صفحه اصلی
-                document.dispatchEvent(new CustomEvent('sidebar-toggle'));
             });
         }
     });
