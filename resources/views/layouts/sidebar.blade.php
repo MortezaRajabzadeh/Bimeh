@@ -158,6 +158,28 @@
         const expandIcon = document.getElementById('expand-icon');
         const menuTexts = document.querySelectorAll('.menu-text');
         
+        // خواندن وضعیت قبلی منو از localStorage
+        const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        
+        // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
+        if (isSidebarCollapsed) {
+            sidebarMenu.classList.add('collapsed');
+            // تغییر عرض به 16px در حالت بسته
+            sidebarMenu.querySelector('.w-64').classList.remove('w-64');
+            sidebarMenu.querySelector('.fixed').classList.add('w-16');
+            
+            // مخفی کردن متن‌ها
+            menuTexts.forEach(el => el.style.display = 'none');
+            
+            // تغییر آیکون دکمه
+            collapseIcon.classList.add('hidden');
+            expandIcon.classList.remove('hidden');
+            
+            // کوچک کردن لوگو
+            document.querySelector('.w-20.h-20').classList.remove('w-20', 'h-20');
+            document.querySelector('.transition-all').classList.add('w-10', 'h-10');
+        }
+        
         if (toggleBtn && sidebarMenu) {
             toggleBtn.addEventListener('click', function() {
                 sidebarMenu.classList.toggle('collapsed');
@@ -177,6 +199,9 @@
                     // کوچک کردن لوگو
                     document.querySelector('.w-20.h-20').classList.remove('w-20', 'h-20');
                     document.querySelector('.transition-all').classList.add('w-10', 'h-10');
+                    
+                    // ذخیره وضعیت بسته منو
+                    localStorage.setItem('sidebarCollapsed', 'true');
                 } else {
                     // تغییر عرض به 64px در حالت باز
                     sidebarMenu.querySelector('.w-16').classList.remove('w-16');
@@ -192,6 +217,9 @@
                     // بزرگ کردن لوگو
                     document.querySelector('.transition-all').classList.remove('w-10', 'h-10');
                     document.querySelector('.transition-all').classList.add('w-20', 'h-20');
+                    
+                    // ذخیره وضعیت باز منو
+                    localStorage.setItem('sidebarCollapsed', 'false');
                 }
                 
                 // ارسال رویداد تغییر وضعیت منو به صفحه اصلی
