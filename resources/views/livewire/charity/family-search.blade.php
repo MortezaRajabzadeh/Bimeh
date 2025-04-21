@@ -294,6 +294,42 @@
                                     @endforelse
                                 </tbody>
                             </table>
+                            
+                            <div class="bg-green-100 py-4 px-4 rounded-b border-r border-l border-b border-green-100 flex justify-between items-center">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
+                                    <div class="bg-white rounded px-3 py-2 flex items-center">
+                                        <span id="sheba_{{ $family->id }}" class="text-sm text-gray-800 ltr">IR056216845813188</span>
+                                        <button onclick="copyToClipboard('sheba_{{ $family->id }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
+                                    <div class="bg-white rounded px-3 py-2 flex items-center">
+                                        <span id="mobile_{{ $family->id }}" class="text-sm text-gray-800">09347964873</span>
+                                        <button onclick="copyToClipboard('mobile_{{ $family->id }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <script>
+                            function copyToClipboard(elementId) {
+                                const text = document.getElementById(elementId).innerText;
+                                navigator.clipboard.writeText(text).then(() => {
+                                    // اختیاری: نمایش پیام موفقیت آمیز
+                                    alert('متن کپی شد: ' + text);
+                                });
+                            }
+                            </script>
                         </div>
                     </td>
                 </tr>
@@ -315,44 +351,5 @@
     <div class="mt-4">
         {{ $families->links() }}
     </div>
-    @endif
-
-    <!-- بخش شماره شبا و موبایل -->
-    @if($expandedFamily)
-    <div class="mt-2 bg-green-200 p-4 rounded flex justify-between items-center">
-        <div class="flex items-center">
-            <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
-            <div class="bg-white rounded px-3 py-2 flex items-center">
-                <span id="sheba_{{ $expandedFamily }}" class="text-sm text-gray-800 ltr">IR056216845813188</span>
-                <button onclick="copyToClipboard('sheba_{{ $expandedFamily }}')" class="text-blue-500 mr-2 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-        
-        <div class="flex items-center">
-            <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
-            <div class="bg-white rounded px-3 py-2 flex items-center">
-                <span id="mobile_{{ $expandedFamily }}" class="text-sm text-gray-800">09347964873</span>
-                <button onclick="copyToClipboard('mobile_{{ $expandedFamily }}')" class="text-blue-500 mr-2 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-    function copyToClipboard(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            // اختیاری: نمایش پیام موفقیت آمیز
-            alert('متن کپی شد: ' + text);
-        });
-    }
-    </script>
     @endif
 </div>
