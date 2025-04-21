@@ -337,6 +337,16 @@ class FamilySearch extends Component
         return Family::where('is_insured', false)->count();
     }
     
+    public function copyText($text)
+    {
+        $this->dispatchBrowserEvent('copy-text', ['text' => $text]);
+        $this->dispatchBrowserEvent('show-toast', [
+            'title' => 'کپی شد!',
+            'message' => 'متن مورد نظر با موفقیت کپی شد.',
+            'type' => 'success'
+        ]);
+    }
+    
     public function render()
     {
         // آمار خانواده‌ها و اعضا برای نمایش در بالای صفحه
