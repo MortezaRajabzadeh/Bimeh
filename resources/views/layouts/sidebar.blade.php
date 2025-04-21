@@ -161,7 +161,7 @@
     
     /* تنظیم دکمه باز/بسته کردن منو */
     #sidebar-toggle-btn {
-        top: 84%;
+        top: 56%;
         transform: translateY(0);
     }
 </style>
