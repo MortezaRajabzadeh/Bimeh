@@ -88,7 +88,7 @@
                 </a>
             @endif
         </div>
-
+        
         <!-- Footer Menu Items -->
         <div class="border-t border-gray-200 py-2">
             @if(auth()->check() && auth()->user()->user_type === 'charity')
@@ -112,17 +112,17 @@
             </form>
         </div>
     </div>
+    
+    <!-- دکمه‌ی باز/بسته کردن منو -->
+    <button id="sidebar-toggle-btn" class="fixed left-0 z-50 bg-green-500 text-white p-2 rounded-r-md shadow-md hover:bg-green-600 transition-all duration-300">
+        <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+    </button>
 </div>
-
-<!-- دکمه‌ی باز/بسته کردن منو - خارج از منو -->
-<button id="sidebar-toggle-btn" class="fixed left-0 transform -translate-x-0 p-3 bg-green-500 text-white hover:bg-green-600 rounded-r-lg shadow-md focus:outline-none transition-all duration-300 z-50">
-    <svg id="collapse-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-    </svg>
-    <svg id="expand-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-    </svg>
-</button>
 
 <style>
     /* استایل‌های مربوط به آیکون‌ها در حالت بسته منو */
@@ -158,6 +158,12 @@
     .sidebar-transition {
         transition: all 0.3s ease;
     }
+    
+    /* تنظیم دکمه باز/بسته کردن منو */
+    #sidebar-toggle-btn {
+        top: 50%;
+        transform: translateY(-50%);
+    }
 </style>
 
 <script>
@@ -170,18 +176,6 @@
         
         // خواندن وضعیت قبلی منو از localStorage
         const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        
-        // تنظیم موقعیت دکمه در کنار آیتم منو
-        function positionToggleButton() {
-            const insuranceMenuItem = document.getElementById('insurance-requests-menu-item');
-            if (insuranceMenuItem) {
-                const rect = insuranceMenuItem.getBoundingClientRect();
-                toggleBtn.style.top = rect.top + window.scrollY + (rect.height / 2) - (toggleBtn.offsetHeight / 2) + 'px';
-            }
-        }
-        
-        // هنگام تغییر اندازه صفحه، موقعیت دکمه را تنظیم کن
-        window.addEventListener('resize', positionToggleButton);
         
         function collapseSidebar() {
             // تنظیم کلاس برای منو
@@ -216,9 +210,6 @@
             
             // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
             document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: true } }));
-            
-            // تنظیم مجدد موقعیت دکمه
-            setTimeout(positionToggleButton, 300);
         }
         
         function expandSidebar() {
@@ -254,9 +245,6 @@
             
             // ارسال رویداد برای آگاه کردن سایر اسکریپت‌ها
             document.dispatchEvent(new CustomEvent('sidebar-toggle', { detail: { collapsed: false } }));
-            
-            // تنظیم مجدد موقعیت دکمه
-            setTimeout(positionToggleButton, 300);
         }
         
         // اعمال وضعیت ذخیره شده هنگام بارگذاری صفحه
@@ -265,9 +253,6 @@
         } else {
             expandSidebar();
         }
-        
-        // تنظیم اولیه موقعیت دکمه
-        setTimeout(positionToggleButton, 300);
         
         // افزودن رویداد کلیک به دکمه
         if (toggleBtn && sidebarMenu) {
