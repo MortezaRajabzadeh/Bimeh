@@ -356,6 +356,13 @@
         // متغیر برای نگه داشتن شناسه تایمر
         let notificationTimeout = null;
         
+        // واکنش به رویداد family-toggled
+        window.addEventListener('family-toggled', event => {
+            const familyId = event.detail.familyId;
+            const isExpanded = event.detail.isExpanded;
+            console.log('وضعیت نمایش خانواده تغییر کرد:', familyId, isExpanded);
+        });
+        
         Livewire.on('copy-text', params => {
             console.log('دریافت متن برای کپی:', params);
             

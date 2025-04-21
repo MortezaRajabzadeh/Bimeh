@@ -12,6 +12,7 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class FamilySearch extends Component
@@ -69,28 +70,44 @@ class FamilySearch extends Component
      */
     public function toggleFamily($familyId)
     {
-        if ($this->expandedFamily === $familyId) {
-            // اگر روی همان خانواده کلیک شده، آن را ببند
-            $this->expandedFamily = null;
-            $this->familyMembers = [];
-        } else {
-            // در غیر این صورت، اطلاعات اعضای خانواده را لود کن
-            $this->expandedFamily = $familyId;
-            $this->loadFamilyMembers($familyId);
+        try {
+            if ($this->expandedFamily === $familyId) {
+                // اگر روی همان خانواده کلیک شده، آن را ببند
+                $this->expandedFamily = null;
+                $this->familyMembers = [];
+            } else {
+                // در غیر این صورت، اطلاعات اعضای خانواده را لود کن
+                $this->expandedFamily = $familyId;
+                $this->loadFamilyMembers($familyId);
+            }
+            $this->dispatchBrowserEvent('family-toggled', ['familyId' => $familyId, 'isExpanded' => $this->expandedFamily === $familyId]);
+        } catch (\Exception $e) {
+            // ثبت خطا
+            \Illuminate\Support\Facades\Log::error('خطا در نمایش اعضای خانواده: ' . $e->getMessage());
+            // ارسال پیام به کاربر
+            session()->flash('error', 'خطا در بارگذاری اعضای خانواده. لطفاً دوباره تلاش کنید.');
         }
     }
     
     public function loadFamilyMembers($familyId)
     {
-        $family = Family::with(['members' => function($query) {
-            // اعضا را مرتب‌سازی می‌کنیم، ابتدا سرپرست و سپس بقیه بر اساس نام
-            $query->orderByDesc('is_head')
-                  ->orderBy('first_name')
-                  ->orderBy('last_name');
-        }])->find($familyId);
-        
-        if ($family) {
-            $this->familyMembers = $family->members;
+        try {
+            $family = Family::with(['members' => function($query) {
+                // اعضا را مرتب‌سازی می‌کنیم، ابتدا سرپرست و سپس بقیه بر اساس نام
+                $query->orderByDesc('is_head')
+                      ->orderBy('first_name')
+                      ->orderBy('last_name');
+            }])->find($familyId);
+            
+            if ($family) {
+                $this->familyMembers = $family->members;
+            } else {
+                $this->familyMembers = [];
+                \Illuminate\Support\Facades\Log::warning('خانواده با شناسه ' . $familyId . ' یافت نشد.');
+            }
+        } catch (\Exception $e) {
+            $this->familyMembers = [];
+            \Illuminate\Support\Facades\Log::error('خطا در بارگذاری اعضای خانواده: ' . $e->getMessage());
         }
     }
     
