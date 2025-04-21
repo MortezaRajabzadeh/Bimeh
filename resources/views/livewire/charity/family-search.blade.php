@@ -337,7 +337,7 @@
     </div>
     
     <!-- اعلان کپی -->
-    <div id="copy-notification" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 flex items-center opacity-0 transition-opacity duration-300">
+    <div id="copy-notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
@@ -353,6 +353,9 @@
     
     <script>
     document.addEventListener('livewire:initialized', function () {
+        // متغیر برای نگه داشتن شناسه تایمر
+        let notificationTimeout = null;
+        
         Livewire.on('copy-text', params => {
             console.log('دریافت متن برای کپی:', params);
             
@@ -434,21 +437,32 @@
             // تنظیم متن نوتیفیکیشن
             notificationText.textContent = 'متن با موفقیت کپی شد: ' + text;
             
+            // پاک کردن تایمر قبلی اگر وجود داشته باشد
+            if (notificationTimeout !== null) {
+                clearTimeout(notificationTimeout);
+            }
+            
             // نمایش نوتیفیکیشن
-            notification.classList.add('opacity-100');
-            notification.classList.remove('opacity-0');
+            notification.classList.remove('hidden');
+            notification.classList.add('notification-show');
             
             // مخفی کردن نوتیفیکیشن بعد از ۲ ثانیه
-            setTimeout(() => {
-                notification.classList.remove('opacity-100');
-                notification.classList.add('opacity-0');
+            notificationTimeout = setTimeout(() => {
+                notification.classList.remove('notification-show');
+                notification.classList.add('notification-hide');
+                
+                // اضافه کردن hidden بعد از پایان انیمیشن
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                    notification.classList.remove('notification-hide');
+                }, 300); // زمان انیمیشن
             }, 2000);
         }
     });
     </script>
     
     <style>
-    @keyframes slideInDown {
+    @keyframes slideIn {
         from {
             transform: translate(-50%, -20px);
             opacity: 0;
@@ -459,9 +473,27 @@
         }
     }
     
+    @keyframes slideOut {
+        from {
+            transform: translate(-50%, 0);
+            opacity: 1;
+        }
+        to {
+            transform: translate(-50%, -20px);
+            opacity: 0;
+        }
+    }
+    
+    .notification-show {
+        animation: slideIn 0.3s ease forwards;
+    }
+    
+    .notification-hide {
+        animation: slideOut 0.3s ease forwards;
+    }
+    
     #copy-notification {
-        animation: slideInDown 0.3s ease-out forwards;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
     }
     </style>
 </div>
