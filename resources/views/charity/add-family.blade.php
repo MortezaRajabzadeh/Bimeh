@@ -11,187 +11,172 @@
                 <form action="#" method="POST">
                     @csrf
                     
-                    <!-- جدول اطلاعات خانواده -->
-                    <div class="mb-8 overflow-x-auto">
-                        <div class="grid grid-cols-8 bg-gray-100 p-2 rounded-t-lg font-medium text-sm">
-                            <div class="col-span-1 text-center">عملیات</div>
-                            <div class="col-span-1 text-center">شناسه</div>
-                            <div class="col-span-1 text-center">استان</div>
-                            <div class="col-span-1 text-center">شهر/روستا</div>
-                            <div class="col-span-1 text-center">معیار پذیرش</div>
-                            <div class="col-span-1 text-center">تعداد اعضا</div>
-                            <div class="col-span-1 text-center">سرپرست خانوار</div>
-                            <div class="col-span-1 text-center">تاریخ عضویت</div>
-                        </div>
+                    <!-- اطلاعات خانواده -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 border-b pb-2">اطلاعات خانواده</h3>
                         
-                        <div class="grid grid-cols-8 bg-green-100 p-2 rounded-b-lg text-sm">
-                            <div class="col-span-1 text-center">سرپرست؟</div>
-                            <div class="col-span-1 text-center">اعضای خانواده</div>
-                            <div class="col-span-1 text-center">نام</div>
-                            <div class="col-span-1 text-center">نام خانوادگی</div>
-                            <div class="col-span-1 text-center">تاریخ تولد</div>
-                            <div class="col-span-1 text-center">کد ملی</div>
-                            <div class="col-span-1 text-center">شغل</div>
-                            <div class="col-span-1 text-center">نوع مشکل</div>
-                            <div class="col-span-1 text-center">مدارک الحاقی</div>
-                            <div class="col-span-1 text-center">نوع بیمه</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label for="family_code" class="block mb-1 text-sm font-medium text-gray-700">کد خانواده</label>
+                                <input type="text" id="family_code" name="family_code" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="کد خانواده بصورت خودکار تولید می‌شود" readonly>
+                            </div>
+                            
+                            <div>
+                                <label for="region_id" class="block mb-1 text-sm font-medium text-gray-700">منطقه</label>
+                                <select id="region_id" name="region_id" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب منطقه</option>
+                                    <option value="1">تهران - منطقه ۱</option>
+                                    <option value="2">تهران - منطقه ۲</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="address" class="block mb-1 text-sm font-medium text-gray-700">آدرس</label>
+                                <input type="text" id="address" name="address" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="آدرس دقیق محل سکونت">
+                            </div>
+                            
+                            <div>
+                                <label for="postal_code" class="block mb-1 text-sm font-medium text-gray-700">کد پستی</label>
+                                <input type="text" id="postal_code" name="postal_code" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="۱۰ رقم بدون خط تیره">
+                            </div>
+                            
+                            <div>
+                                <label for="housing_status" class="block mb-1 text-sm font-medium text-gray-700">وضعیت مسکن</label>
+                                <select id="housing_status" name="housing_status" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب وضعیت</option>
+                                    <option value="owned">ملکی</option>
+                                    <option value="rented">استیجاری</option>
+                                    <option value="relative">منزل اقوام</option>
+                                    <option value="organizational">سازمانی</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="housing_description" class="block mb-1 text-sm font-medium text-gray-700">توضیحات مسکن</label>
+                                <input type="text" id="housing_description" name="housing_description" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="مانند: ۵۰ متر، ۲ خوابه">
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- اطلاعات اعضای خانواده -->
-                    <div class="mb-4">
-                        <!-- ردیف سرپرست -->
-                        <div class="grid grid-cols-10 gap-2 items-center mb-2 bg-green-50 p-2 rounded-lg">
-                            <div class="col-span-1 text-center">
-                                <input type="radio" name="is_head" value="1" class="head-of-family-radio" checked>
-                            </div>
-                            <div class="col-span-1">
-                                <select class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="son">پسر</option>
-                                    <option value="daughter">دختر</option>
-                                    <option value="spouse">همسر</option>
-                                    <option value="father">پدر</option>
-                                    <option value="mother">مادر</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[0][first_name]" placeholder="نام" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[0][last_name]" placeholder="نام خانوادگی" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[0][birth_date]" placeholder="تاریخ تولد" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm datepicker" dir="ltr">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[0][national_code]" placeholder="کد ملی" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[0][job]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">بیکار</option>
-                                    <option value="employee">کارمند</option>
-                                    <option value="worker">کارگر</option>
-                                    <option value="self_employed">آزاد</option>
-                                    <option value="disabled">از کار افتاده</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[0][problem_type]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">انتخاب کنید</option>
-                                    <option value="physical">از کار افتادگی</option>
-                                    <option value="mental">معلولیت</option>
-                                    <option value="orphan">یتیم</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <button type="button" class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[0][insurance_type]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">انتخاب کنید</option>
-                                    <option value="social_security">تأمین اجتماعی</option>
-                                    <option value="health">سلامت</option>
-                                    <option value="military">نیروهای مسلح</option>
-                                    <option value="none">ندارد</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- ردیف عضو دیگر خانواده - نمونه -->
-                        <div class="grid grid-cols-10 gap-2 items-center mb-2 bg-gray-50 p-2 rounded-lg member-row">
-                            <div class="col-span-1 text-center">
-                                <input type="radio" name="is_head" value="0" class="head-of-family-radio">
-                            </div>
-                            <div class="col-span-1">
-                                <select class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="family_member">عضو خانواده</option>
-                                    <option value="son">پسر</option>
-                                    <option value="daughter">دختر</option>
-                                    <option value="spouse">همسر</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[1][first_name]" placeholder="نام" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[1][last_name]" placeholder="نام خانوادگی" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[1][birth_date]" placeholder="تاریخ تولد" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm datepicker" dir="ltr">
-                            </div>
-                            <div class="col-span-1">
-                                <input type="text" name="members[1][national_code]" placeholder="کد ملی" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[1][job]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">بیکار</option>
-                                    <option value="employee">کارمند</option>
-                                    <option value="worker">کارگر</option>
-                                    <option value="self_employed">آزاد</option>
-                                    <option value="disabled">از کار افتاده</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[1][problem_type]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">انتخاب کنید</option>
-                                    <option value="physical">از کار افتادگی</option>
-                                    <option value="mental">معلولیت</option>
-                                    <option value="orphan">یتیم</option>
-                                </select>
-                            </div>
-                            <div class="col-span-1">
-                                <button type="button" class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="col-span-1">
-                                <select name="members[1][insurance_type]" class="border border-gray-300 rounded-md w-full py-1 px-2 text-sm">
-                                    <option value="">انتخاب کنید</option>
-                                    <option value="social_security">تأمین اجتماعی</option>
-                                    <option value="health">سلامت</option>
-                                    <option value="military">نیروهای مسلح</option>
-                                    <option value="none">ندارد</option>
-                                </select>
-                            </div>
-                        </div>
+                    <!-- اطلاعات سرپرست خانوار -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 border-b pb-2">اطلاعات سرپرست خانوار</h3>
                         
-                        <!-- دکمه افزودن عضو جدید -->
-                        <div class="flex justify-center mt-4 mb-6">
-                            <button type="button" id="add-member" class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                افزودن عضو خانواده
-                            </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label for="head_first_name" class="block mb-1 text-sm font-medium text-gray-700">نام</label>
+                                <input type="text" id="head_first_name" name="members[0][first_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام سرپرست خانوار">
+                                <input type="hidden" name="members[0][is_head]" value="1">
+                            </div>
+                            
+                            <div>
+                                <label for="head_last_name" class="block mb-1 text-sm font-medium text-gray-700">نام خانوادگی</label>
+                                <input type="text" id="head_last_name" name="members[0][last_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام خانوادگی سرپرست">
+                            </div>
+                            
+                            <div>
+                                <label for="head_national_code" class="block mb-1 text-sm font-medium text-gray-700">کد ملی</label>
+                                <input type="text" id="head_national_code" name="members[0][national_code]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="۱۰ رقم بدون خط تیره">
+                            </div>
+                            
+                            <div>
+                                <label for="head_father_name" class="block mb-1 text-sm font-medium text-gray-700">نام پدر</label>
+                                <input type="text" id="head_father_name" name="members[0][father_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام پدر">
+                            </div>
+                            
+                            <div>
+                                <label for="head_birth_date" class="block mb-1 text-sm font-medium text-gray-700">تاریخ تولد</label>
+                                <input type="text" id="head_birth_date" name="members[0][birth_date]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="۱۳۶۰/۰۱/۰۱">
+                            </div>
+                            
+                            <div>
+                                <label for="head_gender" class="block mb-1 text-sm font-medium text-gray-700">جنسیت</label>
+                                <select id="head_gender" name="members[0][gender]" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب جنسیت</option>
+                                    <option value="male">مرد</option>
+                                    <option value="female">زن</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="head_marital_status" class="block mb-1 text-sm font-medium text-gray-700">وضعیت تاهل</label>
+                                <select id="head_marital_status" name="members[0][marital_status]" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب وضعیت</option>
+                                    <option value="single">مجرد</option>
+                                    <option value="married">متاهل</option>
+                                    <option value="divorced">مطلقه</option>
+                                    <option value="widowed">همسر فوت شده</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="head_education" class="block mb-1 text-sm font-medium text-gray-700">تحصیلات</label>
+                                <select id="head_education" name="members[0][education]" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب تحصیلات</option>
+                                    <option value="illiterate">بی‌سواد</option>
+                                    <option value="elementary">ابتدایی</option>
+                                    <option value="middle_school">راهنمایی</option>
+                                    <option value="high_school">دبیرستان</option>
+                                    <option value="diploma">دیپلم</option>
+                                    <option value="associate">فوق دیپلم</option>
+                                    <option value="bachelor">لیسانس</option>
+                                    <option value="master">فوق لیسانس</option>
+                                    <option value="phd">دکترا</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">شرایط خاص</label>
+                                <div class="flex flex-wrap gap-4 mt-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[0][has_disability]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">معلولیت</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[0][has_chronic_disease]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">بیماری خاص</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[0][has_insurance]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">دارای بیمه</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="head_occupation" class="block mb-1 text-sm font-medium text-gray-700">شغل</label>
+                                <input type="text" id="head_occupation" name="members[0][occupation]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="شغل فعلی">
+                            </div>
+                            
+                            <div>
+                                <label for="head_mobile" class="block mb-1 text-sm font-medium text-gray-700">موبایل</label>
+                                <input type="text" id="head_mobile" name="members[0][mobile]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="شماره موبایل">
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- اطلاعات تکمیلی سرپرست - این بخش در ابتدا نمایش داده می‌شود -->
-                    <div id="head-info" class="mb-8 grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700">شماره موبایل سرپرست</label>
-                            <input type="text" name="head_mobile" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="مانند: ۰۹۱۲۱۲۳۴۵۶۷">
-                        </div>
+                    <!-- دکمه افزودن اعضای خانواده -->
+                    <div class="mb-8">
+                        <button type="button" id="add-member" class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            افزودن عضو خانواده
+                        </button>
+                    </div>
+                    
+                    <!-- بخش اعضای خانواده (اینجا با جاوااسکریپت تکرار می‌شود) -->
+                    <div id="family-members-container">
+                        <!-- اعضای جدید اینجا اضافه می‌شوند -->
+                    </div>
+                    
+                    <!-- اطلاعات تکمیلی -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold mb-4 border-b pb-2">اطلاعات تکمیلی</h3>
                         
                         <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700">شماره شبا جهت پرداخت خسارت</label>
-                            <input type="text" name="head_sheba" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="بدون IR و بدون فاصله" dir="ltr">
-                        </div>
-                        
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700">استان</label>
-                            <input type="text" name="province" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="استان محل سکونت">
-                        </div>
-                        
-                        <div>
-                            <label class="block mb-1 text-sm font-medium text-gray-700">شهر/روستا</label>
-                            <input type="text" name="city" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="شهر یا روستای محل سکونت">
+                            <label for="additional_info" class="block mb-1 text-sm font-medium text-gray-700">توضیحات اضافی</label>
+                            <textarea id="additional_info" name="additional_info" rows="4" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="هر گونه اطلاعات تکمیلی درباره خانواده که لازم است ثبت شود"></textarea>
                         </div>
                     </div>
                     
@@ -211,57 +196,102 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let memberCount = 2; // شروع از ۲ چون سرپرست و یک عضو دیگر از قبل وجود دارند
+            let memberCount = 1;
             
-            // رویداد برای دکمه افزودن عضو جدید
             document.getElementById('add-member').addEventListener('click', function() {
-                const lastMemberRow = document.querySelector('.member-row:last-child');
-                const newRow = lastMemberRow.cloneNode(true);
+                const container = document.getElementById('family-members-container');
+                const memberHtml = `
+                    <div class="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50 member-container">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">عضو خانواده ${memberCount}</h3>
+                            <button type="button" class="remove-member text-red-500 hover:text-red-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">نام</label>
+                                <input type="text" name="members[${memberCount}][first_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام">
+                                <input type="hidden" name="members[${memberCount}][is_head]" value="0">
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">نام خانوادگی</label>
+                                <input type="text" name="members[${memberCount}][last_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام خانوادگی">
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">کد ملی</label>
+                                <input type="text" name="members[${memberCount}][national_code]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="۱۰ رقم بدون خط تیره">
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">نام پدر</label>
+                                <input type="text" name="members[${memberCount}][father_name]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="نام پدر">
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">تاریخ تولد</label>
+                                <input type="text" name="members[${memberCount}][birth_date]" class="border border-gray-300 rounded-md w-full py-2 px-3" placeholder="۱۳۸۰/۰۱/۰۱">
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">جنسیت</label>
+                                <select name="members[${memberCount}][gender]" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب جنسیت</option>
+                                    <option value="male">مرد</option>
+                                    <option value="female">زن</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-gray-700">نسبت</label>
+                                <select name="members[${memberCount}][relationship]" class="border border-gray-300 rounded-md w-full py-2 px-3">
+                                    <option value="">انتخاب نسبت</option>
+                                    <option value="spouse">همسر</option>
+                                    <option value="child">فرزند</option>
+                                    <option value="parent">والدین</option>
+                                    <option value="sibling">خواهر/برادر</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label class="block mb-1 text-sm font-medium text-gray-700">شرایط خاص</label>
+                                <div class="flex flex-wrap gap-4 mt-2">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[${memberCount}][has_disability]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">معلولیت</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[${memberCount}][has_chronic_disease]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">بیماری خاص</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="members[${memberCount}][has_insurance]" value="1" class="rounded text-blue-600">
+                                        <span class="mr-2 text-sm">دارای بیمه</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 
-                // تغییر نام فیلدها به index جدید
-                const inputs = newRow.querySelectorAll('input[name^="members"]');
-                const selects = newRow.querySelectorAll('select[name^="members"]');
-                
-                inputs.forEach(input => {
-                    const name = input.getAttribute('name');
-                    input.setAttribute('name', name.replace(/\[\d+\]/, `[${memberCount}]`));
-                    input.value = '';
-                });
-                
-                selects.forEach(select => {
-                    const name = select.getAttribute('name');
-                    if (name) {
-                        select.setAttribute('name', name.replace(/\[\d+\]/, `[${memberCount}]`));
-                        select.selectedIndex = 0;
-                    }
-                });
-                
-                // اضافه کردن رویداد رادیو برای سرپرست
-                const radioBtn = newRow.querySelector('.head-of-family-radio');
-                radioBtn.addEventListener('change', handleHeadOfFamilyChange);
-                
-                // اضافه کردن ردیف جدید به صفحه
-                lastMemberRow.after(newRow);
+                // افزودن HTML به صفحه
+                container.insertAdjacentHTML('beforeend', memberHtml);
                 memberCount++;
+                
+                // اضافه کردن رویداد کلیک به دکمه حذف
+                const removeButtons = document.querySelectorAll('.remove-member');
+                removeButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        this.closest('.member-container').remove();
+                    });
+                });
             });
-            
-            // رویداد برای تغییر سرپرست خانواده
-            const headRadios = document.querySelectorAll('.head-of-family-radio');
-            headRadios.forEach(radio => {
-                radio.addEventListener('change', handleHeadOfFamilyChange);
-            });
-            
-            function handleHeadOfFamilyChange(e) {
-                // اگر این رادیو انتخاب شده، اطلاعات سرپرست را نمایش بده
-                if (e.target.checked && e.target.value === "1") {
-                    document.getElementById('head-info').style.display = 'grid';
-                } else {
-                    document.getElementById('head-info').style.display = 'none';
-                }
-            }
-            
-            // نمایش اطلاعات سرپرست در ابتدا (چون سرپرست به صورت پیش‌فرض انتخاب شده)
-            document.getElementById('head-info').style.display = 'grid';
         });
     </script>
 </x-app-layout> 
