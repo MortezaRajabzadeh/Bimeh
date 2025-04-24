@@ -1,5 +1,5 @@
 <nav class="bg-white shadow-md z-12 w-full">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <!-- دکمه‌های عملیات و دسترسی‌ها -->
             <div class="flex items-center space-x-reverse space-x-2 sm:space-x-4 overflow-x-auto hide-scrollbar">
@@ -85,12 +85,9 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
-body {
-    width: 100%; /* یا به اندازه height نوبار */
-}
 /* تنظیمات ریسپانسیو */
 @media (max-width: 640px) {
-    nav .max-w-7xl {
+    nav .w-full {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
     }
