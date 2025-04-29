@@ -19,9 +19,8 @@ class Region extends Model
      */
     protected $fillable = [
         'name',
-        'province',
         'city',
-        'description',
+        'province',
         'is_active',
     ];
 

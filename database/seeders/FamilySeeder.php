@@ -44,7 +44,7 @@ class FamilySeeder extends Seeder
         }
 
         // ایجاد خانواده‌های بیمه شده
-        for ($i = 1; $i <= 15; $i++) {
+        for ($i = 1; $i <= 50; $i++) {
             $family = Family::create([
                 'family_code' => 'FAM-INS-' . str_pad($i, 3, '0', STR_PAD_LEFT),
                 'region_id' => $region->id,
@@ -111,7 +111,7 @@ class FamilySeeder extends Seeder
         }
 
         // ایجاد خانواده‌های بدون بیمه
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= 30; $i++) {
             $family = Family::create([
                 'family_code' => 'FAM-NINS-' . str_pad($i, 3, '0', STR_PAD_LEFT),
                 'region_id' => $region->id,

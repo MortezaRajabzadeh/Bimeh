@@ -1,0 +1,61 @@
+/* استایل‌های مشترک */
+
+/* استایل دکمه برگشت */
+.back-button {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    background-color: #4ADE80;
+    width: 20px;
+    height: 100vh;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.back-button:hover {
+    background-color: #22C55E;
+    width: 50px;
+}
+
+/* استایل‌های منوی کناری */
+.main-with-normal-sidebar {
+    margin-right: 16rem; /* 64px */
+    transition: margin 0.3s ease-in-out;
+}
+
+.main-with-collapsed-sidebar {
+    margin-right: 4rem; /* 16px */
+    transition: margin 0.3s ease-in-out;
+}
+
+/* مخفی کردن اسکرول‌بار افقی */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* استایل اسکرول برای منو */
+.sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+} 

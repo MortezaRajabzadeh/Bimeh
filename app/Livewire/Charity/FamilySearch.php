@@ -5,10 +5,12 @@ namespace App\Livewire\Charity;
 use App\Models\Family;
 use App\Models\Region;
 use App\Models\Member;
+use App\Models\Charity;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 
 class FamilySearch extends Component
 {
@@ -17,18 +19,23 @@ class FamilySearch extends Component
     public $search = '';
     public $status = '';
     public $region = '';
+    public $charity = '';
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
     public $expandedFamily = null;
     public $familyMembers = [];
     public $regions = [];
+    public $selectedHead = null;
+    public $perPage = 15;
     
     protected $queryString = [
         'search' => ['except' => ''],
         'status' => ['except' => ''],
         'region' => ['except' => ''],
+        'charity' => ['except' => ''],
         'sortField' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
+        'perPage' => ['except' => 15],
     ];
     
     public function mount()
@@ -39,7 +46,7 @@ class FamilySearch extends Component
     public function render()
     {
         $query = Family::query()
-            ->with(['region', 'members']);
+            ->with(['region', 'members', 'charity']);
         
         if ($this->search) {
             $query->where(function($q) {
@@ -57,9 +64,13 @@ class FamilySearch extends Component
             $query->where('region_id', $this->region);
         }
         
+        if ($this->charity) {
+            $query->where('charity_id', $this->charity);
+        }
+        
         $query->orderBy($this->sortField, $this->sortDirection);
         
-        $families = $query->paginate(10);
+        $families = $query->paginate($this->perPage);
         
         return view('livewire.charity.family-search', [
             'families' => $families,
@@ -82,6 +93,105 @@ class FamilySearch extends Component
         $this->resetPage();
     }
     
+    public function updatingCharity()
+    {
+        $this->resetPage();
+    }
+    
+    /**
+     * دریافت شماره صفحه فعلی
+     * 
+     * @return int
+     */
+    public function getPage()
+    {
+        return (int) $this->page;
+    }
+    
+    /**
+     * رفتن به صفحه بعدی
+     * 
+     * @return void
+     */
+    public function nextPage()
+    {
+        $nextPage = $this->getPage() + 1;
+        
+        if ($nextPage <= $this->families->lastPage()) {
+            $this->gotoPage($nextPage);
+        }
+    }
+    
+    /**
+     * رفتن به صفحه قبلی
+     * 
+     * @return void
+     */
+    public function previousPage()
+    {
+        $prevPage = $this->getPage() - 1;
+        
+        if ($prevPage > 0) {
+            $this->gotoPage($prevPage);
+        }
+    }
+    
+    /**
+     * اعمال فیلترها به کوئری
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return void
+     */
+    private function applyFilters($query)
+    {
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('name', 'like', '%' . $this->search . '%')
+                  ->orWhere('phone', 'like', '%' . $this->search . '%')
+                  ->orWhere('address', 'like', '%' . $this->search . '%');
+            });
+        }
+        
+        if ($this->status !== '') {
+            $query->where('is_insured', $this->status === 'insured');
+        }
+        
+        if ($this->region) {
+            $query->where('region_id', $this->region);
+        }
+        
+        if ($this->charity) {
+            $query->where('charity_id', $this->charity);
+        }
+        
+        $query->orderBy($this->sortField, $this->sortDirection);
+    }
+    
+    /**
+     * رفتن به صفحه مشخص با اعتبارسنجی شماره صفحه
+     * 
+     * @param int $page شماره صفحه
+     * @return void
+     */
+    public function gotoPage($page)
+    {
+        // محاسبه تعداد کل صفحات
+        $query = Family::query()
+            ->with(['region', 'members', 'charity']);
+        
+        // اعمال فیلترها
+        $this->applyFilters($query);
+        
+        $paginator = $query->paginate($this->perPage);
+        $lastPage = $paginator->lastPage();
+        
+        // اطمینان از این‌که صفحه در محدوده معتبر است
+        $page = max(1, min(intval($page), $lastPage));
+        
+        // استفاده از setPage به جای فراخوانی مستقیم
+        $this->setPage($page);
+    }
+    
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -99,8 +209,27 @@ class FamilySearch extends Component
             $this->familyMembers = [];
         } else {
             $this->expandedFamily = $familyId;
-            $family = Family::with('members')->findOrFail($familyId);
+            
+            // بارگذاری کامل اعضای خانواده با تمام اطلاعات و مرتب‌سازی مناسب
+            $family = Family::with(['members' => function($query) {
+                // مرتب‌سازی: ابتدا سرپرست و سپس به ترتیب ID
+                $query->orderBy('is_head', 'desc')
+                      ->orderBy('id', 'asc');
+            }])->findOrFail($familyId);
+            
+            // تهیه کالکشن کامل اعضای خانواده
             $this->familyMembers = $family->members;
+            
+            // تنظیم selectedHead به ID سرپرست فعلی
+            foreach ($this->familyMembers as $member) {
+                if ($member->is_head) {
+                    $this->selectedHead = $member->id;
+                    break;
+                }
+            }
+            
+            // ارسال رویداد برای اسکرول به موقعیت خانواده باز شده
+            $this->dispatch('family-expanded', $familyId);
         }
     }
     
@@ -113,30 +242,47 @@ class FamilySearch extends Component
      */
     public function setFamilyHead($familyId, $memberId)
     {
-        $family = Family::findOrFail($familyId);
-        
-        // فقط اگر خانواده تایید نشده باشد، اجازه تغییر سرپرست را بدهیم
-        if (!$family->verified_at) {
-            // ابتدا همه اعضای خانواده را به عنوان غیر-سرپرست علامت‌گذاری می‌کنیم
-            Member::where('family_id', $familyId)
-                ->update(['is_head' => false]);
+        try {
+            $family = Family::findOrFail($familyId);
             
-            // سپس عضو انتخاب شده را به عنوان سرپرست تعیین می‌کنیم
-            Member::where('id', $memberId)
-                ->update(['is_head' => true]);
-            
-            // به‌روزرسانی لیست اعضا
-            $this->familyMembers = Member::where('family_id', $familyId)->get();
-            
-            // نمایش پیام موفقیت
+            // فقط اگر خانواده تایید نشده باشد، اجازه تغییر سرپرست را بدهیم
+            if (!$family->verified_at) {
+                // تنظیم متغیر انتخاب شده
+                $this->selectedHead = $memberId;
+                
+                // مدیریت تراکنش برای اطمینان از صحت داده‌ها
+                DB::beginTransaction();
+                
+                // به‌روزرسانی پایگاه داده
+                Member::where('family_id', $familyId)->update(['is_head' => false]);
+                Member::where('id', $memberId)->update(['is_head' => true]);
+                
+                DB::commit();
+                
+                // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
+                if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
+                    // به‌روزرسانی state داخلی بدون بارگیری مجدد
+                    foreach ($this->familyMembers as $member) {
+                        // فقط وضعیت is_head را تغییر می‌دهیم
+                        $member->is_head = ($member->id == $memberId);
+                    }
+                }
+                
+                // نمایش پیام موفقیت
+                $this->dispatch('show-toast', [
+                    'message' => 'سرپرست خانواده با موفقیت تغییر کرد', 
+                    'type' => 'success'
+                ]);
+            } else {
+                $this->dispatch('show-toast', [
+                    'message' => 'امکان تغییر سرپرست برای خانواده‌های تایید شده وجود ندارد', 
+                    'type' => 'error'
+                ]);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
             $this->dispatch('show-toast', [
-                'message' => 'سرپرست خانواده با موفقیت تغییر کرد', 
-                'type' => 'success'
-            ]);
-        } else {
-            // نمایش پیام خطا
-            $this->dispatch('show-toast', [
-                'message' => 'امکان تغییر سرپرست برای خانواده‌های تایید شده وجود ندارد', 
+                'message' => 'خطا در به‌روزرسانی اطلاعات: ' . $e->getMessage(), 
                 'type' => 'error'
             ]);
         }

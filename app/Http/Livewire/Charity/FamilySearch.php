@@ -92,6 +92,7 @@ class FamilySearch extends Component
     public function loadFamilyMembers($familyId)
     {
         try {
+            // پیدا کردن خانواده و بارگذاری اعضا با معیار مرتب‌سازی
             $family = Family::with(['members' => function($query) {
                 // اعضا را مرتب‌سازی می‌کنیم، ابتدا سرپرست و سپس بقیه بر اساس نام
                 $query->orderByDesc('is_head')
@@ -100,7 +101,11 @@ class FamilySearch extends Component
             }])->find($familyId);
             
             if ($family) {
-                $this->familyMembers = $family->members;
+                // بارگذاری مستقیم مجموعه به جای استفاده از رابطه کش شده
+                $this->familyMembers = $family->members()->orderByDesc('is_head')
+                                              ->orderBy('first_name')
+                                              ->orderBy('last_name')
+                                              ->get();
             } else {
                 $this->familyMembers = [];
                 \Illuminate\Support\Facades\Log::warning('خانواده با شناسه ' . $familyId . ' یافت نشد.');
@@ -352,6 +357,101 @@ class FamilySearch extends Component
     public function uninsuredFamilies()
     {
         return Family::where('is_insured', false)->count();
+    }
+    
+    /**
+     * تغییر سرپرست خانواده
+     *
+     * @param int $familyId شناسه خانواده
+     * @param int $memberId شناسه عضو جدید به عنوان سرپرست
+     * @return void
+     */
+    public function setFamilyHead($familyId, $memberId)
+    {
+        try {
+            DB::beginTransaction();
+            
+            // پیدا کردن خانواده
+            $family = Family::findOrFail($familyId);
+            
+            // لغو سرپرستی از همه اعضای فعلی خانواده
+            $family->members()->update(['is_head' => false]);
+            
+            // تعیین عضو جدید به عنوان سرپرست
+            $member = Member::findOrFail($memberId);
+            $member->is_head = true;
+            $member->save();
+            
+            DB::commit();
+            
+            // بارگذاری مجدد لیست اعضا به طور مستقیم از پایگاه داده
+            $this->familyMembers = Member::where('family_id', $familyId)
+                                   ->orderByDesc('is_head')
+                                   ->orderBy('first_name')
+                                   ->orderBy('last_name')
+                                   ->get();
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('show-toast', [
+                'message' => 'سرپرست خانواده با موفقیت تغییر کرد',
+                'type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            // ثبت خطا
+            \Illuminate\Support\Facades\Log::error('خطا در تغییر سرپرست خانواده: ' . $e->getMessage());
+            
+            // نمایش پیام خطا
+            $this->dispatch('show-toast', [
+                'message' => 'خطا در تغییر سرپرست خانواده: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * تایید خانواده
+     *
+     * @param int $familyId شناسه خانواده
+     * @return void
+     */
+    public function verifyFamily($familyId)
+    {
+        try {
+            // پیدا کردن خانواده
+            $family = Family::findOrFail($familyId);
+            
+            // بررسی اینکه آیا عضو سرپرست تعیین شده است
+            $hasHead = $family->members()->where('is_head', true)->exists();
+            
+            if (!$hasHead) {
+                $this->dispatch('show-toast', [
+                    'message' => 'لطفا ابتدا سرپرست خانواده را تعیین کنید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+            
+            // تایید خانواده
+            $family->verified_at = now();
+            $family->save();
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('show-toast', [
+                'message' => 'خانواده با موفقیت تایید شد',
+                'type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            // ثبت خطا
+            \Illuminate\Support\Facades\Log::error('خطا در تایید خانواده: ' . $e->getMessage());
+            
+            // نمایش پیام خطا
+            $this->dispatch('show-toast', [
+                'message' => 'خطا در تایید خانواده: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
     
     public function copyText($text)

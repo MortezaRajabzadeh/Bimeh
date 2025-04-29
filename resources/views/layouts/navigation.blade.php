@@ -1,5 +1,6 @@
-<nav class="bg-white shadow-md z-12 w-full">
-    <div class="w-full px-4 sm:px-6 lg:px-8">
+<nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30 w-full">
+    
+<div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
             <!-- دکمه‌های عملیات و دسترسی‌ها -->
             <div class="flex items-center space-x-reverse space-x-2 sm:space-x-4 overflow-x-auto hide-scrollbar">
@@ -8,7 +9,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
-                    <span class="sm:inline">دانلود اکسل</span>
+                    <span class=" sm:inline">دانلود اکسل</span>
                     <!-- <span class="sm:hidden">دانلود</span> -->
                 </a>
                 
@@ -45,9 +46,6 @@
                     </a>
                     @endif
                 @endif
-
-                <!-- دکمه راهنما -->
- 
             </div>
 
             <!-- پروفایل کاربر و دکمه خروج -->
@@ -85,9 +83,10 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
 /* تنظیمات ریسپانسیو */
-@media (max-width: 640px) {
-    nav .w-full {
+@media (max-width: 100%) {
+    nav .max-w-7xl {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
     }

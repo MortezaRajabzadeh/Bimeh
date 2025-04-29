@@ -34,6 +34,7 @@ class Family extends Model
         'verified_at',
         'is_insured',
         'acceptance_criteria',
+        'photo_path',
     ];
 
     /**
@@ -71,7 +72,7 @@ class Family extends Model
      */
     public function charity()
     {
-        return $this->belongsTo(Organization::class, 'charity_id');
+        return $this->belongsTo(Charity::class);
     }
 
     /**
@@ -95,7 +96,7 @@ class Family extends Model
      */
     public function members()
     {
-        return $this->hasMany(Member::class);
+        return $this->hasMany(FamilyMember::class);
     }
 
     /**
@@ -135,6 +136,6 @@ class Family extends Model
      */
     public function head()
     {
-        return $this->members()->where('is_head', true)->first();
+        return $this->hasOne(FamilyMember::class)->where('is_head', true);
     }
 } 

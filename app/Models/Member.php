@@ -19,6 +19,7 @@ class Member extends Model
      */
     protected $fillable = [
         'family_id',
+        'charity_id',
         'first_name',
         'last_name',
         'national_code',
@@ -77,11 +78,75 @@ class Member extends Model
     }
 
     /**
+     * رابطه با خیریه
+     */
+    public function charity()
+    {
+        return $this->belongsTo(Charity::class);
+    }
+
+    /**
      * نام کامل عضو
      */
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * ترجمه وضعیت تأهل به فارسی
+     */
+    public function getMaritalStatusFaAttribute()
+    {
+        $status = [
+            'single' => 'مجرد',
+            'married' => 'متأهل',
+            'divorced' => 'مطلقه',
+            'widowed' => 'بیوه'
+        ];
+        
+        return $status[$this->marital_status] ?? $this->marital_status;
+    }
+
+    /**
+     * ترجمه جنسیت به فارسی
+     */
+    public function getGenderFaAttribute()
+    {
+        $genders = [
+            'male' => 'مرد',
+            'female' => 'زن'
+        ];
+        
+        return $genders[$this->gender] ?? $this->gender;
+    }
+
+    /**
+     * ترجمه نسبت به فارسی
+     */
+    public function getRelationshipFaAttribute()
+    {
+        $relationships = [
+            'head' => 'والدین',
+            'spouse' => 'همسر',
+            'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
+            'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
+            'father' => 'پدر',
+            'mother' => 'مادر',
+            'brother' => 'برادر',
+            'sister' => 'خواهر',
+            'grandfather' => 'پدربزرگ',
+            'grandmother' => 'مادربزرگ',
+            'uncle' => 'عمو/دایی',
+            'aunt' => 'عمه/خاله',
+            'nephew' => 'برادرزاده/خواهرزاده',
+            'niece' => 'برادرزاده/خواهرزاده',
+            'cousin' => 'پسرعمو/دخترعمو/پسردایی/دختردایی',
+            'son_in_law' => 'داماد',
+            'daughter_in_law' => 'عروس',
+            'other' => 'سایر',
+        ];
+        return $relationships[$this->relationship] ?? 'سایر';
     }
 
     /**
