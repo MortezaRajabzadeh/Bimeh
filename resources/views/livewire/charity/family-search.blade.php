@@ -2,7 +2,7 @@
     {{-- Knowing others is intelligence; knowing yourself is true wisdom. --}}
     
     <!-- جستجو و فیلتر -->
-    <div class="mb-6 flex gap-2">
+    <div class="mb-8 flex gap-2">
         <div class="w-full flex flex-wrap items-center gap-2">
             <div class="relative flex-grow">
                 <input wire:model.live="search" type="text" placeholder="جستجو در تمام فیلدها..." class="border border-gray-300 rounded p-2 w-full">
@@ -503,40 +503,35 @@
     
     <script>
     document.addEventListener('livewire:initialized', function () {
-        // متغیر برای نگه داشتن شناسه تایمر
         let notificationTimeout = null;
-        let toastTimeout = null;
         
-        // اضافه کردن event listener برای دکمه‌های توگل خانواده
+        // تابع اسکرول به محتوای باز شده
+        function scrollToExpandedContent(familyId, delay = 300) {
+            setTimeout(() => {
+                const familyRow = document.querySelector(`tr[data-family-id="${familyId}"]`);
+                const expandedContent = document.querySelector(`tr[data-family-id="${familyId}"] + tr`);
+                
+                if (expandedContent && familyRow) {
+                    const rect = expandedContent.getBoundingClientRect();
+                    const isInViewport = (
+                        rect.top >= 0 &&
+                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+                    );
+                    
+                    if (!isInViewport) {
+                        familyRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }, delay);
+        }
+        
+        // مدیریت کلیک روی دکمه‌های توگل
         document.addEventListener('click', function(e) {
             const toggleBtn = e.target.closest('.toggle-family-btn');
             if (toggleBtn) {
                 const familyId = toggleBtn.getAttribute('data-family-id');
                 if (familyId) {
-                    setTimeout(() => {
-                        const familyRow = document.querySelector(`tr[data-family-id="${familyId}"]`);
-                        const expandedContent = document.querySelector(`tr[data-family-id="${familyId}"] + tr`);
-                        
-                        if (expandedContent) {
-                            // بررسی آیا عنصر باز شده در دید کاربر هست
-                            const rect = expandedContent.getBoundingClientRect();
-                            const isInViewport = (
-                                rect.top >= 0 &&
-                                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-                            );
-                            
-                            // فقط اگر خارج از دید است، اسکرول کن
-                            if (!isInViewport) {
-                                console.log('اسکرول به محتوای خارج از دید');
-                                familyRow.scrollIntoView({
-                                    behavior: 'smooth',
-                                    block: 'start'
-                                });
-                            } else {
-                                console.log('محتوا داخل دید قرار دارد، اسکرول نیاز نیست');
-                            }
-                        }
-                    }, 500);
+                    scrollToExpandedContent(familyId, 500);
                 }
             }
         });
@@ -546,193 +541,84 @@
             const toast = document.getElementById('toast-notification');
             const toastText = document.getElementById('toast-notification-text');
             
-            // تنظیم متن toast
+            if (!toast || !toastText) return;
+            
             toastText.textContent = params.message;
             
-            // تنظیم رنگ toast بر اساس نوع آن
-            if (params.type === 'success') {
-                toast.classList.add('bg-green-500', 'text-white');
-                toast.classList.remove('bg-red-500');
-            } else if (params.type === 'error') {
-                toast.classList.add('bg-red-500', 'text-white');
-                toast.classList.remove('bg-green-500');
-            }
+            toast.className = 'fixed bottom-4 left-4 flex items-center p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300';
+            toast.classList.add(params.type === 'success' ? 'bg-green-500' : 'bg-red-500', 'text-white');
             
-            // پاک کردن تایمر قبلی اگر وجود داشته باشد
-            if (toastTimeout !== null) {
-                clearTimeout(toastTimeout);
-            }
+            clearTimeout(notificationTimeout);
             
-            // نمایش toast
             toast.classList.remove('hidden');
             toast.classList.add('toast-show');
             
-            // مخفی کردن toast بعد از ۳ ثانیه
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('toast-show');
-                toast.classList.add('toast-hide');
-                
-                // اضافه کردن hidden بعد از پایان انیمیشن
+            notificationTimeout = setTimeout(() => {
+                toast.classList.replace('toast-show', 'toast-hide');
                 setTimeout(() => {
                     toast.classList.add('hidden');
                     toast.classList.remove('toast-hide');
-                }, 300); // زمان انیمیشن
-            }, 3000);
-        });
-        
-        // اسکرول به موقعیت خانواده باز شده
-        Livewire.on('family-expanded', (familyId) => {
-            setTimeout(() => {
-                const familyRow = document.querySelector(`tr[data-family-id="${familyId}"]`);
-                const expandedContent = document.querySelector(`tr[data-family-id="${familyId}"] + tr`);
-                
-                if (expandedContent) {
-                    // بررسی آیا محتوای باز شده در دید کاربر هست
-                    const rect = expandedContent.getBoundingClientRect();
-                    const isInViewport = (
-                        rect.top >= 0 &&
-                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-                    );
-                    
-                    // فقط اگر خارج از دید است، اسکرول کن
-                    if (!isInViewport) {
-                        console.log('اسکرول به محتوای خارج از دید');
-                        familyRow.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    } else {
-                        console.log('محتوا داخل دید قرار دارد، اسکرول نیاز نیست');
-                    }
-                }
+                }, 30);
             }, 300);
         });
         
+        // اسکرول به خانواده باز شده
+        Livewire.on('family-expanded', familyId => {
+            scrollToExpandedContent(familyId);
+        });
+        
+        // کپی متن
         Livewire.on('copy-text', params => {
-            console.log('دریافت متن برای کپی:', params);
+            const text = typeof params === 'object' ? (params.text || String(params)) : String(params);
             
-            // استخراج متن از پارامتر دریافتی - آبجکت است نه رشته
-            let textToCopy = '';
-            
-            if (typeof params === 'object' && params !== null) {
-                // اگر دارای ویژگی text است، از آن استفاده کن
-                if (params.hasOwnProperty('text')) {
-                    textToCopy = params.text;
-                } else {
-                    // استفاده از تبدیل رشته‌ای استاندارد
-                    textToCopy = String(params);
-                }
-            } else {
-                // اگر پارامتر ارسالی مستقیماً رشته یا عدد یا اینهاست، از آن استفاده می‌کنیم
-                textToCopy = String(params);
-            }
-            
-            console.log('متن نهایی برای کپی:', textToCopy);
-            
-            // روش 1: استفاده از Clipboard API
             if (navigator.clipboard) {
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => {
-                        console.log('متن با موفقیت کپی شد:', textToCopy);
-                        showCopyNotification(textToCopy);
-                    })
-                    .catch(err => {
-                        console.error('خطا در کپی متن: ', err);
-                        // استفاده از روش دوم در صورت خطا
-                        fallbackCopyTextToClipboard(textToCopy);
-                    });
+                navigator.clipboard.writeText(text)
+                    .then(() => showCopyNotification(text))
+                    .catch(() => fallbackCopyTextToClipboard(text));
             } else {
-                // استفاده از روش دوم اگر Clipboard API پشتیبانی نشود
-                fallbackCopyTextToClipboard(textToCopy);
+                fallbackCopyTextToClipboard(text);
             }
         });
         
-        // روش جایگزین برای مرورگرهایی که از Clipboard API پشتیبانی نمی‌کنند
         function fallbackCopyTextToClipboard(text) {
-            // ایجاد یک عنصر textarea موقت
             const textarea = document.createElement('textarea');
             textarea.value = text;
-            
-            // تنظیم موقعیت خارج از دید
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            
-            // اضافه کردن به DOM
+            textarea.style.cssText = 'position:fixed;opacity:0';
             document.body.appendChild(textarea);
             
-            // انتخاب متن
             textarea.focus();
             textarea.select();
             
-            // کپی متن
             try {
-                var successful = document.execCommand('copy');
-                if (successful) {
-                    console.log('متن با موفقیت کپی شد (روش جایگزین):', text);
+                if (document.execCommand('copy')) {
                     showCopyNotification(text);
-                } else {
-                    console.error('کپی متن با شکست مواجه شد.');
                 }
-            } catch (err) {
-                console.error('خطا در کپی متن: ', err);
-            }
+            } catch (err) {}
             
-            // حذف عنصر موقت
             document.body.removeChild(textarea);
         }
         
-        // نمایش نوتیفیکیشن کپی
         function showCopyNotification(text) {
             const notification = document.getElementById('copy-notification');
             const notificationText = document.getElementById('copy-notification-text');
             
-            // تنظیم متن نوتیفیکیشن
+            if (!notification || !notificationText) return;
+            
             notificationText.textContent = 'متن با موفقیت کپی شد: ' + text;
             
-            // پاک کردن تایمر قبلی اگر وجود داشته باشد
-            if (notificationTimeout !== null) {
-                clearTimeout(notificationTimeout);
-            }
+            clearTimeout(notificationTimeout);
             
-            // نمایش نوتیفیکیشن
             notification.classList.remove('hidden');
             notification.classList.add('notification-show');
             
-            // مخفی کردن نوتیفیکیشن بعد از ۲ ثانیه
             notificationTimeout = setTimeout(() => {
-                notification.classList.remove('notification-show');
-                notification.classList.add('notification-hide');
-                
-                // اضافه کردن hidden بعد از پایان انیمیشن
+                notification.classList.replace('notification-show', 'notification-hide');
                 setTimeout(() => {
                     notification.classList.add('hidden');
                     notification.classList.remove('notification-hide');
-                }, 300); // زمان انیمیشن
-            }, 2000);
+                }, 20);
+            }, 300);
         }
-        
-        // اسکرول به بالای جدول بعد از تغییر صفحه یا فیلترها
-        Livewire.on('$refresh', () => {
-            setTimeout(() => {
-                const tableElement = document.querySelector('.w-full.overflow-hidden.shadow-sm');
-                if (tableElement) {
-                    // بررسی آیا جدول در دید کاربر هست
-                    const rect = tableElement.getBoundingClientRect();
-                    const isInViewport = (
-                        rect.top >= 0 &&
-                        rect.top <= (window.innerHeight || document.documentElement.clientHeight)
-                    );
-                    
-                    // فقط اگر خارج از دید است، اسکرول کن
-                    if (!isInViewport) {
-                        window.scrollTo({
-                            top: tableElement.offsetTop - 20,
-                            behavior: 'smooth'
-                        });
-                    }
-                }
-            }, 200);
-        });
     });
     </script>
     

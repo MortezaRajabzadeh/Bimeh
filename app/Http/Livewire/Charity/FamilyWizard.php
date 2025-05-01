@@ -40,6 +40,33 @@ class FamilyWizard extends Component
         'mapLocationSelected' => 'handleMapLocation'
     ];
 
+    protected function rules()
+    {
+        return [
+            'region_id' => 'required|string',
+            'postal_code' => 'required|string|size:10',
+            'address' => 'required|string|min:10',
+            'housing_status' => 'required|in:owned,rented,relative,organizational',
+            'housing_description' => 'nullable|string',
+            'family_photo' => 'nullable|image|max:2048',
+        ];
+    }
+
+    protected function messages()
+    {
+        return [
+            'region_id.required' => 'منطقه را وارد کنید',
+            'postal_code.required' => 'کد پستی را وارد کنید',
+            'postal_code.size' => 'کد پستی باید ۱۰ رقم باشد',
+            'address.required' => 'آدرس را وارد کنید',
+            'address.min' => 'آدرس باید حداقل ۱۰ حرف باشد',
+            'housing_status.required' => 'وضعیت مسکن را انتخاب کنید',
+            'housing_status.in' => 'وضعیت مسکن نامعتبر است',
+            'family_photo.image' => 'فایل انتخاب شده باید تصویر باشد',
+            'family_photo.max' => 'حجم تصویر نباید بیشتر از ۲ مگابایت باشد',
+        ];
+    }
+
     public function mount()
     {
         $this->currentStep = 1;
@@ -48,22 +75,24 @@ class FamilyWizard extends Component
 
     public function nextStep()
     {
-        try {
-            if ($this->validateCurrentStep()) {
-                if ($this->currentStep < $this->totalSteps) {
-                    $this->currentStep++;
-                    $this->dispatch('show-toast', [
-                        'type' => 'success',
-                        'message' => 'مرحله با موفقیت تکمیل شد'
-                    ]);
-                }
+        if ($this->currentStep === 1) {
+            if (empty($this->region_id) || empty($this->postal_code) || empty($this->address) || empty($this->housing_status)) {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'لطفاً همه فیلدهای ستاره‌دار را پر کنید'
+                ]);
+                return;
             }
-        } catch (\Exception $e) {
-            session()->flash('error', $e->getMessage());
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'لطفاً خطاهای فرم را برطرف کنید'
-            ]);
+        }
+
+        if ($this->validateCurrentStep()) {
+            if ($this->currentStep < $this->totalSteps) {
+                $this->currentStep++;
+                $this->dispatch('show-toast', [
+                    'type' => 'success',
+                    'message' => 'مرحله با موفقیت تکمیل شد'
+                ]);
+            }
         }
     }
 
@@ -79,46 +108,53 @@ class FamilyWizard extends Component
         switch ($this->currentStep) {
             case 1:
                 if (empty($this->region_id)) {
-                    throw new \Exception('منطقه را وارد کنید');
+                    $this->addError('region_id', 'منطقه را وارد کنید');
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'لطفاً منطقه را وارد کنید'
+                    ]);
+                    return false;
                 }
                 if (empty($this->postal_code)) {
-                    throw new \Exception('کد پستی را وارد کنید');
+                    $this->addError('postal_code', 'کد پستی را وارد کنید');
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'لطفاً کد پستی را وارد کنید'
+                    ]);
+                    return false;
                 }
                 if (empty($this->address)) {
-                    throw new \Exception('آدرس را وارد کنید');
+                    $this->addError('address', 'آدرس را وارد کنید');
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'لطفاً آدرس را وارد کنید'
+                    ]);
+                    return false;
                 }
                 if (empty($this->housing_status)) {
-                    throw new \Exception('وضعیت مسکن را انتخاب کنید');
+                    $this->addError('housing_status', 'وضعیت مسکن را انتخاب کنید');
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'لطفاً وضعیت مسکن را انتخاب کنید'
+                    ]);
+                    return false;
                 }
                 return true;
 
             case 2:
                 if (empty($this->members) || count($this->members) == 0) {
-                    throw new \Exception('حداقل یک عضو خانواده باید ثبت شود');
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'حداقل یک عضو خانواده باید ثبت شود'
+                    ]);
+                    return false;
                 }
-                
                 if (!isset($this->head_member_index)) {
-                    throw new \Exception('سرپرست خانواده را مشخص کنید');
-                }
-
-                foreach ($this->members as $index => $member) {
-                    if (empty($member['first_name'])) {
-                        throw new \Exception("نام عضو خانواده شماره " . ($index + 1) . " را وارد کنید");
-                    }
-                    if (empty($member['last_name'])) {
-                        throw new \Exception("نام خانوادگی عضو خانواده شماره " . ($index + 1) . " را وارد کنید");
-                    }
-                    if (empty($member['national_code'])) {
-                        throw new \Exception("کد ملی عضو خانواده شماره " . ($index + 1) . " را وارد کنید");
-                    }
-                    if (empty($member['relationship'])) {
-                        throw new \Exception("نسبت عضو خانواده شماره " . ($index + 1) . " را مشخص کنید");
-                    }
-                    
-                    // اعتبارسنجی کد ملی
-                    if (!preg_match('/^[0-9]{10}$/', $member['national_code'])) {
-                        throw new \Exception("کد ملی عضو خانواده شماره " . ($index + 1) . " باید ۱۰ رقم باشد");
-                    }
+                    $this->dispatch('show-toast', [
+                        'type' => 'error',
+                        'message' => 'سرپرست خانواده را مشخص کنید'
+                    ]);
+                    return false;
                 }
                 return true;
 
@@ -265,6 +301,7 @@ class FamilyWizard extends Component
         return view('livewire.charity.family-wizard');
     }
 
+    
     public function submit()
     {
         if (!$this->validateCurrentStep()) {

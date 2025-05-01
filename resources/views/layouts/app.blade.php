@@ -11,6 +11,9 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css">
+
         <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
@@ -20,21 +23,33 @@
             .back-button {
                 position: fixed;
                 left: 0;
-                top: 0;
-                bottom: 0;
-                transform: none;
+                top: 50%; /* تغییر موقعیت به وسط صفحه */
+                transform: translateY(-50%); /* سنتر کردن عمودی */
                 background-color: #4ADE80;
                 width: 20px;
-                height: 100vh;
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
+                height: 80%; /* ارتفاع ثابت به جای کل صفحه */
+                border-top-right-radius: 6px; /* گرد کردن گوشه‌ها */
+                border-bottom-right-radius: 6px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
                 transition: all 0.3s ease;
-                z-index: 1000;
+                z-index: 40;
+                margin-right: 16rem;
+            }
+            
+            @media (max-width: 768px) {
+                .back-button {
+                    height: 60px; /* ارتفاع کمتر در موبایل */
+                    margin-right: 0; /* حذف مارجین در موبایل */
+                }
+            }
+            
+            /* حالت منوی بسته */
+            .sidebar-collapsed .back-button {
+                margin-right: 4rem;
             }
             
             .back-button:hover {
@@ -172,5 +187,9 @@
                 }
             });
         </script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/min/moment.min.js"></script>
+        <script type="text/javascript" src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
     </body>
 </html>

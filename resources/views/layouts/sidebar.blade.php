@@ -1,5 +1,5 @@
 <!-- منوی اصلی سایت -->
-<aside id="sidebar" class="fixed top-0 bottom-0 right-0 z-40 h-screen transition-transform lg:translate-x-0 bg-white shadow-lg overflow-y-auto overflow-x-hidden sidebar-collapsed">
+<aside id="sidebar" class="fixed top-0 bottom-0 right-0 z-40 h-screen transition-transform lg:translate-x-0 bg-white shadow-lg sidebar-collapsed">
     <!-- بخش لوگو -->
     <div class="flex items-center justify-center py-3 border-b border-gray-200">
         <div class="logo-container">
@@ -8,7 +8,7 @@
     </div>
 
     <!-- آیتم‌های منو -->
-    <nav class="flex flex-col h-[calc(100vh-150px)] overflow-y-auto py-2 sidebar-scroll">
+    <nav class="flex flex-col flex-grow py-2">
         <a href="{{ route('charity.dashboard') }}" 
            class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('dashboard') ? 'bg-gray-100' : '' }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +26,6 @@
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بیمه شده</span>
-
                 </div>
             </a>
             
@@ -37,7 +36,6 @@
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بدون پوشش</span>
-
                 </div>
             </a>
 
@@ -79,7 +77,7 @@
     </nav>
     
     <!-- منوی پایین (تنظیمات و خروج) -->
-    <div class="border-t border-gray-200 mt-auto">
+    <div class="mt-auto border-t border-gray-200">
         @if(auth()->check() && auth()->user()->user_type === 'charity')
             <a href="{{ route('charity.settings') }}" 
                class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.settings') ? 'bg-gray-100' : '' }}">
@@ -196,35 +194,21 @@
 </script>
 
 <style>
-    /* استایل اسکرول برای منو */
+    /* استایل‌های سایدبار */
     #sidebar {
-        margin-left: 2rem; /* اضافه کردن مارجین به سمت چپ از ابتدا */
         width: 4rem; /* حالت پیش‌فرض بسته */
         transition: width 0.3s ease-in-out;
-    }
-
-    #sidebar nav::-webkit-scrollbar {
-        width: 4px;
-    }
-    
-    #sidebar nav::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    #sidebar nav::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
-        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
     }
     
     /* استایل‌های جدید برای حالت جمع شده */
     #sidebar.sidebar-collapsed {
         width: 4rem; /* 64px */
-        transition: width 0.3s ease-in-out;
     }
     
     #sidebar.sidebar-expanded {
         width: 16rem; /* 256px */
-        transition: width 0.3s ease-in-out;
     }
     
     /* استایل‌های لوگو */
@@ -265,7 +249,7 @@
     }
 
     /* حالت دسکتاپ - تنظیم فضای اصلی با توجه به وضعیت منو */
-    @media (min-width: 1024px) {
+    /* @media (min-width: 1024px) {
         #main-wrapper:not(.sidebar-collapsed) {
             margin-right: 16rem;
             transition: margin 0.3s ease-in-out;
@@ -275,14 +259,14 @@
             margin-right: 4rem;
             transition: margin 0.3s ease-in-out;
         }
-    }
+    } */
     
     /* اصلاح مشکل مارجین در حالت جمع شده و گسترده */
-    #sidebar.sidebar-collapsed ~ #main-wrapper {
+    /* #sidebar.sidebar-collapsed ~ #main-wrapper {
         margin-right: 4rem !important;
     }
     
     #sidebar.sidebar-expanded ~ #main-wrapper {
         margin-right: 16rem !important;
-    }
+    } */
 </style> 

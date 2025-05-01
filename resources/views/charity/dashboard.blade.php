@@ -1,8 +1,7 @@
 <x-app-layout>
-
-
-    <div class="py-6 sm:ml-64">
-    <div class="container mx-auto px-4">            <!-- بخش آمارهای داشبورد -->
+    <div class="py-6">
+        <div class="container mx-auto px-4">
+            <!-- بخش آمارهای داشبورد -->
             <livewire:charity.dashboard-stats />
             
             <!-- فاصله و خط جداکننده بین دو بخش -->

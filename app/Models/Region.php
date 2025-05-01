@@ -21,6 +21,7 @@ class Region extends Model
         'name',
         'city',
         'province',
+        'description',
         'is_active',
     ];
 
@@ -39,7 +40,7 @@ class Region extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'province', 'city', 'is_active'])
+            ->logOnly(['name', 'province', 'city', 'description', 'is_active'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn(string $eventName) => "منطقه {$eventName} شد");
     }

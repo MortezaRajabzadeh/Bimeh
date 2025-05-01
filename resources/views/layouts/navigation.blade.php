@@ -51,14 +51,14 @@
             <!-- پروفایل کاربر و دکمه خروج -->
             <div class="flex items-center">
                 @if(auth()->check())
-                    <span class="text-sm font-medium text-gray-700 ml-2 hidden sm:inline">{{ auth()->user()->name }}</span>
+    
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-500 bg-white border border-red-500 rounded-md hover:bg-red-50 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            <span class="hidden sm:inline">خروج</span>
+                            <span class="sm:inline">خروج</span>
                         </button>
                     </form>
                 @else
@@ -75,6 +75,7 @@
 </nav>
 
 <style>
+
 /* مخفی کردن اسکرول‌بار افقی */
 .hide-scrollbar::-webkit-scrollbar {
     display: none;
