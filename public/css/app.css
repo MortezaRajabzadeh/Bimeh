@@ -1,0 +1,6 @@
+#sidebar.sidebar-expanded .sidebar-text {
+    display: inline-block !important;
+}
+#sidebar.sidebar-expanded .logo-container {
+    display: flex !important;
+} 

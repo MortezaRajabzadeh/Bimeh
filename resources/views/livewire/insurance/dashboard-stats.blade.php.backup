@@ -1,0 +1,551 @@
+@php
+    $geoLabels = $provinceNames ?? ['تهران', 'اصفهان', 'فارس', 'خراسان'];
+    $geoDataMale = $provinceMaleCounts ?? [120, 80, 60, 90];
+    $geoDataFemale = $provinceFemaleCounts ?? [100, 90, 70, 60];
+    $geoDataDeprived = $provinceDeprivedCounts ?? [30, 20, 10, 15];
+@endphp
+<div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">        <!-- کارت افراد تحت پوشش -->        <div class="bg-white p-6 rounded-xl shadow-lg">            <div class="flex items-center justify-between">                <div class="flex-1">                    <div class="text-gray-600 text-sm font-medium mb-2">افراد تحت پوشش</div>                    <div class="text-2xl font-bold text-gray-800">{{ number_format($totalInsured) }}</div>                    <div class="text-sm text-gray-500 mt-1">نفر</div>                </div>                <div class="bg-green-100 p-3 rounded-full">                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>                    </svg>                </div>            </div>        </div>        <!-- کارت خسارات پرداخت شده -->        <div class="bg-white p-6 rounded-xl shadow-lg">            <div class="flex items-center justify-between">                <div class="flex-1">                    <div class="text-gray-600 text-sm font-medium mb-2">خسارات پرداخت شده</div>                    <div class="text-2xl font-bold text-gray-800">{{ number_format($monthlyClaimsData['claims'] ?? 0) }}</div>                    <div class="text-sm text-gray-500 mt-1">تومان</div>                </div>                <div class="bg-orange-100 p-3 rounded-full">                    <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>                    </svg>                </div>            </div>        </div>        <!-- کارت بودجه باقیمانده -->        <div class="bg-white p-6 rounded-xl shadow-lg">            <div class="flex items-center justify-between">                <div class="flex-1">                    <div class="text-gray-600 text-sm font-medium mb-2">بودجه باقیمانده سازمان</div>                    <div class="text-2xl font-bold text-gray-800">{{ number_format(($monthlyClaimsData['premiums'] ?? 0) - ($monthlyClaimsData['claims'] ?? 0)) }}</div>                    <div class="text-sm text-gray-500 mt-1">تومان</div>                </div>                <div class="bg-green-100 p-3 rounded-full">                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>                    </svg>                </div>            </div>        </div>    </div>
+
+        <!-- Gender & Geographic Charts -->    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">        <!-- نمودار جنسیتی -->        <div class="bg-white p-6 rounded-xl shadow-lg">            <div class="text-lg font-semibold text-center mb-1">تفکیک جنسیتی</div>            <div class="text-center text-gray-600 text-sm mb-4">افراد تحت پوشش</div>            <div class="relative flex flex-col items-center justify-center">                <canvas id="genderDonut" width="200" height="200"></canvas>                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">                    <div class="text-gray-500 text-xs">مجموع</div>                    <div class="text-xl font-bold">{{ number_format($totalInsured) }}</div>                    <div class="text-xs text-gray-400">نفر</div>                </div>            </div>            <div class="flex justify-center gap-4 mt-4 text-sm">                <div class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span>مرد</div>                <div class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-green-500"></span>زن</div>            </div>        </div>                <!-- نمودار جغرافیایی -->        <div class="xl:col-span-2 bg-white p-6 rounded-xl shadow-lg">            <div class="mb-4">                <div class="text-lg font-semibold text-gray-800 mb-1">تفکیک جغرافیایی افراد تحت پوشش</div>                <div class="text-gray-600 text-sm">                    میله‌ها: تعداد تحت پوشش در هر استان (تجمیعی زن و مرد)                    <span class="text-red-500 mr-2">• خط منحنی: افراد محروم بیمه‌شده</span>                </div>            </div>            <div class="bg-gray-50 p-4 rounded-lg">                <canvas id="geoBarLineChart" height="280"></canvas>            </div>        </div>    </div>
+
+        <!-- نمودار جریان مالی -->    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">            <div class="mb-4">                <div class="text-lg font-semibold text-gray-800 mb-1">نمودار جریان مالی ساﻻنه</div>                <div class="text-gray-600 text-sm">                    <span class="text-red-500">• آمارها مربوط به افراد بیمه‌شده</span><br>                    میله‌ها: بودجه اختصاص یافته و خسارت پرداختی ماهانه • خط: روند خسارت‌ها                </div>            </div>            <div class="bg-gray-50 p-4 rounded-lg">                <canvas id="financialFlowChart" height="240"></canvas>            </div>        </div>        <div class="bg-white p-6 rounded-xl shadow-lg">            <div class="text-center mb-4">                <div class="text-lg font-semibold text-gray-800">نسبت مالی کلی</div>                <div class="text-sm text-gray-600">تحلیل حق بیمه و خسارات</div>            </div>                        <!-- آمار کلی -->            <div class="grid grid-cols-2 gap-4 mb-4">                <div class="bg-green-50 p-3 rounded-lg text-center">                    <div class="text-xs text-green-600 mb-1">حق بیمه</div>                    <div class="text-lg font-bold text-green-800">{{ $financialRatio['premiumsDisplay'] }}</div>                    <div class="text-xs text-gray-500">میلیون ریال</div>                </div>                <div class="bg-orange-50 p-3 rounded-lg text-center">                    <div class="text-xs text-orange-600 mb-1">خسارات</div>                    <div class="text-lg font-bold text-orange-800">{{ $financialRatio['claimsDisplay'] }}</div>                    <div class="text-xs text-gray-500">میلیون ریال</div>                </div>            </div>                        <!-- نمودار دونات -->            <div class="relative mb-4">                <canvas id="doubleDonut" width="200" height="200"></canvas>                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">                    <div class="text-gray-500 text-xs">مجموع</div>                    <div class="text-xl font-bold">{{ $financialRatio['totalDisplay'] }}</div>                    <div class="text-xs text-gray-400">میلیون ریال</div>                </div>            </div>                        <!-- درصدها -->            <div class="space-y-3">                <div class="flex items-center justify-between">                    <div class="flex items-center gap-2">                        <span class="w-3 h-3 rounded-full bg-green-500"></span>                        <span class="text-sm font-medium">حق بیمه پرداختی</span>                    </div>                    <span class="text-sm font-bold text-green-700">{{ $financialRatio['premiumsPercentage'] }}%</span>                </div>                <div class="flex items-center justify-between">                    <div class="flex items-center gap-2">                        <span class="w-3 h-3 rounded-full bg-orange-500"></span>                        <span class="text-sm font-medium">خسارت پرداختی</span>                    </div>                    <span class="text-sm font-bold text-orange-700">{{ $financialRatio['claimsPercentage'] }}%</span>                </div>                                <!-- نسبت خسارت -->                <div class="border-t pt-2 mt-3">                    <div class="flex items-center justify-between text-xs text-gray-600">                        <span>نسبت خسارت:</span>                        <span class="font-bold {{ $financialRatio['claimsPercentage'] > 40 ? 'text-red-600' : 'text-green-600' }}">                            {{ round($financialRatio['claimsPercentage'], 1) }}%                        </span>                    </div>                    <div class="text-xs text-gray-500 mt-1">                        @if($financialRatio['claimsPercentage'] <= 30)                            <span class="text-green-600">• وضعیت مالی مطلوب</span>                        @elseif($financialRatio['claimsPercentage'] <= 40)                            <span class="text-yellow-600">• وضعیت مالی متوسط</span>                        @else                            <span class="text-red-600">• نیاز به بازنگری</span>                        @endif                    </div>                </div>            </div>        </div>    </div>
+
+        <!-- نمودار جریان خسارات ماهانه -->    <div class="bg-white p-6 rounded-xl shadow-lg mb-8 max-w-7xl mx-auto">        <div class="flex flex-col lg:flex-row gap-8">            <!-- نمودار اصلی -->            <div class="flex-1">                <div class="mb-4">                    <h3 class="text-lg font-bold text-gray-800 mb-2">جریان خسارت‌های پرداختی ماهانه</h3>                    <p class="text-sm text-gray-600">نمایش خسارات پرداختی به تفکیک ماه‌ها (+43%) نسبت به سال گذشته</p>                </div>                <div class="bg-gray-50 p-4 rounded-lg">                    <canvas id="monthlyClaimsFlowChart" height="300"></canvas>                </div>                <!-- Legend -->                <div class="flex justify-center gap-6 mt-4 text-sm">                    <div class="flex items-center gap-2">                        <span class="w-4 h-4 bg-green-500 rounded"></span>                        <span>خسارات پرداختی</span>                    </div>                    <div class="flex items-center gap-2">                        <span class="w-4 h-4 bg-blue-500 rounded"></span>                        <span>روند کلی</span>                    </div>                    <div class="flex items-center gap-2">                        <span class="w-4 h-4 bg-orange-500 rounded"></span>                        <span>میانگین ماهانه</span>                    </div>                </div>            </div>                        <!-- پنل کنترل و نمودار دونات -->            <div class="w-full lg:w-80">                <!-- نمودار نسبت خسارت ماهانه -->                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">                    <div class="text-center mb-4">                        <h4 class="font-semibold text-gray-800 mb-2">نسبت خسارت ماهانه</h4>                        <p class="text-xs text-gray-600">انتخاب ماه برای نمایش جزئیات</p>                    </div>                                        <!-- فیلترها -->                    <div class="space-y-3 mb-4">                        <!-- فیلتر سال -->                        <div>                            <label class="block text-xs font-medium text-gray-700 mb-1">سال:</label>                            <div class="relative">                                <select wire:model.live="selectedYear" class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white">                                    @foreach($jalaliYears as $year)                                        <option value="{{ $year }}">{{ $year }}</option>                                    @endforeach                                </select>                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>                                    </svg>                                </div>                            </div>                        </div>                                                <!-- فیلتر ماه -->                        <div>                            <label class="block text-xs font-medium text-gray-700 mb-1">ماه:</label>                            <div class="relative">                                <select wire:model.live="selectedMonth" class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white">                                    @foreach($jalaliMonths as $monthNum => $monthName)                                        <option value="{{ $monthNum }}">{{ $monthName }}</option>                                    @endforeach                                </select>                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>                                    </svg>                                </div>                            </div>                        </div>                    </div>                                        <!-- نمودار دونات کوچک -->                    <div class="relative mb-4">                        <canvas id="monthlyClaimsChart" width="200" height="200"></canvas>                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">                            <div class="text-xs text-gray-500">{{ $jalaliMonths[$selectedMonth] ?? 'ماه' }}</div>                            <div class="text-sm font-bold">{{ number_format($monthlyClaimsData['total'] ?? 0) }}</div>                            <div class="text-xs text-gray-400">ریال</div>                        </div>                    </div>                                        <!-- آمار کلی -->                    <div class="bg-gray-50 rounded-lg p-3 text-xs">                        <div class="space-y-2">                            <div class="flex justify-between">                                <span>حق بیمه:</span>                                <span class="font-bold text-green-600">{{ number_format($monthlyClaimsData['premiums'] ?? 0) }}</span>                            </div>                            <div class="flex justify-between">                                <span>خسارت:</span>                                <span class="font-bold text-orange-600">{{ number_format($monthlyClaimsData['claims'] ?? 0) }}</span>                            </div>                            <div class="border-t pt-2 flex justify-between font-bold">                                <span>مجموع:</span>                                <span>{{ number_format($monthlyClaimsData['total'] ?? 0) }}</span>                            </div>                        </div>                    </div>                </div>            </div>        </div>    </div>    <!-- نمودار نسبت خسارت پرداختی ماهانه -->    <div class="bg-white p-6 rounded shadow mb-8 max-w-5xl mx-auto" style="display: none;">
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- فیلترها -->
+            <div class="w-full md:w-1/3">
+                <div class="text-green-600 font-bold text-lg mb-4">نسبت خسارت پرداختی ماهانه</div>
+                <div class="text-gray-700 text-sm mb-4">
+                    نمودار بیرونی: حق بیمه پرداختی در ماه<br>
+                    دایره داخلی: خسارت پرداختی مربوط به بیمه‌نامه‌هایی که در این ماه شروع شده‌اند
+                </div>
+                
+                <!-- فیلتر سال -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">انتخاب سال:</label>
+                    <div class="relative">
+                        <select wire:model.live="selectedYear" class="w-full border border-gray-300 rounded-md pr-10 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none bg-white">
+                            @foreach($jalaliYears as $year)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endforeach
+                        </select>
+                        <!-- فلش سفارشی -->
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- فیلتر ماه -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">انتخاب ماه:</label>
+                    <div class="relative">
+                        <select wire:model.live="selectedMonth" class="w-full border border-gray-300 rounded-md pr-10 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none bg-white">
+                            @foreach($jalaliMonths as $monthNum => $monthName)
+                                <option value="{{ $monthNum }}">{{ $monthName }}</option>
+                            @endforeach
+                        </select>
+                        <!-- فلش سفارشی -->
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- آمار کلی -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="text-sm text-gray-600">آمار {{ $jalaliMonths[$selectedMonth] ?? 'ماه انتخابی' }} {{ $selectedYear }}:</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span>حق بیمه:</span>
+                            <span class="font-bold text-green-600">{{ number_format($monthlyClaimsData['premiums']) }} ریال</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>خسارت:</span>
+                            <span class="font-bold text-orange-600">{{ number_format($monthlyClaimsData['claims']) }} ریال</span>
+                        </div>
+                        <div class="border-t pt-2 flex justify-between text-sm font-bold">
+                            <span>مجموع:</span>
+                            <span>{{ number_format($monthlyClaimsData['total']) }} ریال</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- نمودار -->
+            <div class="w-full md:w-2/3 flex flex-col items-center justify-center">
+                <div class="relative">
+                    <canvas id="monthlyClaimsChart" width="300" height="300"></canvas>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                        <div class="text-gray-500 text-sm">{{ $jalaliMonths[$selectedMonth] ?? 'ماه' }}</div>
+                        <div class="text-2xl font-bold">{{ number_format($monthlyClaimsData['total']) }}</div>
+                        <div class="text-xs text-gray-400">ریال</div>
+                    </div>
+                </div>
+                <div class="flex justify-center gap-6 mt-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 rounded-full bg-green-500"></span>
+                        <span>حق بیمه پرداختی</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-4 h-4 rounded-full bg-orange-500"></span>
+                        <span>خسارت پرداختی</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمودار معیارهای پذیرش -->    <div class="bg-white p-6 rounded-xl shadow-lg mb-8">        <div class="mb-6">            <div class="text-lg font-semibold text-gray-800 mb-2">معیارهای پذیرش افراد تحت پوشش</div>            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">                <div class="bg-green-50 p-3 rounded-lg border border-green-200">                    <div class="flex items-center gap-2 mb-2">                        <span class="w-3 h-3 rounded-full bg-green-500"></span>                        <span class="font-semibold text-green-800">معیارهای خانوادگی</span>                    </div>                    <div class="text-green-700 text-xs">                        معیارهایی که به کل خانواده اعمال می‌شوند مانند مادر سرپرست، پدر فوت شده و...                    </div>                </div>                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">                    <div class="flex items-center gap-2 mb-2">                        <span class="w-3 h-3 rounded-full bg-blue-500"></span>                        <span class="font-semibold text-blue-800">معیارهای فردی</span>                    </div>                    <div class="text-blue-700 text-xs">                        معیارهایی که به هر فرد اعمال می‌شوند مانند معلولیت، بیماری خاص و...                    </div>                </div>            </div>        </div>        <div class="bg-gray-50 p-4 rounded-lg">            <canvas id="criteriaBarChart" height="400"></canvas>        </div>        <div class="mt-4 text-xs text-gray-500 text-center">            نمودار بالا نشان‌دهنده تعداد افراد تحت پوشش بر اساس هر معیار پذیرش است        </div>    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Gender Donut Chart
+            const genderCtx = document.getElementById('genderDonut').getContext('2d');
+            new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مرد', 'زن'],
+                    datasets: [{
+                        data: [Number('{{ $maleCount }}'), Number('{{ $femaleCount }}')],
+                        backgroundColor: [
+                            '#3b82f6', // مرد
+                            '#10b981', // زن
+                        ],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + ' نفر';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Geographic Distribution Chart
+            const geoLabels = JSON.parse(`@json($geoLabels)`);
+            const geoDataMale = JSON.parse(`@json($geoDataMale)`);
+            const geoDataFemale = JSON.parse(`@json($geoDataFemale)`);
+            const geoDataDeprived = JSON.parse(`@json($geoDataDeprived)`);
+
+            const ctx = document.getElementById('geoBarLineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: geoLabels,
+                    datasets: [
+                        {
+                            label: 'مرد',
+                            data: geoDataMale,
+                            backgroundColor: '#3b82f6',
+                            stack: 'Stack 0',
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'زن',
+                            data: geoDataFemale,
+                            backgroundColor: '#10b981',
+                            stack: 'Stack 0',
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'افراد محروم بیمه‌شده',
+                            data: geoDataDeprived,
+                            type: 'line',
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244,63,94,0.1)',
+                            fill: false,
+                            tension: 0.4,
+                            yAxisID: 'y',
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f43f5e',
+                            order: 2,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            title: { display: true, text: 'تعداد نفرات' }
+                        }
+                    }
+                }
+            });
+
+            // نمودار جریان مالی (دمو)
+            const months = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+            const budgetData = [40, 50, 35, 60, 70, 55, 80, 65, 75, 90, 85, 60];
+            const lossData = [20, 30, 25, 40, 45, 35, 50, 40, 55, 60, 50, 45];
+            const trendData = [22, 32, 28, 42, 48, 38, 53, 43, 57, 62, 52, 47];
+            const ctx2 = document.getElementById('financialFlowChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'بودجه اختصاص یافته',
+                            data: budgetData,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 6,
+                            barPercentage: 0.22,
+                            categoryPercentage: 0.5,
+                        },
+                        {
+                            label: 'خسارت پرداختی',
+                            data: lossData,
+                            backgroundColor: '#ef4444',
+                            borderRadius: 6,
+                            barPercentage: 0.22,
+                            categoryPercentage: 0.5,
+                        },
+                        {
+                            label: 'روند خسارت',
+                            data: trendData,
+                            type: 'line',
+                            borderColor: '#0ea5e9',
+                            backgroundColor: 'rgba(14,165,233,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: 'y',
+                            pointRadius: 4,
+                            pointBackgroundColor: '#0ea5e9',
+                            order: 2,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: { stacked: false },
+                        y: {
+                            stacked: false,
+                            title: { display: true, text: 'میلیون ریال' }
+                        }
+                    }
+                }
+            });
+
+            // نمودار نسبت مالی کلی با داده‌های واقعی
+            const financialRatio = @json($financialRatio ?? []);
+            const doubleDonutCtx = document.getElementById('doubleDonut').getContext('2d');
+            new Chart(doubleDonutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['حق بیمه پرداختی', 'خسارات پرداختی'],
+                    datasets: [{
+                        data: [
+                            parseFloat(financialRatio.totalPremiums || 7000000000) / 1000000, // تبدیل به میلیون
+                            parseFloat(financialRatio.totalClaims || 3000000000) / 1000000    // تبدیل به میلیون
+                        ],
+                        backgroundColor: [
+                            '#22c55e', // سبز برای حق بیمه
+                            '#f97316', // نارنجی برای خسارت
+                        ],
+                        borderWidth: 6,
+                        borderColor: '#ffffff',
+                        cutout: '65%',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = new Intl.NumberFormat('fa-IR').format(context.parsed);
+                                    const percentage = context.dataIndex === 0 ? 
+                                        financialRatio.premiumsPercentage : 
+                                        financialRatio.claimsPercentage;
+                                    return [
+                                        context.label,
+                                        value + ' میلیون ریال',
+                                        percentage + '%'
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+
+            // نمودار نسبت خسارت پرداختی ماهانه (دونات چندلایه)
+            let monthlyClaimsChart;
+            const createMonthlyClaimsChart = () => {
+                const monthlyClaimsCtx = document.getElementById('monthlyClaimsChart').getContext('2d');
+                const premiums = {{ $monthlyClaimsData['premiums'] ?? 0 }};
+                const claims = {{ $monthlyClaimsData['claims'] ?? 0 }};
+                
+                if (monthlyClaimsChart) {
+                    monthlyClaimsChart.destroy();
+                }
+                
+                monthlyClaimsChart = new Chart(monthlyClaimsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['حق بیمه پرداختی', 'خسارت پرداختی'],
+                        datasets: [{
+                            data: [premiums, claims],
+                            backgroundColor: [
+                                '#22c55e', // سبز برای حق بیمه
+                                '#f97316', // نارنجی برای خسارت
+                            ],
+                            borderWidth: 3,
+                            borderColor: '#ffffff',
+                            cutout: '60%',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = new Intl.NumberFormat('fa-IR').format(context.parsed);
+                                        return context.label + ': ' + value + ' ریال';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+            
+            createMonthlyClaimsChart();
+
+            // نمودار جریان خسارات ماهانه جدید
+            const yearlyClaimsFlow = @json($yearlyClaimsFlow ?? []);
+            const flowLabels = yearlyClaimsFlow.map(item => item.month_name);
+            const flowData = yearlyClaimsFlow.map(item => item.claims / 1000000); // تبدیل به میلیون ریال
+            
+            // محاسبه میانگین و روند
+            const average = flowData.reduce((a, b) => a + b, 0) / flowData.length;
+            const averageData = new Array(flowData.length).fill(average);
+            const trendData = flowData.map((value, index) => {
+                return value + (Math.sin(index * 0.5) * 2); // روند شبیه‌سازی شده
+            });
+            const monthlyClaimsFlowCtx = document.getElementById('monthlyClaimsFlowChart').getContext('2d');
+            new Chart(monthlyClaimsFlowCtx, {
+                type: 'bar',
+                data: {
+                    labels: flowLabels,
+                    datasets: [
+                        {
+                            label: 'خسارات پرداختی',
+                            data: flowData,
+                            backgroundColor: '#22c55e',
+                            borderRadius: 6,
+                            barPercentage: 0.6,
+                        },
+                        {
+                            label: 'روند کلی',
+                            data: trendData,
+                            type: 'line',
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.1)',
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#3b82f6',
+                            order: 1,
+                        },
+                        {
+                            label: 'میانگین ماهانه',
+                            data: averageData,
+                            type: 'line',
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249,115,22,0.1)',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            order: 2,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = new Intl.NumberFormat('fa-IR').format(context.parsed.y);
+                                    return context.dataset.label + ': ' + value + ' میلیون ریال';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: false,
+                            title: { display: true, text: 'ماه/سال' }
+                        },
+                        y: {
+                            stacked: false,
+                            beginAtZero: true,
+                            title: { display: true, text: 'میلیون ریال' }
+                        }
+                    }
+                }
+            });
+
+            // Listen for refresh event from Livewire
+            document.addEventListener('livewire:loaded', function () {
+                Livewire.on('refreshClaimsChart', function () {
+                    setTimeout(() => {
+                        createMonthlyClaimsChart();
+                    }, 100);
+                });
+            });
+
+            // نمودار معیارهای پذیرش بهینه شده
+            const criteriaData = @json($criteriaData ?? []);
+            const criteriaLabels = criteriaData.map(item => item.name);
+            const criteriaCounts = criteriaData.map(item => item.count);
+            const criteriaPercentages = criteriaData.map(item => item.percentage);
+            const criteriaColors = criteriaData.map(item => item.color);
+            const criteriaTypes = criteriaData.map(item => item.type);
+            
+            const ctxCriteria = document.getElementById('criteriaBarChart').getContext('2d');
+            new Chart(ctxCriteria, {
+                type: 'bar',
+                data: {
+                    labels: criteriaLabels,
+                    datasets: [
+                        {
+                            label: 'تعداد افراد',
+                            data: criteriaCounts,
+                            backgroundColor: criteriaColors,
+                            borderRadius: 6,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.8,
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', // horizontal bar chart
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                generateLabels: function(chart) {
+                                    return [
+                                        {
+                                            text: 'معیارهای خانوادگی',
+                                            fillStyle: '#10b981',
+                                            strokeStyle: '#10b981',
+                                            lineWidth: 0,
+                                        },
+                                        {
+                                            text: 'معیارهای فردی',
+                                            fillStyle: '#3b82f6',
+                                            strokeStyle: '#3b82f6',
+                                            lineWidth: 0,
+                                        }
+                                    ];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const count = criteriaCounts[index];
+                                    const percentage = criteriaPercentages[index];
+                                    const type = criteriaTypes[index] === 'family' ? 'خانوادگی' : 'فردی';
+                                    return [
+                                        `تعداد: ${new Intl.NumberFormat('fa-IR').format(count)} نفر`,
+                                        `درصد: ${percentage}%`,
+                                        `نوع: ${type}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'تعداد افراد (نفر)',
+                                font: { size: 12 }
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'معیارهای پذیرش',
+                                font: { size: 12 }
+                            },
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 11 },
+                                maxRotation: 0,
+                                callback: function(value, index) {
+                                    const label = this.getLabelForValue(value);
+                                    return label.length > 20 ? label.substr(0, 18) + '...' : label;
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            right: 10
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</div> 

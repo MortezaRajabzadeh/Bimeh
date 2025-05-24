@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        font-family: 'Vazirmatn', system-ui, sans-serif;
+    }
+}
+
+/* استایل‌های سفارشی برای پروژه */
+
+/* دکمه برگشت به داشبورد */
+.back-button {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: none;
+    background-color: #4ADE80;
+    width: 20px;
+    height: 100vh;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.back-button:hover {
+    background-color: #22C55E;
+    width: 50px;
+}
+
+/* منوی کناری */
+.main-with-normal-sidebar {
+    margin-right: 16rem; /* 64px */
+    transition: margin 0.3s ease-in-out;
+}
+
+.main-with-collapsed-sidebar {
+    margin-right: 4rem; /* 16px */
+    transition: margin 0.3s ease-in-out;
+}
+
+/* مخفی کردن اسکرول‌بار */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* اسکرول‌بار منو */
+.sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 20px;
+}
+
+/* حالت موبایل - منوی مخفی */
+@media (max-width: 1024px) {
+    #sidebar {
+        transform: translateX(-100%);
+    }
+    
+    #sidebar.mobile-open {
+        transform: translateX(0);
+    }
+}
+
+/* استایل‌های کارت‌های داشبورد */
+.dashboard-card {
+    @apply bg-white p-6 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg;
+}
+
+.dashboard-card-green {
+    @apply border-r-4 border-green-500;
+}
+
+.dashboard-card-red {
+    @apply border-r-4 border-red-500;
+}
+
+.dashboard-card-blue {
+    @apply border-r-4 border-blue-500;
+}
+
+/* استایل‌های جدید برای کارت‌های عمودی */
+.dashboard-vertical {
+    @apply p-6 mb-4 rounded-lg;
+}
+
+.dashboard-vertical-title {
+    @apply text-xl font-bold text-gray-800 mb-1;
+}
+
+.dashboard-vertical-info {
+    @apply flex items-center mt-2;
+}
+
+.dashboard-vertical-count {
+    @apply font-bold text-xl mr-1;
+}
+
+/* دکمه‌های اصلی */
+.btn-primary {
+    @apply px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors;
+}
+
+.btn-success {
+    @apply px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors;
+}
+
+.btn-danger {
+    @apply px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors;
+}
+
+/* جلوگیری از هرگونه افکت ورود صفحه از چپ به راست */
+#main-wrapper, .flex.flex-col.min-h-screen, body {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+}
+
+
+
+/* راه حل بهتر: کامپوننت wrapper */
+.select-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.select-wrapper select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding-right: 1rem;
+    padding-left: 2.5rem;
+}
+
+.select-wrapper .dropdown-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #6b7280;
+    width: 1rem;
+    height: 1rem;
+}
+
+/* برای فرم‌های متفاوت */
+.select-sm .dropdown-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    left: 0.5rem;
+}
+
+.select-lg .dropdown-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    left: 1rem;
+}
+
+/* حالت غیرفعال */
+.select-wrapper select:disabled {
+    background-color: #f9fafb;
+    color: #6b7280;
+}
+
+.select-wrapper select:disabled + .dropdown-icon {
+    color: #d1d5db;
+}

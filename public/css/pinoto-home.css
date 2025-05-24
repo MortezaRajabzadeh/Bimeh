@@ -1,0 +1,416 @@
+/* تنظیمات کلی */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    line-height: 1.6;
+    direction: rtl;
+}
+
+.container {
+    max-width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* هدر و لوگو */
+.app-header {
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    background-color: #fff;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    position: relative;
+}
+
+.map-pin {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.pin-outer {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    background-color: #e20613;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    top: 2.5px;
+    left: 2.5px;
+}
+
+.pin-inner {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background-color: white;
+    border-radius: 50%;
+    top: 12.5px;
+    left: 12.5px;
+    z-index: 1;
+}
+
+.brand-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-name {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #e20613;
+    margin: 0;
+}
+
+.tagline {
+    font-size: 0.75rem;
+    color: #003366;
+    font-weight: normal;
+    margin: 0;
+}
+
+/* محتوای اصلی */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 30px;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* دکمه ثبت سفر جدید */
+.add-trip-button {
+    background-color: #ffc107;
+    color: #333;
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.plus-icon {
+    width: 30px;
+    height: 30px;
+    background-color: #333;
+    color: #ffc107;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* تاگل سوییچ */
+.toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.toggle-label {
+    font-size: 1rem;
+    color: #333;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 25px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #003366;
+}
+
+input:checked + .slider:before {
+    transform: translateX(25px);
+}
+
+/* باکس اطلاع رسانی */
+.info-box {
+    border: 1.5px solid #e20613;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: #fff9f9;
+}
+
+.info-icon {
+    min-width: 25px;
+    height: 25px;
+    background-color: #e20613;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.info-text {
+    font-size: 0.85rem;
+    color: #333;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* فوتر و منوی پایین */
+.app-footer {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 5px;
+    border-top: 1.5px solid #f0f0f0;
+    background-color: #fff;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: #777;
+    cursor: pointer;
+    width: 25%;
+    text-align: center;
+}
+
+.nav-item.active {
+    color: #e20613;
+    border-bottom: 2px solid #e20613;
+}
+
+.nav-icon {
+    width: 25px;
+    height: 25px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.home-icon {
+    width: 25px;
+    height: 25px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath d='M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z'/%3E%3C/svg%3E") no-repeat center center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath d='M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z'/%3E%3C/svg%3E") no-repeat center center;
+}
+
+.car-icon {
+    width: 25px;
+    height: 25px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zm-352.06-17.83c7.29-18.22 24.94-30.17 44.57-30.17h127c19.63 0 37.28 11.95 44.57 30.17L384 208H128l19.93-49.83zM96 319.8c-19.2 0-32-12.76-32-31.9S76.8 256 96 256s48 28.71 48 47.85-28.8 15.95-48 15.95zm320 0c-19.2 0-48 3.19-48-15.95S396.8 256 416 256s32 12.76 32 31.9-12.8 31.9-32 31.9z'/%3E%3C/svg%3E") no-repeat center center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zm-352.06-17.83c7.29-18.22 24.94-30.17 44.57-30.17h127c19.63 0 37.28 11.95 44.57 30.17L384 208H128l19.93-49.83zM96 319.8c-19.2 0-32-12.76-32-31.9S76.8 256 96 256s48 28.71 48 47.85-28.8 15.95-48 15.95zm320 0c-19.2 0-48 3.19-48-15.95S396.8 256 416 256s32 12.76 32 31.9-12.8 31.9-32 31.9z'/%3E%3C/svg%3E") no-repeat center center;
+}
+
+.profile-icon {
+    width: 25px;
+    height: 25px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z'/%3E%3C/svg%3E") no-repeat center center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath d='M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z'/%3E%3C/svg%3E") no-repeat center center;
+}
+
+.history-icon {
+    width: 25px;
+    height: 25px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z'/%3E%3C/svg%3E") no-repeat center center;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z'/%3E%3C/svg%3E") no-repeat center center;
+}
+
+.nav-text {
+    font-size: 0.75rem;
+} 
+
+/* اعلان‌ها */
+.alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.alert-error {
+    background-color: #FEECEC;
+    color: #E20613;
+}
+
+.alert-success {
+    background-color: #ECFAEC;
+    color: #28a745;
+}
+
+/* استایل‌های مربوط به کارت‌های وضعیت */
+.status-card {
+    @apply bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+}
+
+.status-card .icon {
+    @apply w-12 h-12 rounded-full flex items-center justify-center mb-4;
+}
+
+.status-card.active {
+    @apply border-2 border-green-500;
+}
+
+.status-card.inactive {
+    @apply border-2 border-red-500;
+}
+
+/* استایل‌های مربوط به دکمه‌ها */
+.action-button {
+    @apply inline-flex items-center px-4 py-2 rounded-md font-semibold text-sm transition-all duration-300;
+}
+
+.action-button.primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+.action-button.success {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-offset-2 focus:ring-green-500;
+}
+
+.action-button.danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500;
+}
+
+/* استایل‌های مربوط به آمار */
+.stats-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8;
+}
+
+.stat-card {
+    @apply bg-white rounded-lg shadow p-6;
+}
+
+.stat-card .title {
+    @apply text-sm font-medium text-gray-500 mb-2;
+}
+
+.stat-card .value {
+    @apply text-3xl font-bold text-gray-900;
+}
+
+/* استایل‌های مربوط به نمودار */
+.chart-container {
+    @apply bg-white rounded-lg shadow-md p-6 mb-8;
+}
+
+.chart-header {
+    @apply flex items-center justify-between mb-4;
+}
+
+.chart-title {
+    @apply text-lg font-semibold text-gray-900;
+}
+
+/* استایل‌های مربوط به جدول */
+.data-table {
+    @apply min-w-full divide-y divide-gray-200;
+}
+
+.data-table th {
+    @apply px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.data-table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+/* استایل‌های مربوط به انیمیشن‌ها */
+.fade-enter {
+    opacity: 0;
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transition: opacity 300ms ease-in;
+}
+
+.fade-exit {
+    opacity: 1;
+}
+
+.fade-exit-active {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+}
+
+/* استایل‌های واکنش‌گرا */
+@media (max-width: 640px) {
+    .stats-grid {
+        @apply grid-cols-1;
+    }
+    
+    .chart-container {
+        @apply overflow-x-auto;
+    }
+} 
