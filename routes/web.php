@@ -58,14 +58,10 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
         return view('admin.settings');
     })->name('settings');
     
-    // مدیریت مناطق
-    Route::middleware('can:manage regions')->get('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'index'])->name('regions.index');
-    Route::middleware('can:manage regions')->get('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'show'])->name('regions.show');
-    Route::middleware('can:manage regions')->get('/regions/create', [\App\Http\Controllers\Admin\RegionController::class, 'create'])->name('regions.create');
-    Route::middleware('can:manage regions')->post('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'store'])->name('regions.store');
-    Route::middleware('can:manage regions')->get('/regions/{region}/edit', [\App\Http\Controllers\Admin\RegionController::class, 'edit'])->name('regions.edit');
-    Route::middleware('can:manage regions')->put('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'update'])->name('regions.update');
-    Route::middleware('can:manage regions')->delete('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'destroy'])->name('regions.destroy');
+    // مدیریت مناطق محروم
+    Route::middleware('can:view advanced reports')->get('/regions', function () {
+        return view('insurance.deprived-areas');
+    })->name('regions.index');
     
     // مدیریت کاربران
     Route::middleware('can:manage users')->get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
