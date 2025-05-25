@@ -1,0 +1,34 @@
+{
+  "platform": "laravel",
+  "app": "microbime",
+  "port": 80,
+  "build": {
+    "buildCommand": "npm run build",
+    "buildLocation": "public/build"
+  },
+  "run": {
+    "scripts": {
+      "build": "./liara_deploy.sh"
+    }
+  },
+  "environments": {
+    "APP_NAME": "میکروبیمه",
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "APP_TIMEZONE": "Asia/Tehran",
+    "APP_URL": "https://microbime.com",
+    "APP_LOCALE": "fa",
+    "APP_FALLBACK_LOCALE": "en",
+    "SESSION_DRIVER": "database",
+    "CACHE_STORE": "database",
+    "QUEUE_CONNECTION": "database",
+    "LOG_CHANNEL": "single",
+    "LOG_LEVEL": "warning",
+    "BROADCAST_CONNECTION": "log"
+  },
+  "healthCheck": {
+    "path": "/health",
+    "interval": 30
+  },
+  "zone": "iran"
+} 

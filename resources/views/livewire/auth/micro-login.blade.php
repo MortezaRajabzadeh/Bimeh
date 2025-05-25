@@ -57,19 +57,12 @@
                     می‌توانید با استفاده از اطلاعات زیر وارد شوید:
                 </div>
                 <div class="mt-1 text-xs text-gray-500">
-                    <div><strong>مدیر سیستم:</strong> admin@example.com / password</div>
-                    <div><strong>خیریه:</strong> charity@example.com / password</div>
-                    <div><strong>بیمه:</strong> insurance@example.com / password</div>
+                    <div><strong>مدیر سیستم:</strong> admin@microbime.com / Admin@123456</div>
+                    <div><strong>خیریه:</strong> charity@microbime.com / Charity@123456</div>
+                    <div><strong>بیمه:</strong> insurance@microbime.com / Insurance@123456</div>
                 </div>
             </div>
-            
-            @if (Route::has('select-user-type'))
-                <div class="mt-4 text-center">
-                    <a href="{{ route('select-user-type') }}" class="text-sm text-gray-600 hover:text-green-600">
-                        بازگشت به انتخاب نوع کاربری
-                    </a>
-                </div>
-            @endif
+        
         </form>
     </div>
 </div>

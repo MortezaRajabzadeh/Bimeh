@@ -1,66 +1,185 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏥 سیستم مدیریت بیمه خرد
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+سیستم جامع مدیریت بیمه‌های خرد برای خیریه‌ها و موسسات حمایتی
 
-## About Laravel
+## 🎯 ویژگی‌های اصلی
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 👥 مدیریت چندسطحه کاربران
+- **ادمین سیستم:** مدیریت کل سیستم
+- **شرکت بیمه:** بررسی و تایید درخواست‌ها
+- **خیریه‌ها:** ثبت خانواده‌ها و مدیریت اعضا
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 📊 قابلیت‌های کلیدی
+- ✅ ثبت و مدیریت خانواده‌های نیازمند
+- ✅ سیستم تایید چندمرحله‌ای
+- ✅ آپلود و پردازش فایل‌های Excel
+- ✅ گزارش‌گیری مالی تفصیلی
+- ✅ مدیریت پرداخت‌ها
+- ✅ سیستم notification
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🔐 امنیت و دسترسی
+- ✅ احراز هویت با OTP
+- ✅ مدیریت نقش‌ها و مجوزها
+- ✅ لاگ تمام فعالیت‌ها
+- ✅ امنیت اطلاعات شخصی
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🛠️ تکنولوژی‌های استفاده شده
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Backend:** Laravel 12
+- **Frontend:** Livewire 3 + Alpine.js
+- **UI:** Tailwind CSS
+- **Database:** MySQL
+- **Queue:** Database Queue
+- **Cache:** Database Cache
+- **Build:** Vite
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📦 پکیج‌های اصلی:
+- `spatie/laravel-permission` - مدیریت دسترسی‌ها
+- `maatwebsite/excel` - پردازش فایل‌های Excel
+- `shetabit/payment` - درگاه پرداخت
+- `pamenary/laravel-sms` - ارسال SMS
+- `longman/telegram-bot` - ربات تلگرام
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🚀 راه‌اندازی
 
-### Premium Partners
+### پیش‌نیازها:
+- PHP 8.2+
+- Composer
+- Node.js & NPM
+- MySQL
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### نصب محلی:
+```bash
+# کلون کردن پروژه
+git clone [repository-url]
+cd microbime
 
-## Contributing
+# نصب dependencies
+composer install
+npm install
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# تنظیم .env
+cp .env.example .env
+php artisan key:generate
 
-## Code of Conduct
+# Database
+php artisan migrate
+php artisan db:seed
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Build assets
+npm run dev
+```
 
-## Security Vulnerabilities
+### Deploy روی Liara:
+مطالعه کنید: [راهنمای Deploy](LIARA_DEPLOYMENT_GUIDE.md)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 📱 صفحات و عملکردها
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 🏢 داشبورد ادمین
+- `/admin/dashboard` - آمار کلی سیستم
+- `/admin/users` - مدیریت کاربران
+- `/admin/organizations` - مدیریت سازمان‌ها
+- `/admin/regions` - مدیریت مناطق
+- `/admin/logs` - لاگ فعالیت‌ها
+
+### 🏦 داشبورد بیمه
+- `/insurance/dashboard` - آمار خانواده‌ها
+- `/insurance/families/approval` - تایید درخواست‌ها
+- `/insurance/financial-report` - گزارش مالی
+- `/insurance/funding-manager` - مدیریت بودجه
+
+### ❤️ داشبورد خیریه
+- `/charity/dashboard` - آمار خیریه
+- `/charity/families` - مدیریت خانواده‌ها
+- `/charity/import` - آپلود Excel
+- `/charity/export-excel` - دانلود گزارش
+
+---
+
+## 🔧 API و نقاط پایانی
+
+### Health Check:
+- `GET /health` - وضعیت سیستم
+
+### Authentication:
+- `POST /login` - احراز هویت با OTP
+- `POST /logout` - خروج از سیستم
+
+---
+
+## 📋 Structure پروژه
+
+```
+├── app/
+│   ├── Http/Controllers/          # کنترلرها
+│   ├── Livewire/                 # کامپوننت‌های Livewire
+│   ├── Models/                   # مدل‌های دیتابیس
+│   ├── Services/                 # سرویس‌ها
+│   └── Http/Middleware/          # Middleware ها
+├── database/
+│   ├── migrations/               # Migration ها
+│   └── seeders/                  # Seeder ها
+├── resources/
+│   ├── views/                    # View ها
+│   └── js/                       # Frontend assets
+└── routes/
+    ├── web.php                   # Route های اصلی
+    └── auth.php                  # Route های احراز هویت
+```
+
+---
+
+## 🎨 UI/UX
+
+### طراحی:
+- ✅ Responsive Design
+- ✅ RTL Support (فارسی)
+- ✅ Dark/Light Mode Ready
+- ✅ Mobile Friendly
+
+### کامپوننت‌ها:
+- فرم‌های پیشرفته با validation
+- جداول قابل جستجو و مرتب‌سازی
+- Modal ها و Dropdown ها
+- Charts و گراف‌ها
+
+---
+
+## 🔍 Testing
+
+```bash
+# اجرای تست‌ها
+php artisan test
+
+# تست‌های مخصوص
+php artisan test --filter=AuthTest
+```
+
+---
+
+## 📞 پشتیبانی
+
+### مستندات:
+- [راهنمای Deploy](LIARA_DEPLOYMENT_GUIDE.md)
+- [راهنمای نقش‌ها و مجوزها](ROLES_PERMISSIONS_GUIDE.md)
+
+### در صورت مشکل:
+1. بررسی logs در `storage/logs/`
+2. چک کردن Health Check: `/health`
+3. مطالعه مستندات Laravel
+
+---
+
+## 📄 مجوز
+
+این پروژه توسط [نام فریلنسر] توسعه یافته و برای استفاده اختصاصی تحویل داده شده است.
+
+---
+
+**🎉 موفق باشید!**

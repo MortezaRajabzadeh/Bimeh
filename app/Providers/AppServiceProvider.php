@@ -12,9 +12,9 @@ use App\Models\Family;
 use App\Models\Member;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
-use App\Http\Livewire\Charity\DashboardStats;
-use App\Http\Livewire\Charity\FamilySearch;
-use App\Http\Livewire\SidebarToggle;
+use App\Livewire\Charity\DashboardStats;
+use App\Livewire\Charity\FamilySearch;
+use App\Livewire\SidebarToggle;
 use App\Livewire\Insurance\DashboardStats as InsuranceDashboardStats;
 
 class AppServiceProvider extends ServiceProvider
@@ -138,6 +138,6 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('insurance.dashboard-stats', InsuranceDashboardStats::class);
         Livewire::component('charity.family-search', FamilySearch::class);
         Livewire::component('sidebar-toggle', SidebarToggle::class);
-        Livewire::component('insurance.paid-claims', \App\Http\Livewire\Insurance\PaidClaims::class);
+        Livewire::component('insurance.paid-claims', \App\Livewire\Insurance\PaidClaims::class);
     }
 }

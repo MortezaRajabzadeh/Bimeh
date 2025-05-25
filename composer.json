@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "microbime/insurance-management",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "سیستم مدیریت بیمه خرد برای خیریه‌ها و سازمان‌های حمایتی",
     "keywords": [
         "laravel",
-        "framework"
+        "insurance",
+        "charity",
+        "microbime",
+        "persian"
     ],
     "license": "MIT",
     "require": {

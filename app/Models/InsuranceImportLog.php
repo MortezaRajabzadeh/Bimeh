@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class InsuranceImportLog extends Model
 {
+    use LogsActivity;
+    
     protected $fillable = [
         'family_id',
         'row_data',
@@ -32,6 +36,17 @@ class InsuranceImportLog extends Model
         'created_family_codes' => 'array',
         'errors' => 'string',
     ];
+
+    /**
+     * تنظیمات لاگ فعالیت
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'total_insurance_amount', 'created_count', 'updated_count', 'error_count'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "ایمپورت بیمه {$eventName} شد");
+    }
 
     public function family()
     {

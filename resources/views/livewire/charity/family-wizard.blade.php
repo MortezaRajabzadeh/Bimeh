@@ -115,7 +115,6 @@
     <!-- اسکریپت‌های جاوااسکریپت -->
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script type="text/javascript" src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
     <script>
         document.addEventListener('livewire:load', function () {

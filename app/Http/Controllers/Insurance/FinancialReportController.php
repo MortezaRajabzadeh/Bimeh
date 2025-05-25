@@ -18,79 +18,101 @@ class FinancialReportController extends Controller
      */
     public function index(Request $request)
     {
-        // دریافت تراکنش‌های بودجه (credit)
-        $fundingTransactions = FundingTransaction::with('source')->orderBy('created_at')->get();
-        // دریافت پرداخت‌های بیمه (debit)
-        $insuranceAllocations = InsuranceAllocation::with(['family.members'])->orderBy('created_at')->get();
+        $perPage = $request->get('per_page', 15);
+        
+        // محاسبه موجودی کل
+        $totalCredit = FundingTransaction::sum('amount');
+        $totalDebit = InsuranceAllocation::sum('amount') + InsuranceImportLog::sum('total_insurance_amount');
+        $balance = $totalCredit - $totalDebit;
 
-        $transactions = [];
-        $balance = 0;
+        // گرفتن همه تراکنش‌ها - ساده و مستقیم
+        $allTransactions = collect();
 
-        // تراکنش‌های بودجه (credit)
+        // 1. تراکنش‌های بودجه
+        $fundingTransactions = FundingTransaction::with('source')->get();
         foreach ($fundingTransactions as $trx) {
-            $transactions[] = [
+            $allTransactions->push([
                 'title' => 'تخصیص بودجه',
                 'amount' => $trx->amount,
                 'type' => 'credit',
-                'date' => jdate($trx->created_at)->format('Y/m/d'),
+                'date' => $trx->created_at,
+                'date_formatted' => jdate($trx->created_at)->format('Y/m/d'),
+                'sort_timestamp' => $trx->created_at->timestamp,
                 'description' => $trx->description,
                 'reference_no' => $trx->reference_no,
                 'details' => $trx->source ? $trx->source->name : null,
-            ];
-            $balance += $trx->amount;
+                'created_family_codes' => [],
+                'updated_family_codes' => [],
+                'members' => collect(),
+                'family' => null,
+            ]);
         }
 
-        // پرداخت‌های بیمه (debit)
+        // 2. پرداخت‌های بیمه
+        $insuranceAllocations = InsuranceAllocation::with(['family.members'])->get();
         foreach ($insuranceAllocations as $alloc) {
-            $family = $alloc->family;
-            $members = $family ? $family->members : collect();
-            $transactions[] = [
+            $allTransactions->push([
                 'title' => 'حق بیمه پرداختی',
                 'amount' => $alloc->amount,
                 'type' => 'debit',
-                'date' => jdate($alloc->created_at)->format('Y/m/d'),
+                'date' => $alloc->created_at,
+                'date_formatted' => jdate($alloc->created_at)->format('Y/m/d'),
+                'sort_timestamp' => $alloc->created_at->timestamp,
                 'description' => $alloc->description,
-                'family' => $family,
-                'members' => $members,
-            ];
-            $balance -= $alloc->amount;
+                'reference_no' => null,
+                'details' => null,
+                'family' => $alloc->family,
+                'members' => $alloc->family ? $alloc->family->members : collect(),
+                'created_family_codes' => [],
+                'updated_family_codes' => [],
+            ]);
         }
 
-        // مرتب‌سازی بر اساس تاریخ (جدیدترین بالا)
-        usort($transactions, function($a, $b) {
-            return strtotime($b['date']) <=> strtotime($a['date']);
-        });
-
-        // اضافه کردن گزارش ایمپورت‌ها به صورت هر لاگ یک تراکنش جداگانه
-        $logs = InsuranceImportLog::with('user')->orderByDesc('created_at')->paginate(20);
-        $totalAmount = InsuranceImportLog::sum('total_insurance_amount');
-
-        // تراکنش‌های ایمپورت اکسل (هر لاگ یک تراکنش جدا)
-        foreach (InsuranceImportLog::orderByDesc('created_at')->get() as $log) {
-            // فقط خانواده‌هایی که موفق یا بروزرسانی شده‌اند
-            $familyCodes = is_array($log->family_codes) ? $log->family_codes : [];
-            $created = is_array($log->created_family_codes ?? null) ? $log->created_family_codes : [];
-            $updated = is_array($log->updated_family_codes ?? null) ? $log->updated_family_codes : [];
-            $validCodes = array_unique(array_merge($created, $updated));
-            // اگر فیلدهای جدا نداری، فقط همه family_codes را نگه دار
-            if (count($validCodes)) {
-                $familyCodes = array_values(array_intersect($familyCodes, $validCodes));
-            }
-            $transactions[] = [
+        // 3. ایمپورت‌های اکسل
+        $importLogs = InsuranceImportLog::get();
+        foreach ($importLogs as $log) {
+            $allTransactions->push([
                 'title' => 'بیمه پرداختی (ایمپورت اکسل)',
                 'amount' => $log->total_insurance_amount,
                 'type' => 'debit',
-                'date' => jdate($log->created_at)->format('Y/m/d'),
+                'date' => $log->created_at,
+                'date_formatted' => jdate($log->created_at)->format('Y/m/d'),
+                'sort_timestamp' => $log->created_at->timestamp,
                 'description' => 'ایمپورت اکسل: ' . ($log->file_name ?? ''),
+                'reference_no' => null,
+                'details' => null,
                 'count_success' => $log->created_count + $log->updated_count,
                 'members' => collect(),
-                'updated_family_codes' => is_array($log->updated_family_codes ?? null) ? $log->updated_family_codes : [],
-                'created_family_codes' => is_array($log->created_family_codes ?? null) ? $log->created_family_codes : [],
-            ];
-            $balance -= $log->total_insurance_amount;
+                'family' => null,
+                'updated_family_codes' => is_array($log->updated_family_codes) ? $log->updated_family_codes : [],
+                'created_family_codes' => is_array($log->created_family_codes) ? $log->created_family_codes : [],
+            ]);
         }
 
-        return view('insurance.financial-report', compact('transactions', 'balance', 'logs', 'totalAmount'));
+        // ساده‌ترین sorting - فقط بر اساس timestamp
+        $sortedTransactions = $allTransactions->sortByDesc('sort_timestamp')->values();
+
+        // Manual pagination
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedTransactions = $sortedTransactions->slice($offset, $perPage);
+        
+        $transactionsPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedTransactions,
+            $sortedTransactions->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'pageName' => 'page',
+            ]
+        );
+
+        // گزارش ایمپورت‌های اکسل
+        $logs = InsuranceImportLog::with('user')->orderByDesc('created_at')->paginate(20, ['*'], 'logs_page');
+        $totalAmount = InsuranceImportLog::sum('total_insurance_amount');
+
+        return view('insurance.financial-report', compact('transactionsPaginated', 'balance', 'logs', 'totalAmount'));
     }
 
     public function importLogs()

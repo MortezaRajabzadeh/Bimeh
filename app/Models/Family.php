@@ -202,6 +202,22 @@ class Family extends Model implements HasMedia
     {
         return $this->insurances()->count();
     }
+    
+    /**
+     * تعداد اعضای بیمه‌دار این خانواده
+     */
+    public function insuredMembersCount()
+    {
+        return $this->members()->where('has_insurance', true)->count();
+    }
+    
+    /**
+     * آیا این خانواده بیمه دارد؟
+     */
+    public function isInsured()
+    {
+        return $this->members()->where('has_insurance', true)->exists();
+    }
 
     /**
      * لیست انواع بیمه‌های این خانواده

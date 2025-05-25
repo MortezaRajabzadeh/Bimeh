@@ -425,14 +425,34 @@ class FamilyWizard extends Component
     }
 
     /**
-     * Generate a unique 12-digit family code
+     * Generate a unique family code
+     * Format: [year][month][day][charity_id][random_6_digits]
      * @return string
      */
     private function generateUniqueFamilyCode(): string
     {
+        $maxAttempts = 100;
+        $attempt = 0;
+        
         do {
-            $code = str_pad(strval(random_int(0, 999999999999)), 12, '0', STR_PAD_LEFT);
-        } while (\App\Models\Family::where('family_code', $code)->exists());
+            $attempt++;
+            
+            // تولید کد بر اساس تاریخ جاری + ID سازمان + شماره تصادفی
+            $year = now()->format('Y');
+            $month = str_pad(now()->format('m'), 2, '0', STR_PAD_LEFT);
+            $day = str_pad(now()->format('d'), 2, '0', STR_PAD_LEFT);
+            $charityId = str_pad(Auth::user()->organization_id ?? 1, 3, '0', STR_PAD_LEFT);
+            $randomSuffix = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            
+            $code = $year . $month . $day . $charityId . $randomSuffix;
+            
+            // اگر بیش از حد تلاش کردیم، یک کد کاملاً تصادفی 15 رقمی تولید کنیم
+            if ($attempt > $maxAttempts) {
+                $code = str_pad(strval(random_int(100000000000000, 999999999999999)), 15, '0', STR_PAD_LEFT);
+            }
+            
+        } while (\App\Models\Family::where('family_code', $code)->exists() && $attempt <= $maxAttempts + 10);
+        
         return $code;
     }
 

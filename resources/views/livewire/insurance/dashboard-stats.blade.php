@@ -1,26 +1,51 @@
 @php
     // استفاده از داده‌های واقعی از کامپوننت 
-    $geoLabels = $this->provinceNames ?? []; 
-    $geoDataMale = $this->provinceMaleCounts ?? [];   
-    $geoDataFemale = $this->provinceFemaleCounts ?? [];  
-    $geoDataDeprived = $this->provinceDeprivedCounts ?? [];
+    $geoLabels = $provinceNames ?? []; 
+    $geoDataMale = $provinceMaleCounts ?? [];   
+    $geoDataFemale = $provinceFemaleCounts ?? [];  
+    $geoDataDeprived = $provinceDeprivedCounts ?? [];
 @endphp
 
 <div>
-    <!-- اضافه کردن فیلترهای سراسری در بالای صفحه -->
+    <!-- خلاصه آمار کلی -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-xl shadow-lg mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+            <div>
+                <div class="text-3xl font-bold">{{ number_format($totalInsured) }}</div>
+                <div class="text-blue-100 text-sm">افراد تحت پوشش</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold">{{ $selectedMonth ? $jalaliMonths[$selectedMonth] : 'کل سال' }} {{ $selectedYear }}</div>
+                <div class="text-blue-100 text-sm">دوره انتخاب شده</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold">{{ number_format($totalOrganizations) }}</div>
+                <div class="text-blue-100 text-sm">سازمان فعال</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold">{{ $financialRatio['totalDisplay'] ?? '0' }}</div>
+                <div class="text-blue-100 text-sm">{{ $financialRatio['unit'] ?? 'میلیون تومان' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فیلترهای داشبورد -->
     <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
-        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="flex-1">
+        <div class="flex flex-col space-y-4">
+            <div>
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">فیلترهای داشبورد</h3>
-                <p class="text-sm text-gray-600">انتخاب سال و ماه برای نمایش داده‌های مربوطه در تمام نمودارها</p>
+                <p class="text-sm text-gray-600">انتخاب دوره زمانی و سازمان برای نمایش داده‌های مربوطه</p>
             </div>
             
-            <div class="flex gap-4">
+            <!-- فیلترها -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- فیلتر سال -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">سال:</label>
                     <div class="relative">
-                        <select wire:model.live="selectedYear" class="border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]" style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                        <select wire:model.live="selectedYear" 
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             @foreach($jalaliYears as $year)
                                 <option value="{{ $year }}">{{ $year }}</option>
                             @endforeach
@@ -37,7 +62,10 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">ماه:</label>
                     <div class="relative">
-                        <select wire:model.live="selectedMonth" class="border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[140px]" style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                        <select wire:model.live="selectedMonth" 
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="">کل سال</option>
                             @foreach($jalaliMonths as $monthNum => $monthName)
                                 <option value="{{ $monthNum }}">{{ $monthName }}</option>
                             @endforeach
@@ -49,12 +77,59 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- فیلتر سازمان -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">سازمان:</label>
+                    <div class="relative">
+                        <select wire:model.live="selectedOrganization" 
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="">همه سازمان‌ها</option>
+                            @foreach($organizations as $org)
+                                <option value="{{ $org->id }}">{{ $org->name }} ({{ $org->type === 'charity' ? 'خیریه' : 'بیمه' }})</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه ریست -->
+                <div class="flex items-end">
+                    <button wire:click="resetFilters" class="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors duration-200">
+                        <svg class="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        ریست فیلترها
+                    </button>
+                </div>
+            </div>
+
+            <!-- نمایش فیلترهای فعال -->
+            <div class="flex flex-wrap gap-2 mt-2">
+                @if($selectedMonth)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {{ $jalaliMonths[$selectedMonth] ?? 'ماه انتخابی' }}
+                        <button wire:click="$set('selectedMonth', '')" class="mr-1 text-blue-600 hover:text-blue-800">×</button>
+                    </span>
+                @endif
+
+                @if($selectedOrganization)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {{ $organizations->find($selectedOrganization)->name ?? 'سازمان انتخابی' }}
+                        <button wire:click="$set('selectedOrganization', '')" class="mr-1 text-purple-600 hover:text-purple-800">×</button>
+                    </span>
+                @endif
             </div>
         </div>
     </div>
 
     <!-- Top Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <!-- کارت افراد تحت پوشش -->
         <div class="bg-white p-6 rounded-xl shadow-lg">
             <div class="flex items-center justify-between">
@@ -87,17 +162,33 @@
             </div>
         </div>
 
+        <!-- کارت بودجه کل -->
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="text-gray-600 text-sm font-medium mb-2">بودجه تخصیص یافته</div>
+                    <div class="text-2xl font-bold text-gray-800">{{ number_format($financialRatio['budget'] ?? 0) }}</div>
+                    <div class="text-sm text-gray-500 mt-1">ریال</div>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-full">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
         <!-- کارت بودجه باقیمانده -->
         <div class="bg-white p-6 rounded-xl shadow-lg">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
-                    <div class="text-gray-600 text-sm font-medium mb-2">بودجه باقیمانده سازمان</div>
-                    <div class="text-2xl font-bold text-gray-800">{{ number_format(($monthlyClaimsData['premiums'] ?? 0) - ($monthlyClaimsData['claims'] ?? 0)) }}</div>
+                    <div class="text-gray-600 text-sm font-medium mb-2">بودجه باقیمانده</div>
+                    <div class="text-2xl font-bold text-gray-800">{{ number_format(($financialRatio['budget'] ?? 0) - ($monthlyClaimsData['premiums'] ?? 0) - ($monthlyClaimsData['claims'] ?? 0)) }}</div>
                     <div class="text-sm text-gray-500 mt-1">ریال</div>
                 </div>
                 <div class="bg-green-100 p-3 rounded-full">
                     <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
             </div>
@@ -112,7 +203,7 @@
             <div class="text-center text-gray-600 text-sm mb-4">افراد تحت پوشش</div>
             <div class="relative flex flex-col items-center justify-center">
                 <canvas id="genderDonut" width="200" height="200"></canvas>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                     <div class="text-gray-500 text-xs">مجموع</div>
                     <div class="text-xl font-bold">{{ number_format($totalInsured) }}</div>
                     <div class="text-xs text-gray-400">نفر</div>
@@ -134,7 +225,7 @@
                 <div class="text-lg font-semibold text-gray-800 mb-1">تفکیک جغرافیایی افراد تحت پوشش</div>
                 <div class="text-gray-600 text-sm">
                     میله‌ها: تعداد تحت پوشش در هر استان (تجمیعی زن و مرد)
-                    <span class="text-red-500 mr-2">• خط منحنی: افراد محروم بیمه‌شده</span>
+                    <span class="text-red-500 mr-2">• خط منحنی: افراد محروم</span>
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg">
@@ -149,8 +240,8 @@
             <div class="mb-4">
                 <div class="text-lg font-semibold text-gray-800 mb-1">نمودار جریان مالی ساﻻنه</div>
                 <div class="text-gray-600 text-sm">
-                    <span class="text-red-500">• آمارها مربوط به افراد بیمه‌شده</span><br>
-                    میله‌ها: بودجه اختصاص یافته و خسارت پرداختی ماهانه • خط: روند خسارت‌ها
+                    <span class="text-red-500">• آمارها مربوط به افراد انتخاب شده</span><br>
+                    میله‌ها: بودجه اختصاص یافته و خسارت پرداختی ماهانه • خط: روند کلی
                 </div>
             </div>
             <div class="bg-gray-50 p-4 rounded-lg">
@@ -181,7 +272,7 @@
             <!-- نمودار دونات -->
             <div class="relative mb-4">
                 <canvas id="doubleDonut" width="200" height="200"></canvas>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                     <div class="text-gray-500 text-xs">مجموع</div>
                     <div class="text-xl font-bold">{{ $financialRatio['totalDisplay'] }}</div>
                     <div class="text-xs text-gray-400">{{ $financialRatio['unit'] }}</div>
@@ -227,14 +318,14 @@
         </div>
     </div>
 
-    <!-- نمودار جریان خسارات ماهانه -->
+        <!-- نمودار جریان خسارات ماهانه -->
     <div class="bg-white p-6 rounded-xl shadow-lg mb-8 max-w-7xl mx-auto">
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- نمودار اصلی -->
             <div class="flex-1">
                 <div class="mb-4">
                     <h3 class="text-lg font-bold text-gray-800 mb-2">جریان خسارت‌های پرداختی ماهانه</h3>
-                    <p class="text-sm text-gray-600">نمایش خسارات پرداختی به تفکیک ماه‌ها (+43%) نسبت به سال گذشته</p>
+                    <p class="text-sm text-gray-600">نمایش خسارات پرداختی به تفکیک ماه‌ها بر اساس فیلترهای انتخابی</p>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <canvas id="monthlyClaimsFlowChart" height="300"></canvas>
@@ -247,66 +338,31 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="w-4 h-4 bg-blue-500 rounded"></span>
-                        <span>روند کلی</span>
+                        <span>حق بیمه</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="w-4 h-4 bg-orange-500 rounded"></span>
-                        <span>میانگین ماهانه</span>
+                        <span class="w-4 h-4 bg-purple-500 rounded"></span>
+                        <span>بودجه</span>
                     </div>
                 </div>
             </div>
 
-            <!-- پنل کنترل و نمودار دونات -->
+            <!-- پنل کنترل -->
             <div class="w-full lg:w-80">
                 <!-- نمودار نسبت خسارت ماهانه -->
                 <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
                     <div class="text-center mb-4">
-                        <h4 class="font-semibold text-gray-800 mb-2">نسبت خسارت ماهانه</h4>
-                        <p class="text-xs text-gray-600">انتخاب ماه برای نمایش جزئیات</p>
-                    </div>
-
-                    <!-- فیلترها -->
-                    <div class="space-y-3 mb-4">
-                        <!-- فیلتر سال -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">سال:</label>
-                            <div class="relative">
-                                <select wire:model.live="selectedYear" class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                    @foreach($jalaliYears as $year)
-                                        <option value="{{ $year }}">{{ $year }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- فیلتر ماه -->
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">ماه:</label>
-                            <div class="relative">
-                                <select wire:model.live="selectedMonth" class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                    @foreach($jalaliMonths as $monthNum => $monthName)
-                                        <option value="{{ $monthNum }}">{{ $monthName }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
+                        <h4 class="font-semibold text-gray-800 mb-2">نسبت خسارت انتخابی</h4>
+                        <p class="text-xs text-gray-600">بر اساس فیلترهای فعال</p>
                     </div>
 
                     <!-- نمودار دونات کوچک -->
                     <div class="relative mb-4">
                         <canvas id="monthlyClaimsChart" width="200" height="200"></canvas>
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                            <div class="text-xs text-gray-500">{{ $jalaliMonths[$selectedMonth] ?? 'ماه' }}</div>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                            <div class="text-xs text-gray-500">
+                                {{ $selectedMonth ? $jalaliMonths[$selectedMonth] : 'کل سال' }} {{ $selectedYear }}
+                            </div>
                             <div class="text-sm font-bold">{{ number_format($monthlyClaimsData['total'] ?? 0) }}</div>
                             <div class="text-xs text-gray-400">ریال</div>
                         </div>
@@ -315,6 +371,10 @@
                     <!-- آمار کلی -->
                     <div class="bg-gray-50 rounded-lg p-3 text-xs">
                         <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>بودجه:</span>
+                                <span class="font-bold text-purple-600">{{ number_format($monthlyClaimsData['budget'] ?? 0) }}</span>
+                            </div>
                             <div class="flex justify-between">
                                 <span>حق بیمه:</span>
                                 <span class="font-bold text-green-600">{{ number_format($monthlyClaimsData['premiums'] ?? 0) }}</span>
@@ -345,7 +405,7 @@
                         <span class="font-semibold text-green-800">معیارهای خانوادگی</span>
                     </div>
                     <div class="text-green-700 text-xs">
-                        معیارهایی که به کل خانواده اعمال می‌شوند مانند مادر سرپرست، پدر فوت شده و...
+                        معیارهایی که به کل خانواده اعمال می‌شوند مانند محرومیت، سرپرستی زن و...
                     </div>
                 </div>
                 <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -360,216 +420,48 @@
             </div>
         </div>
         <div class="bg-gray-50 p-4 rounded-lg">
-            <canvas id="criteriaBarChart" height="400"></canvas>
+            <canvas id="criteriaBarChart" height="300"></canvas>
         </div>
-        <div class="mt-4 text-xs text-gray-500 text-center">
-            نمودار بالا نشان‌دهنده تعداد افراد تحت پوشش بر اساس هر معیار پذیرش است
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            @foreach($criteriaData as $criteria)
+                <div class="bg-white p-3 rounded-lg border border-gray-200 text-center">
+                    <div class="flex items-center justify-center gap-2 mb-2">
+                        <span class="w-3 h-3 rounded-full {{ $criteria['color'] === '#ef4444' ? 'bg-red-500' : ($criteria['color'] === '#3b82f6' ? 'bg-blue-500' : ($criteria['color'] === '#10b981' ? 'bg-green-500' : 'bg-purple-500')) }}"></span>
+                        <span class="font-semibold text-gray-800 text-sm">{{ $criteria['percentage'] }}%</span>
+                    </div>
+                    <div class="text-xs text-gray-600 mb-1">{{ $criteria['name'] }}</div>
+                    <div class="text-lg font-bold text-gray-800">{{ number_format($criteria['count']) }}</div>
+                    <div class="text-xs text-gray-500">{{ $criteria['type'] === 'family' ? 'خانوار' : 'نفر' }}</div>
+                </div>
+            @endforeach
         </div>
     </div>
 
+    <!-- Loading indicator -->
+    <div wire:loading class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div class="text-gray-600">در حال بارگذاری...</div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // متغیرهای سراسری برای نگهداری چارت‌ها
-        let genderChart, geoChart, financialChart, monthlyChart, criteriaChart, doubleDonutChart;
-        
-        // تابع برای حفظ تنظیمات پیش‌فرض چارت‌ها
-        function getDefaultChartOptions() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 750,
-                    easing: 'easeInOutQuart'
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 15,
-                            font: {
-                                family: 'IRANSans, Tahoma, Arial, sans-serif',
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: '#ddd',
-                        borderWidth: 1,
-                        cornerRadius: 6,
-                        displayColors: true
-                    }
-                }
-            };
-        }
-        
-        // تابع برای ایجاد نمودار جنسیتی
-        function createGenderChart() {
-            const ctx = document.getElementById('genderDonut');
-            if (!ctx) return;
-            
-            if (genderChart) {
-                genderChart.destroy();
-            }
-            
-            genderChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['مرد', 'زن'],
-                    datasets: [{
-                        data: [Number('{{ $maleCount }}'), Number('{{ $femaleCount }}')],
-                        backgroundColor: ['#3b82f6', '#10b981'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    ...getDefaultChartOptions(),
-                    cutout: '70%',
-                    plugins: {
-                        ...getDefaultChartOptions().plugins,
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-        }
-        
-        // تابع برای ایجاد نمودار جغرافیایی
-        function createGeoChart() {
-            const ctx = document.getElementById('geoBarLineChart');
-            if (!ctx) return;
-            
-            if (geoChart) {
-                geoChart.destroy();
-            }
-            
-            // const geoLabels = @json($geoLabels);
-            // const geoDataMale = @json($geoDataMale);
-            // const geoDataFemale = @json($geoDataFemale);
-            // const geoDataDeprived = @json($geoDataDeprived);
-            
-            geoChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: geoLabels,
-                    datasets: [
-                        {
-                            label: 'مرد',
-                            data: geoDataMale,
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 4,
-                            stack: 'combined'
-                        },
-                        {
-                            label: 'زن',
-                            data: geoDataFemale,
-                            backgroundColor: '#10b981',
-                            borderRadius: 4,
-                            stack: 'combined'
-                        },
-                        {
-                            label: 'افراد محروم',
-                            data: geoDataDeprived,
-                            type: 'line',
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#ef4444',
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    ...getDefaultChartOptions(),
-                    scales: {
-                        x: {
-                            stacked: true,
-                            title: { display: true, text: 'استان‌ها' }
-                        },
-                        y: {
-                            stacked: true,
-                            beginAtZero: true,
-                            title: { display: true, text: 'تعداد افراد' }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            beginAtZero: true,
-                            title: { display: true, text: 'افراد محروم' },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // تابع برای ایجاد سایر چارت‌ها
-        function createFinancialChart() {
-            // ... کد مشابه برای نمودار مالی ...
-        }
-        
-        function createMonthlyChart() {
-            // ... کد مشابه برای نمودار ماهانه ...
-        }
-        
-        function createCriteriaChart() {
-            // ... کد مشابه برای نمودار معیارها ...
-        }
-        
-        function createDoubleDonutChart() {
-            // ... کد مشابه برای نمودار دونات دوگانه ...
-        }
-        
-        // تابع اصلی برای ایجاد تمام چارت‌ها
-        function initializeAllCharts() {
-            createGenderChart();
-            createGeoChart();
-            createFinancialChart();
-            createMonthlyChart();
-            createCriteriaChart();
-            createDoubleDonutChart();
-        }
-        
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeAllCharts();
-        });
-        
-        // Livewire event listeners
-        document.addEventListener('livewire:initialized', function() {
-            Livewire.on('refreshAllCharts', function() {
-                setTimeout(() => {
-                    initializeAllCharts();
-                }, 100);
-            });
-        });
-        
-        // برای سازگاری با نسخه‌های قدیمی Livewire
-        document.addEventListener('livewire:load', function() {
-            Livewire.on('refreshAllCharts', function() {
-                setTimeout(() => {
-                    initializeAllCharts();
-                }, 100);
-            });
-        });
-        
-        // رفرش چارت‌ها هنگام آپدیت کامپوننت
-        document.addEventListener('livewire:updated', function() {
-            setTimeout(() => {
-                initializeAllCharts();
-            }, 50);
-        });
+    <script src="{{ asset('js/dashboard-charts.js') }}"></script>
+    
+    <!-- داده‌های چارت برای JavaScript -->
+    <script type="application/json" id="chart-data">
+        {!! json_encode([
+            'geoLabels' => $provinceNames ?? [],
+            'geoDataMale' => $provinceMaleCounts ?? [],
+            'geoDataFemale' => $provinceFemaleCounts ?? [],
+            'geoDataDeprived' => $provinceDeprivedCounts ?? [],
+            'criteriaData' => $criteriaData ?? [],
+            'monthlyData' => $monthlyClaimsData ?? [],
+            'yearlyData' => $yearlyClaimsFlow ?? [],
+            'financialData' => $financialRatio ?? [],
+            'maleCount' => $maleCount ?? 0,
+            'femaleCount' => $femaleCount ?? 0
+        ]) !!}
     </script>
 </div>

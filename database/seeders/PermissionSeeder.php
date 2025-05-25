@@ -18,63 +18,75 @@ class PermissionSeeder extends Seeder
         $charityRole = Role::firstOrCreate(['name' => 'charity']);
         $insuranceRole = Role::firstOrCreate(['name' => 'insurance']);
 
-        // تعریف دسترسی‌های سازمان‌ها
-        $organizationPermissions = [
-            'view organizations',
-            'create organization',
-            'edit organization',
-            'delete organization',
+        // تعریف دسترسی‌های مدیریت سیستم (فقط ادمین)
+        $adminPermissions = [
+            'manage users',
+            'manage organizations', 
+            'manage roles',
+            'manage permissions',
+            'view system logs',
+            'manage system settings',
+            'view all statistics',
+            'manage regions',
+            'backup system',
+            'restore system',
         ];
 
-        // تعریف دسترسی‌های مناطق
-        $regionPermissions = [
-            'view regions',
-            'create region',
-            'edit region',
-            'delete region',
-        ];
-
-        // تعریف دسترسی‌های کاربران
-        $userPermissions = [
-            'view users',
-            'create user',
-            'edit user',
-            'delete user',
+        // تعریف دسترسی‌های مشترک
+        $commonPermissions = [
+            'view dashboard',
+            'view profile',
+            'edit profile',
         ];
 
         // تعریف دسترسی‌های خانواده‌ها
         $familyPermissions = [
-            'view families',
-            'create family',
-            'edit family',
-            'delete family',
-            'change family status',
-            'verify family',
+            'view own families',      // مشاهده خانواده‌های خودی
+            'view all families',      // مشاهده همه خانواده‌ها (ادمین + بیمه)
+            'create family',          // ایجاد خانواده (خیریه + ادمین)
+            'edit own family',        // ویرایش خانواده خودی
+            'edit any family',        // ویرایش هر خانواده (ادمین)
+            'delete own family',      // حذف خانواده خودی
+            'delete any family',      // حذف هر خانواده (ادمین)
+            'change family status',   // تغییر وضعیت خانواده (بیمه + ادمین)
+            'verify family',          // تایید خانواده (بیمه + ادمین)
+            'reject family',          // رد خانواده (بیمه + ادمین)
         ];
 
         // تعریف دسترسی‌های اعضای خانواده
         $memberPermissions = [
-            'view members',
-            'create member',
-            'edit member',
-            'delete member',
+            'view family members',
+            'add family member',
+            'edit family member',
+            'remove family member',
         ];
 
         // تعریف دسترسی‌های گزارش‌ها
         $reportPermissions = [
-            'view reports',
-            'export reports',
+            'view basic reports',     // گزارش‌های پایه (خیریه)
+            'view advanced reports',  // گزارش‌های پیشرفته (بیمه + ادمین)
+            'export reports',         // خروجی گرفتن از گزارش‌ها
+            'view financial reports', // گزارش‌های مالی (ادمین)
+        ];
+
+        // تعریف دسترسی‌های بیمه
+        $insurancePermissions = [
+            'manage insurance policies',
+            'process claims',
+            'approve claims',
+            'reject claims',
+            'view claims history',
+            'calculate premiums',
         ];
 
         // تجمیع همه دسترسی‌ها
         $allPermissions = array_merge(
-            $organizationPermissions,
-            $regionPermissions,
-            $userPermissions,
+            $adminPermissions,
+            $commonPermissions,
             $familyPermissions,
             $memberPermissions,
             $reportPermissions,
-            ['view dashboard', 'view activity logs']
+            $insurancePermissions
         );
 
         // ایجاد دسترسی‌ها
@@ -82,32 +94,45 @@ class PermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // اختصاص دسترسی‌ها به ادمین
+        // پاک کردن تمام دسترسی‌های قبلی
+        $adminRole->permissions()->detach();
+        $charityRole->permissions()->detach();
+        $insuranceRole->permissions()->detach();
+
+        // اختصاص دسترسی‌ها به ادمین (همه دسترسی‌ها)
         $adminRole->givePermissionTo($allPermissions);
 
         // اختصاص دسترسی‌ها به کاربر خیریه
-        $charityRole->givePermissionTo([
-            'view families',
+        $charityPermissions = array_merge($commonPermissions, [
+            'view own families',
             'create family',
-            'edit family',
-            'view members',
-            'create member',
-            'edit member',
-            'delete member',
-            'view regions',
-            'view dashboard',
-        ]);
-
-        // اختصاص دسترسی‌ها به کاربر بیمه
-        $insuranceRole->givePermissionTo([
-            'view families',
-            'change family status',
-            'verify family',
-            'view members',
-            'view regions',
-            'view dashboard',
-            'view reports',
+            'edit own family',
+            'delete own family',
+            'view family members',
+            'add family member',
+            'edit family member',
+            'remove family member',
+            'view basic reports',
             'export reports',
         ]);
+        $charityRole->givePermissionTo($charityPermissions);
+
+        // اختصاص دسترسی‌ها به کاربر بیمه  
+        $insurancePermissionsList = array_merge($commonPermissions, [
+            'view all families',
+            'change family status',
+            'verify family',
+            'reject family',
+            'view family members',
+            'view advanced reports',
+            'export reports',
+            'manage insurance policies',
+            'process claims',
+            'approve claims',
+            'reject claims',
+            'view claims history',
+            'calculate premiums',
+        ]);
+        $insuranceRole->givePermissionTo($insurancePermissionsList);
     }
 }

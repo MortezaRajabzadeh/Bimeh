@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,30 +11,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed users for each role
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'user_type' => 'admin',
-            'username' => 'admin',
-        ]);
-        User::factory()->create([
-            'name' => 'Charity User',
-            'email' => 'charity@example.com',
-            'user_type' => 'charity',
-            'username' => 'charity',
-        ]);
-        User::factory()->create([
-            'name' => 'Insurance User',
-            'email' => 'insurance@example.com',
-            'user_type' => 'insurance',
-            'username' => 'insurance',
-        ]);
-
+        // ترتیب اجرای seeders مهم است
         $this->call([
+            // ابتدا permissions و roles
             PermissionSeeder::class,
             RoleSeeder::class,
+            
+            // سپس seeders مربوط به کاربران و سازمان‌ها
             AssignRolePermissionSeeder::class,
         ]);
+        
+        $this->command->info('✅ همه seeders با موفقیت اجرا شدند.');
+        $this->command->info('💡 برای ایجاد کاربران پیش‌فرض، دستور زیر را اجرا کنید:');
+        $this->command->info('php artisan users:create-defaults');
     }
 } 

@@ -14,7 +14,7 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
-        Gate::authorize('view activity logs');
+        Gate::authorize('view system logs');
         
         $query = Activity::with('causer');
         
@@ -52,7 +52,7 @@ class ActivityLogController extends Controller
      */
     public function show(Activity $activity)
     {
-        Gate::authorize('view activity logs');
+        Gate::authorize('view system logs');
         
         return view('admin.logs.show', compact('activity'));
     }

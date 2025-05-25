@@ -17,8 +17,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        
+@vite(['resources/css/app.css', 'resources/js/app.js'])        
         <style>
             .back-button {
                 position: fixed;

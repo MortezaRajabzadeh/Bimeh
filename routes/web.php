@@ -8,6 +8,15 @@ use App\Livewire\Auth\UserTypeSelection;
 use App\Livewire\Auth\MicroLogin;
 use App\Http\Middleware\CheckUserType;
 
+// Health Check Route for Liara
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toISOString(),
+        'app' => config('app.name'),
+        'version' => '1.0.0'
+    ]);
+})->name('health');
 
 // مسیرهای عمومی
 Route::get('/', MicroLogin::class)->name('admin.login');
@@ -40,142 +49,139 @@ Route::middleware('auth')->group(function () {
 
 // مسیرهای ادمین سیستم
 Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
+    Route::middleware('can:view dashboard')->get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard');
     
     // تنظیمات سیستم
-    Route::get('/settings', function () {
+    Route::middleware('can:manage system settings')->get('/settings', function () {
         return view('admin.settings');
     })->name('settings');
     
     // مدیریت مناطق
-    Route::middleware('can:view regions')->get('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'index'])->name('regions.index');
-    Route::middleware('can:view regions')->get('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'show'])->name('regions.show');
-    Route::middleware('can:create region')->get('/regions/create', [\App\Http\Controllers\Admin\RegionController::class, 'create'])->name('regions.create');
-    Route::middleware('can:create region')->post('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'store'])->name('regions.store');
-    Route::middleware('can:edit region')->get('/regions/{region}/edit', [\App\Http\Controllers\Admin\RegionController::class, 'edit'])->name('regions.edit');
-    Route::middleware('can:edit region')->put('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'update'])->name('regions.update');
-    Route::middleware('can:delete region')->delete('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'destroy'])->name('regions.destroy');
+    Route::middleware('can:manage regions')->get('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'index'])->name('regions.index');
+    Route::middleware('can:manage regions')->get('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'show'])->name('regions.show');
+    Route::middleware('can:manage regions')->get('/regions/create', [\App\Http\Controllers\Admin\RegionController::class, 'create'])->name('regions.create');
+    Route::middleware('can:manage regions')->post('/regions', [\App\Http\Controllers\Admin\RegionController::class, 'store'])->name('regions.store');
+    Route::middleware('can:manage regions')->get('/regions/{region}/edit', [\App\Http\Controllers\Admin\RegionController::class, 'edit'])->name('regions.edit');
+    Route::middleware('can:manage regions')->put('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'update'])->name('regions.update');
+    Route::middleware('can:manage regions')->delete('/regions/{region}', [\App\Http\Controllers\Admin\RegionController::class, 'destroy'])->name('regions.destroy');
     
     // مدیریت کاربران
-    Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
-    Route::middleware('can:view users')->get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
-    Route::middleware('can:create user')->get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('users.create');
-    Route::middleware('can:create user')->post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
-    Route::middleware('can:edit user')->get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
-    Route::middleware('can:edit user')->put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
-    Route::middleware('can:delete user')->delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
-    Route::middleware('can:delete user')->delete('/users', [\App\Http\Controllers\Admin\UserController::class, 'bulkDestroy'])->name('users.bulk-destroy');
+    Route::middleware('can:manage users')->get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::middleware('can:manage users')->get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
+    Route::middleware('can:manage users')->get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('users.create');
+    Route::middleware('can:manage users')->post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
+    Route::middleware('can:manage users')->get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
+    Route::middleware('can:manage users')->put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+    Route::middleware('can:manage users')->delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
+    Route::middleware('can:manage users')->delete('/users', [\App\Http\Controllers\Admin\UserController::class, 'bulkDestroy'])->name('users.bulk-destroy');
     
     // گزارش‌ها
-    Route::middleware('can:view reports')->get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::middleware('can:view all statistics')->get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
     Route::middleware('can:export reports')->get('/reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');
     
     // لاگ فعالیت‌ها
-    Route::middleware('can:view activity logs')->get('/logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('logs.index');
-    Route::middleware('can:view activity logs')->get('/logs/{activity}', [\App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('logs.show');
+    Route::middleware('can:view system logs')->get('/logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('logs.index');
+    Route::middleware('can:view system logs')->get('/logs/{activity}', [\App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('logs.show');
     
-    // Organizations routes
-    Route::resource('organizations', \App\Http\Controllers\Admin\OrganizationController::class);
-    Route::delete('organizations', [\App\Http\Controllers\Admin\OrganizationController::class, 'bulkDestroy'])->name('organizations.bulk-destroy');
+    // مدیریت سازمان‌ها
+    Route::middleware('can:manage organizations')->resource('organizations', \App\Http\Controllers\Admin\OrganizationController::class);
+    Route::middleware('can:manage organizations')->delete('organizations', [\App\Http\Controllers\Admin\OrganizationController::class, 'bulkDestroy'])->name('organizations.bulk-destroy');
     
-    // Access levels routes
-    Route::resource('access-levels', \App\Http\Controllers\Admin\AccessLevelController::class);
+    // مدیریت سطوح دسترسی
+    Route::middleware('can:manage roles')->resource('access-levels', \App\Http\Controllers\Admin\AccessLevelController::class);
 });
 
 // مسیرهای خیریه
 Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix('charity')->name('charity.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\Charity\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/insured-families', [App\Http\Controllers\Charity\DashboardController::class, 'insuredFamilies'])->name('insured-families');
-    Route::get('/uninsured-families', [App\Http\Controllers\Charity\DashboardController::class, 'uninsuredFamilies'])->name('uninsured-families');
-    Route::get('/add-family', [App\Http\Controllers\Charity\DashboardController::class, 'addFamily'])->name('add-family');
+    Route::middleware('can:view dashboard')->get('/dashboard', [App\Http\Controllers\Charity\DashboardController::class, 'index'])->name('dashboard');
+    Route::middleware('can:view own families')->get('/insured-families', [App\Http\Controllers\Charity\DashboardController::class, 'insuredFamilies'])->name('insured-families');
+    Route::middleware('can:view own families')->get('/uninsured-families', [App\Http\Controllers\Charity\DashboardController::class, 'uninsuredFamilies'])->name('uninsured-families');
+    Route::middleware('can:create family')->get('/add-family', [App\Http\Controllers\Charity\DashboardController::class, 'addFamily'])->name('add-family');
     
-    // جستجوی خانواده‌ها - استفاده می‌شد قبل از طراحی لایوویر
-    Route::get('/search', [App\Http\Controllers\Charity\FamilyController::class, 'search'])->name('search');
+    // جستجوی خانواده‌ها
+    Route::middleware('can:view own families')->get('/search', [App\Http\Controllers\Charity\FamilyController::class, 'search'])->name('search');
     
     // مدیریت خانواده‌ها
-    Route::middleware('can:view families')->get('/families', [\App\Http\Controllers\Charity\FamilyController::class, 'index'])->name('families.index');
-    Route::middleware('can:view families')->get('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'show'])->name('families.show');
+    Route::middleware('can:view own families')->get('/families', [\App\Http\Controllers\Charity\FamilyController::class, 'index'])->name('families.index');
+    Route::middleware('can:view own families')->get('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'show'])->name('families.show');
     Route::middleware('can:create family')->get('/families/create', [\App\Http\Controllers\Charity\FamilyController::class, 'create'])->name('families.create');
     Route::middleware('can:create family')->post('/families', [\App\Http\Controllers\Charity\FamilyController::class, 'store'])->name('families.store');
-    Route::middleware('can:edit family')->get('/families/{family}/edit', [\App\Http\Controllers\Charity\FamilyController::class, 'edit'])->name('families.edit');
-    Route::middleware('can:edit family')->put('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'update'])->name('families.update');
-    Route::middleware('can:delete family')->delete('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'destroy'])->name('families.destroy');
+    Route::middleware('can:edit own family')->get('/families/{family}/edit', [\App\Http\Controllers\Charity\FamilyController::class, 'edit'])->name('families.edit');
+    Route::middleware('can:edit own family')->put('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'update'])->name('families.update');
+    Route::middleware('can:delete own family')->delete('/families/{family}', [\App\Http\Controllers\Charity\FamilyController::class, 'destroy'])->name('families.destroy');
     
     // مدیریت اعضای خانواده
-    Route::middleware('can:view members')->get('/families/{family}/members', [\App\Http\Controllers\Charity\MemberController::class, 'index'])->name('families.members.index');
-    Route::middleware('can:create member')->get('/families/{family}/members/create', [\App\Http\Controllers\Charity\MemberController::class, 'create'])->name('families.members.create');
-    Route::middleware('can:create member')->post('/families/{family}/members', [\App\Http\Controllers\Charity\MemberController::class, 'store'])->name('families.members.store');
-    Route::middleware('can:edit member')->get('/families/{family}/members/{member}/edit', [\App\Http\Controllers\Charity\MemberController::class, 'edit'])->name('families.members.edit');
-    Route::middleware('can:edit member')->put('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'update'])->name('families.members.update');
-    Route::middleware('can:delete member')->delete('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'destroy'])->name('families.members.destroy');
+    Route::middleware('can:view family members')->get('/families/{family}/members', [\App\Http\Controllers\Charity\MemberController::class, 'index'])->name('families.members.index');
+    Route::middleware('can:add family member')->get('/families/{family}/members/create', [\App\Http\Controllers\Charity\MemberController::class, 'create'])->name('families.members.create');
+    Route::middleware('can:add family member')->post('/families/{family}/members', [\App\Http\Controllers\Charity\MemberController::class, 'store'])->name('families.members.store');
+    Route::middleware('can:edit family member')->get('/families/{family}/members/{member}/edit', [\App\Http\Controllers\Charity\MemberController::class, 'edit'])->name('families.members.edit');
+    Route::middleware('can:edit family member')->put('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'update'])->name('families.members.update');
+    Route::middleware('can:remove family member')->delete('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'destroy'])->name('families.members.destroy');
     
     // آپلود اکسل خانواده‌ها
     Route::middleware('can:create family')->get('/import', [\App\Http\Controllers\Charity\ImportController::class, 'index'])->name('import.index');
     Route::middleware('can:create family')->post('/import', [\App\Http\Controllers\Charity\ImportController::class, 'import'])->name('import.store');
     Route::middleware('can:create family')->get('/import/template', [\App\Http\Controllers\Charity\ImportController::class, 'downloadTemplate'])->name('import.template');
 
-    Route::get('/export-excel', [App\Http\Controllers\Charity\FamilyController::class, 'exportExcel'])->name('export-excel');
+    Route::middleware('can:export reports')->get('/export-excel', [App\Http\Controllers\Charity\FamilyController::class, 'exportExcel'])->name('export-excel');
 
-    Route::get('/settings', function () {
+    Route::middleware('can:view profile')->get('/settings', function () {
         return view('charity.settings');
     })->name('settings');
 });
 
 // مسیرهای بیمه
 Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->prefix('insurance')->name('insurance.')->group(function () {
-    Route::get('/dashboard', function () {
+    Route::middleware('can:view dashboard')->get('/dashboard', function () {
         return view('insurance.dashboard');
     })->name('dashboard');
-    Route::get('/deprived-areas', function () {
+    
+    Route::middleware('can:view advanced reports')->get('/deprived-areas', function () {
         return view('insurance.deprived-areas');
     })->name('deprived-areas');
+    
     Route::redirect('/families', '/insurance/families/approval');
-    Route::middleware('can:view families')->get('/families/list', [\App\Http\Controllers\Insurance\FamilyController::class, 'listByCodes'])->name('families.list');
+    Route::middleware('can:view all families')->get('/families/list', [\App\Http\Controllers\Insurance\FamilyController::class, 'listByCodes'])->name('families.list');
 
-    Route::middleware('can:view families')->get('/families/approval', function () {
+    Route::middleware('can:view all families')->get('/families/approval', function () {
         return view('insurance.families-approval');
     })->name('families.approval');
 
-    Route::middleware('can:view families')->get('/families/{family}', [\App\Http\Controllers\Insurance\FamilyController::class, 'show'])->name('families.show');
+    Route::middleware('can:view all families')->get('/families/{family}', [\App\Http\Controllers\Insurance\FamilyController::class, 'show'])->name('families.show');
     Route::middleware('can:change family status')->put('/families/{family}/status', [\App\Http\Controllers\Insurance\FamilyController::class, 'updateStatus'])->name('families.update-status');
-    // تایید خانواده‌ها (Livewire)
     
     // گزارش‌ها
-    Route::middleware('can:view reports')->get('/reports', [\App\Http\Controllers\Insurance\ReportController::class, 'index'])->name('reports.index');
+    Route::middleware('can:view advanced reports')->get('/reports', [\App\Http\Controllers\Insurance\ReportController::class, 'index'])->name('reports.index');
     Route::middleware('can:export reports')->get('/reports/export', [\App\Http\Controllers\Insurance\ReportController::class, 'export'])->name('reports.export');
 
-    Route::get('/settings', function () {
+    Route::middleware('can:view profile')->get('/settings', function () {
         return view('insurance.settings');
     })->name('settings');
    
-    Route::get('/paid-claims', function () {
+    Route::middleware('can:view claims history')->get('/paid-claims', function () {
         return view('insurance.paid-claims');
     })->name('paid-claims');
 
-    Route::get('/funding-manager', function () {
+    Route::middleware('can:manage insurance policies')->get('/funding-manager', function () {
         return view('insurance.funding-manager');
     })->name('funding-manager');
 
-    Route::get('/insured-families', function () {
+    Route::middleware('can:view all families')->get('/insured-families', function () {
         return view('insurance.insured-families');
     })->name('insured-families');
 
-    Route::get('/uninsured-families', function () {
+    Route::middleware('can:view all families')->get('/uninsured-families', function () {
         return view('insurance.uninsured-families');
     })->name('uninsured-families');
 
     // گزارش مالی
-    Route::get('/financial-report', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'index'])->name('financial-report');
+    Route::middleware('can:view advanced reports')->get('/financial-report', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'index'])->name('financial-report');
 
 });
 
 // مسیرهای سازمان
-
-// مسیرهای تست برای بررسی مدل یوزر
-Route::get('/test/user-model', [App\Http\Controllers\TestController::class, 'testUserModel'])->name('test.user-model');
-Route::get('/test/admin-permissions', [App\Http\Controllers\TestController::class, 'testAdminPermissions'])->name('test.admin-permissions');
 
 
 require __DIR__.'/auth.php';

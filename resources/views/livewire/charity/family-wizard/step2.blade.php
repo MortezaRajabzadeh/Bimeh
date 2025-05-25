@@ -52,9 +52,10 @@
                                value="{{ $index }}"
                                class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500">
                     </div>
-                    <div class="w-32">
+                    <div class="w-32 relative">
                         <select wire:model="members.{{ $index }}.relationship"
-                                class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white @error('members.'.$index.'.relationship') border-red-300 @enderror">
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 @error('members.'.$index.'.relationship') border-red-300 @enderror">
                             <option value="">عضو خانواده</option>
                             <option value="spouse">همسر</option>
                             <option value="child">فرزند</option>
@@ -62,6 +63,12 @@
                             <option value="sibling">خواهر/برادر</option>
                             <option value="other">سایر</option>
                         </select>
+                        <!-- آیکون کشویی -->
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
                         @error('members.'.$index.'.relationship') 
                             <div class="absolute mt-1 text-red-500 text-xs bg-white p-1 rounded shadow-sm border border-red-100">
                                 {{ $message }}

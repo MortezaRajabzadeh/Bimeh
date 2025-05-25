@@ -1,130 +1,448 @@
 <x-app-layout>
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">گزارش مالی</h2>
-    <div class="overflow-x-auto rounded-2xl shadow-lg bg-white border border-gray-100">
-        <table class="min-w-full table-fixed text-center" dir="rtl">
-            <colgroup>
-                <col style="width:33.33%" />
-                <col style="width:33.33%" />
-                <col style="width:33.33%" />
-            </colgroup>
-            <thead>
-                <tr class="bg-gray-400 text-white text-lg font-bold">
-                    <th class="px-6 py-4 text-center align-middle">عنوان تراکنش</th>
-                    <th class="px-6 py-4 text-center align-middle">تاریخ</th>
-                    <th class="px-6 py-4 text-center align-middle">مبلغ</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($transactions as $idx => $t)
-                    <tbody x-data="{ open: false }" class="transition-all duration-300">
-                        <tr @click="open = !open"
-                            class="cursor-pointer text-lg {{ $t['type'] === 'credit' ? 'bg-green-100' : 'bg-red-100' }}">
-                            <td class="px-6 py-4 text-center font-bold relative">
-                                @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
-                                    <button @click.stop="open = !open"
-                                            type="button"
-                                            class="absolute right-2 top-1/2 -translate-y-1/2 bg-pink-200 rounded-full p-1 focus:outline-none transition-transform"
-                                            :class="open ? 'rotate-180' : ''">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none"
-                                             viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M19 9l-7 7-7-7"/>
-                                        </svg>
-                                    </button>
-                                @endif
-                                {{ $t['title'] }}
-                            </td>
-                            <td class="px-6 py-4 text-center">{{ $t['date'] }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="{{ $t['type'] === 'credit' ? 'text-green-700' : 'text-red-700' }}">
-                                    {{ $t['type'] === 'credit' ? '+' : '-' }}
-                                    {{ number_format($t['amount']) }} ریال
-                                </span>
-                            </td>
-                        </tr>
+    <div class="container mx-auto px-4 py-6">
+        <!-- عنوان اصلی -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    گزارش مالی بیمه
+                </h2>
+                <p class="text-sm text-gray-600 mt-1">مشاهده کلیه تراکنش‌های مالی و موجودی حساب</p>
+            </div>
+            
+            <!-- کارت خلاصه مالی -->
+            <div class="px-6 py-4">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                            </div>
+                            <div class="mr-4">
+                                <p class="text-sm font-medium text-gray-700">موجودی حساب</p>
+                                <p class="text-2xl font-bold text-gray-900">{{ number_format($balance) }} <span class="text-sm font-normal text-gray-600">ریال</span></p>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs text-gray-500">وضعیت مالی</p>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                {{ $balance > 0 ? 'مثبت' : 'منفی' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
-                        <tr x-show="open" x-transition x-cloak class="bg-red-50">
-                            <td colspan="3" class="text-center px-6 py-6 align-middle text-base text-gray-700">
-                            @php
-                                $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
-                            @endphp
-                            @if(count($allCodes))
-                                پرداخت حق بیمه برای {{ count($allCodes) }} خانواده به مبلغ {{ number_format($t['amount']) }} ریال
-                                <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}" class="text-blue-600 underline ml-2" target="_blank">(مشاهده بیمه‌شدگان)</a>
+        <!-- جدول تراکنش‌ها -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        لیست تراکنش‌ها
+                    </h3>
+                    <div class="bg-blue-100 px-3 py-1 rounded-full">
+                        <span class="text-sm font-medium text-blue-800">
+                            مجموع: {{ $transactionsPaginated->total() }} تراکنش
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    شرح تراکنش
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    تاریخ
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    مبلغ
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    نوع
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($transactionsPaginated as $idx => $t)
+                                <tbody x-data="{ open: false }" class="divide-y divide-gray-200">
+                                    <tr class="hover:bg-gray-50 transition-colors duration-200 
+                                        {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                                                    <button @click="open = !open"
+                                                            type="button"
+                                                            class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                                                            :class="open ? 'rotate-180' : ''">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                        </svg>
+                                                    </button>
+                                                @endif
+                                                <div>
+                                                    <div class="text-sm font-medium text-gray-900">{{ $t['title'] }}</div>
+                                                    <div class="text-xs text-gray-500">تراکنش #{{ $transactionsPaginated->firstItem() + $idx }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ $t['date_formatted'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ jdate($t['date'])->format('H:i') }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium {{ $t['type'] === 'credit' ? 'text-green-700' : 'text-red-700' }}">
+                                                {{ $t['type'] === 'credit' ? '+' : '-' }}
+                                                {{ number_format($t['amount']) }} ریال
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {{ $t['type'] === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                <span class="w-1.5 h-1.5 ml-1 rounded-full {{ $t['type'] === 'credit' ? 'bg-green-400' : 'bg-red-400' }}"></span>
+                                                {{ $t['type'] === 'credit' ? 'واریز' : 'برداشت' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
+                                            x-transition:enter-start="opacity-0 transform scale-95" 
+                                            x-transition:enter-end="opacity-100 transform scale-100" 
+                                            x-cloak class="bg-blue-50">
+                                            <td colspan="4" class="px-6 py-4">
+                                                @php
+                                                    $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
+                                                @endphp
+                                                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                                    <div class="flex items-start justify-between">
+                                                        <div>
+                                                            <h4 class="text-sm font-medium text-gray-900 mb-2">جزئیات پرداخت</h4>
+                                                            @if(count($allCodes))
+                                                                <p class="text-sm text-gray-700 mb-3">
+                                                                    پرداخت حق بیمه برای <span class="font-semibold text-blue-600">{{ count($allCodes) }}</span> خانواده 
+                                                                    به مبلغ <span class="font-semibold text-green-600">{{ number_format($t['amount']) }} ریال</span>
+                                                                </p>
+                                                                <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}" 
+                                                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200" 
+                                                                   target="_blank">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                    مشاهده لیست خانواده‌ها
+                                                                </a>
+                                                            @else
+                                                                <p class="text-sm text-gray-700">پرداخت حق بیمه</p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <p class="text-gray-500 text-sm">هیچ تراکنشی ثبت نشده است</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination تراکنش‌ها -->
+            @if($transactionsPaginated->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center justify-between">
+                        <!-- تعداد نمایش - سمت راست -->
+                        <div class="flex items-center order-1 mr-auto">
+                            <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
+                            <div class="relative">
+                                <form method="GET" action="{{ request()->url() }}" class="inline">
+                                    @foreach(request()->except(['per_page', 'page']) as $key => $value)
+                                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                                    @endforeach
+                                    <select name="per_page" onchange="this.form.submit()" class="h-9 w-20 border border-gray-300 rounded-md pr-8 pl-3 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 text-center appearance-none" style="-webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: none;">
+                                        <option value="10" {{ request('per_page', 15) == 10 ? 'selected' : '' }}>10</option>
+                                        <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15</option>
+                                        <option value="20" {{ request('per_page', 15) == 20 ? 'selected' : '' }}>20</option>
+                                        <option value="30" {{ request('per_page', 15) == 30 ? 'selected' : '' }}>30</option>
+                                        <option value="50" {{ request('per_page', 15) == 50 ? 'selected' : '' }}>50</option>
+                                    </select>
+                                </form>
+                                <!-- آیکون dropdown -->
+                                <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- شماره صفحات - وسط (چپ به راست) -->
+                        <div class="flex items-center justify-center order-2 flex-grow mx-4" dir="ltr">
+                            @if(!$transactionsPaginated->onFirstPage())
+                                <a href="{{ $transactionsPaginated->previousPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ‹
+                                </a>
                             @else
-                                پرداخت حق بیمه
+                                <span class="text-gray-400 opacity-50 cursor-not-allowed bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ‹
+                                </span>
                             @endif
-                            </td>
-                        </tr>
-                        @endif
-                    </tbody>
-                @empty
-                    <tr>
-                        <td colspan="3" class="text-center py-4 text-gray-500">هیچ تراکنشی ثبت نشده است.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-            <tfoot>
-                <tr class="bg-gray-200 text-xl font-bold text-gray-800">
-                    <td colspan="2" style="width:50%" class="px-6 py-4 text-center align-middle">بودجه باقی‌مانده:</td>
-                    <td class="px-6 py-4 text-center align-middle">{{ number_format($balance) }} ریال</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-    <div class="my-8">
-        <h2 class="text-xl font-bold text-center mb-4">گزارش ایمپورت‌های اکسل بیمه</h2>
-        <div class="mb-4 text-center">
-            <span class="font-bold">مجموع کل مبلغ بیمه‌های ثبت‌شده:</span>
-            <span class="text-green-700">{{ number_format($totalAmount) }} ریال</span>
+                            
+                            <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300 mx-1">
+                                @php
+                                    $start = max($transactionsPaginated->currentPage() - 2, 1);
+                                    $end = min($start + 4, $transactionsPaginated->lastPage());
+                                    if ($end - $start < 4 && $start > 1) {
+                                        $start = max(1, $end - 4);
+                                    }
+                                @endphp
+                                
+                                @if($start > 1)
+                                    <a href="{{ $transactionsPaginated->url(1) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">1</a>
+                                    @if($start > 2)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                @endif
+                                
+                                @for($i = $start; $i <= $end; $i++)
+                                    @if($transactionsPaginated->currentPage() == $i)
+                                        <span class="bg-green-100 text-green-800 font-medium h-full px-3 inline-flex items-center justify-center text-sm">
+                                            {{ $i }}
+                                        </span>
+                                    @else
+                                        <a href="{{ $transactionsPaginated->url($i) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">
+                                            {{ $i }}
+                                        </a>
+                                    @endif
+                                @endfor
+                                
+                                @if($end < $transactionsPaginated->lastPage())
+                                    @if($end < $transactionsPaginated->lastPage() - 1)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                    <a href="{{ $transactionsPaginated->url($transactionsPaginated->lastPage()) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">{{ $transactionsPaginated->lastPage() }}</a>
+                                @endif
+                            </div>
+                            
+                            @if($transactionsPaginated->hasMorePages())
+                                <a href="{{ $transactionsPaginated->nextPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ›
+                                </a>
+                            @else
+                                <span class="text-gray-400 opacity-50 cursor-not-allowed bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ›
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- شمارنده - سمت چپ -->
+                        <div class="text-sm text-gray-600 order-3 ml-auto">
+                            نمایش {{ $transactionsPaginated->firstItem() }} تا {{ $transactionsPaginated->lastItem() }} از {{ $transactionsPaginated->total() }} تراکنش
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
-        <div class="overflow-x-auto">
-    <table class="min-w-full bg-white rounded shadow border table-fixed">
-        <thead class="bg-gray-200">
-            <tr>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">تاریخ</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">کاربر</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">نام فایل</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">کل ردیف</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">جدید</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">بروزرسانی</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">بدون تغییر</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">خطا</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">مجموع مبلغ</th>
-                <th class="w-1/10 px-3 py-2 text-center align-middle">خانواده‌ها</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($logs as $log)
-            <tr class="border-b hover:bg-gray-50">
-                <td class="w-1/10 px-3 py-2 text-center align-middle">{{ jdate($log->created_at)->format('Y/m/d') }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle">{{ $log->user->name ?? '-' }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle">{{ $log->file_name }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle">{{ $log->total_rows }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle text-green-700">{{ $log->created_count }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle text-blue-700">{{ $log->updated_count }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle text-gray-500">{{ $log->skipped_count }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle text-red-700">{{ $log->error_count }}</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle">{{ number_format($log->total_insurance_amount) }} ریال</td>
-                <td class="w-1/10 px-3 py-2 text-center align-middle">
-                    @if($log->family_codes && is_array($log->family_codes))
-                        <span class="text-xs">{{ implode(', ', $log->family_codes) }}</span>
-                    @else
-                        -
-                    @endif
-                </td>
-            </tr>
-            @empty
-            <tr><td colspan="10" class="text-center py-4 text-gray-400">گزارشی ثبت نشده است.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
-        <div class="mt-4">
-            {{ $logs->links() }}
+
+        <!-- گزارش ایمپورت‌های اکسل -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        گزارش ایمپورت فایل‌های اکسل
+                    </h3>
+                    <div class="bg-green-100 px-3 py-1 rounded-full">
+                        <span class="text-sm font-medium text-green-800">
+                            مجموع: {{ number_format($totalAmount) }} ریال
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاریخ</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کاربر</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نام فایل</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کل ردیف</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">جدید</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">بروزرسانی</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">بدون تغییر</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خطا</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مبلغ</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خانواده‌ها</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($logs as $log)
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ jdate($log->created_at)->format('Y/m/d') }}
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ $log->user->name ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900 font-medium">{{ $log->file_name }}</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {{ $log->total_rows }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            {{ $log->created_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ $log->updated_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            {{ $log->skipped_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            {{ $log->error_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ number_format($log->total_insurance_amount) }} ریال
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-500">
+                                        @if($log->family_codes && is_array($log->family_codes))
+                                            <div class="max-w-xs overflow-hidden">
+                                                <span class="text-xs">{{ implode(', ', array_slice($log->family_codes, 0, 3)) }}</span>
+                                                @if(count($log->family_codes) > 3)
+                                                    <span class="text-xs text-gray-400">... و {{ count($log->family_codes) - 3 }} مورد دیگر</span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <p class="text-gray-500 text-sm">هیچ گزارش ایمپورتی ثبت نشده است</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination ایمپورت لاگ‌ها -->
+            @if($logs->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <div class="flex flex-wrap items-center justify-between">
+                        <!-- شماره صفحات - وسط (چپ به راست) -->
+                        <div class="flex items-center justify-center flex-grow" dir="ltr">
+                            @if(!$logs->onFirstPage())
+                                <a href="{{ $logs->previousPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ‹
+                                </a>
+                            @else
+                                <span class="text-gray-400 opacity-50 cursor-not-allowed bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ‹
+                                </span>
+                            @endif
+                            
+                            <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300 mx-1">
+                                @php
+                                    $start = max($logs->currentPage() - 2, 1);
+                                    $end = min($start + 4, $logs->lastPage());
+                                    if ($end - $start < 4 && $start > 1) {
+                                        $start = max(1, $end - 4);
+                                    }
+                                @endphp
+                                
+                                @if($start > 1)
+                                    <a href="{{ $logs->url(1) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">1</a>
+                                    @if($start > 2)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                @endif
+                                
+                                @for($i = $start; $i <= $end; $i++)
+                                    @if($logs->currentPage() == $i)
+                                        <span class="bg-green-100 text-green-800 font-medium h-full px-3 inline-flex items-center justify-center text-sm">
+                                            {{ $i }}
+                                        </span>
+                                    @else
+                                        <a href="{{ $logs->url($i) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">
+                                            {{ $i }}
+                                        </a>
+                                    @endif
+                                @endfor
+                                
+                                @if($end < $logs->lastPage())
+                                    @if($end < $logs->lastPage() - 1)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                    <a href="{{ $logs->url($logs->lastPage()) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">{{ $logs->lastPage() }}</a>
+                                @endif
+                            </div>
+                            
+                            @if($logs->hasMorePages())
+                                <a href="{{ $logs->nextPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ›
+                                </a>
+                            @else
+                                <span class="text-gray-400 opacity-50 cursor-not-allowed bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
+                                    ›
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- شمارنده - سمت چپ -->
+                        <div class="text-sm text-gray-600">
+                            نمایش {{ $logs->firstItem() }} تا {{ $logs->lastItem() }} از {{ $logs->total() }} گزارش
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
-</div>
-</x-app-layout> 
+</x-app-layout>

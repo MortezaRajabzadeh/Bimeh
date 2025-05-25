@@ -22,21 +22,32 @@ class CheckUserType
         }
 
         // اگر کاربر ادمین باشد، به تمام بخش‌ها دسترسی دارد
-        if ($user->isAdmin()) {
+        if ($user->hasRole('admin')) {
             return $next($request);
         }
 
-        // بررسی نوع کاربر برای سایر کاربران
-        if ($userType === 'admin' && !$user->isAdmin()) {
-            abort(403, 'شما به این بخش دسترسی ندارید.');
-        }
+        // بررسی نوع کاربر و رول مربوطه
+        switch ($userType) {
+            case 'admin':
+                if (!$user->hasRole('admin')) {
+                    abort(403, 'شما به این بخش دسترسی ندارید. فقط مدیران سیستم می‌توانند وارد شوند.');
+                }
+                break;
 
-        if ($userType === 'charity' && !$user->isCharity()) {
-            abort(403, 'دسترسی به این بخش فقط برای کاربران خیریه مجاز است.');
-        }
+            case 'charity':
+                if (!$user->hasRole('charity') && !$user->hasRole('admin')) {
+                    abort(403, 'دسترسی به این بخش فقط برای کاربران خیریه مجاز است.');
+                }
+                break;
 
-        if ($userType === 'insurance' && !$user->isInsurance()) {
-            abort(403, 'دسترسی به این بخش فقط برای کاربران بیمه مجاز است.');
+            case 'insurance':
+                if (!$user->hasRole('insurance') && !$user->hasRole('admin')) {
+                    abort(403, 'دسترسی به این بخش فقط برای کاربران بیمه مجاز است.');
+                }
+                break;
+
+            default:
+                abort(403, 'نوع کاربری نامعتبر است.');
         }
 
         return $next($request);

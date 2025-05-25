@@ -39,21 +39,28 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div class="space-y-1">
                                 <label for="province_id" class="block text-sm font-medium text-gray-700">استان <span class="text-red-500 mr-1">*</span></label>
-                                <div class="relative">
-                                    <select id="province_id" wire:model.live="province_id"
-                                        class="border rounded-md w-full py-2 px-3 transition duration-150 ease-in-out {{ $errors->has('province_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}">
-                                        <option value="">انتخاب استان</option>
-                                        @foreach($provinces as $prov)
-                                            <option value="{{ $prov->id }}">{{ $prov->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div wire:loading wire:target="province_id" class="absolute left-3 top-2">
-                                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                                                <div class="relative">
+                    <select id="province_id" wire:model.live="province_id"
+                        style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                        class="border rounded-md w-full py-2 px-3 pr-8 bg-white transition duration-150 ease-in-out {{ $errors->has('province_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}">
+                        <option value="">انتخاب استان</option>
+                        @foreach($provinces as $prov)
+                            <option value="{{ $prov->id }}">{{ $prov->name }}</option>
+                        @endforeach
+                    </select>
+                    <!-- آیکون کشویی -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div wire:loading wire:target="province_id" class="absolute left-3 top-2">
+                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
                                 @error('province_id')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -61,24 +68,31 @@
                             
                             <div class="space-y-1">
                                 <label for="city_id" class="block text-sm font-medium text-gray-700">شهرستان <span class="text-red-500 mr-1">*</span></label>
-                                <div class="relative">
-                                    <select id="city_id" wire:model.live="city_id"
-                                        class="border rounded-md w-full py-2 px-3 transition duration-150 ease-in-out {{ $errors->has('city_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}"
-                                        {{ is_null($province_id) ? 'disabled' : '' }}>
-                                        <option value="">انتخاب شهرستان</option>
-                                        @if(!is_null($province_id) && $cities && $cities->isNotEmpty())
-                                            @foreach($cities as $city)
-                                                <option value="{{ $city->id }}">{{ $city->name }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <div wire:loading wire:target="city_id, province_id" class="absolute left-3 top-2">
-                                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                                                <div class="relative">
+                    <select id="city_id" wire:model.live="city_id"
+                        style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                        class="border rounded-md w-full py-2 px-3 pr-8 bg-white transition duration-150 ease-in-out {{ $errors->has('city_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}"
+                        {{ is_null($province_id) ? 'disabled' : '' }}>
+                        <option value="">انتخاب شهرستان</option>
+                        @if(!is_null($province_id) && $cities && $cities->isNotEmpty())
+                            @foreach($cities as $city)
+                                <option value="{{ $city->id }}">{{ $city->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <!-- آیکون کشویی -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div wire:loading wire:target="city_id, province_id" class="absolute left-3 top-2">
+                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
                                 @error('city_id')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -86,24 +100,31 @@
                             
                             <div class="space-y-1">
                                 <label for="district_id" class="block text-sm font-medium text-gray-700">دهستان <span class="text-red-500 mr-1">*</span></label>
-                                <div class="relative">
-                                    <select id="district_id" wire:model.live="district_id"
-                                        class="border rounded-md w-full py-2 px-3 transition duration-150 ease-in-out {{ $errors->has('district_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}"
-                                        {{ is_null($city_id) ? 'disabled' : '' }}>
-                                        <option value="">انتخاب دهستان</option>
-                                        @if(!is_null($city_id) && $districts && $districts->isNotEmpty())
-                                            @foreach($districts as $district)
-                                                <option value="{{ $district->id }}">{{ $district->name }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <div wire:loading wire:target="district_id, city_id" class="absolute left-3 top-2">
-                                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    </div>
-                                </div>
+                                                <div class="relative">
+                    <select id="district_id" wire:model.live="district_id"
+                        style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                        class="border rounded-md w-full py-2 px-3 pr-8 bg-white transition duration-150 ease-in-out {{ $errors->has('district_id') ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-green-500 focus:ring-green-500' }}"
+                        {{ is_null($city_id) ? 'disabled' : '' }}>
+                        <option value="">انتخاب دهستان</option>
+                        @if(!is_null($city_id) && $districts && $districts->isNotEmpty())
+                            @foreach($districts as $district)
+                                <option value="{{ $district->id }}">{{ $district->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <!-- آیکون کشویی -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div wire:loading wire:target="district_id, city_id" class="absolute left-3 top-2">
+                        <svg class="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
                                 @error('district_id')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
