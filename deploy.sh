@@ -1,95 +1,60 @@
 #!/bin/bash
 
-# 🚀 Microbime Complete Deployment Script for Liara
-echo "🎯 شروع deploy کامل پروژه میکروبیمه به Liara..."
+echo "🚀 Starting Laravel deployment to Liara..."
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Function to print colored output
-print_step() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
-
-print_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
-
-# Check if Liara CLI is installed
-if ! command -v liara &> /dev/null; then
-    print_warning "Liara CLI موجود نیست. در حال نصب..."
-    npm install -g @liara/cli
+# بررسی وجود فایل‌های ضروری
+if [ ! -f "composer.json" ]; then
+    echo "❌ composer.json not found!"
+    exit 1
 fi
 
-print_step "نصب dependencies..."
-composer install --optimize-autoloader --no-dev
-npm ci
+# نصب dependencies
+echo "📦 Installing PHP dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction
 
-print_step "Build کردن assets..."
+echo "📦 Installing Node dependencies..."
+npm ci --silent
+
+# Build assets
+echo "🔨 Building frontend assets..."
 npm run build
 
-print_step "آماده‌سازی Laravel برای production..."
-
-# Generate APP_KEY if not exists
-if [ ! -f .env ]; then
-    print_warning "فایل .env موجود نیست. در حال کپی از .env.example..."
-    cp .env.example .env
-fi
-
-# Generate APP_KEY
-php artisan key:generate
-
-print_step "Cache کردن configs..."
-php artisan config:cache
-php artisan route:cache  
-php artisan view:cache
-php artisan event:cache
-
-print_step "بررسی migrations..."
-php artisan migrate:status
-
-print_step "بررسی آماده‌سازی files..."
-
-# Check critical files
-if [ ! -f "liara.json" ]; then
-    print_error "فایل liara.json موجود نیست!"
-    exit 1
-fi
-
-if [ ! -f "composer.json" ]; then
-    print_error "فایل composer.json موجود نیست!"
-    exit 1
-fi
-
-if [ ! -d "public/build" ]; then
-    print_error "Assets build نشده! ابتدا npm run build اجرا کنید."
-    exit 1
-fi
-
-print_step "تنظیم permissions..."
-chmod -R 755 storage
-chmod -R 755 bootstrap/cache
-
-print_step "پاک کردن cache های اضافی..."
-php artisan cache:clear
+# پاک کردن cache ها
+echo "🧹 Clearing caches..."
 php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
 
-print_step "✨ همه چیز آماده! حالا می‌توانید deploy کنید:"
-echo ""
-echo "🔗 Commands بعدی:"
-echo "   liara auth:login"
-echo "   liara deploy --app microbime --platform laravel"
-echo ""
-echo "📋 یادتون نره:"
-echo "   1. Database رو در Liara ایجاد کنید"
-echo "   2. Environment variables رو تنظیم کنید"  
-echo "   3. بعد از deploy: php artisan db:seed"
-echo ""
-print_step "🎉 آماده deploy!" 
+# تولید APP_KEY در صورت عدم وجود
+if [ -z "$APP_KEY" ]; then
+    echo "🔑 Generating application key..."
+    php artisan key:generate --force --no-interaction
+fi
+
+# اجرای migrations
+echo "🗄️ Running database migrations..."
+php artisan migrate --force --no-interaction
+
+# بررسی وجود جدول sessions
+echo "🔄 Checking sessions table..."
+php artisan migrate:status | grep -q "sessions" || php artisan session:table && php artisan migrate --force
+
+# Cache کردن configs برای production
+echo "⚡ Optimizing for production..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan optimize
+
+# تنظیم permissions
+echo "🔐 Setting permissions..."
+chmod -R 755 storage/
+chmod -R 755 bootstrap/cache/
+
+# ایجاد کاربران پیش‌فرض
+echo "👥 Creating default users..."
+php artisan db:seed --class=DatabaseSeeder --force || echo "⚠️ Seeding failed or already exists"
+
+echo "✅ Deployment completed successfully!"
+echo "🌐 Your application should be available at: $APP_URL" 
