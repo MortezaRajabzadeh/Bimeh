@@ -19,7 +19,7 @@ Route::get('/health', function () {
 })->name('health');
 
 // مسیرهای عمومی
-Route::get('/', MicroLogin::class)->name('admin.login');
+Route::get('/', MicroLogin::class)->name('home.login');
 
 // صفحه انتخاب نوع کاربر
 Route::get('/select-user-type', [\App\Http\Controllers\Auth\LoginController::class, 'showUserTypeSelection'])->name('select-user-type');
