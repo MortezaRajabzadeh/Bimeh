@@ -9,10 +9,15 @@ class District extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['city_id', 'name', 'is_deprived'];
+    protected $fillable = [
+        'city_id', 
+        'name', 
+        'slug',
+        'is_active'
+    ];
 
     protected $casts = [
-        'is_deprived' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**

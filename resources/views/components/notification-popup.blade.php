@@ -1,7 +1,7 @@
 @props([
     'type' => 'info',
     'position' => 'top-right',
-    'duration' => 3000,
+    'duration' => 20000,
     'dismissible' => true,
     'title' => null,
     'slot'

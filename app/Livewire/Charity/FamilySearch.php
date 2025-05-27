@@ -337,43 +337,55 @@ class FamilySearch extends Component
             $family = Family::findOrFail($familyId);
             
             // فقط اگر خانواده تایید نشده باشد، اجازه تغییر سرپرست را بدهیم
-            if (!$family->verified_at) {
-                // تنظیم متغیر انتخاب شده
-                $this->selectedHead = $memberId;
-                
-                // مدیریت تراکنش برای اطمینان از صحت داده‌ها
-                DB::beginTransaction();
-                
-                // به‌روزرسانی پایگاه داده
-                Member::where('family_id', $familyId)->update(['is_head' => false]);
-                Member::where('id', $memberId)->update(['is_head' => true]);
-                
-                DB::commit();
-                
-                // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
-                if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
-                    // به‌روزرسانی state داخلی بدون بارگیری مجدد
-                    foreach ($this->familyMembers as $member) {
-                        // فقط وضعیت is_head را تغییر می‌دهیم
-                        $member->is_head = ($member->id == $memberId);
-                    }
-                }
-                
-                // نمایش پیام موفقیت
+            if ($family->verified_at) {
                 $this->dispatch('show-toast', [
-                    'message' => 'سرپرست خانواده با موفقیت تغییر کرد', 
-                    'type' => 'success'
-                ]);
-            } else {
-                $this->dispatch('show-toast', [
-                    'message' => 'امکان تغییر سرپرست برای خانواده‌های تایید شده وجود ندارد', 
+                    'message' => '❌ امکان تغییر سرپرست برای خانواده‌های تایید شده وجود ندارد', 
                     'type' => 'error'
                 ]);
+                return;
             }
+            
+            // بررسی اینکه عضو انتخاب شده متعلق به همین خانواده است
+            $member = Member::where('id', $memberId)->where('family_id', $familyId)->first();
+            if (!$member) {
+                $this->dispatch('show-toast', [
+                    'message' => '❌ عضو انتخاب شده در این خانواده یافت نشد', 
+                    'type' => 'error'
+                ]);
+                return;
+            }
+            
+            // تنظیم متغیر انتخاب شده
+            $this->selectedHead = $memberId;
+            
+            // مدیریت تراکنش برای اطمینان از صحت داده‌ها
+            DB::beginTransaction();
+            
+            // به‌روزرسانی پایگاه داده - فقط یک نفر سرپرست
+            Member::where('family_id', $familyId)->update(['is_head' => false]);
+            Member::where('id', $memberId)->update(['is_head' => true]);
+            
+            DB::commit();
+            
+            // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
+            if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
+                // به‌روزرسانی state داخلی بدون بارگیری مجدد
+                foreach ($this->familyMembers as $familyMember) {
+                    // فقط وضعیت is_head را تغییر می‌دهیم
+                    $familyMember->is_head = ($familyMember->id == $memberId);
+                }
+            }
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('show-toast', [
+                'message' => '✅ سرپرست خانواده با موفقیت تغییر یافت', 
+                'type' => 'success'
+            ]);
+            
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('show-toast', [
-                'message' => 'خطا در به‌روزرسانی اطلاعات: ' . $e->getMessage(), 
+                'message' => '❌ خطا در به‌روزرسانی اطلاعات: ' . $e->getMessage(), 
                 'type' => 'error'
             ]);
         }
@@ -384,7 +396,7 @@ class FamilySearch extends Component
         // بررسی دسترسی کاربر
         if (!Auth::check() || !Gate::allows('verify-family')) {
             $this->dispatch('show-toast', [
-                'message' => 'شما اجازه تایید خانواده را ندارید',
+                'message' => '🚫 شما اجازه تایید خانواده را ندارید',
                 'type' => 'error'
             ]);
             return;
@@ -395,7 +407,40 @@ class FamilySearch extends Component
         // اگر قبلاً تایید شده، اطلاع بدهیم
         if ($family->verified_at) {
             $this->dispatch('show-toast', [
-                'message' => 'این خانواده قبلاً تایید شده است',
+                'message' => '⚠️ این خانواده قبلاً تایید شده است',
+                'type' => 'warning'
+            ]);
+            return;
+        }
+        
+        // بررسی اینکه یک سرپرست انتخاب شده باشد
+        $headsCount = Member::where('family_id', $familyId)->where('is_head', true)->count();
+        
+        if ($headsCount === 0) {
+            $this->dispatch('show-toast', [
+                'message' => '❌ لطفاً قبل از تایید، یک سرپرست برای خانواده انتخاب کنید',
+                'type' => 'error'
+            ]);
+            return;
+        }
+        
+        if ($headsCount > 1) {
+            $this->dispatch('show-toast', [
+                'message' => '⚠️ خطا: بیش از یک سرپرست انتخاب شده است. لطفاً فقط یک نفر را انتخاب کنید',
+                'type' => 'error'
+            ]);
+            // اصلاح خودکار - فقط اولین سرپرست را نگه می‌داریم
+            $firstHead = Member::where('family_id', $familyId)->where('is_head', true)->first();
+            Member::where('family_id', $familyId)->update(['is_head' => false]);
+            $firstHead->update(['is_head' => true]);
+            return;
+        }
+        
+        // بررسی حداقل یک عضو در خانواده
+        $membersCount = Member::where('family_id', $familyId)->count();
+        if ($membersCount === 0) {
+            $this->dispatch('show-toast', [
+                'message' => '❌ این خانواده هیچ عضوی ندارد و قابل تایید نیست',
                 'type' => 'error'
             ]);
             return;
@@ -408,7 +453,7 @@ class FamilySearch extends Component
         
         // نمایش پیام موفقیت
         $this->dispatch('show-toast', [
-            'message' => 'خانواده با موفقیت تایید شد',
+            'message' => '✅ خانواده با موفقیت تایید شد و آماده ارسال به بیمه می‌باشد',
             'type' => 'success'
         ]);
     }
@@ -416,6 +461,10 @@ class FamilySearch extends Component
     public function copyText($text)
     {
         $this->dispatch('copy-text', $text);
+        $this->dispatch('show-toast', [
+            'message' => '📋 متن با موفقیت کپی شد: ' . $text,
+            'type' => 'success'
+        ]);
     }
     
     /**
@@ -468,6 +517,56 @@ class FamilySearch extends Component
             'message' => 'همه فیلترها پاک شدند',
             'type' => 'success'
         ]);
+    }
+    
+    /**
+     * اصلاح خودکار خانواده‌هایی که بیش از یک سرپرست دارند
+     * 
+     * @param int $familyId
+     * @return void
+     */
+    public function fixMultipleHeads($familyId = null)
+    {
+        if ($familyId) {
+            // اصلاح یک خانواده خاص
+            $families = collect([Family::find($familyId)])->filter();
+        } else {
+            // اصلاح همه خانواده‌ها
+            $families = Family::all();
+        }
+        
+        $fixedCount = 0;
+        
+        foreach ($families as $family) {
+            $heads = Member::where('family_id', $family->id)->where('is_head', true)->get();
+            
+            if ($heads->count() > 1) {
+                // فقط اولین سرپرست را نگه می‌داریم
+                $firstHead = $heads->first();
+                Member::where('family_id', $family->id)->update(['is_head' => false]);
+                $firstHead->update(['is_head' => true]);
+                $fixedCount++;
+            } elseif ($heads->count() === 0) {
+                // اگر سرپرستی نداشت، اولین عضو را سرپرست می‌کنیم
+                $firstMember = Member::where('family_id', $family->id)->first();
+                if ($firstMember) {
+                    $firstMember->update(['is_head' => true]);
+                    $fixedCount++;
+                }
+            }
+        }
+        
+        if ($fixedCount > 0) {
+            $this->dispatch('show-toast', [
+                'message' => "✅ {$fixedCount} خانواده اصلاح شد",
+                'type' => 'success'
+            ]);
+        } else {
+            $this->dispatch('show-toast', [
+                'message' => '✅ همه خانواده‌ها صحیح هستند',
+                'type' => 'success'
+            ]);
+        }
     }
     
     /**

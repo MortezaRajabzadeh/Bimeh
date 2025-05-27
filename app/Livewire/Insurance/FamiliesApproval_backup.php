@@ -24,16 +24,9 @@ class FamiliesApproval extends Component
     public $insuranceExcelFile;
     public $perPage = 15;
 
-    protected $paginationTheme = 'bootstrap';
-
     public function mount()
     {
-        // پیش‌فرض pagination
-    }
-
-    public function updatedPerPage()
-    {
-        $this->resetPage();
+        // پیش‌فرض pagination در mount
     }
 
     public function updatedSelectAll($value)
@@ -51,7 +44,6 @@ class FamiliesApproval extends Component
         $families = $this->getFamiliesProperty();
         $this->selectAll = count($this->selected) && count($this->selected) === $families->count();
     }
-
     public function approveSelected()
     {
         Family::whereIn('id', $this->selected)->update(['status' => 'reviewing']);
@@ -171,6 +163,7 @@ class FamiliesApproval extends Component
                     continue;
                 }
                 $importedFamilyCodes[] = $familyCode;
+                // Validate and parse row data
                 try {
                     $insuranceType = $this->validateInsuranceType(trim($row[1]), $familyCode, $i);
                     $insuranceAmount = $this->validateInsuranceAmount($row[2], $familyCode, $i);
@@ -188,9 +181,11 @@ class FamiliesApproval extends Component
                     'insurance_payer' => Auth::user()->name,
                 ];
                 if ($insurance) {
+                    // Check if data has actually changed
                     $isChanged = false;
                     foreach ($data as $key => $val) {
                         $currentValue = $insurance->$key;
+                        // Handle date comparison properly
                         if ($key === 'insurance_issue_date' || $key === 'insurance_end_date') {
                             $currentValue = $this->safeFormatDate($currentValue);
                             $val = $this->safeFormatDate($val);
@@ -226,7 +221,7 @@ class FamiliesApproval extends Component
                     $totalInsuranceAmount += $insuranceAmount;
                 }
             }
-            $fileNameToLog = $this->insuranceExcelFile ? $this->insuranceExcelFile->getClientOriginalName() : 'نامعلوم';
+            $fileNameToLog = $this->insuranceExcelFile ? $this->insuranceExcelFile->getClientOriginalName() : 'نامعلوم'; // نام فایل را اینجا بگیرید
             DB::commit();
             $this->insuranceExcelFile = null; 
             $maxErrorsToShow = 5;
@@ -265,6 +260,9 @@ class FamiliesApproval extends Component
         }
     }
 
+    /**
+     * Validate and parse Jalali date
+     */
     private function parseJalaliDate($dateString, $fieldName, $familyCode, $rowIndex)
     {
         if (empty($dateString)) {
@@ -282,6 +280,9 @@ class FamiliesApproval extends Component
         }
     }
 
+    /**
+     * Validate insurance amount
+     */
     private function validateInsuranceAmount($amount, $familyCode, $rowIndex)
     {
         if (!is_numeric($amount) || $amount <= 0) {
@@ -290,6 +291,9 @@ class FamiliesApproval extends Component
         return (float) $amount;
     }
 
+    /**
+     * Validate insurance type
+     */
     private function validateInsuranceType($type, $familyCode, $rowIndex)
     {
         $validTypes = ['تکمیلی', 'درمانی', 'عمر', 'حوادث', 'سایر', 'تامین اجتماعی'];
@@ -300,22 +304,27 @@ class FamiliesApproval extends Component
         return $type;
     }
 
+    /**
+     * Safely format date for comparison (handle both Carbon and string dates)
+     */
     private function safeFormatDate($date)
     {
         if (empty($date)) {
             return null;
         }
 
+        // If it's a Carbon instance, format it
         if ($date instanceof \Carbon\Carbon) {
             return $date->format('Y-m-d');
         }
 
+        // If it's a string, try to parse and format it
         if (is_string($date)) {
             try {
                 $carbonDate = \Carbon\Carbon::parse($date);
                 return $carbonDate->format('Y-m-d');
             } catch (\Exception $e) {
-                return $date;
+                return $date; // Return as-is if can't parse
             }
         }
 

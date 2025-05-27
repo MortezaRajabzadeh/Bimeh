@@ -10,7 +10,7 @@ class NotificationPopup extends Component
     public $message = '';
     public $type = 'info';
     public $position = 'top-right';
-    public $duration = 3000;
+    public $duration = 20000;
     public $dismissible = true;
 
     protected $listeners = ['show-toast' => 'showToast'];
@@ -20,7 +20,7 @@ class NotificationPopup extends Component
         $this->type = $data['type'] ?? 'info';
         $this->message = $data['message'] ?? '';
         $this->position = $data['position'] ?? 'top-right';
-        $this->duration = $data['duration'] ?? 3000;
+        $this->duration = $data['duration'] ?? 20000;
         $this->dismissible = $data['dismissible'] ?? true;
         $this->show = true;
     }

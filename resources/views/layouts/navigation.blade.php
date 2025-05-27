@@ -4,14 +4,16 @@
         <div class="flex justify-between items-center h-16">
             <!-- دکمه‌های عملیات و دسترسی‌ها -->
             <div class="flex items-center space-x-reverse space-x-2 sm:space-x-4 overflow-x-auto hide-scrollbar gap-4">
-                <!-- دکمه دانلود اکسل -->
-                <a href="#" class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition" onclick="event.preventDefault();">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                <!-- دکمه آپلود اکسل خانواده‌ها (فقط در صفحه داشبورد خیریه) -->
+                @if(auth()->check() && auth()->user()->hasRole('charity') && request()->routeIs('charity.dashboard'))
+                <button onclick="openUploadModal()" class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    <span class=" sm:inline">دانلود اکسل</span>
-                    <!-- <span class="sm:hidden">دانلود</span> -->
-                </a>
+                    <span class="hidden sm:inline">وارد کردن با فایل اکسل</span>
+                    <span class="sm:hidden">آپلود</span>
+                </button>
+                @endif
                 
                 <!-- دکمه‌های پنل‌ها -->
                 @if(auth()->check())

@@ -310,10 +310,10 @@
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     عملیات
                                 </th>
-                            </tr>
-                        </thead>
+                    </tr>
+                </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($logs as $log)
+                    @forelse($logs as $log)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $log->id }}
@@ -327,7 +327,7 @@
                                             {{ $typeLabels[$log->causer->user_type] ?? $log->causer->user_type }}
                                         </div>
                                     @endif
-                                </td>
+                            </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         @if($log->event == 'created') bg-green-100 text-green-800
@@ -337,13 +337,13 @@
                                         @elseif($log->event == 'logout') bg-yellow-100 text-yellow-800
                                         @else bg-gray-100 text-gray-800
                                         @endif">
-                                        {{ $eventLabels[$log->event] ?? $log->event }}
+                                {{ $eventLabels[$log->event] ?? $log->event }}
                                     </span>
-                                </td>
+                            </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900">
-                                        {{ $modelLabels[class_basename($log->subject_type) ?? ''] ?? class_basename($log->subject_type) }}
-                                        @if($log->subject_id)
+                                {{ $modelLabels[class_basename($log->subject_type) ?? ''] ?? class_basename($log->subject_type) }}
+                                @if($log->subject_id)
                                             <span class="text-gray-500">(شناسه: {{ $log->subject_id }})</span>
                                         @endif
                                         
@@ -382,8 +382,8 @@
                                         <div class="text-sm text-gray-500 mt-1">
                                             {{ Str::limit($log->description, 50) }}
                                         </div>
-                                    @endif
-                                </td>
+                                @endif
+                            </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ jdate($log->created_at)->format('Y/m/d H:i') }}
                                 </td>
@@ -394,23 +394,23 @@
                                             <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
                                         </svg>
                                     </a>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
                                 <td colspan="6" class="px-6 py-4 text-center text-gray-500">
                                     هیچ لاگی ثبت نشده است.
                                 </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
                 </div>
 
                 <!-- پیجینیشن -->
-                <div class="mt-4">
+            <div class="mt-4">
                     @if(isset($logs) && $logs->hasPages())
-                        {{ $logs->links() }}
+                {{ $logs->links() }}
                     @endif
                 </div>
             </div>

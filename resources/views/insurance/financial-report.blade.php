@@ -73,8 +73,8 @@
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     نوع
                                 </th>
-                            </tr>
-                        </thead>
+                </tr>
+            </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($transactionsPaginated as $idx => $t)
                                 <tbody x-data="{ open: false }" class="divide-y divide-gray-200">
@@ -82,16 +82,16 @@
                                         {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                                @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
                                                     <button @click="open = !open"
-                                                            type="button"
+                                            type="button"
                                                             class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-                                                            :class="open ? 'rotate-180' : ''">
+                                            :class="open ? 'rotate-180' : ''">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                                        </svg>
-                                                    </button>
-                                                @endif
+                                        </svg>
+                                    </button>
+                                @endif
                                                 <div>
                                                     <div class="text-sm font-medium text-gray-900">{{ $t['title'] }}</div>
                                                     <div class="text-xs text-gray-500">تراکنش #{{ $transactionsPaginated->firstItem() + $idx }}</div>
@@ -101,11 +101,11 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">{{ $t['date_formatted'] }}</div>
                                             <div class="text-xs text-gray-500">{{ jdate($t['date'])->format('H:i') }}</div>
-                                        </td>
+                            </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium {{ $t['type'] === 'credit' ? 'text-green-700' : 'text-red-700' }}">
-                                                {{ $t['type'] === 'credit' ? '+' : '-' }}
-                                                {{ number_format($t['amount']) }} ریال
+                                    {{ $t['type'] === 'credit' ? '+' : '-' }}
+                                    {{ number_format($t['amount']) }} ریال
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -113,24 +113,24 @@
                                                 {{ $t['type'] === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                 <span class="w-1.5 h-1.5 ml-1 rounded-full {{ $t['type'] === 'credit' ? 'bg-green-400' : 'bg-red-400' }}"></span>
                                                 {{ $t['type'] === 'credit' ? 'واریز' : 'برداشت' }}
-                                            </span>
-                                        </td>
-                                    </tr>
+                                </span>
+                            </td>
+                        </tr>
 
-                                    @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                        @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
                                         <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
                                             x-transition:enter-start="opacity-0 transform scale-95" 
                                             x-transition:enter-end="opacity-100 transform scale-100" 
                                             x-cloak class="bg-blue-50">
                                             <td colspan="4" class="px-6 py-4">
-                                                @php
-                                                    $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
-                                                @endphp
+                            @php
+                                $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
+                            @endphp
                                                 <div class="bg-white rounded-lg p-4 border border-blue-200">
                                                     <div class="flex items-start justify-between">
                                                         <div>
                                                             <h4 class="text-sm font-medium text-gray-900 mb-2">جزئیات پرداخت</h4>
-                                                            @if(count($allCodes))
+                            @if(count($allCodes))
                                                                 <p class="text-sm text-gray-700 mb-3">
                                                                     پرداخت حق بیمه برای <span class="font-semibold text-blue-600">{{ count($allCodes) }}</span> خانواده 
                                                                     به مبلغ <span class="font-semibold text-green-600">{{ number_format($t['amount']) }} ریال</span>
@@ -144,18 +144,18 @@
                                                                     </svg>
                                                                     مشاهده لیست خانواده‌ها
                                                                 </a>
-                                                            @else
+                            @else
                                                                 <p class="text-sm text-gray-700">پرداخت حق بیمه</p>
-                                                            @endif
+                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                </tbody>
-                            @empty
-                                <tr>
+                            </td>
+                        </tr>
+                        @endif
+                    </tbody>
+                @empty
+                    <tr>
                                     <td colspan="4" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -164,11 +164,11 @@
                                             <p class="text-gray-500 text-sm">هیچ تراکنشی ثبت نشده است</p>
                                         </div>
                                     </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
             </div>
             
             <!-- Pagination تراکنش‌ها -->
@@ -287,7 +287,7 @@
             </div>
             
             <div class="overflow-hidden">
-                <div class="overflow-x-auto">
+        <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -301,10 +301,10 @@
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خطا</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مبلغ</th>
                                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خانواده‌ها</th>
-                            </tr>
-                        </thead>
+            </tr>
+        </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($logs as $log)
+            @forelse($logs as $log)
                                 <tr class="hover:bg-gray-50 transition-colors duration-200">
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ jdate($log->created_at)->format('Y/m/d') }}
@@ -344,19 +344,19 @@
                                         {{ number_format($log->total_insurance_amount) }} ریال
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500">
-                                        @if($log->family_codes && is_array($log->family_codes))
+                    @if($log->family_codes && is_array($log->family_codes))
                                             <div class="max-w-xs overflow-hidden">
                                                 <span class="text-xs">{{ implode(', ', array_slice($log->family_codes, 0, 3)) }}</span>
                                                 @if(count($log->family_codes) > 3)
                                                     <span class="text-xs text-gray-400">... و {{ count($log->family_codes) - 3 }} مورد دیگر</span>
                                                 @endif
                                             </div>
-                                        @else
+                    @else
                                             <span class="text-gray-400">-</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
+                    @endif
+                </td>
+            </tr>
+            @empty
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
@@ -367,10 +367,10 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            @endforelse
+        </tbody>
+    </table>
+</div>
             </div>
             
             <!-- Pagination ایمپورت لاگ‌ها -->
@@ -443,6 +443,6 @@
                     </div>
                 </div>
             @endif
-        </div>
     </div>
-</x-app-layout>
+</div>
+</x-app-layout> 

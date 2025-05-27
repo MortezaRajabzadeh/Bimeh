@@ -120,6 +120,8 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix
     Route::middleware('can:create family')->get('/import', [\App\Http\Controllers\Charity\ImportController::class, 'index'])->name('import.index');
     Route::middleware('can:create family')->post('/import', [\App\Http\Controllers\Charity\ImportController::class, 'import'])->name('import.store');
     Route::middleware('can:create family')->get('/import/template', [\App\Http\Controllers\Charity\ImportController::class, 'downloadTemplate'])->name('import.template');
+    Route::middleware('can:create family')->get('/import/template/families', [\App\Http\Controllers\Charity\ImportController::class, 'downloadFamiliesTemplate'])->name('import.template.families');
+    Route::middleware('can:create family')->get('/import/status', [\App\Http\Controllers\Charity\ImportController::class, 'checkJobStatus'])->name('import.status');
 
     Route::middleware('can:export reports')->get('/export-excel', [App\Http\Controllers\Charity\FamilyController::class, 'exportExcel'])->name('export-excel');
 

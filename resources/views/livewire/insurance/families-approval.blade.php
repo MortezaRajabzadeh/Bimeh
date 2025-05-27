@@ -319,6 +319,83 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- صفحه‌بندی -->
+            @if($families->hasPages())
+            <div class="mt-6 border-t border-gray-200 pt-4" id="pagination-section">
+                <div class="flex flex-wrap items-center justify-between">
+                    <!-- تعداد نمایش - سمت راست -->
+                    <div class="flex items-center order-1">
+                        <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
+                        <select wire:model.live="perPage" 
+                                class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                            <option value="10">10</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <!-- شماره صفحات - وسط -->
+                    <div class="flex items-center justify-center order-2 flex-grow mx-4">
+                        <!-- دکمه صفحه قبل -->
+                        <button type="button" wire:click="{{ !$families->onFirstPage() ? 'previousPage' : '' }}" 
+                           class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        
+                        <!-- شماره صفحات -->
+                        <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300">
+                            @php
+                                $start = max($families->currentPage() - 2, 1);
+                                $end = min($start + 4, $families->lastPage());
+                                if ($end - $start < 4 && $start > 1) {
+                                    $start = max(1, $end - 4);
+                                }
+                            @endphp
+                            
+                            @if($start > 1)
+                                <button type="button" wire:click="gotoPage(1)" class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">1</button>
+                                @if($start > 2)
+                                    <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                @endif
+                            @endif
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button type="button" wire:click="gotoPage({{ $i }})" 
+                                   class="{{ $families->currentPage() == $i ? 'bg-green-100 text-green-800 font-medium' : 'bg-white text-gray-600 hover:bg-gray-50' }} h-full px-3 inline-flex items-center justify-center text-sm">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            @if($end < $families->lastPage())
+                                @if($end < $families->lastPage() - 1)
+                                    <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                @endif
+                                <button type="button" wire:click="gotoPage({{ $families->lastPage() }})" class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">{{ $families->lastPage() }}</button>
+                            @endif
+                        </div>
+                        
+                        <!-- دکمه صفحه بعد -->
+                        <button type="button" wire:click="{{ $families->hasMorePages() ? 'nextPage' : '' }}" 
+                           class="{{ $families->hasMorePages() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- شمارنده - سمت چپ -->
+                    <div class="text-sm text-gray-600 order-3">
+                        نمایش {{ $families->firstItem() ?? 0 }} تا {{ $families->lastItem() ?? 0 }} از {{ $families->total() ?? 0 }} خانواده
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>

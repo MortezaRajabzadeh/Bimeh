@@ -31,6 +31,8 @@
             @include('components.notification-popup', ['type' => 'warning', 'slot' => session('warning')])
         @endif
 
+        <!-- نوتیفیکیشن‌های Livewire (Toast) - حذف شده -->
+
         <main>
             {{ $slot }}
         </main>

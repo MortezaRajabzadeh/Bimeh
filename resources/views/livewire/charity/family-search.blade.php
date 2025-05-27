@@ -494,20 +494,29 @@
                             {{ $family->members->count() ?? 0 }}
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                            @if($family->members && $family->members->count())
-                                @foreach($family->members as $member)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
-                                        {{ $member->first_name }} {{ $member->last_name }}
-                                        @if($member->relationship_fa)
-                                            <span class="mx-1 text-gray-500">({{ $member->relationship_fa }})</span>
-                                        @endif
-                                        @if($member->national_code)
-                                            <span class="mx-1 text-gray-400">{{ $member->national_code }}</span>
-                                        @endif
+                            @php
+                                $head = $family->members?->where('is_head', true)->first();
+                            @endphp
+                            @if($head)
+                                <div class="flex items-center justify-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        {{ $head->first_name }} {{ $head->last_name }}
                                     </span>
-                                @endforeach
+                                </div>
+                                @if($head->national_code)
+                                    <div class="text-center mt-1">
+                                        <span class="text-xs text-gray-500">کد ملی: {{ $head->national_code }}</span>
+                                    </div>
+                                @endif
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">-</span>
+                                <div class="flex items-center justify-center">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                        ⚠️ بدون سرپرست
+                                    </span>
+                                </div>
                             @endif
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
@@ -662,14 +671,19 @@
                                         <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200" wire:key="member-{{ $member->id }}">
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center sticky left-0 bg-green-100">
                                                 @if($family->verified_at)
+                                                    {{-- خانواده تایید شده - فقط نمایش --}}
                                                     @if($member->is_head)
-                                                        <span class="text-blue-500 inline-block">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <span class="text-blue-500 font-bold inline-flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                             </svg>
+                                                            سرپرست
                                                         </span>
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
                                                     @endif
                                                 @else
+                                                    {{-- خانواده تایید نشده - امکان تغییر سرپرست --}}
                                                     <input 
                                                         type="radio" 
                                                         name="family_head_{{ $family->id }}" 
@@ -677,7 +691,8 @@
                                                         wire:model="selectedHead" 
                                                         {{ $member->is_head ? 'checked' : '' }}
                                                         wire:change="setFamilyHead({{ $family->id }}, {{ $member->id }})" 
-                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer"
+                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                                                        title="{{ $member->is_head ? 'سرپرست فعلی' : 'انتخاب به عنوان سرپرست' }}"
                                                     >
                                                 @endif
                                             </td>
@@ -952,10 +967,10 @@
             
             toast.classList.remove('hidden');
             
-            // نمایش اعلان برای 3 ثانیه
+            // نمایش اعلان برای 20 ثانیه
             notificationTimeout = setTimeout(() => {
                 toast.classList.add('hidden');
-            }, 3000);
+            }, 20000);
         });
         
         // اسکرول به خانواده باز شده
@@ -1006,10 +1021,10 @@
             
             notification.classList.remove('hidden');
             
-            // نمایش اعلان برای 3 ثانیه
+            // نمایش اعلان برای 20 ثانیه
             notificationTimeout = setTimeout(() => {
                 notification.classList.add('hidden');
-            }, 3000);
+            }, 20000);
         }
     });
     </script>
@@ -1359,4 +1374,277 @@
         background: #a0aec0;
     }
     </style>
+    
+    <!-- مودال آپلود اکسل خانواده‌ها -->
+    <div id="uploadModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden" onclick="closeUploadModalOnBackdrop(event)">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative" onclick="event.stopPropagation()">
+                <!-- هدر مودال -->
+                <div class="border-b border-gray-200 p-6 text-center relative">
+                    <button type="button" onclick="closeUploadModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">وارد کردن با فایل اکسل</h3>
+                    <p class="text-sm text-gray-600">برای وارد کردن اطلاعات خانواده‌ها به صورت دسته جمعی، ابتدا فایل نمونه را طبق فایل نمونه آماده کرده و آن را آپلود نمایید.</p>
+                </div>
+                
+                <!-- محتوای مودال -->
+                <div class="p-6">
+                    <!-- منطقه Drag & Drop -->
+                    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 hover:border-green-400 transition-colors cursor-pointer">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p id="dropZoneText" class="text-gray-600 mb-2 font-medium">فایل آماده شده را در اینجا قرار دهید</p>
+                        <p class="text-xs text-gray-500">یا برای انتخاب فایل کلیک کنید</p>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="hidden">
+                    </div>
+                    
+                    <!-- دکمه‌های عملیات -->
+                    <div class="flex gap-3">
+                        <button type="button" onclick="downloadTemplate()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            دانلود فایل نمونه
+                        </button>
+                        
+                        <button type="button" onclick="uploadFile()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center">
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            آپلود فایل
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- فرم مخفی برای آپلود -->
+    <form id="uploadForm" action="{{ route('charity.import.store') }}" method="POST" enctype="multipart/form-data" class="hidden">
+        @csrf
+        <input type="hidden" name="import_type" value="families">
+        <input type="hidden" name="district_id" id="districtSelect" value="1">
+        <input type="file" name="file" id="hiddenFileInput">
+    </form>
+
+    <script>
+        // باز کردن مودال
+        function openUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                // ریست کردن محتوای مودال
+                resetModalContent();
+            }
+        }
+        
+        // بستن مودال
+        function closeUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                // ریست کردن محتوای مودال
+                resetModalContent();
+            }
+        }
+        
+        // بستن مودال با کلیک روی پس‌زمینه
+        function closeUploadModalOnBackdrop(event) {
+            if (event.target === event.currentTarget) {
+                closeUploadModal();
+            }
+        }
+        
+        // ریست کردن محتوای مودال
+        function resetModalContent() {
+            const fileInput = document.getElementById('excelFile');
+            const dropZoneText = document.getElementById('dropZoneText');
+            const dropZone = document.getElementById('dropZone');
+            
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            if (dropZoneText) {
+                dropZoneText.textContent = 'فایل آماده شده را در اینجا قرار دهید';
+            }
+            if (dropZone) {
+                dropZone.classList.remove('border-green-400', 'bg-green-50');
+            }
+        }
+        
+        // دانلود فایل نمونه
+        function downloadTemplate() {
+            // تست Ajax برای نمایش خطای دقیق
+            fetch('{{ route("charity.import.template.families") }}', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // اگر موفقیت‌آمیز بود، دانلود فایل
+                    window.open('{{ route("charity.import.template.families") }}', '_blank');
+                } else {
+                    // نمایش خطا
+                    response.text().then(text => {
+                        console.error('خطا:', response.status, text);
+                        if (response.status === 401) {
+                            alert('ابتدا وارد سیستم شوید.');
+                        } else if (response.status === 403) {
+                            alert('شما مجوز دانلود فایل نمونه را ندارید.');
+                        } else {
+                            alert('خطا در دانلود فایل: ' + response.status);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('خطا در درخواست:', error);
+                alert('خطا در ارتباط با سرور.');
+            });
+        }
+        
+        // آپلود فایل
+        function uploadFile() {
+            const fileInput = document.getElementById('excelFile');
+            const hiddenInput = document.getElementById('hiddenFileInput');
+            const uploadButton = document.querySelector('button[onclick="uploadFile()"]');
+            
+            if (!fileInput || fileInput.files.length === 0) {
+                alert('لطفا ابتدا فایل را انتخاب کنید.');
+                return;
+            }
+            
+            if (!hiddenInput) {
+                alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
+                return;
+            }
+            
+            try {
+                // نمایش loading state
+                if (uploadButton) {
+                    uploadButton.disabled = true;
+                    uploadButton.innerHTML = `
+                        <svg class="animate-spin w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
+                            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"></path>
+                        </svg>
+                        در حال آپلود...
+                    `;
+                }
+                
+                // کپی فایل انتخاب شده به فرم مخفی
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(fileInput.files[0]);
+                hiddenInput.files = dataTransfer.files;
+                
+                // ارسال فرم
+                const form = document.getElementById('uploadForm');
+                if (form) {
+                    form.submit();
+                } else {
+                    alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
+                    // بازگشت به حالت عادی
+                    if (uploadButton) {
+                        uploadButton.disabled = false;
+                        uploadButton.innerHTML = `
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            آپلود فایل
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('خطا در آپلود فایل. لطفا مجدد تلاش کنید.');
+                
+                // بازگشت به حالت عادی
+                if (uploadButton) {
+                    uploadButton.disabled = false;
+                    uploadButton.innerHTML = `
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        آپلود فایل
+                    `;
+                }
+            }
+        }
+        
+        // Event listeners برای drag & drop
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('excelFile');
+            const dropZoneText = document.getElementById('dropZoneText');
+            
+            if (!dropZone || !fileInput) {
+                return;
+            }
+            
+            // کلیک برای انتخاب فایل
+            dropZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // تغییر فایل انتخاب شده
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    if (dropZoneText) {
+                        dropZoneText.textContent = fileName;
+                    }
+                    dropZone.classList.add('border-green-400', 'bg-green-50');
+                }
+            });
+            
+            // Drag & Drop events
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('border-green-400', 'bg-green-50');
+            });
+            
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('border-green-400', 'bg-green-50');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('border-green-400', 'bg-green-50');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const fileName = files[0].name;
+                    fileInput.files = files;
+                    if (dropZoneText) {
+                        dropZoneText.textContent = fileName;
+                    }
+                    this.classList.add('border-green-400', 'bg-green-50');
+                }
+            });
+            
+            // بستن مودال با کلید ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('uploadModal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeUploadModal();
+                    }
+                }
+            });
+        });
+    </script>
 </div>

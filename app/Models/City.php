@@ -9,10 +9,15 @@ class City extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['province_id', 'name', 'is_deprived'];
+    protected $fillable = [
+        'province_id', 
+        'name', 
+        'slug',
+        'is_active'
+    ];
 
     protected $casts = [
-        'is_deprived' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**

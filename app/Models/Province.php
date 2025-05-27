@@ -11,7 +11,14 @@ class Province extends Model
 
     protected $fillable = [
         'name',
+        'slug',
         'deprivation_rank',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'deprivation_rank' => 'integer',
     ];
 
     /**
