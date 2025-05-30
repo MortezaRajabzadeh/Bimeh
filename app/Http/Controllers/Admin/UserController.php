@@ -62,21 +62,29 @@ class UserController extends Controller
         Log::info('UserController@store - Request Data:', $request->all());
         Gate::authorize('create user');
 
-        try {
-            $validated = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'national_code' => 'nullable|string|max:255',
-                'mobile' => 'nullable|string|max:255',
-                'email' => 'nullable|email|max:255|unique:users,email',
-                'username' => 'required|string|max:255|unique:users,username',
-                'password' => 'required|string|min:8|confirmed',
-                'role' => 'required|string|exists:roles,name',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation Failed:', ['errors' => $e->errors(), 'input' => $request->all()]);
-            throw $e; 
-        }
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255', 
+            'national_code' => 'nullable|string|max:255',
+            'mobile' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email',
+            'username' => 'required|string|max:255|unique:users,username',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string|exists:roles,name',
+        ], [
+            // پیام‌های خطای فارسی
+            'first_name.required' => 'وارد کردن نام الزامی است.',
+            'last_name.required' => 'وارد کردن نام خانوادگی الزامی است.',
+            'email.email' => 'فرمت ایمیل صحیح نیست.',
+            'email.unique' => 'این ایمیل قبلاً ثبت شده است.',
+            'username.required' => 'وارد کردن نام کاربری الزامی است.',
+            'username.unique' => 'این نام کاربری قبلاً ثبت شده است.',
+            'password.required' => 'وارد کردن رمز عبور الزامی است.',
+            'password.min' => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'password.confirmed' => 'رمز عبور و تکرار آن مطابقت ندارند.',
+            'role.required' => 'انتخاب نقش الزامی است.',
+            'role.exists' => 'نقش انتخاب شده معتبر نیست.',
+        ]);
 
         try {
             DB::beginTransaction();
@@ -98,11 +106,7 @@ class UserController extends Controller
                 $user->save();
             }
             
-            Log::info('New user created', [
-                'id' => $user->id, 
-                'username' => $user->username,
-                'national_code' => $user->national_code ?? null
-            ]);
+
 
             // تخصیص نقش به کاربر
             $user->assignRole($validated['role']);

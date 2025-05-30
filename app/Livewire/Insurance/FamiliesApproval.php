@@ -106,8 +106,8 @@ class FamiliesApproval extends Component
             } else {
                 $query = $query->where('status', $status);
             }
-        }
-        
+    }
+
         return $query->paginate($this->perPage);
     }
 
@@ -162,6 +162,9 @@ class FamiliesApproval extends Component
         try {
             foreach ($rows as $i => $row) {
                 $familyCode = trim($row[0]);
+                // Remove leading apostrophe and tab characters (Excel text formatting)
+                $familyCode = ltrim($familyCode, "'\t");
+                
                 if (empty($familyCode) || stripos($familyCode, 'مثال') !== false || !is_numeric($familyCode)) {
                     continue;
                 }
@@ -182,16 +185,16 @@ class FamiliesApproval extends Component
                 }
                 $insurance = $family->insurances()->where('insurance_type', $insuranceType)->first();
                 $data = [
-                    'insurance_amount' => $insuranceAmount,
-                    'insurance_issue_date' => $issueDate,
-                    'insurance_end_date' => $endDate,
+                    'premium_amount' => $insuranceAmount,
+                    'start_date' => $issueDate,
+                    'end_date' => $endDate,
                     'insurance_payer' => Auth::user()->name,
                 ];
                 if ($insurance) {
                     $isChanged = false;
                     foreach ($data as $key => $val) {
                         $currentValue = $insurance->$key;
-                        if ($key === 'insurance_issue_date' || $key === 'insurance_end_date') {
+                        if ($key === 'start_date' || $key === 'end_date') {
                             $currentValue = $this->safeFormatDate($currentValue);
                             $val = $this->safeFormatDate($val);
                         }

@@ -77,6 +77,20 @@ class PermissionSeeder extends Seeder
             'reject claims',
             'view claims history',
             'calculate premiums',
+            // دسترسی‌های جدید - سهم‌بندی بیمه
+            'view insurance shares',
+            'manage insurance shares',
+            'create insurance shares',
+            'edit insurance shares',
+            'delete insurance shares',
+            // دسترسی‌های جدید - پرداخت‌ها
+            'view insurance payments',
+            'manage insurance payments',
+            'create insurance payments',
+            'edit insurance payments',
+            'delete insurance payments',
+            'view payment details',
+            'export payment reports',
         ];
 
         // تجمیع همه دسترسی‌ها
@@ -114,6 +128,8 @@ class PermissionSeeder extends Seeder
             'remove family member',
             'view basic reports',
             'export reports',
+            // دسترسی محدود برای سهم‌بندی
+            'view insurance shares',
         ]);
         $charityRole->givePermissionTo($charityPermissions);
 
@@ -132,6 +148,19 @@ class PermissionSeeder extends Seeder
             'reject claims',
             'view claims history',
             'calculate premiums',
+            // دسترسی‌های جدید
+            'view insurance shares',
+            'manage insurance shares',
+            'create insurance shares',
+            'edit insurance shares',
+            'delete insurance shares',
+            'view insurance payments',
+            'manage insurance payments',
+            'create insurance payments',
+            'edit insurance payments',
+            'delete insurance payments',
+            'view payment details',
+            'export payment reports',
         ]);
         $insuranceRole->givePermissionTo($insurancePermissionsList);
     }

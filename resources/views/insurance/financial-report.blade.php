@@ -3,13 +3,27 @@
         <!-- عنوان اصلی -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    گزارش مالی بیمه
-                </h2>
-                <p class="text-sm text-gray-600 mt-1">مشاهده کلیه تراکنش‌های مالی و موجودی حساب</p>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            {{ __('financial.titles.financial_report') }}
+                        </h2>
+                        <p class="text-sm text-gray-600 mt-1">{{ __('financial.descriptions.report_overview') }}</p>
+                    </div>
+                    <div>
+                        <!-- دکمه دانلود اکسل -->
+                        <a href="{{ route('insurance.financial-report.export') }}" 
+                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            {{ __('financial.actions.export_excel') }}
+                        </a>
+                    </div>
+                </div>
             </div>
             
             <!-- کارت خلاصه مالی -->
@@ -23,14 +37,14 @@
                                 </svg>
                             </div>
                             <div class="mr-4">
-                                <p class="text-sm font-medium text-gray-700">موجودی حساب</p>
+                                <p class="text-sm font-medium text-gray-700">{{ __('financial.titles.account_balance') }}</p>
                                 <p class="text-2xl font-bold text-gray-900">{{ number_format($balance) }} <span class="text-sm font-normal text-gray-600">ریال</span></p>
                             </div>
                         </div>
                         <div class="text-left">
-                            <p class="text-xs text-gray-500">وضعیت مالی</p>
+                            <p class="text-xs text-gray-500">{{ __('financial.titles.financial_status') }}</p>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $balance > 0 ? 'مثبت' : 'منفی' }}
+                                {{ $balance > 0 ? __('financial.statuses.positive') : __('financial.statuses.negative') }}
                             </span>
                         </div>
                     </div>
@@ -46,11 +60,11 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        لیست تراکنش‌ها
+                        {{ __('financial.titles.transactions') }}
                     </h3>
                     <div class="bg-blue-100 px-3 py-1 rounded-full">
                         <span class="text-sm font-medium text-blue-800">
-                            مجموع: {{ $transactionsPaginated->total() }} تراکنش
+                            {{ __('financial.messages.total_transactions', ['count' => $transactionsPaginated->total()]) }}
                         </span>
                     </div>
                 </div>
@@ -62,19 +76,19 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    شرح تراکنش
+                                    {{ __('financial.table_headers.transaction_description') }}
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    تاریخ
+                                    {{ __('financial.table_headers.date') }}
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    مبلغ
+                                    {{ __('financial.table_headers.amount') }}
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    نوع
+                                    {{ __('financial.table_headers.type') }}
                                 </th>
-                </tr>
-            </thead>
+                            </tr>
+                        </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($transactionsPaginated as $idx => $t)
                                 <tbody x-data="{ open: false }" class="divide-y divide-gray-200">
@@ -82,93 +96,119 @@
                                         {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                                                @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]))
                                                     <button @click="open = !open"
-                                            type="button"
+                                                            type="button"
                                                             class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-                                            :class="open ? 'rotate-180' : ''">
+                                                            :class="open ? 'rotate-180' : ''">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                        </svg>
-                                    </button>
-                                @endif
+                                                        </svg>
+                                                    </button>
+                                                @endif
                                                 <div>
                                                     <div class="text-sm font-medium text-gray-900">{{ $t['title'] }}</div>
-                                                    <div class="text-xs text-gray-500">تراکنش #{{ $transactionsPaginated->firstItem() + $idx }}</div>
+                                                    <div class="text-xs text-gray-500">{{ __('financial.messages.transaction_number', ['number' => $transactionsPaginated->firstItem() + $idx]) }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">{{ $t['date_formatted'] }}</div>
                                             <div class="text-xs text-gray-500">{{ jdate($t['date'])->format('H:i') }}</div>
-                            </td>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-medium {{ $t['type'] === 'credit' ? 'text-green-700' : 'text-red-700' }}">
-                                    {{ $t['type'] === 'credit' ? '+' : '-' }}
-                                    {{ number_format($t['amount']) }} ریال
+                                                {{ $t['type'] === 'credit' ? '+' : '-' }}
+                                                {{ number_format($t['amount']) }} ریال
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                                 {{ $t['type'] === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                                 <span class="w-1.5 h-1.5 ml-1 rounded-full {{ $t['type'] === 'credit' ? 'bg-green-400' : 'bg-red-400' }}"></span>
-                                                {{ $t['type'] === 'credit' ? 'واریز' : 'برداشت' }}
-                                </span>
-                            </td>
-                        </tr>
+                                                {{ $t['type'] === 'credit' ? __('financial.transaction_types.credit') : __('financial.transaction_types.debit') }}
+                                            </span>
+                                        </td>
+                                    </tr>
 
-                        @if(in_array($t['title'], ['حق بیمه پرداختی', 'بیمه پرداختی (ایمپورت اکسل)']))
+                                    @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]))
                                         <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
                                             x-transition:enter-start="opacity-0 transform scale-95" 
                                             x-transition:enter-end="opacity-100 transform scale-100" 
                                             x-cloak class="bg-blue-50">
                                             <td colspan="4" class="px-6 py-4">
-                            @php
-                                $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
-                            @endphp
                                                 <div class="bg-white rounded-lg p-4 border border-blue-200">
                                                     <div class="flex items-start justify-between">
-                                                        <div>
-                                                            <h4 class="text-sm font-medium text-gray-900 mb-2">جزئیات پرداخت</h4>
-                            @if(count($allCodes))
+                                                        <div class="flex-1">
+                                                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ __('financial.messages.payment_details') }}</h4>
+                                                            @if($t['family_count'] > 0)
                                                                 <p class="text-sm text-gray-700 mb-3">
-                                                                    پرداخت حق بیمه برای <span class="font-semibold text-blue-600">{{ count($allCodes) }}</span> خانواده 
-                                                                    به مبلغ <span class="font-semibold text-green-600">{{ number_format($t['amount']) }} ریال</span>
+                                                                    @if($t['family_count'] === 1)
+                                                                        {{ __('financial.descriptions.payment_single_family', ['amount' => number_format($t['amount'])]) }}
+                                                                    @else
+                                                                        {{ __('financial.descriptions.payment_for_families', ['count' => $t['family_count'], 'amount' => number_format($t['amount'])]) }}
+                                                                    @endif
                                                                 </p>
-                                                                <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}" 
-                                                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200" 
-                                                                   target="_blank">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                    </svg>
-                                                                    مشاهده لیست خانواده‌ها
-                                                                </a>
-                            @else
-                                                                <p class="text-sm text-gray-700">پرداخت حق بیمه</p>
-                            @endif
+                                                                <div class="flex items-center space-x-4 space-x-reverse mb-3">
+                                                                    <span class="text-sm text-gray-600">
+                                                                        <strong>{{ $t['family_count'] }}</strong> خانواده
+                                                                    </span>
+                                                                    <span class="text-sm text-gray-600">
+                                                                        <strong>{{ $t['members_count'] }}</strong> نفر
+                                                                    </span>
+                                                                </div>
+                                                                <div class="flex space-x-2 space-x-reverse">
+                                                                    @if($t['title'] === __('financial.transaction_types.premium_import'))
+                                                                        @php
+                                                                            $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
+                                                                        @endphp
+                                                                        @if(count($allCodes) > 0)
+                                                                            <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}" 
+                                                                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200" 
+                                                                               target="_blank">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                </svg>
+                                                                                {{ __('financial.actions.view_families') }}
+                                                                            </a>
+                                                                        @endif
+                                                                    @elseif($t['payment_id'])
+                                                                        <a href="{{ route('insurance.financial-report.payment-details', $t['payment_id']) }}?type={{ $t['title'] === __('financial.transaction_types.premium_payment') ? 'allocation' : 'payment' }}" 
+                                                                           class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                            </svg>
+                                                                            {{ __('financial.actions.view_details') }}
+                                                                        </a>
+                                                                    @endif
+                                                                </div>
+                                                            @else
+                                                                <p class="text-sm text-gray-700">{{ __('financial.descriptions.import_payment') }}</p>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                 </div>
-                            </td>
-                        </tr>
-                        @endif
-                    </tbody>
-                @empty
-                    <tr>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            @empty
+                                <tr>
                                     <td colspan="4" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <p class="text-gray-500 text-sm">هیچ تراکنشی ثبت نشده است</p>
+                                            <p class="text-gray-500 text-sm">{{ __('financial.messages.no_transactions') }}</p>
                                         </div>
                                     </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
             <!-- Pagination تراکنش‌ها -->
@@ -177,7 +217,7 @@
                     <div class="flex flex-wrap items-center justify-between">
                         <!-- تعداد نمایش - سمت راست -->
                         <div class="flex items-center order-1 mr-auto">
-                            <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
+                            <span class="text-sm text-gray-600 ml-2">{{ __('financial.messages.per_page') }}</span>
                             <div class="relative">
                                 <form method="GET" action="{{ request()->url() }}" class="inline">
                                     @foreach(request()->except(['per_page', 'page']) as $key => $value)
@@ -261,7 +301,11 @@
 
                         <!-- شمارنده - سمت چپ -->
                         <div class="text-sm text-gray-600 order-3 ml-auto">
-                            نمایش {{ $transactionsPaginated->firstItem() }} تا {{ $transactionsPaginated->lastItem() }} از {{ $transactionsPaginated->total() }} تراکنش
+                            {{ __('financial.messages.showing_results', [
+                                'from' => $transactionsPaginated->firstItem(),
+                                'to' => $transactionsPaginated->lastItem(),
+                                'total' => $transactionsPaginated->total()
+                            ]) }}
                         </div>
                     </div>
                 </div>
@@ -276,35 +320,35 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        گزارش ایمپورت فایل‌های اکسل
+                        {{ __('financial.titles.import_reports') }}
                     </h3>
                     <div class="bg-green-100 px-3 py-1 rounded-full">
                         <span class="text-sm font-medium text-green-800">
-                            مجموع: {{ number_format($totalAmount) }} ریال
+                            {{ __('financial.messages.total_amount', ['amount' => number_format($totalAmount)]) }}
                         </span>
                     </div>
                 </div>
             </div>
             
             <div class="overflow-hidden">
-        <div class="overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاریخ</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کاربر</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نام فایل</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کل ردیف</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">جدید</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">بروزرسانی</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">بدون تغییر</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خطا</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مبلغ</th>
-                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">خانواده‌ها</th>
-            </tr>
-        </thead>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.date') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.user') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.file_name') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.total_rows') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.new') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.updated') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.unchanged') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.errors') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.amount') }}</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('financial.table_headers.families') }}</th>
+                            </tr>
+                        </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-            @forelse($logs as $log)
+                            @forelse($logs as $log)
                                 <tr class="hover:bg-gray-50 transition-colors duration-200">
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ jdate($log->created_at)->format('Y/m/d') }}
@@ -344,33 +388,33 @@
                                         {{ number_format($log->total_insurance_amount) }} ریال
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500">
-                    @if($log->family_codes && is_array($log->family_codes))
+                                        @if($log->family_codes && is_array($log->family_codes))
                                             <div class="max-w-xs overflow-hidden">
                                                 <span class="text-xs">{{ implode(', ', array_slice($log->family_codes, 0, 3)) }}</span>
                                                 @if(count($log->family_codes) > 3)
                                                     <span class="text-xs text-gray-400">... و {{ count($log->family_codes) - 3 }} مورد دیگر</span>
                                                 @endif
                                             </div>
-                    @else
+                                        @else
                                             <span class="text-gray-400">-</span>
-                    @endif
-                </td>
-            </tr>
-            @empty
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <p class="text-gray-500 text-sm">هیچ گزارش ایمپورتی ثبت نشده است</p>
+                                            <p class="text-gray-500 text-sm">{{ __('financial.messages.no_import_reports') }}</p>
                                         </div>
                                     </td>
                                 </tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
             
             <!-- Pagination ایمپورت لاگ‌ها -->
@@ -438,11 +482,15 @@
 
                         <!-- شمارنده - سمت چپ -->
                         <div class="text-sm text-gray-600">
-                            نمایش {{ $logs->firstItem() }} تا {{ $logs->lastItem() }} از {{ $logs->total() }} گزارش
+                            {{ __('financial.messages.showing_reports', [
+                                'from' => $logs->firstItem(),
+                                'to' => $logs->lastItem(),
+                                'total' => $logs->total()
+                            ]) }}
                         </div>
                     </div>
                 </div>
             @endif
+        </div>
     </div>
-</div>
 </x-app-layout> 

@@ -51,7 +51,10 @@ class ImportController extends Controller
             $originalFileName = $file->getClientOriginalName();
             
             // ذخیره فایل در storage موقت
-            $filePath = $file->store('temp-imports');
+            // مطمئن شدن از وجود پوشه uploads
+            Storage::disk('public')->makeDirectory('uploads');
+            
+            $filePath = $file->store('uploads', 'public');
             
             // تشخیص اندازه فایل و تصمیم‌گیری
             $fileSize = $file->getSize();
@@ -83,12 +86,12 @@ class ImportController extends Controller
                     $request->input('district_id')
                 );
                 
-                ExcelFacade::import($import, Storage::path($filePath));
+                ExcelFacade::import($import, Storage::disk('public')->path($filePath));
                 
                 $results = $import->getResults();
                 
                 // حذف فایل موقت
-                Storage::delete($filePath);
+                Storage::disk('public')->delete($filePath);
                 
                 // تولید پیام موفقیت با جزئیات
                 $message = $this->generateSuccessMessage($results, $originalFileName);
@@ -100,8 +103,8 @@ class ImportController extends Controller
                 
         } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
             // حذف فایل موقت در صورت خطا
-            if (isset($filePath) && Storage::exists($filePath)) {
-                Storage::delete($filePath);
+            if (isset($filePath) && Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
             }
             
             $failures = $e->failures();
@@ -120,8 +123,8 @@ class ImportController extends Controller
                 
         } catch (\Exception $e) {
             // حذف فایل موقت در صورت خطا
-            if (isset($filePath) && Storage::exists($filePath)) {
-                Storage::delete($filePath);
+            if (isset($filePath) && Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
             }
             
             $errorMessage = $this->translateDatabaseError($e->getMessage(), $originalFileName);
@@ -213,6 +216,11 @@ class ImportController extends Controller
         // خطاهای رایج فایل
         if (str_contains($errorMessage, 'file not found') || str_contains($errorMessage, 'فایل یافت نشد')) {
             return '📁 فایل انتخاب شده یافت نشد. لطفاً مجدداً فایل را انتخاب کنید.';
+        }
+        
+        // خطای ایجاد پوشه (مخصوص لیارا)
+        if (str_contains($errorMessage, 'Unable to create a directory') || str_contains($errorMessage, 'create directory')) {
+            return '📁 مشکل در ذخیره‌سازی فایل: سیستم نتوانست پوشه موقت ایجاد کند. لطفاً مجدداً تلاش کنید.';
         }
         
         if (str_contains($errorMessage, 'permission denied') || str_contains($errorMessage, 'دسترسی مجاز نیست')) {

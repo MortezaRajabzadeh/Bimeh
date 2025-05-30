@@ -10,8 +10,8 @@
     <!-- آیتم‌های منو -->
     <nav class="flex flex-col flex-grow py-2">
         <a href="{{ auth()->check() && auth()->user()->user_type === 'admin' ? route('admin.dashboard') : (auth()->check() && auth()->user()->user_type === 'charity' ? route('charity.dashboard') : (auth()->check() && auth()->user()->user_type === 'insurance' ? route('insurance.dashboard') : '#')) }}" 
-           class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('*.dashboard') ? 'bg-gray-100' : '' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+           class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('*.dashboard') ? 'bg-blue-500 text-white' : '' }}">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('*.dashboard') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
             <span class="sidebar-text">داشبورد</span>
@@ -26,16 +26,18 @@
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بیمه شده</span>
+                    <p class="text-sm {{ request()->routeIs('charity.insured-families') ? 'text-gray-200' : 'text-gray-600' }}">{{ $insuredFamilies }} خانواده - {{ $insuredMembers }} نفر</p>
                 </div>
             </a>
             
             <a href="{{ route('charity.uninsured-families') }}" 
                class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.uninsured-families') ? 'bg-red-500 text-white' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('charity.uninsured-families') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بدون پوشش</span>
+                    <p class="text-sm {{ request()->routeIs('charity.uninsured-families') ? 'text-gray-200' : 'text-gray-600' }}">{{ $uninsuredFamilies }} خانواده - {{ $uninsuredMembers }} نفر</p>
                 </div>
             </a>
 
@@ -60,47 +62,53 @@
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بیمه شده</span>
+                    <p class="text-sm {{ request()->routeIs('insurance.insured-families') ? 'text-gray-200' : 'text-gray-600' }}">{{ $insuredFamilies }} خانواده - {{ $insuredMembers }} نفر</p>
                 </div>
             </a>
             
-            <a href="{{ route('insurance.uninsured-families') }}" 
-               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.uninsured-families') ? 'bg-red-500 text-white' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.uninsured-families') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            <a href="{{ route('insurance.families.approval') }}" 
+               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.families.approval') ? 'bg-red-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.families.approval') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
                 <div class="flex flex-col sidebar-text">
                     <span>خانواده‌های بدون پوشش</span>
+                    <p class="text-sm {{ request()->routeIs('insurance.families.approval') ? 'text-gray-200' : 'text-gray-600' }}">{{ $uninsuredFamilies }} خانواده - {{ $uninsuredMembers }} نفر</p>
                 </div>
             </a>
-
-            <a href="#" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100" onclick="event.preventDefault();">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.591 1.106c1.527-.878 3.286.88 2.408 2.408a1.724 1.724 0 001.107 2.592c1.755.425 1.755 2.923 0 3.349a1.724 1.724 0 00-1.107 2.592c.878 1.527-.881 3.286-2.408 2.408a1.724 1.724 0 00-2.592 1.107c-.425 1.755-2.923 1.755-3.349 0a1.724 1.724 0 00-2.592-1.107c-1.527.878-3.286-.881-2.408-2.408a1.724 1.724 0 00-1.107-2.592c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.107-2.592c-.878-1.527.881-3.286 2.408-2.408.996.574 2.25.072 2.592-1.106z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span class="sidebar-text">درخواست‌های بیمه</span>
-            </a>
             
-            <a href="{{ route('insurance.families.approval') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            @can('view insurance shares')
+            <a href="{{ route('insurance.shares.index') }}" 
+               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.shares.index') ? 'bg-blue-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.shares.index') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
-                <span class="sidebar-text">تایید خانواده‌ها</span>
+                <span class="sidebar-text">لیست سهم‌بندی</span>
             </a>
+            @endcan
+            
+            @can('manage insurance shares')
+            <a href="{{ route('insurance.shares.manage') }}" 
+               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.shares.manage') ? 'bg-purple-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.shares.manage') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span class="sidebar-text">سهم‌بندی Real-Time</span>
+            </a>
+            @endcan
         @endif
 
         <!-- منوی فقط مخصوص ادمین -->
         @if(auth()->check() && auth()->user()->user_type === 'admin')
-            <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.users.*') ? 'bg-gray-100' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.users.*') ? 'bg-blue-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span class="sidebar-text">مدیریت کاربران</span>
             </a>
 
-            <a href="{{ route('admin.organizations.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.organizations.*') ? 'bg-gray-100' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <a href="{{ route('admin.organizations.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.organizations.*') ? 'bg-blue-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('admin.organizations.*') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 <span class="sidebar-text">سازمان‌ها</span>
@@ -109,8 +117,8 @@
 
         @if(auth()->check() && auth()->user()->user_type === 'insurance')
             <a href="{{ route('insurance.financial-report') }}"
-               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.financial-report') ? 'bg-gray-100' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.financial-report') ? 'bg-blue-500 text-white' : '' }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.financial-report') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-4.41 0-8-1.79-8-4V6c0-2.21 3.59-4 8-4s8 1.79 8 4v8c0 2.21-3.59 4-8 4z" />
                 </svg>
                 <span class="sidebar-text">گزارش مالی</span>
@@ -137,16 +145,11 @@
             @endphp
             @if($settingsRoute)
                 <a href="{{ $settingsRoute }}"
-                   class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->url() === $settingsRoute ? 'bg-gray-100' : '' }}">
+                   class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->url() === $settingsRoute ? 'bg-blue-500 text-white' : '' }}">
             
-                    <svg 
-                    xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->url() === $settingsRoute ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.591 1.106c1.527-.878 3.286.88 2.408 2.408a1.724 1.724 0 001.107 2.592c1.755.425 1.755 2.923 0 3.349a1.724 1.724 0 00-1.107 2.592c.878 1.527-.881 3.286-2.408 2.408a1.724 1.724 0 00-2.592 1.107c-.425 1.755-2.923 1.755-3.349 0a1.724 1.724 0 00-2.592-1.107c-1.527.878-3.286-.881-2.408-2.408a1.724 1.724 0 00-1.107-2.592c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.107-2.592c-.878-1.527.881-3.286 2.408-2.408.996.574 2.25.072 2.592-1.106z" />
-                         <path stroke-linecap="round" 
-        stroke-linejoin="round" 
-        stroke-width="2" 
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span class="sidebar-text">{{ $settingsText }}</span>
                 </a>
@@ -156,7 +159,7 @@
                 @csrf
                 <button type="submit" class="sidebar-item w-full flex items-center py-3 px-6 hover:bg-gray-100 text-red-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.5 12L10 19l-2.5-2.5M10 5l7.5 7-2.5 2.5" />
                     </svg>
                     <span class="sidebar-text">خروج</span>
                 </button>

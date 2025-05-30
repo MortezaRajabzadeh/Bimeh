@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Member extends Model
+class Member extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity, InteractsWithMedia;
 
     /**
      * فیلدهای قابل پر شدن
@@ -29,11 +31,14 @@ class Member extends Model
         'marital_status',
         'education',
         'relationship',
+        'relationship_fa',
         'is_head',
         'has_disability',
         'has_chronic_disease',
         'has_insurance',
         'insurance_type',
+        'insurance_start_date',
+        'insurance_end_date',
         'special_conditions',
         'problem_type',
         'occupation',
@@ -41,6 +46,9 @@ class Member extends Model
         'mobile',
         'phone',
         'sheba',
+        'has_incomplete_data',
+        'incomplete_data_details',
+        'incomplete_data_updated_at',
     ];
 
     /**
@@ -55,8 +63,24 @@ class Member extends Model
         'has_insurance' => 'boolean',
         'is_employed' => 'boolean',
         'problem_type' => 'array',
-        
+        'has_incomplete_data' => 'boolean',
+        'incomplete_data_details' => 'array',
+        'incomplete_data_updated_at' => 'datetime',
     ];
+
+    /**
+     * تنظیمات مدیا لایبرری
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('special_disease_documents')
+            ->singleFile()
+            ->useDisk('public');
+            
+        $this->addMediaCollection('disability_documents')
+            ->singleFile()
+            ->useDisk('public');
+    }
 
     /**
      * تنظیمات لاگ فعالیت
@@ -85,7 +109,7 @@ class Member extends Model
      */
     public function charity()
     {
-        return $this->belongsTo(Charity::class);
+        return $this->belongsTo(Organization::class, 'charity_id');
     }
 
     /**
@@ -205,7 +229,31 @@ class Member extends Model
      */
     public function scopeExpiredInsurance($query)
     {
-        return $query->whereNotNull('insurance_end_date')
-            ->where('insurance_end_date', '<', now());
+        return $query->whereNotNull('end_date')
+            ->where('end_date', '<', now());
+    }
+
+    /**
+     * فیلتر افراد دارای اطلاعات ناقص
+     */
+    public function scopeWithIncompleteData($query)
+    {
+        return $query->where('has_incomplete_data', true);
+    }
+
+    /**
+     * بررسی اینکه آیا عضو دارای اطلاعات ناقص است
+     */
+    public function hasIncompleteData(): bool
+    {
+        return $this->has_incomplete_data;
+    }
+
+    /**
+     * دریافت فهرست اطلاعات ناقص
+     */
+    public function getIncompleteDataList(): array
+    {
+        return $this->incomplete_data_details ?? [];
     }
 } 

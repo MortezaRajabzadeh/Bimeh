@@ -13,9 +13,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 
-class FamiliesImport implements ToCollection, WithHeadingRow
+class FamiliesImport implements ToCollection
 {
     protected User $user;
     protected int $districtId;
@@ -23,385 +23,626 @@ class FamiliesImport implements ToCollection, WithHeadingRow
         'success' => 0,
         'failed' => 0,
         'families_created' => 0,
+        'families_updated' => 0,
         'members_added' => 0,
+        'members_updated' => 0,
         'errors' => [],
-    ];
-
-    /**
-     * نقشه فیلدهای فارسی و انگلیسی به انگلیسی
-     * تفکیک خانواده‌ها بر اساس: استان + شهر + دهستان + آدرس
-     */
-    protected array $fieldMapping = [
-        // اطلاعات آدرس - فارسی
-        'استان' => 'province_name',
-        'شهر' => 'city_name',
-        'دهستان' => 'district_name', 
-        'آدرس' => 'address',
-        
-        // اطلاعات آدرس - انگلیسی (از فایل کاربر)
-        'astan' => 'province_name',
-        'shhr' => 'city_name',
-        'dhstan' => 'district_name',
-        'adrs' => 'address',
-        
-        // اطلاعات عضو - فارسی  
-        'نام' => 'first_name',
-        'نام خانوادگی' => 'last_name', 
-        'کد ملی' => 'national_code',
-        'تاریخ تولد' => 'birth_date',
-        'جنسیت' => 'gender',
-        'نسبت خانوادگی' => 'relationship',
-        'وضعیت تأهل' => 'marital_status',
-        'شغل' => 'occupation',
-        'موبایل' => 'phone',
-        
-        // اطلاعات عضو - انگلیسی (از فایل کاربر)
-        'nam' => 'first_name',
-        'nam_khanoadgy' => 'last_name',
-        'kd_mly' => 'national_code', 
-        'tarykh_told' => 'birth_date',
-        'gnsyt' => 'gender',
-        'nsbt_khanoadgy' => 'relationship',
-        'odaayt_tahl' => 'marital_status',
-        'shghl' => 'occupation',
-        'mobayl' => 'phone',
+        'error_summary' => [],
+        'sample_errors' => [],
+        'validation_errors' => [],
+        'database_errors' => [],
+        'total_errors' => 0,
+        'error_types' => [],
+        'max_display_errors' => 20,
+        'showing_count' => 0,
     ];
 
     /**
      * نقشه مقادیر فارسی به انگلیسی
-     * فقط فیلدهایی که در FamilyWizard استفاده میشن
      */
     protected array $valueMapping = [
         'gender' => [
             'مرد' => 'male',
             'زن' => 'female',
+            'male' => 'male',
+            'female' => 'female',
+            'مذکر' => 'male',
+            'مونث' => 'female',
         ],
         'marital_status' => [
             'مجرد' => 'single',
-            'متأهل' => 'married',
-            'مطلقه' => 'divorced',
-            'بیوه' => 'widowed',
+            'متاهل' => 'married',
+            'single' => 'single',
+            'married' => 'married',
+        ],
+        'boolean' => [
+            'بلی' => true,
+            'خیر' => false,
+            'بله' => true,
+            'نه' => false,
+            'Yes' => true,
+            'No' => false,
+            'yes' => true,
+            'no' => false,
+            'دارد' => true,
+            'ندارد' => false,
+            '1' => true,
+            '0' => false,
+            1 => true,
+            0 => false,
+            true => true,
+            false => false,
+            'TRUE' => true,
+            'FALSE' => false,
         ],
         'relationship' => [
             'سرپرست' => 'head',
             'همسر' => 'spouse',
             'فرزند' => 'child',
             'والدین' => 'parent',
-            'برادر' => 'brother',
-            'خواهر' => 'sister',
             'سایر' => 'other',
+            'head' => 'head',
+            'spouse' => 'spouse',
+            'child' => 'child',
+            'parent' => 'parent',
+            'other' => 'other',
         ],
+    ];
+
+    /**
+     * نقشه کلیدهای ستون‌های برای تطابق
+     */
+    protected array $columnMapping = [
+        'شناسه_خانواده' => 'شناسه خانواده',
+        'نام_روستا' => 'نام روستا',
+        'سرپرست' => 'سرپرست؟',
+        'نوع_عضو_خانواده' => 'نوع عضو خانواده',
+        'نام' => 'نام',
+        'نام_خانوادگی' => 'نام خانوادگی',
+        'شغل' => 'شغل',
+        'کد_ملی' => 'کد ملی',
+        'تاریخ_تولد' => 'تاریخ تولد',
+        'اعتیاد' => 'اعتیاد',
+        'بیکار' => 'بیکار',
+        'بیماری_خاص' => 'بیماری خاص',
+        'ازکارافتادگی' => 'ازکارافتادگی',
+        'توضیحات_بیشتر_کمک_کننده' => 'توضیحات بیشتر کمک‌کننده',
+    ];
+
+    /**
+     * کلیدهای ستون‌های فارسی مطابق FamiliesTemplateExport
+     */
+    protected array $expectedHeaders = [
+        'شناسه_خانواده' => 'شناسه خانواده',
+        'استان' => 'استان',
+        'شهر' => 'شهر',
+        'سرپرست' => 'سرپرست؟',
+        'نوع_عضو_خانواده' => 'نوع عضو خانواده',
+        'نام' => 'نام',
+        'نام_خانوادگی' => 'نام خانوادگی',
+        'شغل' => 'شغل',
+        'کد_ملی' => 'کد ملی',
+        'تاریخ_تولد' => 'تاریخ تولد',
+        'اعتیاد' => 'اعتیاد',
+        'بیکار' => 'بیکار',
+        'بیماری_خاص' => 'بیماری خاص',
+        'ازکارافتادگی' => 'ازکارافتادگی',
+        'توضیحات_بیشتر_کمک_کننده' => 'توضیحات بیشتر کمک‌کننده',
     ];
 
     public function __construct(User $user, int $districtId)
     {
+        // تنظیم formatter سرتیتر به حالت none تا فرمت دقیق حفظ شود
+        HeadingRowFormatter::default('none');
+        
         $this->user = $user;
         $this->districtId = $districtId;
+        $this->results = [
+            'success' => 0,
+            'failed' => 0,
+            'families_created' => 0,
+            'families_updated' => 0,
+            'members_added' => 0,
+            'members_updated' => 0,
+            'errors' => [],
+            'error_summary' => [],
+            'sample_errors' => [],
+            'validation_errors' => [],
+            'database_errors' => [],
+            'total_errors' => 0,
+            'error_types' => [],
+            'max_display_errors' => 20,
+            'showing_count' => 0,
+        ];
     }
 
     /**
-     * پردازش فایل اکسل
+     * تعیین ردیف سرتیتر - ردیف 3 (بعد از عنوان و راهنما)
+     */
+    public function headingRow(): int
+    {
+        return 2; // ردیف دوم به عنوان سرتیتر
+    }
+
+    /**
+     * پردازش فایل اکسل با مدیریت header های ترکیبی
      */
     public function collection(Collection $rows)
     {
-        // حذف transaction اصلی چون برای هر خانواده transaction جداگانه داریم
-        try {
-            $familyService = app(FamilyService::class);
-            $groupedMembers = [];
+        Log::info('شروع پردازش فایل اکسل', ['total_rows' => count($rows)]);
+        
+        if ($rows->isEmpty()) {
+            Log::warning('فایل اکسل خالی است');
+            return;
+        }
+
+        // تعیین ردیف‌های header
+        $headingRowIndex = 1; // ردیف دوم (index 1) - header اصلی
+        $subHeadingRowIndex = 2; // ردیف سوم (index 2) - sub header
+
+        $headers = [];
+        $subHeaders = [];
+        $finalHeaders = [];
+
+        // گروه‌بندی اعضا بر اساس شناسه خانواده
+        $groupedFamilies = [];
+        $familyIdMapping = [];
+        $lastFamilyId = null;
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 1;
             
-            // مرحله 1: پردازش و گروه‌بندی اعضا بر اساس آدرس
-            foreach ($rows as $index => $row) {
-                // رد کردن ردیف‌های راهنمایی
-                if ($this->isGuideRow($row->toArray())) {
+            try {
+                // خواندن header اصلی
+                if ($index === $headingRowIndex) {
+                    $headers = $row->toArray();
+                    Log::info('Header اصلی خوانده شد', ['headers' => $headers]);
                     continue;
                 }
-                
-                // Debug: نمایش raw data قبل از mapping
-                Log::debug("Row " . ($index + 2) . " raw data:", $row->toArray());
-                
-                $rowData = $this->mapRow($row->toArray());
-                
-                // Debug: نمایش تمام فیلدهای mapped شده
-                Log::debug("Row " . ($index + 2) . " mapped data:", $rowData);
-                
-                // بررسی وجود اطلاعات ضروری
-                $firstName = trim($rowData['first_name'] ?? '');
-                $nationalCode = trim($rowData['national_code'] ?? '');
-                
-                if (empty($firstName) || empty($nationalCode)) {
-                    $this->results['failed']++;
-                    $this->results['errors'][] = "ردیف " . ($index + 2) . ": نام یا کد ملی خالی است - نام: '{$firstName}' (طول: " . strlen($firstName) . "), کد ملی: '{$nationalCode}' (طول: " . strlen($nationalCode) . ")";
-                    continue;
-                }
-                
-                // ایجاد کلید منحصر به فرد برای آدرس
-                $addressKey = $this->generateAddressKey($rowData);
-                
-                if (!isset($groupedMembers[$addressKey])) {
-                    // پاک‌سازی و validation داده‌های خانواده
-                    $address = $this->sanitizeAddress($rowData['address'] ?? '');
+
+                // خواندن sub header
+                if ($index === $subHeadingRowIndex) {
+                    $subHeaders = $row->toArray();
+                    Log::info('Sub header خوانده شد', ['sub_headers' => $subHeaders]);
                     
-                    $groupedMembers[$addressKey] = [
-                        'family_data' => [
-                            'province_name' => $rowData['province_name'] ?? '',
-                            'city_name' => $rowData['city_name'] ?? '',
-                            'district_name' => $rowData['district_name'] ?? '',
-                            'address' => $address,
-                        ],
-                        'members' => []
-                    ];
+                    // ساخت header های نهایی
+                    foreach ($headers as $col => $mainTitle) {
+                        $mainTitle = trim($mainTitle ?? '');
+                        $subTitle = trim($subHeaders[$col] ?? '');
+
+                        if ($mainTitle === 'نوع مشکل' && !empty($subTitle)) {
+                            // برای ستون‌های زیر "نوع مشکل"، از sub header استفاده کن
+                            $finalHeaders[$col] = $subTitle;
+                        } elseif (!empty($mainTitle)) {
+                            // برای سایر ستون‌ها از header اصلی استفاده کن
+                            $finalHeaders[$col] = $mainTitle;
+                        } elseif (!empty($subTitle)) {
+                            // اگر header اصلی خالی بود از sub header استفاده کن
+                            $finalHeaders[$col] = $subTitle;
+                        } else {
+                            // اگر هر دو خالی بودند، نام کلی بده
+                            $finalHeaders[$col] = "ستون_" . ($col + 1);
+                        }
+                    }
+                    
+                    Log::info('Header های نهایی ساخته شدند', ['final_headers' => $finalHeaders]);
+                    continue;
+                }
+
+                // رد کردن ردیف‌های قبل از شروع داده‌ها
+                if ($index < 3) { // ردیف‌های 0، 1، 2 header هستند
+                    continue;
+                }
+
+                // اگر header ها هنوز تشکیل نشده‌اند، skip کن
+                if (empty($finalHeaders)) {
+                    continue;
+                }
+
+                // ترکیب داده‌ها با header های نهایی
+                $rowArray = $row->toArray();
+                $data = [];
+                
+                foreach ($finalHeaders as $col => $headerName) {
+                    $data[$headerName] = $rowArray[$col] ?? null;
+                }
+
+                Log::info('داده ردیف پردازش شد', [
+                    'row_number' => $rowNumber,
+                    'data_keys' => array_keys($data),
+                    'sample_data' => array_slice($data, 0, 5, true)
+                ]);
+
+                // تطبیق کلیدها
+                $rowData = $this->normalizeRowKeys($data, $rowNumber);
+                
+                // تشخیص خودکار ردیف‌های خالی
+                if ($this->isRowEmpty($rowData, $rowNumber)) {
+                    continue;
                 }
                 
-                // آماده‌سازی داده عضو
-                $relationship = $this->mapValue($rowData['relationship'] ?? 'other', 'relationship');
+                if ($this->shouldSkipRow($rowData, $rowNumber)) {
+                    continue;
+                }
                 
-                $memberData = [
-                    'first_name' => $rowData['first_name'],
-                    'last_name' => $rowData['last_name'] ?? '',
-                    'national_code' => $rowData['national_code'],
-                    'birth_date' => $this->parseDate($rowData['birth_date'] ?? ''),
-                    'gender' => $this->mapValue($rowData['gender'] ?? '', 'gender'),
-                    'relationship' => $relationship,
-                    'marital_status' => $this->mapValue($rowData['marital_status'] ?? '', 'marital_status'),
-                    'occupation' => $rowData['occupation'] ?? '',
-                    'phone' => $rowData['phone'] ?? '',
-                    'is_head' => ($relationship === 'head'),
+                // اعتبارسنجی داده‌های ردیف (فقط فیلدهای ضروری)
+                $validation = $this->validateRowData($rowData, $rowNumber);
+                
+                // اگر خطای اجباری داشت، این ردیف رو skip کن
+                if (!$validation['valid']) {
+                    foreach ($validation['errors'] as $error) {
+                        $this->addError($error);
+                    }
+                    $this->results['failed']++;
+                    continue;
+                }
+                
+                // مدیریت شناسه خانواده (برای گروه‌بندی اعضا)
+                $familyId = trim($rowData['family_id'] ?? '');
+                
+                if (!empty($familyId)) {
+                    $lastFamilyId = $familyId;
+                    $familyIdMapping[$rowNumber] = $familyId;
+                } elseif ($lastFamilyId) {
+                    $familyId = $lastFamilyId;
+                    $familyIdMapping[$rowNumber] = "استفاده از آخرین ID: {$familyId}";
+                } else {
+                    $this->addError("ردیف {$rowNumber}: شناسه خانواده مشخص نیست");
+                    $this->results['failed']++;
+                    continue;
+                }
+                
+                // اضافه کردن عضو به خانواده
+                if (!isset($groupedFamilies[$familyId])) {
+                    $groupedFamilies[$familyId] = [];
+                }
+                
+                $groupedFamilies[$familyId][] = [
+                    'data' => $rowData,
+                    'row_number' => $rowNumber
                 ];
+
+            } catch (\Exception $e) {
+                Log::error('خطا در پردازش ردیف', [
+                    'row_number' => $rowNumber,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 
-                $groupedMembers[$addressKey]['members'][] = $memberData;
+                $this->addError("ردیف {$rowNumber}: خطای غیرمنتظره - {$e->getMessage()}");
+                $this->results['failed']++;
+                continue;
+            }
+        }
+
+        Log::info('اطلاعات debug شناسه خانواده‌ها', $familyIdMapping);
+        Log::info('آمار نهایی گروه‌بندی', [
+            'total_families' => count($groupedFamilies),
+            'families_overview' => array_map(fn($members) => count($members), $groupedFamilies)
+        ]);
+
+        // پردازش خانواده‌های گروه‌بندی شده
+        $this->processFamilies($groupedFamilies);
+    }
+
+    /**
+     * تبدیل کلیدهای ردیف به فرمت استاندارد
+     */
+    protected function normalizeRowKeys(array $row, int $rowNumber): array
+    {
+        $normalized = [];
+        
+        // نقشه تطبیق کلیدها (فارسی به انگلیسی)
+        $keyMapping = [
+            'شناسه خانواده' => 'family_id',
+            'نام روستا' => 'village_name',
+            'استان' => 'province_name',
+            'شهر' => 'city_name',
+            'شهرستان' => 'county_name',
+            'سرپرست؟' => 'is_head',
+            'نوع عضو خانواده' => 'relationship_fa',
+            'نام' => 'first_name',
+            'نام خانوادگی' => 'last_name',
+            'شغل' => 'occupation',
+            'کد ملی' => 'national_code',
+            'تاریخ تولد' => 'birth_date',
+            'جنسیت' => 'gender',
+            'وضعیت تاهل' => 'marital_status',
+            'اعتیاد' => 'addiction',
+            'بیکار' => 'unemployed',
+            'بیماری خاص' => 'special_disease',
+            'ازکارافتادگی' => 'disability',
+            'توضیحات بیشتر کمک‌کننده' => 'additional_details',
+        ];
+        
+        // تطبیق کلیدها
+        foreach ($row as $key => $value) {
+            $key = trim($key);
+            
+            // جستجوی تطبیق دقیق
+            if (isset($keyMapping[$key])) {
+                $normalized[$keyMapping[$key]] = trim(strval($value ?? ''));
+                continue;
             }
             
-            // مرحله 2: ایجاد خانواده‌ها و اعضا
-            foreach ($groupedMembers as $addressKey => $familyGroup) {
-                // شروع transaction جداگانه برای هر خانواده
-                DB::beginTransaction();
-                
-                try {
-                    $familyData = $familyGroup['family_data'];
-                    $members = $familyGroup['members'];
-                    
-                    if (empty($members)) {
-                        DB::rollback();
-                        continue;
+            // جستجوی تطبیق فازی
+            foreach ($keyMapping as $persianKey => $englishKey) {
+                if (str_contains($key, $persianKey) || str_contains($persianKey, $key)) {
+                    $normalized[$englishKey] = trim(strval($value ?? ''));
+                    break;
+                }
+            }
+        }
+        
+        // Debug برای بررسی تطبیق کلیدها
+        if ($rowNumber <= 5) {
+            Log::debug("تطبیق کلیدها برای ردیف {$rowNumber}", [
+                'original_keys' => array_keys($row),
+                'mapped_keys' => array_keys($normalized),
+                'family_id' => $normalized['family_id'] ?? 'NOT_FOUND',
+                'first_name' => $normalized['first_name'] ?? 'NOT_FOUND'
+            ]);
+        }
+        
+        return $normalized;
+    }
+
+    /**
+     * بررسی اینکه آیا ردیف باید نادیده گرفته شود (فقط ردیف‌های راهنما)
+     */
+    protected function shouldSkipRow(array $rowData, int $rowNumber): bool
+    {
+        $familyId = $rowData['family_id'] ?? '';
+        $firstName = $rowData['first_name'] ?? '';
+        
+        // فقط ردیف‌های راهنما یا مثال را skip کن
+        if ($familyId === 'راهنما' || 
+            str_contains($familyId, 'راهنما') ||
+            str_contains($familyId, 'مثال') ||
+            $firstName === 'راهنما' ||
+            str_contains($firstName, 'راهنما') ||
+            str_contains($firstName, 'مثال')) {
+            
+            Log::debug("ردیف {$rowNumber} نادیده گرفته شد", [
+                'reason' => 'ردیف راهنما یا مثال',
+                'family_id' => $familyId,
+                'first_name' => $firstName
+            ]);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * اعتبارسنجی داده‌های ردیف (فقط فیلدهای ضروری)
+     */
+    protected function validateRowData(array $rowData, int $rowNumber): array
+    {
+        $errors = [];
+        
+        // فقط فیلدهای اجباری - بقیه هیچ پیامی نمی‌دهند
+        if (empty($rowData['first_name'])) {
+            $errors[] = "❌ ردیف {$rowNumber}: نام الزامی است";
+        }
+        
+        if (empty($rowData['last_name'])) {
+            $errors[] = "❌ ردیف {$rowNumber}: نام خانوادگی الزامی است";
+        }
+        
+        if (empty($rowData['national_code'])) {
+            $errors[] = "❌ ردیف {$rowNumber}: کد ملی الزامی است";
+        }
+        
+        // تمام فیلدهای دیگر (استان، شهر، تاریخ تولد، نوع عضو، کد ملی تکراری، وغیره) 
+        // بدون هیچ پیام warning یا error ای پذیرفته می‌شوند
+        // کد ملی تکراری مشکل نیست چون از updateOrCreate استفاده می‌کنیم
+        
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors,
+            'warnings' => [] // هیچ warning ای نمایش داده نمی‌شود
+        ];
+    }
+
+    /**
+     * پردازش یک گروه خانواده با اولویت updateOrCreate
+     */
+    protected function processFamilyGroup(array $familyData): void
+    {
+        $members = $familyData['members'];
+        $firstMember = $members[0];
+        $provinceName = trim($firstMember['province_name'] ?? '');
+        $cityName = trim($firstMember['city_name'] ?? '');
+        $familyTempId = $familyData['temp_id'];
+        
+        // بررسی وجود سرپرست در خانواده
+        $hasHead = false;
+        foreach ($members as $memberData) {
+            $isHead = $this->mapBooleanValue($memberData['is_head'] ?? 'خیر');
+            if ($isHead) {
+                $hasHead = true;
+                break;
+            }
+        }
+        
+        if (!$hasHead) {
+            throw new \Exception("❌ خانواده شناسه {$familyTempId}: هیچ سرپرستی مشخص نشده است. هر خانواده باید حداقل یک سرپرست داشته باشد");
+        }
+        
+        // ابتدا چک می‌کنیم آیا اعضای این خانواده از قبل وجود دارند
+        // اگر بیش از نیمی از اعضا وجود داشته باشند، خانواده موجودشان را استفاده می‌کنیم
+        $existingFamily = $this->findExistingFamily($members);
+        
+        if ($existingFamily) {
+            Log::debug("خانواده موجود پیدا شد", [
+                'family_id' => $existingFamily->id,
+                'family_code' => $existingFamily->family_code,
+                'temp_id' => $familyTempId
+            ]);
+            $family = $existingFamily;
+        } else {
+            // تنظیم پیش‌فرض در صورت خالی بودن استان/شهر
+            $province = null;
+            $city = null;
+            $address = "نامشخص";
+            
+            if (!empty($provinceName)) {
+                $province = Province::where('name', 'LIKE', "%{$provinceName}%")->first();
+                if ($province && !empty($cityName)) {
+                    $city = City::where('province_id', $province->id)
+                               ->where('name', 'LIKE', "%{$cityName}%")
+                               ->first();
+            
+                    if ($city) {
+                        $address = "شهر {$cityName}، استان {$provinceName}";
+                    } else {
+                        $address = "استان {$provinceName}";
                     }
-                    
-                    // پیش‌بررسی: چک کردن اعضای تکراری و validation کلی
-                    $preValidation = $this->preValidateFamily($members);
-                    if (!empty($preValidation['errors'])) {
-                        DB::rollback();
-                        $this->results['failed']++;
-                        // اضافه کردن همه خطاهای این خانواده
-                        foreach ($preValidation['errors'] as $error) {
-                            $this->results['errors'][] = $error;
-                        }
-                        continue;
-                    }
-                    
-                    // یافتن یا ایجاد استان، شهر و دهستان
-                    $provinceId = $this->findOrCreateProvince($familyData['province_name']);
-                    $cityId = $this->findOrCreateCity($familyData['city_name'], $provinceId);
-                    $districtId = $this->findOrCreateDistrict($familyData['district_name'], $cityId);
-                    
-                    // ایجاد خانواده
-                    $family = $familyService->registerFamily([
-                        'family_code' => $this->generateUniqueFamilyCode(),
-                        'province_id' => $provinceId,
-                        'city_id' => $cityId,
-                        'district_id' => $districtId,
-                        'address' => $familyData['address'],
-                    ], $this->user);
-                    
-                    // شمارش موقت اعضای موفق
-                    $tempMembersAdded = 0;
-                    $tempSuccess = 0;
-                    
-                    // اضافه کردن فقط اعضای معتبر
-                    foreach ($members as $memberData) {
-                        $firstName = trim($memberData['first_name'] ?? '');
-                        $nationalCode = trim($memberData['national_code'] ?? '');
-                        
-                        // فقط اعضای معتبر را اضافه کن
-                        if (!empty($firstName) && !empty($nationalCode) && strlen($nationalCode) <= 10) {
-                            try {
-                                $familyService->addMember($family, $memberData);
-                                $tempMembersAdded++;
-                                $tempSuccess++;
-                            } catch (\Exception $memberException) {
-                                // اگر اضافه کردن این عضو خاص مشکل داشت، آن را نادیده بگیر و ادامه بده
-                                Log::warning('Error adding individual member', [
-                                    'member_data' => $memberData,
-                                    'error' => $memberException->getMessage()
-                                ]);
-                                
-                                // اگر مشکل duplicate بود، خطا را به لیست اضافه کن
-                                if (str_contains($memberException->getMessage(), 'Duplicate entry')) {
-                                    $memberName = trim($firstName . ' ' . ($memberData['last_name'] ?? ''));
-                                    $this->results['errors'][] = "⚠️ {$memberName} (کد ملی: {$nationalCode}) رد شد: قبلاً ثبت شده";
-                                }
-                            }
-                        }
-                    }
-                    
-                    // بررسی اینکه آیا حداقل یک عضو اضافه شده یا خیر
-                    if ($tempMembersAdded === 0) {
-                        // اگر هیچ عضوی اضافه نشد، خانواده را حذف کن
-                        throw new \Exception("هیچ عضو معتبری برای این خانواده یافت نشد");
-                    }
-                    
-                    // اگر همه چیز موفق بود، commit کن و شمارش را به‌روزرسانی کن
-                    DB::commit();
-                    
-                    $this->results['families_created']++;
-                    $this->results['members_added'] += $tempMembersAdded;
-                    $this->results['success'] += $tempSuccess;
-                    
-                } catch (\Exception $e) {
-                    // Rollback در صورت هر نوع خطا
-                    DB::rollback();
-                    
-                    $this->results['failed']++;
-                    $errorMessage = $this->translateDatabaseError($e->getMessage(), $familyGroup['members']);
-                    $this->results['errors'][] = $errorMessage;
-                    Log::error('Family creation error', [
-                        'address_key' => $addressKey,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                        'members_count' => count($familyGroup['members']),
-                        'family_data' => $familyData
-                    ]);
+                } elseif ($province) {
+                    $address = "استان {$provinceName}";
                 }
             }
             
-        } catch (\Exception $e) {
-            // خطا در سطح کلی فایل
-            $this->results['failed']++;
-            $this->results['errors'][] = "خطا کلی در پردازش فایل: " . $e->getMessage();
-            Log::error('Families Import Error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * ایجاد کلید منحصر به فرد برای آدرس
-     * بر اساس ترکیب: استان + شهر + دهستان + آدرس
-     */
-    protected function generateAddressKey(array $data): string
-    {
-        $province = trim($data['province_name'] ?? '');
-        $city = trim($data['city_name'] ?? '');
-        $district = trim($data['district_name'] ?? '');
-        $address = trim($data['address'] ?? '');
-        
-        return md5(strtolower("$province|$city|$district|$address"));
-    }
-
-    /**
-     * یافتن یا ایجاد استان
-     */
-    protected function findOrCreateProvince(string $name): int
-    {
-        if (empty($name)) {
-            return 1; // استان پیشفرض
-        }
-        
-        $province = Province::where('name', 'LIKE', "%{$name}%")->first();
-        
-        if (!$province) {
-            $province = Province::create([
-                'name' => $name,
-            ]);
-        }
-        
-        return $province->id;
-    }
-
-    /**
-     * یافتن یا ایجاد شهر
-     */
-    protected function findOrCreateCity(string $name, int $provinceId): int
-    {
-        if (empty($name)) {
-            return 1; // شهر پیشفرض
-        }
-        
-        $city = City::where('name', 'LIKE', "%{$name}%")
-                   ->where('province_id', $provinceId)
-                   ->first();
-        
-        if (!$city) {
-            $city = City::create([
-                'name' => $name,
-                'province_id' => $provinceId
-            ]);
-        }
-        
-        return $city->id;
-    }
-
-    /**
-     * یافتن یا ایجاد دهستان
-     */
-    protected function findOrCreateDistrict(string $name, int $cityId): int
-    {
-        if (empty($name)) {
-            return $this->districtId; // دهستان انتخاب شده توسط کاربر
-        }
-        
-        $district = District::where('name', 'LIKE', "%{$name}%")
-                           ->where('city_id', $cityId)
-                           ->first();
-        
-        if (!$district) {
-            $district = District::create([
-                'name' => $name,
-                'city_id' => $cityId
-            ]);
-        }
-        
-        return $district->id;
-    }
-
-    /**
-     * تبدیل ردیف اکسل به فیلدهای قابل استفاده
-     */
-    protected function mapRow(array $row): array
-    {
-        $mapped = [];
-        
-        foreach ($row as $key => $value) {
-            // حذف فضاهای اضافی و کاراکترهای غیرقابل رؤیت
-            $normalizedKey = trim(preg_replace('/\s+/', ' ', $key));
-            $normalizedValue = trim($value ?? '');
+            // ایجاد خانواده جدید
+            $familyService = app(FamilyService::class);
+            $family = $familyService->registerFamily([
+                'family_code' => $this->generateUniqueFamilyCode(),
+                'province_id' => $province?->id,
+                'city_id' => $city?->id,
+                'district_id' => $this->districtId,
+                'address' => $address,
+            ], $this->user);
             
-            if (isset($this->fieldMapping[$normalizedKey])) {
-                $mapped[$this->fieldMapping[$normalizedKey]] = $normalizedValue;
-            } else {
-                // Log unmapped fields for debugging
-                Log::debug("Unmapped field found: '{$normalizedKey}' (original: '{$key}')");
+            Log::debug("خانواده جدید ایجاد شد", [
+                'family_id' => $family->id,
+                'family_code' => $family->family_code,
+                'temp_id' => $familyTempId
+            ]);
+        }
+        
+        // اضافه کردن اعضا
+        foreach ($members as $memberData) {
+            $this->addMemberToFamily($family, $memberData);
+        }
+    }
+
+    /**
+     * یافتن خانواده موجود بر اساس اعضای موجود
+     */
+    protected function findExistingFamily(array $members): ?Family
+    {
+        // کدهای ملی اعضا
+        $nationalCodes = [];
+        foreach ($members as $memberData) {
+            if (!empty($memberData['national_code'])) {
+                $nationalCodes[] = $memberData['national_code'];
             }
         }
         
-        return $mapped;
-    }
-
-    /**
-     * تبدیل مقادیر فارسی به انگلیسی
-     */
-    protected function mapValue(string $value, string $type)
-    {
-        $normalizedValue = trim($value);
-        
-        if (isset($this->valueMapping[$type][$normalizedValue])) {
-            return $this->valueMapping[$type][$normalizedValue];
+        if (empty($nationalCodes)) {
+            return null;
         }
         
-        return $normalizedValue;
+        // جستجو برای اعضای موجود
+        $existingMembers = Member::whereIn('national_code', $nationalCodes)->get();
+        
+        if ($existingMembers->isEmpty()) {
+            return null;
+        }
+        
+        // اگر بیش از نیمی از اعضا در یک خانواده هستند، آن خانواده را برمی‌گردانیم
+        $familyCounts = $existingMembers->groupBy('family_id');
+        $totalMembers = count($members);
+        
+        foreach ($familyCounts as $familyId => $familyMembers) {
+            $existingCount = $familyMembers->count();
+            if ($existingCount >= ceil($totalMembers / 2)) {
+                return Family::find($familyId);
+            }
+        }
+        
+        return null;
     }
 
     /**
-     * تبدیل تاریخ فارسی به فرمت مناسب
+     * اضافه کردن عضو به خانواده با updateOrCreate
+     */
+    protected function addMemberToFamily(Family $family, array $memberData): void
+    {
+        // تبدیل مقادیر
+        $isHead = $this->mapBooleanValue($memberData['is_head'] ?? 'خیر');
+        $relationship = $this->mapRelationshipValue($memberData['relationship_fa']);
+        
+        // تشخیص جنسیت
+        $gender = in_array($relationship, ['mother']) || $memberData['relationship_fa'] === 'مادر' ? 'female' : 'male';
+        
+        // تبدیل مقادیر مشکلات
+        $problemTypes = [];
+        if ($this->mapBooleanValue($memberData['addiction'] ?? 'خیر')) {
+            $problemTypes[] = 'addiction';
+        }
+        if ($this->mapBooleanValue($memberData['unemployed'] ?? 'خیر')) {
+            $problemTypes[] = 'unemployment';
+        }
+        if ($this->mapBooleanValue($memberData['special_disease'] ?? 'خیر')) {
+            $problemTypes[] = 'special_disease';
+        }
+        if ($this->mapBooleanValue($memberData['disability'] ?? 'خیر')) {
+            $problemTypes[] = 'work_disability';
+        }
+        
+        $memberUpdateData = [
+            'family_id' => $family->id,
+            'charity_id' => $this->getValidCharityId(),
+            'first_name' => $memberData['first_name'],
+            'last_name' => $memberData['last_name'] ?? '',
+            'birth_date' => $this->parseDate($memberData['birth_date'] ?? ''),
+            'gender' => $gender,
+            'relationship' => $relationship,
+            'relationship_fa' => $memberData['relationship_fa'],
+            'is_head' => $isHead,
+            'occupation' => $memberData['occupation'] ?? '',
+            'problem_type' => $problemTypes,
+            'special_conditions' => $memberData['additional_details'] ?? '',
+        ];
+        
+        // استفاده از updateOrCreate برای جلوگیری از تکراری یا آپدیت کردن
+        $member = Member::updateOrCreate(
+            [
+                'national_code' => $memberData['national_code'], // کلید یکتا برای تشخیص
+            ],
+            $memberUpdateData
+        );
+        
+        // چک کردن اینکه آیا عضو جدید ایجاد شده یا آپدیت شده
+        if ($member->wasRecentlyCreated) {
+            $this->results['members_added']++;
+        } else {
+            $this->results['members_updated']++;
+        }
+    }
+
+    /**
+     * تبدیل مقدار boolean
+     */
+    protected function mapBooleanValue(string $value): bool
+    {
+        $value = trim($value);
+        return $this->valueMapping['boolean'][$value] ?? false;
+    }
+
+    /**
+     * تبدیل مقدار رابطه خانوادگی
+     */
+    protected function mapRelationshipValue(string $value): string
+    {
+        $value = trim($value);
+        return $this->valueMapping['relationship'][$value] ?? 'other';
+    }
+
+    /**
+     * پارس کردن تاریخ شمسی
      */
     protected function parseDate(string $date): ?string
     {
@@ -410,291 +651,267 @@ class FamiliesImport implements ToCollection, WithHeadingRow
         }
         
         try {
-            $parts = explode('/', $date);
-            if (count($parts) === 3) {
-                return sprintf('%04d-%02d-%02d', $parts[0], $parts[1], $parts[2]);
+            // حذف space اضافی
+            $date = trim($date);
+            
+            // فرمت‌های مختلف تاریخ
+            // 1. فرمت استاندارد: 1370/1/1
+            if (preg_match('/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
+                $year = intval($matches[1]);
+                $month = intval($matches[2]);
+                $day = intval($matches[3]);
+                
+                // اعتبارسنجی محدوده
+                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
+                    return null;
+                }
+                
+                $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
+                return $jalalian->toCarbon()->format('Y-m-d');
             }
+            
+            // 2. فرمت با slash اضافی: 1356//04/21
+            if (preg_match('/^(\d{4})\/+(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
+                $year = intval($matches[1]);
+                $month = intval($matches[2]);
+                $day = intval($matches[3]);
+                
+                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
+                    return null;
+                }
+                
+                $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
+                return $jalalian->toCarbon()->format('Y-m-d');
+            }
+            
+            // 3. فقط سال: 1360
+            if (preg_match('/^(\d{4})$/', $date, $matches)) {
+                $year = intval($matches[1]);
+                // فرض می‌کنیم اول فروردین
+                $jalalian = new \Morilog\Jalali\Jalalian($year, 1, 1);
+                return $jalalian->toCarbon()->format('Y-m-d');
+            }
+            
+            // 4. فرمت با صفر اضافی در ماه: 1314/080/1
+            if (preg_match('/^(\d{4})\/0?(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
+                $year = intval($matches[1]);
+                $month = intval($matches[2]);
+                $day = intval($matches[3]);
+                
+                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
+                    return null;
+                }
+                
+                $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
+                return $jalalian->toCarbon()->format('Y-m-d');
+            }
+            
         } catch (\Exception $e) {
-            // در صورت خطا null برگردان
+            Log::warning('خطا در پارس تاریخ', ['date' => $date, 'error' => $e->getMessage()]);
         }
         
         return null;
     }
 
     /**
-     * بررسی اینکه آیا ردیف راهنما است یا خیر
+     * تولید کد یکتای خانواده
      */
-    protected function isGuideRow(array $row): bool
+    protected function generateUniqueFamilyCode(): string
     {
-        $firstCell = reset($row);
-        $firstCellStr = (string) $firstCell;
+        do {
+            $code = mt_rand(100000000, 999999999);
+        } while (Family::where('family_code', $code)->exists());
         
-        // بررسی patterns مختلف برای ردیف‌های راهنما
-        $guidePatterns = [
-            '---',
-            'راهنما',
-            'مثال:',
-            'کد پستی',
-            'آدرس کامل',
-            'نام و نام خانوادگی',
-            'وارد کنید',
-            '10 رقمی',
-            'مالک یا مستاجر',
-            'توضیحات اضافی'
+        return (string) $code;
+    }
+
+    /**
+     * بررسی معتبر بودن charity_id
+     */
+    protected function getValidCharityId(): ?int
+    {
+        if ($this->user->organization_id) {
+            $orgExists = \App\Models\Organization::where('id', $this->user->organization_id)->exists();
+            if ($orgExists) {
+                return $this->user->organization_id;
+            }
+        }
+        
+        $firstCharity = \App\Models\Organization::where('type', 'charity')
+                                                ->where('is_active', true)
+                                                ->first();
+        
+        return $firstCharity?->id;
+    }
+
+    /**
+     * اضافه کردن خطا
+     */
+    protected function addError(string $error): void
+    {
+        $this->results['errors'][] = $error;
+        $this->results['total_errors']++;
+        
+        // محدود کردن نمایش خطاها
+        if (count($this->results['errors']) > 20) {
+            $this->results['errors'] = array_slice($this->results['errors'], 0, 20);
+            $this->results['showing_count'] = 20;
+        } else {
+            $this->results['showing_count'] = count($this->results['errors']);
+        }
+    }
+
+    /**
+     * دریافت نتایج
+     */
+    public function getResults(): array
+    {
+        // تولید خلاصه خطاها قبل از بازگشت نتایج
+        $this->generateErrorSummary();
+        return $this->results;
+    }
+
+    /**
+     * تولید خلاصه خطاها برای نمایش بهتر
+     */
+    protected function generateErrorSummary(): void
+    {
+        $summary = [];
+        
+        foreach ($this->results['error_types'] as $type => $count) {
+            $typeLabel = $this->getErrorTypeLabel($type);
+            $summary[] = "{$typeLabel}: {$count} مورد";
+        }
+        
+        $this->results['error_summary'] = $summary;
+        
+        // اگر خطاهای زیادی هست، پیام اضافی اضافه کن
+        if ($this->results['total_errors'] > $this->results['max_display_errors']) {
+            $hiddenCount = $this->results['total_errors'] - $this->results['max_display_errors'];
+            $this->results['sample_errors'][] = [
+                'message' => "💡 {$hiddenCount} خطای اضافی مخفی شده‌اند. برای مشاهده کامل، لاگ سیستم را بررسی کنید.",
+                'type' => 'summary',
+                'context' => []
+            ];
+        }
+    }
+
+    /**
+     * برچسب انواع خطاها
+     */
+    protected function getErrorTypeLabel(string $type): string
+    {
+        $labels = [
+            'validation' => '❌ خطاهای اعتبارسنجی',
+            'database' => '🔧 خطاهای پایگاه داده',
+            'foreign_key' => '🔗 خطاهای ارتباط جداول',
+            'duplicate' => '⚠️ اطلاعات تکراری',
+            'data_format' => '📝 خطاهای فرمت داده',
+            'province_city' => '📍 خطاهای استان/شهر',
+            'general' => '🚫 خطاهای عمومی'
         ];
         
-        foreach ($guidePatterns as $pattern) {
-            if (strpos($firstCellStr, $pattern) !== false) {
-                return true;
+        return $labels[$type] ?? "🔍 {$type}";
+    }
+
+    /**
+     * تشخیص خودکار ردیف‌های خالی
+     */
+    protected function isRowEmpty(array $rowData, int $rowNumber): bool
+    {
+        // فیلدهای اصلی که باید چک شوند
+        $mainFields = ['first_name', 'last_name', 'national_code'];
+        
+        $hasData = false;
+        foreach ($mainFields as $field) {
+            if (!empty($rowData[$field]) && trim($rowData[$field]) !== '') {
+                $hasData = true;
+                break;
             }
+        }
+        
+        // اگر فیلدهای اصلی خالی بودند، بررسی کنیم که آیا سایر فیلدها هم خالی هستند
+        if (!$hasData) {
+            // بررسی اضافی - اگر شناسه خانواده یا شغل هم داشته باشد، ردیف خالی نیست
+            $extraFields = ['family_id', 'occupation', 'province_name', 'city_name'];
+            foreach ($extraFields as $field) {
+                if (!empty($rowData[$field]) && trim($rowData[$field]) !== '') {
+                    // اگر شناسه خانواده دارد ولی نام ندارد، احتمالاً ردیف خراب است
+                    Log::warning("ردیف {$rowNumber} اطلاعات ناقص دارد", [
+                        'has_family_id' => !empty($rowData['family_id']),
+                        'has_name' => !empty($rowData['first_name']),
+                        'has_last_name' => !empty($rowData['last_name']),
+                        'has_national_code' => !empty($rowData['national_code'])
+                    ]);
+                    return false; // ردیف خراب ولی خالی نیست
+                }
+            }
+            
+            Log::debug("ردیف {$rowNumber} نادیده گرفته شد", [
+                'reason' => 'ردیف خالی - تمام فیلدهای اصلی خالی'
+            ]);
+            return true;
         }
         
         return false;
     }
 
     /**
-     * پاک‌سازی آدرس
+     * پردازش خانواده‌های گروه‌بندی شده
      */
-    protected function sanitizeAddress(string $address): string
+    protected function processFamilies(array $groupedFamilies): void
     {
-        $cleaned = trim($address);
-        
-        // حذف راهنماها
-        if (strpos($cleaned, 'آدرس کامل') !== false ||
-            strpos($cleaned, 'وارد کنید') !== false) {
-            return '';
-        }
-        
-        return $cleaned;
-    }
-
-    /**
-     * تولید کد منحصر به فرد خانواده
-     */
-    protected function generateUniqueFamilyCode(): string
-    {
-        $maxAttempts = 100;
-        $attempt = 0;
-        
-        do {
-            $attempt++;
-            
-            // تولید کد بر اساس تاریخ جاری + ID سازمان + شماره تصادفی
-            $year = now()->format('Y');
-            $month = str_pad(now()->format('m'), 2, '0', STR_PAD_LEFT);
-            $day = str_pad(now()->format('d'), 2, '0', STR_PAD_LEFT);
-            $charityId = str_pad($this->user->organization_id ?? 1, 3, '0', STR_PAD_LEFT);
-            $randomSuffix = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            
-            $code = $year . $month . $day . $charityId . $randomSuffix;
-            
-            // اگر بیش از حد تلاش کردیم، یک کد کاملاً تصادفی 15 رقمی تولید کنیم
-            if ($attempt > $maxAttempts) {
-                $code = str_pad(strval(random_int(100000000000000, 999999999999999)), 15, '0', STR_PAD_LEFT);
-            }
-            
-        } while (Family::where('family_code', $code)->exists() && $attempt <= $maxAttempts + 10);
-        
-        return $code;
-    }
-
-    /**
-     * پیش‌بررسی کامل خانواده قبل از ایجاد
-     */
-    protected function preValidateFamily(array $members): array
-    {
-        $errors = [];
-        $validMembers = 0;
-        
-        foreach ($members as $index => $member) {
-            $memberNumber = $index + 1;
-            $firstName = trim($member['first_name'] ?? '');
-            $nationalCode = trim($member['national_code'] ?? '');
-            $memberName = trim($firstName . ' ' . ($member['last_name'] ?? ''));
-            
-            // بررسی فیلدهای ضروری
-            if (empty($firstName)) {
-                $errors[] = "❌ عضو {$memberNumber}: نام ضروری است";
-                continue;
-            }
-            
-            if (empty($nationalCode)) {
-                $errors[] = "❌ {$memberName}: کد ملی ضروری است";
-                continue;
-            }
-            
-            // بررسی طول کد ملی
-            if (strlen($nationalCode) > 10) {
-                $errors[] = "❌ {$memberName}: کد ملی نباید بیشتر از 10 رقم باشد (فعلی: " . strlen($nationalCode) . " رقم)";
-                continue;
-            }
-            
-            // بررسی تکراری بودن در پایگاه داده
-            $existingMember = Member::where('national_code', $nationalCode)->first();
-            if ($existingMember) {
-                $errors[] = "⚠️ {$memberName} (کد ملی: {$nationalCode}) قبلاً در سیستم ثبت شده است";
-                continue;
-            }
-            
-            // بررسی تکراری بودن در همین فایل (در همین خانواده)
-            $duplicatesInFamily = array_filter($members, function($m) use ($nationalCode) {
-                return trim($m['national_code'] ?? '') === $nationalCode;
-            });
-            
-            if (count($duplicatesInFamily) > 1) {
-                $errors[] = "⚠️ {$memberName} (کد ملی: {$nationalCode}) در همین خانواده تکراری است";
-                continue;
-            }
-            
-            $validMembers++;
-        }
-        
-        // بررسی اینکه خانواده حداقل یک عضو معتبر دارد
-        if ($validMembers === 0) {
-            $errors[] = "❌ خانواده نامعتبر: هیچ عضو معتبری برای ایجاد خانواده وجود ندارد";
-        }
-        
-        return [
-            'valid_members' => $validMembers,
-            'total_members' => count($members),
-            'errors' => $errors
-        ];
-    }
-
-    /**
-     * بررسی وجود اعضای تکراری قبل از ایجاد خانواده (deprecated - استفاده از preValidateFamily)
-     */
-    protected function checkForDuplicateMembers(array $members): ?string
-    {
-        foreach ($members as $member) {
-            $nationalCode = trim($member['national_code'] ?? '');
-            
-            if (empty($nationalCode)) {
-                continue; // کدهای ملی خالی در validation اصلی چک می‌شوند
-            }
-            
-            // بررسی وجود کد ملی در پایگاه داده
-            $existingMember = Member::where('national_code', $nationalCode)->first();
-            
-            if ($existingMember) {
-                $memberName = trim(($member['first_name'] ?? '') . ' ' . ($member['last_name'] ?? ''));
-                return "⚠️ کد ملی تکراری: {$memberName} (کد ملی: {$nationalCode}) قبلاً در سیستم ثبت شده است";
-            }
-        }
-        
-        return null; // هیچ تکراری پیدا نشد
-    }
-
-    /**
-     * ترجمه خطاهای پایگاه داده به زبان قابل فهم
-     */
-    protected function translateDatabaseError(string $errorMessage, array $members = []): string
-    {
-        // خطای کد ملی تکراری
-        if (str_contains($errorMessage, 'Duplicate entry') && str_contains($errorMessage, 'members_national_code_unique')) {
-            preg_match('/Duplicate entry \'([^\']+)\'/', $errorMessage, $matches);
-            $duplicateNationalCode = $matches[1] ?? 'نامشخص';
-            
-            // پیدا کردن نام صاحب کد ملی تکراری
-            $memberName = 'نامشخص';
-            foreach ($members as $member) {
-                if ($member['national_code'] === $duplicateNationalCode) {
-                    $memberName = trim($member['first_name'] . ' ' . $member['last_name']);
-                    break;
+        // پردازش هر خانواده
+        foreach ($groupedFamilies as $familyId => $familyMembers) {
+            try {
+                DB::beginTransaction();
+                
+                // استخراج داده‌های اعضا
+                $membersData = array_map(fn($member) => $member['data'], $familyMembers);
+                
+                // چک کردن آیا خانواده جدید است یا آپدیت می‌شود
+                $existingFamily = $this->findExistingFamily($membersData);
+                $isNewFamily = !$existingFamily;
+                
+                // ایجاد ساختار سازگار با متد قدیمی
+                $familyData = [
+                    'members' => $membersData,
+                    'temp_id' => $familyId
+                ];
+                
+                $this->processFamilyGroup($familyData);
+                
+                DB::commit();
+                
+                if ($isNewFamily) {
+                    $this->results['families_created']++;
+                } else {
+                    $this->results['families_updated']++;
                 }
+                
+                $this->results['success']++;
+                
+                Log::info("خانواده {$familyId} با موفقیت " . ($isNewFamily ? 'ایجاد' : 'آپدیت') . " شد", [
+                    'members_count' => count($membersData),
+                    'is_new' => $isNewFamily
+                ]);
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                
+                Log::error('خطا در پردازش خانواده', [
+                    'family_id' => $familyId,
+                    'error' => $e->getMessage()
+                ]);
+                
+                $this->addError("❌ خانواده شناسه {$familyId}: " . $e->getMessage());
+                $this->results['failed']++;
             }
-            
-            return "⚠️ کد ملی تکراری: {$memberName} (کد ملی: {$duplicateNationalCode}) قبلاً در سیستم ثبت شده است";
         }
         
-        // خطای کد خانواده تکراری
-        if (str_contains($errorMessage, 'Duplicate entry') && str_contains($errorMessage, 'families_family_code_unique')) {
-            return "⚠️ کد خانواده تکراری: این خانواده قبلاً در سیستم ثبت شده است";
-        }
-        
-        // خطای محدودیت کلید خارجی
-        if (str_contains($errorMessage, 'foreign key constraint')) {
-            if (str_contains($errorMessage, 'province_id')) {
-                return "❌ خطا در اطلاعات استان: استان وارد شده معتبر نیست";
-            }
-            if (str_contains($errorMessage, 'city_id')) {
-                return "❌ خطا در اطلاعات شهر: شهر وارد شده معتبر نیست";
-            }
-            if (str_contains($errorMessage, 'district_id')) {
-                return "❌ خطا در اطلاعات منطقه: منطقه وارد شده معتبر نیست";
-            }
-            return "❌ خطا در ارتباط اطلاعات: یکی از فیلدهای وارد شده معتبر نیست";
-        }
-        
-        // خطای فیلد خالی اجباری
-        if (str_contains($errorMessage, 'cannot be null') || str_contains($errorMessage, 'not null')) {
-            if (str_contains($errorMessage, 'first_name')) {
-                return "❌ نام ضروری است: نام اعضای خانواده نباید خالی باشد";
-            }
-            if (str_contains($errorMessage, 'national_code')) {
-                return "❌ کد ملی ضروری است: کد ملی اعضای خانواده نباید خالی باشد";
-            }
-            if (str_contains($errorMessage, 'family_code')) {
-                return "❌ کد خانواده ضروری است: خطای داخلی در تولید کد خانواده";
-            }
-            return "❌ فیلد اجباری خالی است: یکی از فیلدهای ضروری خالی باقی مانده";
-        }
-        
-        // خطای طول زیاد فیلد
-        if (str_contains($errorMessage, 'Data too long for column')) {
-            if (str_contains($errorMessage, 'national_code')) {
-                return "❌ کد ملی طولانی: کد ملی نباید بیشتر از 10 رقم باشد";
-            }
-            if (str_contains($errorMessage, 'phone')) {
-                return "❌ شماره تلفن طولانی: شماره تلفن نباید بیشتر از 15 رقم باشد";
-            }
-            if (str_contains($errorMessage, 'address')) {
-                return "❌ آدرس طولانی: آدرس نباید بیشتر از 500 کاراکتر باشد";
-            }
-            return "❌ داده طولانی: یکی از فیلدها بیش از حد مجاز طولانی است";
-        }
-        
-        // خطای مقدار غیرمعتبر enum
-        if (str_contains($errorMessage, 'incorrect enum value') || str_contains($errorMessage, 'invalid enum')) {
-            if (str_contains($errorMessage, 'gender')) {
-                return "❌ جنسیت نامعتبر: مقادیر معتبر عبارتند از: مرد، زن";
-            }
-            if (str_contains($errorMessage, 'marital_status')) {
-                return "❌ وضعیت تأهل نامعتبر: مقادیر معتبر عبارتند از: مجرد، متأهل، مطلقه، بیوه";
-            }
-            if (str_contains($errorMessage, 'relationship')) {
-                return "❌ نسبت خانوادگی نامعتبر: مقادیر معتبر عبارتند از: سرپرست، همسر، فرزند، والدین، برادر، خواهر، سایر";
-            }
-            return "❌ مقدار نامعتبر: یکی از مقادیر وارد شده معتبر نیست";
-        }
-        
-        // خطای عمومی connection
-        if (str_contains($errorMessage, 'connection') || str_contains($errorMessage, 'timeout')) {
-            return "🔌 مشکل ارتباط با پایگاه داده: لطفاً مجدداً تلاش کنید";
-        }
-        
-        // خطای table موجود نبودن
-        if (str_contains($errorMessage, 'Base table or view not found') || str_contains($errorMessage, "doesn't exist")) {
-            if (str_contains($errorMessage, 'family_members')) {
-                return "❌ خطای پیکربندی: Table اعضای خانواده یافت نشد. لطفاً با پشتیبانی تماس بگیرید.";
-            }
-            if (str_contains($errorMessage, 'families')) {
-                return "❌ خطای پیکربندی: Table خانواده‌ها یافت نشد. لطفاً با پشتیبانی تماس بگیرید.";
-            }
-            return "❌ خطای پیکربندی پایگاه داده: یکی از table های ضروری یافت نشد. لطفاً با پشتیبانی تماس بگیرید.";
-        }
-        
-        // خطاهای عمومی دیگر - خلاصه شده
-        return "❌ خطا در ثبت اطلاعات: " . (strlen($errorMessage) > 100 ? 
-            substr($errorMessage, 0, 100) . '...' : 
-            $errorMessage);
-    }
-
-    /**
-     * دریافت نتایج پردازش
-     */
-    public function getResults(): array
-    {
-        return $this->results;
+        Log::info('پردازش فایل اکسل تمام شد', $this->results);
     }
 } 

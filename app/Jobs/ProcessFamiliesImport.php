@@ -73,7 +73,7 @@ class ProcessFamiliesImport implements ShouldQueue
             ]);
 
             // بررسی وجود فایل
-            if (!Storage::exists($this->filePath)) {
+            if (!Storage::disk('public')->exists($this->filePath)) {
                 throw new \Exception("فایل آپلود شده یافت نشد: {$this->filePath}");
             }
 
@@ -84,7 +84,7 @@ class ProcessFamiliesImport implements ShouldQueue
             
             $this->updateStatus('processing', 30);
             
-            Excel::import($import, Storage::path($this->filePath));
+            Excel::import($import, Storage::disk('public')->path($this->filePath));
             
             $this->updateStatus('processing', 80);
             
@@ -101,7 +101,7 @@ class ProcessFamiliesImport implements ShouldQueue
             }
             
             // حذف فایل موقت
-            Storage::delete($this->filePath);
+            Storage::disk('public')->delete($this->filePath);
             
             Log::info("پردازش فایل اکسل کامل شد", [
                 'user_id' => $this->user->id,
@@ -134,8 +134,8 @@ class ProcessFamiliesImport implements ShouldQueue
         $this->updateStatus('failed', 0, null, $exception->getMessage());
         
         // حذف فایل موقت در صورت شکست
-        if (Storage::exists($this->filePath)) {
-            Storage::delete($this->filePath);
+        if (Storage::disk('public')->exists($this->filePath)) {
+            Storage::disk('public')->delete($this->filePath);
         }
         
         $this->sendErrorNotification($exception->getMessage());

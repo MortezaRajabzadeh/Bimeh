@@ -92,7 +92,7 @@
         'monthly_income' => 'درآمد ماهانه',
         'is_insured' => 'وضعیت بیمه',
         'insurance_start_date' => 'تاریخ شروع بیمه',
-        'insurance_end_date' => 'تاریخ پایان بیمه',
+        'end_date' => 'تاریخ پایان بیمه',
         'region_id' => 'منطقه',
         'province_id' => 'استان',
         'city_id' => 'شهر',

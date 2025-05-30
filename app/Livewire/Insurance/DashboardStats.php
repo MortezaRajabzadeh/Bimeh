@@ -110,7 +110,7 @@ class DashboardStats extends Component
         $query = Member::query()
             ->join('families', 'members.family_id', '=', 'families.id')
             ->join('family_insurances', 'families.id', '=', 'family_insurances.family_id')
-            ->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']]);
+            ->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']]);
 
         // فیلتر سازمان
         if ($this->selectedOrganization) {
@@ -134,7 +134,7 @@ class DashboardStats extends Component
         $query = Member::query()
             ->join('families', 'members.family_id', '=', 'families.id')
             ->join('family_insurances', 'families.id', '=', 'family_insurances.family_id')
-            ->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']]);
+            ->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']]);
 
         // فیلتر سازمان
         if ($this->selectedOrganization) {
@@ -161,14 +161,14 @@ class DashboardStats extends Component
     private function getTotalPayments($dateRange)
     {
         // حق بیمه‌های پرداخت شده
-        $insurancePayments = FamilyInsurance::whereBetween('insurance_issue_date', [$dateRange['start'], $dateRange['end']])
+        $insurancePayments = FamilyInsurance::whereBetween('start_date', [$dateRange['start'], $dateRange['end']])
             ->when($this->selectedOrganization, function($q) {
                 return $q->whereHas('family', function($family) {
                     $family->where('charity_id', $this->selectedOrganization)
                           ->orWhere('insurance_id', $this->selectedOrganization);
                 });
             })
-            ->sum('insurance_amount');
+            ->sum('premium_amount');
 
         // خسارات پرداخت شده
         $allocations = InsuranceAllocation::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
@@ -332,7 +332,7 @@ class DashboardStats extends Component
             ->leftJoin('family_insurances', 'families.id', '=', 'family_insurances.family_id');
 
         // فیلتر زمانی - بر اساس تاریخ صدور بیمه
-        $query->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']]);
+        $query->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']]);
 
         // فیلتر سازمان
         if ($this->selectedOrganization) {
@@ -373,14 +373,14 @@ class DashboardStats extends Component
             ->sum('amount');
 
         // حق بیمه‌های پرداخت شده
-        $totalPremiums = FamilyInsurance::whereBetween('insurance_issue_date', [$dateRange['start'], $dateRange['end']])
+        $totalPremiums = FamilyInsurance::whereBetween('start_date', [$dateRange['start'], $dateRange['end']])
             ->when($this->selectedOrganization, function($q) {
                 return $q->whereHas('family', function($family) {
                     $family->where('charity_id', $this->selectedOrganization)
                           ->orWhere('insurance_id', $this->selectedOrganization);
                 });
             })
-            ->sum('insurance_amount');
+            ->sum('premium_amount');
 
         // خسارات پرداخت شده
         $totalClaims = InsuranceAllocation::whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
@@ -422,15 +422,15 @@ class DashboardStats extends Component
         foreach ($monthsToShow as $month) {
             $dateRange = $this->convertJalaliToGregorian($this->selectedYear, $month);
             
-            $premiums = FamilyInsurance::where('insurance_issue_date', '>=', $dateRange['start'])
-                ->where('insurance_issue_date', '<', $dateRange['end'])
+            $premiums = FamilyInsurance::where('start_date', '>=', $dateRange['start'])
+                ->where('start_date', '<', $dateRange['end'])
                 ->when($this->selectedOrganization, function($q) {
                     return $q->whereHas('family', function($family) {
                         $family->where('charity_id', $this->selectedOrganization)
                               ->orWhere('insurance_id', $this->selectedOrganization);
                     });
                 })
-                ->sum('insurance_amount') ?? 0;
+                ->sum('premium_amount') ?? 0;
 
             $claims = InsuranceAllocation::where('created_at', '>=', $dateRange['start'])
                 ->where('created_at', '<', $dateRange['end'])
@@ -469,7 +469,7 @@ class DashboardStats extends Component
         // خانواده‌های در دوره انتخابی (با فیلتر زمانی)
         $familiesQuery = Family::query()
             ->join('family_insurances', 'families.id', '=', 'family_insurances.family_id')
-            ->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']]);
+            ->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']]);
 
         if ($this->selectedOrganization) {
             $familiesQuery->where(function($q) {
@@ -483,7 +483,7 @@ class DashboardStats extends Component
         // خانواده‌های محروم (با فیلتر زمانی)
         $deprivedFamiliesQuery = Family::query()
             ->join('family_insurances', 'families.id', '=', 'family_insurances.family_id')
-            ->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']])
+            ->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']])
             ->where('families.poverty_confirmed', 1);
 
         if ($this->selectedOrganization) {
@@ -499,7 +499,7 @@ class DashboardStats extends Component
         $membersQuery = Member::query()
             ->join('families', 'members.family_id', '=', 'families.id')
             ->join('family_insurances', 'families.id', '=', 'family_insurances.family_id')
-            ->whereBetween('family_insurances.insurance_issue_date', [$dateRange['start'], $dateRange['end']]);
+            ->whereBetween('family_insurances.start_date', [$dateRange['start'], $dateRange['end']]);
 
         if ($this->selectedOrganization) {
             $membersQuery->where(function($q) {

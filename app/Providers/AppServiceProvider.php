@@ -61,6 +61,12 @@ class AppServiceProvider extends ServiceProvider
             if (Auth::check()) {
                 $user = Auth::user();
                 
+                // متغیرهای پیش‌فرض
+                $insuredFamilies = 0;
+                $insuredMembers = 0;
+                $uninsuredFamilies = 0;
+                $uninsuredMembers = 0;
+                
                 // بررسی اینکه کاربر از نوع خیریه یا ادمین باشد
                 if ($user->user_type === 'charity' || $user->user_type === 'admin') {
                     $charity_id = null;
@@ -114,22 +120,53 @@ class AppServiceProvider extends ServiceProvider
                     $insuredMembers = isset($insuredStats[0]) ? $insuredStats[0]->member_count : 0;
                     $uninsuredFamilies = isset($uninsuredStats[0]) ? $uninsuredStats[0]->family_count : 0;
                     $uninsuredMembers = isset($uninsuredStats[0]) ? $uninsuredStats[0]->member_count : 0;
-                    
-                    // ارسال آمار به ویو
-                    $view->with([
-                        'insuredFamilies' => $insuredFamilies,
-                        'insuredMembers' => $insuredMembers,
-                        'uninsuredFamilies' => $uninsuredFamilies,
-                        'uninsuredMembers' => $uninsuredMembers
-                    ]);
-                    
-                    // چاپ آمار در خروجی برای دیباگ
-                    Log::info('Stats for ' . $user->user_type, [
-                        'charity_id' => $charity_id,
-                        'insured' => $insuredFamilies . ' families, ' . $insuredMembers . ' members',
-                        'uninsured' => $uninsuredFamilies . ' families, ' . $uninsuredMembers . ' members',
-                    ]);
                 }
+                
+                // بررسی اینکه کاربر از نوع بیمه باشد
+                if ($user->user_type === 'insurance') {
+                    $insurance_id = $user->organization_id;
+                    
+                    // آمار خانواده‌های بیمه شده (کل خانواده‌هایی که بیمه دارند)
+                    $insuredStats = DB::select("
+                        SELECT 
+                            COUNT(DISTINCT f.id) as family_count,
+                            COUNT(DISTINCT m.id) as member_count
+                        FROM families f
+                        LEFT JOIN members m ON m.family_id = f.id
+                        WHERE f.is_insured = 1
+                    ");
+                    
+                    // آمار خانواده‌های بدون بیمه (کل خانواده‌هایی که بیمه ندارند)
+                    $uninsuredStats = DB::select("
+                        SELECT 
+                            COUNT(DISTINCT f.id) as family_count,
+                            COUNT(DISTINCT m.id) as member_count
+                        FROM families f
+                        LEFT JOIN members m ON m.family_id = f.id
+                        WHERE f.is_insured = 0 OR f.is_insured IS NULL
+                    ");
+                    
+                    $insuredFamilies = isset($insuredStats[0]) ? $insuredStats[0]->family_count : 0;
+                    $insuredMembers = isset($insuredStats[0]) ? $insuredStats[0]->member_count : 0;
+                    $uninsuredFamilies = isset($uninsuredStats[0]) ? $uninsuredStats[0]->family_count : 0;
+                    $uninsuredMembers = isset($uninsuredStats[0]) ? $uninsuredStats[0]->member_count : 0;
+                }
+                
+                // ارسال آمار به ویو
+                $view->with([
+                    'insuredFamilies' => $insuredFamilies,
+                    'insuredMembers' => $insuredMembers,
+                    'uninsuredFamilies' => $uninsuredFamilies,
+                    'uninsuredMembers' => $uninsuredMembers
+                ]);
+            } else {
+                // اگر کاربر لاگین نکرده، مقادیر پیش‌فرض
+                $view->with([
+                    'insuredFamilies' => 0,
+                    'insuredMembers' => 0,
+                    'uninsuredFamilies' => 0,
+                    'uninsuredMembers' => 0
+                ]);
             }
         });
 

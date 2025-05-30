@@ -27,4 +27,31 @@ class VerifyOtpRequest extends FormRequest
         ];
     }
 
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'mobile' => 'شماره موبایل',
+            'code' => 'کد تایید',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'mobile.required' => 'وارد کردن شماره موبایل الزامی است.',
+            'mobile.regex' => 'فرمت شماره موبایل صحیح نیست.',
+            'code.required' => 'وارد کردن کد تایید الزامی است.',
+            'code.digits' => 'کد تایید باید ۶ رقم باشد.',
+        ];
+    }
 }

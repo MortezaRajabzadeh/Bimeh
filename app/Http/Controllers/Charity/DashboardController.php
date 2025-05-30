@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Charity;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Family;
+use App\Models\Member;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -17,7 +18,66 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        return view('charity.dashboard');
+        // محاسبه آمارهای کلی
+        $stats = $this->calculateStats();
+        
+        return view('charity.dashboard', compact('stats'));
+    }
+    
+    /**
+     * محاسبه آمارهای کلی برای سایدبار
+     * 
+     * @return array
+     */
+    private function calculateStats()
+    {
+        $charityId = Auth::user()->organization_id;
+        
+        // آمارهای کلی
+        $totalFamilies = Family::where('charity_id', $charityId)->count();
+        $totalMembers = Member::whereHas('family', function($query) use ($charityId) {
+            $query->where('charity_id', $charityId);
+        })->count();
+        
+        // وضعیت رکوردها - بر اساس رابطه insurances و فیلد is_insured
+        $insuredFamilies = Family::where('charity_id', $charityId)
+            ->where(function($q) {
+                $q->whereHas('insurances')
+                  ->orWhere('is_insured', true)
+                  ->orWhere('is_insured', 1);
+            })
+            ->count();
+            
+        $uninsuredFamilies = Family::where('charity_id', $charityId)
+            ->whereDoesntHave('insurances')
+            ->where(function($q) {
+                $q->where('is_insured', false)
+                  ->orWhere('is_insured', 0)
+                  ->orWhereNull('is_insured');
+            })
+            ->count();
+            
+        $newFamilies = Family::where('charity_id', $charityId)
+            ->where('status', 'pending')
+            ->count();
+            
+        $membersWithDisability = Member::whereHas('family', function($query) use ($charityId) {
+            $query->where('charity_id', $charityId);
+        })->where('has_disability', true)->count();
+        
+        $membersWithChronicDisease = Member::whereHas('family', function($query) use ($charityId) {
+            $query->where('charity_id', $charityId);
+        })->where('has_chronic_disease', true)->count();
+
+        return [
+            'total_families' => $totalFamilies,
+            'total_members' => $totalMembers,
+            'insured_families' => $insuredFamilies,
+            'uninsured_families' => $uninsuredFamilies,
+            'new_families' => $newFamilies,
+            'members_with_disability' => $membersWithDisability,
+            'members_with_chronic_disease' => $membersWithChronicDisease,
+        ];
     }
     
     /**
@@ -49,7 +109,10 @@ class DashboardController extends Controller
                     ->paginate(15)
                     ->appends(['search' => $search, 'sort' => $sort]);
                     
-        return view('charity.insured-families', compact('families'));
+        // محاسبه آمارها برای سایدبار
+        $stats = $this->calculateStats();
+                    
+        return view('charity.insured-families', compact('families', 'stats'));
     }
     
     /**
@@ -85,7 +148,10 @@ class DashboardController extends Controller
                     ->paginate(15)
                     ->appends(['search' => $search, 'priority' => $priority, 'sort' => $sort]);
                     
-        return view('charity.uninsured-families', compact('families'));
+        // محاسبه آمارها برای سایدبار
+        $stats = $this->calculateStats();
+                    
+        return view('charity.uninsured-families', compact('families', 'stats'));
     }
     
     /**
@@ -95,6 +161,9 @@ class DashboardController extends Controller
      */
     public function addFamily()
     {
-        return view('charity.add-family');
+        // محاسبه آمارها برای سایدبار
+        $stats = $this->calculateStats();
+        
+        return view('charity.add-family', compact('stats'));
     }
 }

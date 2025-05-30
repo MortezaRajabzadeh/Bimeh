@@ -5,6 +5,7 @@ namespace App\Livewire\Charity;
 use Livewire\Component;
 use App\Models\Family;
 use App\Models\Member;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardStats extends Component
 {
@@ -15,10 +16,43 @@ class DashboardStats extends Component
 
     public function mount()
     {
-        $this->insuredFamilies = Family::where('is_insured', true)->count();
-        $this->uninsuredFamilies = Family::where('is_insured', false)->count();
-        $this->insuredMembers = Member::whereHas('family', fn($q) => $q->where('is_insured', true))->count();
-        $this->uninsuredMembers = Member::whereHas('family', fn($q) => $q->where('is_insured', false))->count();
+        $charityId = Auth::user()->organization_id;
+        
+        $this->insuredFamilies = Family::where('charity_id', $charityId)
+            ->where(function($q) {
+                $q->whereHas('insurances')
+                  ->orWhere('is_insured', true)
+                  ->orWhere('is_insured', 1);
+            })
+            ->count();
+            
+        $this->uninsuredFamilies = Family::where('charity_id', $charityId)
+            ->whereDoesntHave('insurances')
+            ->where(function($q) {
+                $q->where('is_insured', false)
+                  ->orWhere('is_insured', 0)
+                  ->orWhereNull('is_insured');
+            })
+            ->count();
+            
+        $this->insuredMembers = Member::whereHas('family', function($q) use ($charityId) {
+            $q->where('charity_id', $charityId)
+              ->where(function($subQ) {
+                  $subQ->whereHas('insurances')
+                       ->orWhere('is_insured', true)
+                       ->orWhere('is_insured', 1);
+              });
+        })->count();
+        
+        $this->uninsuredMembers = Member::whereHas('family', function($q) use ($charityId) {
+            $q->where('charity_id', $charityId)
+              ->whereDoesntHave('insurances')
+              ->where(function($subQ) {
+                  $subQ->where('is_insured', false)
+                       ->orWhere('is_insured', 0)
+                       ->orWhereNull('is_insured');
+              });
+        })->count();
     }
 
     public function render()

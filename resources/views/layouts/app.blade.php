@@ -36,7 +36,7 @@
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
                 transition: all 0.3s ease;
                 z-index: 40;
-                margin-right: 16rem;
+                margin-right: 4rem; /* ثابت نگه داشتن */
             }
             
             @media (max-width: 768px) {
@@ -46,42 +46,14 @@
                 }
             }
             
-            /* حالت منوی بسته */
-            .sidebar-collapsed .back-button {
-                margin-right: 4rem;
-            }
-            
             .back-button:hover {
                 background-color: #22C55E;
                 width: 50px;
             }
             
-            /* CSS برای حالت باز/بسته بودن منو */
-            .main-with-normal-sidebar {
-                margin-right: 16rem; /* 64px */
-                transition: margin 0.3s ease-in-out;
-            }
-            
-            .main-with-collapsed-sidebar {
-                margin-right: 4rem; /* 16px */
-                transition: margin 0.3s ease-in-out;
-            }
-            
             /* استایل overlay سایدبار */
             #sidebar-overlay {
                 transition: opacity 0.3s ease;
-            }
-            
-            @media (min-width: 1024px) {
-                #main-wrapper {
-                    margin-right: 16rem; /* برابر عرض سایدبار */
-                    transition: all 0.3s ease-in-out;
-                }
-                
-                #main-wrapper.sidebar-collapsed {
-                    margin-right: 4rem; /* برابر عرض سایدبار جمع شده */
-                    transition: all 0.3s ease-in-out;
-                }
             }
         </style>
         
@@ -117,19 +89,6 @@
                 const mainWrapper = document.getElementById('main-wrapper');
                 const sidebarToggle = document.getElementById('sidebar-toggle');
                 const sidebarOverlay = document.getElementById('sidebar-overlay');
-                
-                // گوش دادن به رویداد تغییر وضعیت منو
-                document.addEventListener('sidebar-toggle', function(event) {
-                    if (event.detail && mainWrapper) {
-                        if (event.detail.collapsed) {
-                            mainWrapper.classList.add('sidebar-collapsed');
-                            mainWrapper.classList.remove('sidebar-expanded');
-                        } else {
-                            mainWrapper.classList.remove('sidebar-collapsed');
-                            mainWrapper.classList.add('sidebar-expanded');
-                        }
-                    }
-                });
                 
                 // تنظیم رویدادهای مربوط به موبایل برای overlay
                 if (sidebarToggle && sidebar && sidebarOverlay) {
@@ -172,19 +131,6 @@
                         document.body.classList.remove('overflow-hidden');
                     }
                 });
-                
-                // تنظیم حالت اولیه سایدبار
-                const storedState = localStorage.getItem('sidebarState');
-                if (mainWrapper) {
-                    if (storedState === 'collapsed') {
-                        mainWrapper.classList.add('sidebar-collapsed');
-                        mainWrapper.classList.remove('sidebar-expanded');
-                    } else {
-                        // حالت پیش‌فرض: منو باز است
-                        mainWrapper.classList.remove('sidebar-collapsed');
-                        mainWrapper.classList.add('sidebar-expanded');
-                    }
-                }
             });
         </script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

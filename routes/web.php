@@ -86,7 +86,15 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
     Route::middleware('can:manage organizations')->delete('organizations', [\App\Http\Controllers\Admin\OrganizationController::class, 'bulkDestroy'])->name('organizations.bulk-destroy');
     
     // مدیریت سطوح دسترسی
-    Route::middleware('can:manage roles')->resource('access-levels', \App\Http\Controllers\Admin\AccessLevelController::class);
+    Route::middleware('can:manage roles')->resource('access-levels', \App\Http\Controllers\RoleManagementController::class);
+    
+    // مدیریت نقش‌ها (جدید)
+    Route::middleware('can:manage roles')->resource('roles', \App\Http\Controllers\RoleManagementController::class);
+    
+    // مدیریت نقش‌های سفارشی
+    Route::middleware('can:manage roles')->resource('custom-roles', \App\Http\Controllers\CustomRoleController::class);
+    Route::middleware('can:manage roles')->get('/custom-roles/{customRole}/permissions', [\App\Http\Controllers\CustomRoleController::class, 'permissions'])->name('custom-roles.permissions');
+    Route::middleware('can:manage roles')->post('/custom-roles/{customRole}/permissions', [\App\Http\Controllers\CustomRoleController::class, 'updatePermissions'])->name('custom-roles.update-permissions');
 });
 
 // مسیرهای خیریه
@@ -115,6 +123,10 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix
     Route::middleware('can:edit family member')->get('/families/{family}/members/{member}/edit', [\App\Http\Controllers\Charity\MemberController::class, 'edit'])->name('families.members.edit');
     Route::middleware('can:edit family member')->put('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'update'])->name('families.members.update');
     Route::middleware('can:remove family member')->delete('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'destroy'])->name('families.members.destroy');
+    
+    // آپلود مدارک اعضای خانواده
+    Route::middleware('can:edit family member')->get('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'showUploadForm'])->name('charity.family.members.documents.upload');
+    Route::middleware('can:edit family member')->post('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'store'])->name('charity.family.members.documents.store');
     
     // آپلود اکسل خانواده‌ها
     Route::middleware('can:create family')->get('/import', [\App\Http\Controllers\Charity\ImportController::class, 'index'])->name('import.index');
@@ -176,6 +188,18 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
 
     // گزارش مالی
     Route::middleware('can:view advanced reports')->get('/financial-report', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'index'])->name('financial-report');
+    Route::middleware('can:view advanced reports')->get('/financial-report/export', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'exportExcel'])->name('financial-report.export');
+    Route::middleware('can:view advanced reports')->get('/financial-report/payment/{paymentId}', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'paymentDetails'])->name('financial-report.payment-details');
+
+    // مدیریت سهم‌بندی حق بیمه
+    Route::middleware('can:manage insurance policies')->resource('shares', \App\Http\Controllers\InsuranceShareController::class);
+    Route::middleware('can:manage insurance policies')->get('/family-insurances/{familyInsurance}/shares', [\App\Http\Controllers\InsuranceShareController::class, 'byFamilyInsurance'])->name('family-insurances.shares');
+    Route::middleware('can:manage insurance policies')->post('/shares/{insuranceShare}/mark-paid', [\App\Http\Controllers\InsuranceShareController::class, 'markAsPaid'])->name('shares.mark-paid');
+    // صفحه مدیریت سهم‌بندی Real-Time
+    Route::middleware('can:manage insurance shares')->get('/shares-manager', [\App\Http\Controllers\InsuranceShareController::class, 'manage'])->name('shares.manage');
+
+    // مدیریت پرداخت‌های بیمه
+    Route::middleware('can:view advanced reports')->resource('payments', \App\Http\Controllers\InsurancePaymentController::class);
 
 });
 

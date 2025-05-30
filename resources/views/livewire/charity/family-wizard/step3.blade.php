@@ -57,7 +57,10 @@
                     @endswitch
                 </div>
                 <div>
-                    <span class="font-medium">خیریه معرف:</span>
+                    <span class="font-medium flex items-center gap-1">
+                        <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
+                        خیریه معرف:
+                    </span>
                     {{ optional(auth()->user()->organization)->name ?? '' }}
                 </div>
                 <div class="md:col-span-2"><span class="font-medium">آدرس:</span> {{ $address }}</div>

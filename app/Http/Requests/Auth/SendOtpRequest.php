@@ -25,4 +25,29 @@ class SendOtpRequest extends FormRequest
             'mobile' => ['required', 'regex:/^09\d{9}$/'],
         ];
     }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'mobile' => 'شماره موبایل',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'mobile.required' => 'وارد کردن شماره موبایل الزامی است.',
+            'mobile.regex' => 'فرمت شماره موبایل صحیح نیست. (مثال: ۰۹۱۲۳۴۵۶۷۸۹)',
+        ];
+    }
 }

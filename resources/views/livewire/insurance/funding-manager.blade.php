@@ -7,20 +7,14 @@
         <form wire:submit.prevent="addTransaction" wire:key="add-transaction-form-{{ $formKey }}" class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div class="w-full">
                 <label for="source_id" class="block mb-1 font-bold">منبع بودجه</label>
-                <div class="relative">
+                <div class="rtl-select-wrapper">
                     <select id="source_id" wire:model="source_id"
-                        class="block appearance-none w-full border border rounded px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        class="rtl-select block w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">انتخاب منبع</option>
                         @foreach($sources as $source)
                             <option value="{{ $source->id }}">{{ $source->name }} ({{ $typeLabels[$source->type] ?? $source->type }})</option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
                 </div>
                 @error('source_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
@@ -55,21 +49,15 @@
                 <input type="text" wire:model="source_name" placeholder="نام منبع" class="border rounded px-3 py-2 w-full text-right" />
                 <div class="w-full">
                     <label for="source_type" class="block mb-1 font-bold">نوع منبع</label>
-                    <div class="relative">
+                    <div class="rtl-select-wrapper">
                         <select id="source_type" wire:model="source_type"
-                            class="block appearance-none w-full border border rounded px-3 py-2 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="rtl-select block w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="charity">سازمان</option>
                             <option value="bank">بانک</option>
                             <option value="person">شخص حقیقی</option>
                             <option value="government">دولت</option>
                             <option value="other">سایر</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
                     </div>
                 </div>
                 <input type="text" wire:model="source_description" placeholder="توضیحات" class="border rounded px-3 py-2 w-full text-right" />
@@ -169,11 +157,13 @@
                             <tr class="bg-gray-50">
                                 <td colspan="6">
                                     <form wire:submit.prevent="updateTransaction" class="flex flex-col md:flex-row gap-2 items-end p-2">
-                                        <select wire:model="edit_source_id" class="border rounded px-2 py-1 w-full md:w-1/4">
-                                            @foreach($sources as $source)
-                                                <option value="{{ $source->id }}">{{ $source->name }} ({{ $source->type }})</option>
-                                            @endforeach
-                                        </select>
+                                        <div class="rtl-select-wrapper w-full md:w-1/4">
+                                            <select wire:model="edit_source_id" class="rtl-select border rounded px-2 py-1 w-full">
+                                                @foreach($sources as $source)
+                                                    <option value="{{ $source->id }}">{{ $source->name }} ({{ $source->type }})</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                         <input type="number" wire:model="edit_amount" class="border rounded px-2 py-1 w-full md:w-1/4" min="1000" />
                                         <input type="text" wire:model="edit_description" class="border rounded px-2 py-1 w-full md:w-1/4" />
                                         <input type="text" wire:model="edit_reference_no" class="border rounded px-2 py-1 w-full md:w-1/4" />

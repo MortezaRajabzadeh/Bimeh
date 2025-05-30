@@ -8,6 +8,8 @@ use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Province;
 use App\Models\City;
+use App\Models\RankSetting;
+use App\Models\FamilyCriterion;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
@@ -36,11 +38,23 @@ class FamilySearch extends Component
     public $province = '';
     public $city = '';
     public $deprivation_rank = '';
+    public $page = 1;
     
-    // فیلترهای مودالی
+    // فیلترهای رتبه‌بندی جدید
+    public $family_rank_range = '';
+    public $specific_criteria = '';
+    public $availableRankSettings = [];
+    
+    // مدیریت فیلترهای پیشرفته
     public $tempFilters = [];
     public $activeFilters = [];
     
+    // New ranking properties
+    public $showRankModal = false;
+    public $rankFilters = [];
+    
+    protected $paginationTheme = 'tailwind';
+
     protected $queryString = [
         'search' => ['except' => ''],
         'status' => ['except' => ''],
@@ -49,94 +63,70 @@ class FamilySearch extends Component
         'sortField' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
         'perPage' => ['except' => 15],
+        'family_rank_range' => ['except' => ''],
+        'specific_criteria' => ['except' => ''],
+        'province' => ['except' => ''],
+        'city' => ['except' => ''],
+        'deprivation_rank' => ['except' => ''],
+        'page' => ['except' => 1],
     ];
     
     public function mount()
     {
         $this->regions = Region::all();
-        $this->provinces = Province::all();
-        $this->cities = City::all();
-        $this->organizations = Organization::charity()->active()->get();
+        $this->provinces = Province::orderBy('name')->get();
+        $this->cities = City::orderBy('name')->get();
+        $this->organizations = Organization::where('type', 'charity')->orderBy('name')->get();
+        $this->availableRankSettings = RankSetting::active()->ordered()->get();
         
         // مقداردهی اولیه فیلترهای مودالی - حتماً آرایه خالی
         $this->tempFilters = [];
         $this->activeFilters = [];
+        
+        // مقدار پیشفرض برای تعداد نمایش
+        if (!$this->perPage) {
+            $this->perPage = 15;
+        }
     }
     
     public function render()
     {
+        // ساخت کوئری اصلی
         $query = Family::query()
-            ->with(['region', 'members', 'organization', 'province', 'city']);
-        
-        if ($this->search) {
-            $query->where(function($q) {
-                $q->where('family_code', 'like', '%' . $this->search . '%')
-                  ->orWhere('address', 'like', '%' . $this->search . '%')
-                  ->orWhere('additional_info', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('members', function($memberQuery) {
-                      $memberQuery->where('first_name', 'like', '%' . $this->search . '%')
-                                  ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                                  ->orWhere('national_code', 'like', '%' . $this->search . '%')
-                                  ->orWhere('mobile', 'like', '%' . $this->search . '%');
-                  });
-            });
-        }
-        
-        if ($this->status !== '') {
-            if ($this->status === 'insured') {
-                // خانواده‌هایی که حداقل یک عضو دارای بیمه هست
-                $query->whereHas('members', function ($q) {
-                    $q->where('has_insurance', true);
-                });
-            } elseif ($this->status === 'uninsured') {
-                // خانواده‌هایی که هیچ عضوی بیمه نداره
-                $query->whereDoesntHave('members', function ($q) {
-                    $q->where('has_insurance', true);
-                });
-            } else {
-                // برای سایر وضعیت‌ها (pending, approved, etc.)
-                $query->where('status', $this->status);
-            }
-        }
-        
-        if ($this->province) {
-            $query->where('province_id', $this->province);
-        }
-        
-        if ($this->city) {
-            $query->where('city_id', $this->city);
-        }
-        
-        if ($this->deprivation_rank) {
-            $query->whereHas('province', function($q) {
-                if ($this->deprivation_rank === 'high') {
-                    $q->whereBetween('deprivation_rank', [1, 3]);
-                } elseif ($this->deprivation_rank === 'medium') {
-                    $q->whereBetween('deprivation_rank', [4, 6]);
-                } elseif ($this->deprivation_rank === 'low') {
-                    $q->whereBetween('deprivation_rank', [7, 10]);
-                }
-            });
-        }
-        
-        if ($this->region) {
-            $query->where('region_id', $this->region);
-        }
-        
-        if ($this->charity) {
-            $query->where('charity_id', $this->charity);
-        }
-        
+            ->with([
+                'province', 
+                'city', 
+                'members' => function($q) {
+                    $q->orderBy('is_head', 'desc');
+                }, 
+                'organization',
+                'familyCriteria.rankSetting'
+            ]);
+
+        // اعمال فیلترها
+        $this->applyFiltersToQuery($query);
+
+        // مرتب‌سازی
         $query->orderBy($this->sortField, $this->sortDirection);
-        
+
+        // صفحه‌بندی
         $families = $query->paginate($this->perPage);
-        
+
+        // اگر خانواده‌ای باز شده، اعضای آن را بارگذاری کن
+        if ($this->expandedFamily) {
+            $this->familyMembers = Member::where('family_id', $this->expandedFamily)
+                ->orderBy('is_head', 'desc')
+                ->orderBy('created_at')
+                ->get();
+        }
+
+        // بازگشت view با داده‌ها
         return view('livewire.charity.family-search', [
             'families' => $families,
-            'regions' => $this->regions,
             'provinces' => $this->provinces,
             'cities' => $this->cities,
             'organizations' => $this->organizations,
+            'availableRankSettings' => $this->availableRankSettings,
         ]);
     }
     
@@ -175,114 +165,223 @@ class FamilySearch extends Component
         $this->resetPage();
     }
     
+    public function updatingFamilyRankRange()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSpecificCriteria()
+    {
+        $this->resetPage();
+    }
+    
     /**
-     * دریافت شماره صفحه فعلی
-     * 
-     * @return int
+     * متد فعلی برای صفحه‌بندی
      */
     public function getPage()
     {
-        return (int) $this->page;
+        return $this->getPropertyValue('page');
     }
-    
+
     /**
-     * رفتن به صفحه بعدی
-     * 
-     * @return void
+     * رفتن به صفحه بعد با بررسی محدودیت
      */
     public function nextPage()
     {
-        $nextPage = $this->getPage() + 1;
+        $currentPage = $this->getPage();
+        $families = $this->getFamiliesQuery();
+        $totalPages = ceil($families->count() / $this->perPage);
         
-        if ($nextPage <= $this->families->lastPage()) {
-            $this->gotoPage($nextPage);
+        if ($currentPage < $totalPages) {
+            $this->setPage($currentPage + 1);
         }
     }
-    
+
     /**
-     * رفتن به صفحه قبلی
-     * 
-     * @return void
+     * رفتن به صفحه قبل با بررسی محدودیت
      */
     public function previousPage()
     {
-        $prevPage = $this->getPage() - 1;
+        $currentPage = $this->getPage();
         
-        if ($prevPage > 0) {
-            $this->gotoPage($prevPage);
+        if ($currentPage > 1) {
+            $this->setPage($currentPage - 1);
         }
     }
-    
+
+    /**
+     * دریافت کوئری اصلی خانواده‌ها
+     */
+    private function getFamiliesQuery()
+    {
+        return $this->applyFiltersToQuery(Family::query());
+    }
+
     /**
      * اعمال فیلترها به کوئری
-     * 
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return void
      */
     private function applyFiltersToQuery($query)
     {
+        // فیلتر جستجو عمومی
         if ($this->search) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('family_code', 'like', '%' . $this->search . '%')
                   ->orWhere('address', 'like', '%' . $this->search . '%')
                   ->orWhere('additional_info', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('members', function($memberQuery) {
+                  ->orWhereHas('members', function ($memberQuery) {
                       $memberQuery->where('first_name', 'like', '%' . $this->search . '%')
                                   ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                                  ->orWhere('national_code', 'like', '%' . $this->search . '%')
-                                  ->orWhere('mobile', 'like', '%' . $this->search . '%');
+                                  ->orWhere('national_code', 'like', '%' . $this->search . '%');
                   });
             });
         }
-        
-        if ($this->status === 'insured') {
-            $query->whereHas('members', function ($q) {
-                $q->where('has_insurance', true);
-            });
-        } elseif ($this->status === 'uninsured') {
-            $query->whereDoesntHave('members', function ($q) {
-                $q->where('has_insurance', true);
-            });
-        } elseif ($this->status !== '') {
-            $query->where('status', $this->status);
+
+        // فیلتر وضعیت - اصلاح شده
+        if ($this->status) {
+            if ($this->status === 'insured') {
+                // خانواده‌هایی که is_insured = true یا status = 'insured'
+                $query->where(function($q) {
+                    $q->where('is_insured', true)
+                      ->orWhere('status', 'insured');
+                });
+            } elseif ($this->status === 'uninsured') {
+                // خانواده‌هایی که is_insured = false و status != 'insured'
+                $query->where('is_insured', false)
+                      ->where('status', '!=', 'insured');
+            } else {
+                // سایر وضعیت‌ها: pending, reviewing, approved, renewal, rejected, deleted
+                $query->where('status', $this->status);
+            }
         }
-        
-        if ($this->region) {
-            $query->where('region_id', $this->region);
+
+        // فیلتر استان - اصلاح شده
+        if ($this->province) {
+            $query->where('province_id', $this->province);
         }
-        
+
+        // فیلتر شهر - اصلاح شده  
+        if ($this->city) {
+            $query->where('city_id', $this->city);
+        }
+
+        // فیلتر رتبه محرومیت استان - اصلاح شده
+        if ($this->deprivation_rank) {
+            $query->whereHas('province', function ($q) {
+                switch ($this->deprivation_rank) {
+                    case 'high':
+                        $q->where('deprivation_rank', '<=', 3);
+                        break;
+                    case 'medium':
+                        $q->whereBetween('deprivation_rank', [4, 6]);
+                        break;
+                    case 'low':
+                        $q->where('deprivation_rank', '>=', 7);
+                        break;
+                }
+            });
+        }
+
+        // فیلتر بازه رتبه محرومیت خانواده - نیاز به فیلد calculated_rank
+        if ($this->family_rank_range) {
+            switch ($this->family_rank_range) {
+                case 'very_high': // 80-100
+                    $query->where('calculated_rank', '>=', 80)
+                          ->where('calculated_rank', '<=', 100);
+                    break;
+                case 'high': // 60-79
+                    $query->where('calculated_rank', '>=', 60)
+                          ->where('calculated_rank', '<', 80);
+                    break;
+                case 'medium': // 40-59
+                    $query->where('calculated_rank', '>=', 40)
+                          ->where('calculated_rank', '<', 60);
+                    break;
+                case 'low': // 20-39
+                    $query->where('calculated_rank', '>=', 20)
+                          ->where('calculated_rank', '<', 40);
+                    break;
+                case 'very_low': // 0-19
+                    $query->where('calculated_rank', '>=', 0)
+                          ->where('calculated_rank', '<', 20);
+                    break;
+            }
+        }
+
+        // فیلتر معیار خاص - بهبود یافته برای پشتیبانی از هر دو روش ذخیره‌سازی
+        if ($this->specific_criteria) {
+            $rankSetting = RankSetting::find($this->specific_criteria);
+            if ($rankSetting) {
+                $query->where(function($q) use ($rankSetting) {
+                    // جستجو در فیلد acceptance_criteria (JSON array)
+                    $q->whereJsonContains('acceptance_criteria', $rankSetting->name)
+                      // یا جستجو در جدول family_criteria
+                      ->orWhereHas('familyCriteria', function ($subQ) use ($rankSetting) {
+                          $subQ->where('rank_setting_id', $rankSetting->id)
+                               ->where('has_criteria', true);
+                      });
+                });
+            }
+        }
+
+        // فیلتر خیریه معرف - اصلاح شده
         if ($this->charity) {
             $query->where('charity_id', $this->charity);
         }
-        
-        $query->orderBy($this->sortField, $this->sortDirection);
+
+        return $query;
     }
-    
-    /**
-     * رفتن به صفحه مشخص با اعتبارسنجی شماره صفحه
-     * 
-     * @param int $page شماره صفحه
-     * @return void
-     */
+
     public function gotoPage($page)
     {
-        // محاسبه تعداد کل صفحات
-        $query = Family::query()
-            ->with(['region', 'members', 'organization']);
-        
-        // اعمال فیلترها
-        $this->applyFiltersToQuery($query);
-        
-        $paginator = $query->paginate($this->perPage);
-        $lastPage = $paginator->lastPage();
-        
-        // اطمینان از این‌که صفحه در محدوده معتبر است
-        $page = max(1, min(intval($page), $lastPage));
-        
-        // استفاده از setPage به جای فراخوانی مستقیم
         $this->setPage($page);
     }
-    
+
+    /**
+     * تابع پاک کردن همه فیلترها
+     */
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->status = '';
+        $this->province = '';
+        $this->city = '';
+        $this->deprivation_rank = '';
+        $this->family_rank_range = '';
+        $this->specific_criteria = '';
+        $this->charity = '';
+        $this->resetPage();
+    }
+
+    /**
+     * بررسی وجود فیلترهای فعال
+     */
+    public function hasActiveFilters()
+    {
+        return !empty($this->status) || 
+               !empty($this->province) || 
+               !empty($this->city) || 
+               !empty($this->deprivation_rank) || 
+               !empty($this->family_rank_range) || 
+               !empty($this->specific_criteria) || 
+               !empty($this->charity);
+    }
+
+    /**
+     * شمارش فیلترهای فعال
+     */
+    public function getActiveFiltersCount()
+    {
+        $count = 0;
+        if ($this->status) $count++;
+        if ($this->province) $count++;
+        if ($this->city) $count++;
+        if ($this->deprivation_rank) $count++;
+        if ($this->family_rank_range) $count++;
+        if ($this->specific_criteria) $count++;
+        if ($this->charity) $count++;
+        return $count;
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -355,32 +454,32 @@ class FamilySearch extends Component
                 return;
             }
             
-            // تنظیم متغیر انتخاب شده
-            $this->selectedHead = $memberId;
-            
-            // مدیریت تراکنش برای اطمینان از صحت داده‌ها
-            DB::beginTransaction();
-            
+                // تنظیم متغیر انتخاب شده
+                $this->selectedHead = $memberId;
+                
+                // مدیریت تراکنش برای اطمینان از صحت داده‌ها
+                DB::beginTransaction();
+                
             // به‌روزرسانی پایگاه داده - فقط یک نفر سرپرست
-            Member::where('family_id', $familyId)->update(['is_head' => false]);
-            Member::where('id', $memberId)->update(['is_head' => true]);
-            
-            DB::commit();
-            
-            // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
-            if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
-                // به‌روزرسانی state داخلی بدون بارگیری مجدد
+                Member::where('family_id', $familyId)->update(['is_head' => false]);
+                Member::where('id', $memberId)->update(['is_head' => true]);
+                
+                DB::commit();
+                
+                // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
+                if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
+                    // به‌روزرسانی state داخلی بدون بارگیری مجدد
                 foreach ($this->familyMembers as $familyMember) {
-                    // فقط وضعیت is_head را تغییر می‌دهیم
+                        // فقط وضعیت is_head را تغییر می‌دهیم
                     $familyMember->is_head = ($familyMember->id == $memberId);
+                    }
                 }
-            }
-            
-            // نمایش پیام موفقیت
-            $this->dispatch('show-toast', [
+                
+                // نمایش پیام موفقیت
+                $this->dispatch('show-toast', [
                 'message' => '✅ سرپرست خانواده با موفقیت تغییر یافت', 
-                'type' => 'success'
-            ]);
+                    'type' => 'success'
+                ]);
             
         } catch (\Exception $e) {
             DB::rollBack();
@@ -468,108 +567,6 @@ class FamilySearch extends Component
     }
     
     /**
-     * بررسی وجود فیلترهای فعال
-     * 
-     * @return bool
-     */
-    public function hasActiveFilters()
-    {
-        return $this->status || $this->province || $this->city || 
-               $this->deprivation_rank || $this->charity || $this->region;
-    }
-    
-    /**
-     * شمارش فیلترهای فعال
-     * 
-     * @return int
-     */
-    public function getActiveFiltersCount()
-    {
-        $count = 0;
-        if ($this->status) $count++;
-        if ($this->province) $count++;
-        if ($this->city) $count++;
-        if ($this->deprivation_rank) $count++;
-        if ($this->charity) $count++;
-        if ($this->region) $count++;
-        
-        return $count;
-    }
-    
-    /**
-     * پاک کردن همه فیلترها
-     * 
-     * @return void
-     */
-    public function clearAllFilters()
-    {
-        $this->status = '';
-        $this->province = '';
-        $this->city = '';
-        $this->deprivation_rank = '';
-        $this->charity = '';
-        $this->region = '';
-        $this->search = '';
-        
-        $this->resetPage();
-        
-        $this->dispatch('notify', [
-            'message' => 'همه فیلترها پاک شدند',
-            'type' => 'success'
-        ]);
-    }
-    
-    /**
-     * اصلاح خودکار خانواده‌هایی که بیش از یک سرپرست دارند
-     * 
-     * @param int $familyId
-     * @return void
-     */
-    public function fixMultipleHeads($familyId = null)
-    {
-        if ($familyId) {
-            // اصلاح یک خانواده خاص
-            $families = collect([Family::find($familyId)])->filter();
-        } else {
-            // اصلاح همه خانواده‌ها
-            $families = Family::all();
-        }
-        
-        $fixedCount = 0;
-        
-        foreach ($families as $family) {
-            $heads = Member::where('family_id', $family->id)->where('is_head', true)->get();
-            
-            if ($heads->count() > 1) {
-                // فقط اولین سرپرست را نگه می‌داریم
-                $firstHead = $heads->first();
-                Member::where('family_id', $family->id)->update(['is_head' => false]);
-                $firstHead->update(['is_head' => true]);
-                $fixedCount++;
-            } elseif ($heads->count() === 0) {
-                // اگر سرپرستی نداشت، اولین عضو را سرپرست می‌کنیم
-                $firstMember = Member::where('family_id', $family->id)->first();
-                if ($firstMember) {
-                    $firstMember->update(['is_head' => true]);
-                    $fixedCount++;
-                }
-            }
-        }
-        
-        if ($fixedCount > 0) {
-            $this->dispatch('show-toast', [
-                'message' => "✅ {$fixedCount} خانواده اصلاح شد",
-                'type' => 'success'
-            ]);
-        } else {
-            $this->dispatch('show-toast', [
-                'message' => '✅ همه خانواده‌ها صحیح هستند',
-                'type' => 'success'
-            ]);
-        }
-    }
-    
-    /**
      * اعمال فیلترهای مودالی
      * 
      * @return void
@@ -637,11 +634,11 @@ class FamilySearch extends Component
                         break;
                     case 'members_count':
                         // این فیلتر نیاز به منطق خاص دارد - فعلاً skip می‌کنیم
-                        logger('Skipped members_count filter - not implemented yet');
+                        logger('Skipped members_count filter - needs special logic');
                         break;
                     case 'created_at':
                         // این فیلتر نیاز به منطق خاص دارد - فعلاً skip می‌کنیم
-                        logger('Skipped created_at filter - not implemented yet');
+                        logger('Skipped created_at filter - needs date range logic');
                         break;
                 }
             }
@@ -699,11 +696,120 @@ class FamilySearch extends Component
      */
     public function testFilters()
     {
-        logger('Current tempFilters in testFilters:', $this->tempFilters);
+        // تست محدود کردن نتایج با فیلترهای فعلی
+        $filteredQuery = $this->getFamiliesQuery();
+        $this->applyFiltersToQuery($filteredQuery);
+        
+        $count = $filteredQuery->count();
         
         $this->dispatch('notify', [
-            'message' => 'تست فیلترها: ' . count($this->tempFilters) . ' فیلتر موجود',
+            'message' => "فیلترهای انتخاب شده {$count} خانواده را نمایش می‌دهد",
             'type' => 'success'
         ]);
+    }
+    
+    // توابع مودال رتبه‌بندی
+    public function openRankModal()
+    {
+        $this->showRankModal = true;
+        $this->availableRankSettings = RankSetting::active()->ordered()->get();
+        
+        // اگر فیلتری وجود ندارد، یک فیلتر پیشفرض اضافه کن
+        if (empty($this->rankFilters)) {
+            $this->rankFilters = [
+                [
+                    'type' => 'rank_range',
+                    'operator' => 'equals',
+                    'value' => '',
+                    'label' => ''
+                ]
+            ];
+        }
+    }
+    
+    public function closeRankModal()
+    {
+        $this->showRankModal = false;
+    }
+    
+    public function clearRankFilters()
+    {
+        $this->family_rank_range = '';
+        $this->specific_criteria = '';
+        $this->resetPage();
+    }
+    
+    public function saveRankFilter()
+    {
+        // ذخیره فیلترها - می‌توانید منطق ذخیره در دیتابیس را اینجا اضافه کنید
+        $this->dispatch('notify', [
+            'message' => 'فیلترها ذخیره شد',
+            'type' => 'success'
+        ]);
+    }
+    
+    public function resetRankToDefault()
+    {
+        $this->rankFilters = [];
+        $this->family_rank_range = '';
+        $this->specific_criteria = '';
+        $this->resetPage();
+        
+        $this->dispatch('notify', [
+            'message' => 'تنظیمات به حالت پیشفرض بازگشت',
+            'type' => 'success'
+        ]);
+    }
+    
+    public function applyRankFilters()
+    {
+        try {
+            $appliedCount = 0;
+            
+            // پاک کردن فیلترهای قبلی
+            $this->family_rank_range = '';
+            $this->specific_criteria = '';
+            $this->province = '';
+            $this->city = '';
+            
+            // اعمال فیلترهای جدید
+            foreach ($this->rankFilters as $filter) {
+                if (empty($filter['value'])) continue;
+                
+                switch ($filter['type']) {
+                    case 'rank_range':
+                        $this->family_rank_range = $filter['value'];
+                        $appliedCount++;
+                        break;
+                    case 'criteria':
+                        $this->specific_criteria = $filter['value'];
+                        $appliedCount++;
+                        break;
+                    case 'province':
+                        $this->province = $filter['value'];
+                        $appliedCount++;
+                        break;
+                    case 'city':
+                        $this->city = $filter['value'];
+                        $appliedCount++;
+                        break;
+                }
+            }
+            
+            $this->resetPage();
+            
+            $this->dispatch('notify', [
+                'message' => $appliedCount > 0 ? 
+                    "فیلترهای رتبه‌بندی با موفقیت اعمال شدند ($appliedCount فیلتر)" : 
+                    'هیچ فیلتر معتبری برای اعمال یافت نشد',
+                'type' => $appliedCount > 0 ? 'success' : 'error'
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در اعمال فیلترها: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 }

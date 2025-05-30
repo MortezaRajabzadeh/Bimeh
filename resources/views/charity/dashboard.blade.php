@@ -43,7 +43,7 @@
                                 <details class="mt-4 bg-red-50 rounded-lg border border-red-200">
                                     <summary class="cursor-pointer p-3 font-medium text-red-800 hover:bg-red-100 rounded-lg transition-colors">
                                         🔍 مشاهده خطاها 
-                                        @if(isset(session('results')['total_errors']) && session('results')['total_errors'] > session('results')['showing_count'])
+                                        @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                             (نمایش {{ session('results')['showing_count'] }} از {{ session('results')['total_errors'] }} خطا)
                                         @endif
                                     </summary>
@@ -57,7 +57,7 @@
                                             @endforeach
                                         </ul>
                                         
-                                        @if(isset(session('results')['total_errors']) && session('results')['total_errors'] > session('results')['showing_count'])
+                                        @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                             <div class="mt-3 p-3 bg-orange-100 rounded-lg border border-orange-200">
                                                 <p class="text-orange-800 text-sm">
                                                     ⚠️ <strong>توجه:</strong> {{ session('results')['total_errors'] - session('results')['showing_count'] }} خطای دیگر نیز وجود دارد. 
@@ -102,7 +102,7 @@
                                 @endforeach
                             </ul>
                             
-                            @if(isset(session('results')['total_errors']) && session('results')['total_errors'] > session('results')['showing_count'])
+                            @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                 <div class="mt-3 p-3 bg-red-100 rounded-lg border border-red-200">
                                     <p class="text-red-800 text-sm">
                                         ⚠️ <strong>توجه:</strong> فقط {{ session('results')['showing_count'] }} خطای اول نمایش داده شده است. 
@@ -216,9 +216,6 @@
                 </div>
             @endif
 
-            <!-- بخش آمارهای داشبورد -->
-            <livewire:charity.dashboard-stats />
-            
             <!-- فاصله و خط جداکننده بین دو بخش -->
             <div class="my-10 border-t border-gray-200"></div>
        

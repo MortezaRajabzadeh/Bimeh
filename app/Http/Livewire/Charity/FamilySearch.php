@@ -276,8 +276,8 @@ class FamilySearch extends Component
                 if (in_array('verified_at', Schema::getColumnListing('families'))) {
                     $q->orWhere('verified_at', 'like', '%' . $searchTerm . '%');
                 }
-                // جستجو برای ضریبه مصرف
-                if (in_array($searchTerm, ['۵۰٪', '50%', '50', '۵۰', 'ضریبه مصرف', 'ضریب مصرف'])) {
+                // جستجو برای درصد مشارکت
+                if (in_array($searchTerm, ['۵۰٪', '50%', '50', '۵۰', 'درصد مشارکت', 'ضریب مشارکت'])) {
                     $q->orWhere('id', '>', 0);
                 }
             });

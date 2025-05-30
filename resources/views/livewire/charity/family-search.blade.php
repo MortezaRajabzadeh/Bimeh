@@ -16,12 +16,11 @@
             this.filters.splice(index, 1);
         },
         updateFilterLabel(index) {
-            const filter = this.filters[index];
-            if (!filter) return;
+            if (!this.filters[index]) return;
             
             let label = '';
             
-            switch(filter.type) {
+            switch(this.filters[index].type) {
                 case 'status':
                     label = 'وضعیت';
                     break;
@@ -41,15 +40,19 @@
                     label = 'تعداد اعضا';
                     break;
                 case 'created_at':
-                    label = 'تاریخ عضویت';
+                    if (this.filters && this.filters.find(f => f.type === 'status' && f.value === 'insured')) {
+                        label = 'تاریخ پایان بیمه';
+                    } else {
+                        label = 'تاریخ عضویت';
+                    }
                     break;
             }
             
-            if (filter.operator === 'equals') label += ' برابر با';
-            else if (filter.operator === 'not_equals') label += ' مخالف';
-            else if (filter.operator === 'greater_than') label += ' بیشتر از';
-            else if (filter.operator === 'less_than') label += ' کمتر از';
-            else if (filter.operator === 'contains') label += ' شامل';
+            if (this.filters[index].operator === 'equals') label += ' برابر با';
+            else if (this.filters[index].operator === 'not_equals') label += ' مخالف';
+            else if (this.filters[index].operator === 'greater_than') label += ' بیشتر از';
+            else if (this.filters[index].operator === 'less_than') label += ' کمتر از';
+            else if (this.filters[index].operator === 'contains') label += ' شامل';
             
             this.filters[index].label = label;
         }
@@ -82,6 +85,15 @@
                         {{ $this->getActiveFiltersCount() }}
                     </span>
                 @endif
+            </button>
+            
+            <!-- دکمه تنظیمات رتبه -->
+            <button wire:click="openRankModal"
+                    class="inline-flex items-center px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                تنظیمات رتبه
             </button>
             
             <!-- دکمه خیره فیلتر -->
@@ -129,6 +141,29 @@
                         خیریه: {{ $organizations->find($charity)->name ?? 'نامشخص' }}
                         <button wire:click="$set('charity', '')" class="mr-1 text-pink-600 hover:text-pink-800">×</button>
                     </span>
+                @endif
+                
+                @if($family_rank_range)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        رتبه: 
+                        @if($family_rank_range === 'very_high') خیلی بالا
+                        @elseif($family_rank_range === 'high') بالا
+                        @elseif($family_rank_range === 'medium') متوسط
+                        @elseif($family_rank_range === 'low') پایین
+                        @elseif($family_rank_range === 'very_low') خیلی پایین
+                        @endif
+                        <button wire:click="$set('family_rank_range', '')" class="mr-1 text-purple-600 hover:text-purple-800">×</button>
+                    </span>
+                @endif
+                
+                @if($specific_criteria && isset($availableRankSettings))
+                    @php $criteria = $availableRankSettings->find($specific_criteria); @endphp
+                    @if($criteria)
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            معیار: {{ $criteria->name }}
+                            <button wire:click="$set('specific_criteria', '')" class="mr-1 text-indigo-600 hover:text-indigo-800">×</button>
+                        </span>
+                    @endif
                 @endif
                 
                 <!-- دکمه پاک کردن همه فیلترها -->
@@ -290,6 +325,9 @@
                             </button>
                         </th>
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
+                            مشکلات خانواده
+                        </th>
+                        <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('insurance_payer')" class="flex items-center justify-end w-full">
                                 پرداخت کننده حق بیمه
                                 @if($sf === 'insurance_payer')
@@ -352,8 +390,8 @@
                             </th>
                         @else
                             <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                                <button wire:click="sortBy('charity')" class="flex items-center justify-end w-full">
-                                    خیریه معرف
+                                <button wire:click="sortBy('charity')" class="flex items-center justify-end w-full" title="خیریه معرف">
+                                    <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
                                     @if($sf === 'charity')
                                         <span class="mr-1 text-[0.5rem]">
                                             @if($sd === 'asc')
@@ -373,7 +411,7 @@
                             </th>
                             <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                                 <button wire:click="sortBy('consumption_coefficient')" class="flex items-center justify-end w-full">
-                                    ضریبه مصرف
+                                    درصد مشارکت
                                     @if($sf === 'consumption_coefficient')
                                         <span class="mr-1 text-[0.5rem]">
                                             @if($sd === 'asc')
@@ -394,7 +432,11 @@
                         @endif
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">
-                                تاریخ عضویت
+                                @if($status === 'insured')
+                                    تاریخ پایان بیمه
+                                @else
+                                    تاریخ عضویت
+                                @endif
                                 @if($sf === 'created_at')
                                     <span class="mr-1 text-[0.5rem]">
                                         @if($sd === 'asc')
@@ -413,25 +455,12 @@
                             </button>
                         </th>
                         @if(!auth()->user()->hasRole('admin'))
-                        <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                            <button wire:click="sortBy('verified_at')" class="flex items-center justify-end w-full">
-                                تاییدیه / اعضا
-                                @if($sf === 'verified_at')
-                                    <span class="mr-1 text-[0.5rem]">
-                                        @if($sd === 'asc')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                        @else
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @endif
-                                    </span>
-                                @else
-                                    <span class="mr-1 text-[0.5rem]">▼</span>
-                                @endif
-                            </button>
+
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            آیکون‌های اعتبارسنجی
+                        </th>
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            جزئیات
                         </th>
                         @endif
                     </tr>
@@ -521,6 +550,48 @@
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                             @php
+                                // شمارش مشکلات تجمیعی خانواده
+                                $familyProblems = [];
+                                foreach ($family->members as $member) {
+                                    if (is_array($member->problem_type)) {
+                                        foreach ($member->problem_type as $problem) {
+                                            if (!isset($familyProblems[$problem])) {
+                                                $familyProblems[$problem] = 0;
+                                            }
+                                            $familyProblems[$problem]++;
+                                        }
+                                    }
+                                }
+                                
+                                $problemLabels = [
+                                    'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-purple-100 text-purple-800'],
+                                    'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-orange-100 text-orange-800'],
+                                    'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-red-100 text-red-800'],
+                                    'work_disability' => ['label' => 'ازکارافتادگی', 'color' => 'bg-yellow-100 text-yellow-800'],
+                                ];
+                            @endphp
+                            
+                            <div class="flex flex-wrap gap-1">
+                                @if(count($familyProblems) > 0)
+                                    @foreach($familyProblems as $problem => $count)
+                                        @if(isset($problemLabels[$problem]))
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $problemLabels[$problem]['color'] }}">
+                                                {{ $problemLabels[$problem]['label'] }}
+                                                @if($count > 1)
+                                                    <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
+                                                @endif
+                                            </span>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        بدون مشکل خاص
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                            @php
                                 $types = $family->insuranceTypes();
                                 $payers = $family->insurancePayers();
                             @endphp
@@ -568,70 +639,32 @@
                             </td>
                         @endif
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                            {{ $family->created_at ? jdate($family->created_at)->format('Y/m/d') : '-' }}
+                            @if($family->created_at)
+                                @php
+                                    try {
+                                        echo jdate($family->created_at)->format('Y/m/d');
+                                    } catch (\Exception $e) {
+                                        echo $family->created_at->format('Y/m/d');
+                                    }
+                                @endphp
+                            @else
+                                -
+                            @endif
                         </td>
+
+
                         @if(!auth()->user()->hasRole('admin'))
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                            <div class="flex space-x-2 space-x-reverse">
-                                @switch($family->status)
-                                    @case('pending')
-                                        <span class="bg-orange-100 text-orange-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>در انتظار بررسی</span>
-                                        </span>
-                                        @break
-                                    @case('reviewing')
-                                        <span class="bg-yellow-100 text-yellow-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>در حال بررسی</span>
-                                        </span>
-                                        @break
-                                    @case('approved')
-                                        <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>تایید شده</span>
-                                        </span> 
-                                        @break
-                                    @case('insured')
-                                        <span class="bg-green-100 text-green-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            <span>بیمه شده</span>
-                                        </span>
-                                        @break
-                                    @case('renewal')
-                                        <span class="bg-indigo-100 text-indigo-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <span>در انتظار تمدید</span>
-                                        </span>
-                                        @break
-                                    @case('rejected')
-                                        <span class="bg-red-100 text-red-800 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                            <span>رد شده</span>
-                                        </span>
-                                        @break
-                                    @case('deleted')
-                                        <span class="bg-gray-200 text-gray-500 text-xs py-1 px-2 rounded-full flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                            <span>حذف شده</span>
-                                        </span>
-                                        @break
-                                @endswitch
-                                
+                            <div class="flex items-center justify-center">
+                                <x-family-validation-icons :family="$family" size="sm" />
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{{ route('charity.families.show', $family->id) }}" class="bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out">
+                                    <i class="fas fa-edit text-blue-600 mr-1"></i>
+                                    مشاهده
+                                </a>
                                 <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out toggle-family-btn" data-family-id="{{ $family->id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -644,7 +677,7 @@
                     
                     @if($expandedFamily === $family->id && !auth()->user()->hasRole('admin'))
                     <tr class="bg-green-50">
-                        <td colspan="{{ auth()->user()->hasRole('admin') ? 10 : 12 }}" class="p-0">
+                        <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 14 }}" class="p-0">
                             <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
                                 <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                                     <table class="min-w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
@@ -657,12 +690,14 @@
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">تاریخ تولد</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">شغل</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع مشکل</th>
-                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">خیریه معرف</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">
+                                                <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
+                                            </th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع بیمه</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">پرداخت کننده حق بیمه</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">درصد مشارکت</th>
                                             @if(!auth()->user()->hasRole('admin'))
-                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">تاییدیه</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">اعتبارسنجی</th>
                                             @endif
                                         </tr>
                                     </thead>
@@ -703,43 +738,68 @@
                                                 {{ $member->first_name }} {{ $member->last_name }}
                                             </td>
                                             <td class="px-3 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
-                                            <td class="px-3 py-3 text-sm text-gray-800">{{ $member->birth_date}}</td>
+                                            <td class="px-3 py-3 text-sm text-gray-800">
+                                                @if($member->birth_date)
+                                                    @php
+                                                        try {
+                                                            echo jdate($member->birth_date)->format('Y/m/d');
+                                                        } catch (\Exception $e) {
+                                                            echo \Carbon\Carbon::parse($member->birth_date)->format('Y/m/d');
+                                                        }
+                                                    @endphp
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
                                             <td class="px-3 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
                                             <td class="px-3 py-3 text-sm text-gray-800">
-                                                @if($member->has_disability)
-                                                    <span class="px-2 py-0.5 rounded-md text-xs bg-orange-100 text-orange-800">
-                                                        از کار افتادگی
-                                                    </span>
-                                                @elseif($member->has_chronic_disease)
-                                                    <span class="px-2 py-0.5 rounded-md text-xs bg-pink-100 text-red-800">
-                                                        بیماری خاص
-                                                    </span>
+                                                @php
+                                                    $memberProblems = [];
+                                                    if (is_array($member->problem_type)) {
+                                                        foreach ($member->problem_type as $problem) {
+                                                            if (isset($problemLabels[$problem])) {
+                                                                $memberProblems[] = $problemLabels[$problem];
+                                                            }
+                                                        }
+                                                    }
+                                                @endphp
+                                                
+                                                @if(count($memberProblems) > 0)
+                                                    <div class="flex flex-wrap gap-1">
+                                                        @foreach($memberProblems as $problem)
+                                                            <span class="px-2 py-0.5 rounded-md text-xs {{ $problem['color'] }}">
+                                                                {{ $problem['label'] }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
                                                 @else
                                                     <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                                        اعتیاد
+                                                        بدون مشکل
                                                     </span>
                                                 @endif
                                             </td>
                                             <td class="px-3 py-3 text-sm text-gray-800">
-                                                <div class="flex items-center">
+                                                <div class="flex items-center gap-2">
                                                     @if($member->organization)
-                                                        <span class="ml-1">{{ $member->organization->name }}</span>
                                                         @if($member->organization->logo)
-                                                            <img src="{{ $member->organization->logo }}" alt="لوگوی خیریه" class="w-5 h-5 rounded-full object-cover">
+                                                            <img src="{{ $member->organization->logo }}" alt="لوگوی {{ $member->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $member->organization->name }}">
                                                         @else
-                                                            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800">
+                                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $member->organization->name }}">
                                                                 {{ substr($member->organization->name, 0, 1) }}
                                                             </div>
                                                         @endif
+                                                        <span class="text-sm">{{ $member->organization->name }}</span>
                                                     @elseif($family->organization)
-                                                        <span class="ml-1">{{ $family->organization->name }}</span>
                                                         @if($family->organization->logo)
-                                                            <img src="{{ $family->organization->logo }}" alt="لوگوی خیریه" class="w-5 h-5 rounded-full object-cover">
+                                                            <img src="{{ $family->organization->logo }}" alt="لوگوی {{ $family->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $family->organization->name }}">
                                                         @else
-                                                            <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800">
+                                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $family->organization->name }}">
                                                                 {{ substr($family->organization->name, 0, 1) }}
                                                             </div>
                                                         @endif
+                                                        <span class="text-sm">{{ $family->organization->name }}</span>
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
                                                     @endif
                                                 </div>
                                             </td>
@@ -764,15 +824,31 @@
                                                 @endif
                                             </td>
                                             <td class="px-3 py-3 text-sm text-gray-800">۱۰۰٪</td>
+
                                             @if(!auth()->user()->hasRole('admin'))
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
-                                                ✓
+                                                @php
+                                                    // چک کنیم آیا این عضو نیاز به مدرک دارد
+                                                    $needsDocument = isset($member->needs_document) && $member->needs_document;
+                                                @endphp
+                                                
+                                                @if($needsDocument)
+                                                    <a href="{{ route('charity.family.members.documents.upload', ['family' => $family->id, 'member' => $member->id]) }}" 
+                                                       class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                        </svg>
+                                                        آپلود مدرک
+                                                    </a>
+                                                @else
+                                                    <x-member-validation-icons :member="$member" size="sm" />
+                                                @endif
                                             </td>
                                             @endif
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="{{ auth()->user()->hasRole('admin') ? 10 : 12 }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                            <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 12 }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
                                                 عضوی برای این خانواده ثبت نشده است.
                                             </td>
                                         </tr>
@@ -812,7 +888,7 @@
                     
                     @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->hasRole('admin') ? 10 : 12 }}" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
+                        <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 14 }}" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
                             هیچ خانواده‌ای یافت نشد.
                         </td>
                     </tr>
@@ -1098,7 +1174,7 @@
                                                 <option value="deprivation_rank">رتبه محرومیت</option>
                                                 <option value="charity">خیریه معرف</option>
                                                 <option value="members_count">تعداد اعضا</option>
-                                                <option value="created_at">تاریخ عضویت</option>
+                                                <option value="created_at">تاریخ پایان بیمه</option>
                                             </select>
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1647,4 +1723,276 @@
             });
         });
     </script>
+    
+    <!-- مودال تنظیمات رتبه -->
+    <div x-data="{ 
+        showRankModal: @entangle('showRankModal'),
+        rankFilters: @entangle('rankFilters'),
+        addRankFilter() {
+            if (!this.rankFilters) {
+                this.rankFilters = [];
+            }
+            this.rankFilters.push({
+                type: 'rank_range',
+                operator: 'equals',
+                value: '',
+                label: ''
+            });
+        },
+        removeRankFilter(index) {
+            this.rankFilters.splice(index, 1);
+        },
+        updateRankFilterLabel(index) {
+            const filter = this.rankFilters[index];
+            if (!filter) return;
+            
+            let label = '';
+            
+            switch(filter.type) {
+                case 'rank_range':
+                    label = 'بازه رتبه';
+                    break;
+                case 'criteria':
+                    label = 'معیار پذیرش';
+                    break;
+                case 'province':
+                    label = 'استان';
+                    break;
+                case 'city':
+                    label = 'شهر';
+                    break;
+            }
+            
+            if (filter.operator === 'equals') label += ' برابر با';
+            else if (filter.operator === 'not_equals') label += ' مخالف';
+            else if (filter.operator === 'and') label += ' و';
+            else if (filter.operator === 'or') label += ' یا';
+            
+            this.rankFilters[index].label = label;
+        }
+    }" 
+         x-show="showRankModal" 
+         @keydown.escape.window="showRankModal = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="$wire.closeRankModal()"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95"
+             class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            
+            <!-- هدر مودال -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">تنظیمات رتبه</h3>
+                        <p class="text-sm text-gray-600">لطفا فیلترهای مدنظر خود را اعمال کنید. انتخاب محدوده رتبه اجباری است.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- دکمه ذخیره فیلتر -->
+                    <button wire:click="saveRankFilter" 
+                            class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                        ذخیره فیلتر
+                    </button>
+                    
+                    <button wire:click="closeRankModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- محتوای مودال -->
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <!-- جدول فیلترها -->
+                <div class="overflow-x-auto bg-white rounded-lg border border-gray-200">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-sm text-gray-700">
+                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[140px]">نوع فیلتر</th>
+                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[200px]">جزئیات فیلتر</th>
+                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[120px]">شرط</th>
+                                <th class="px-6 py-4 text-center border-b border-gray-200 font-semibold w-20">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="(filter, index) in rankFilters" :key="index">
+                                <tr class="hover:bg-blue-25 transition-colors duration-200">
+                                    <!-- نوع فیلتر -->
+                                    <td class="px-6 py-5">
+                                        <div class="relative">
+                                            <select x-model="filter.type" @change="updateRankFilterLabel(index)"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="rank_range">بازه رتبه</option>
+                                                <option value="criteria">معیار پذیرش</option>
+                                                <option value="province">استان</option>
+                                                <option value="city">شهر</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- جزئیات فیلتر -->
+                                    <td class="px-6 py-5">
+                                        <div x-show="filter.type === 'rank_range'" class="relative">
+                                            <select x-model="filter.value"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="">انتخاب بازه رتبه...</option>
+                                                <option value="very_high">خیلی بالا (80-100)</option>
+                                                <option value="high">بالا (60-79)</option>
+                                                <option value="medium">متوسط (40-59)</option>
+                                                <option value="low">پایین (20-39)</option>
+                                                <option value="very_low">خیلی پایین (0-19)</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="filter.type === 'criteria'" class="relative">
+                                            <select x-model="filter.value"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="">انتخاب معیار...</option>
+                                                @if(isset($availableRankSettings))
+                                                    @foreach($availableRankSettings as $setting)
+                                                        <option value="{{ $setting->id }}">{{ $setting->name }}</option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="filter.type === 'province'" class="relative">
+                                            <select x-model="filter.value"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="">انتخاب استان...</option>
+                                                @foreach($provinces as $province)
+                                                    <option value="{{ $province->id }}">{{ $province->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="filter.type === 'city'" class="relative">
+                                            <select x-model="filter.value"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="">انتخاب شهر...</option>
+                                                @foreach($cities as $city)
+                                                    <option value="{{ $city->id }}">{{ $city->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- شرط -->
+                                    <td class="px-6 py-5">
+                                        <div class="relative">
+                                            <select x-model="filter.operator" @change="updateRankFilterLabel(index)"
+                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="equals">برابر</option>
+                                                <option value="and">و</option>
+                                                <option value="or">یا</option>
+                                                <option value="not_equals">مخالف</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- حذف -->
+                                    <td class="px-6 py-5 text-center">
+                                        <button @click="removeRankFilter(index)" 
+                                                class="inline-flex items-center justify-center w-10 h-10 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-all duration-200 group">
+                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            
+                            <!-- خط اضافه کردن فیلتر جدید -->
+                            <tr>
+                                <td colspan="4" class="px-6 py-6">
+                                    <button @click="addRankFilter()" 
+                                            class="w-full flex items-center justify-center gap-3 p-4 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-xl border-2 border-dashed border-green-300 hover:border-green-400 transition-all duration-200 group">
+                                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        <span class="font-medium">افزودن فیلتر جدید</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- فوتر مودال -->
+            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+                <div class="flex gap-2">
+                    <button wire:click="resetRankToDefault"
+                            class="inline-flex items-center px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        بازگشت به تنظیمات پیشفرض
+                    </button>
+                </div>
+                
+                <button wire:click="applyRankFilters" @click="showRankModal = false"
+                        class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    تایید و اعمال تنظیمات جدید
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
