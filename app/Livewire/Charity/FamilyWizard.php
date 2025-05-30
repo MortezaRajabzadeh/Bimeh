@@ -163,6 +163,22 @@ class FamilyWizard extends Component
                     if (!preg_match('/^[0-9]{10}$/', $member['national_code'])) {
                         throw new \Exception("کد ملی عضو خانواده شماره " . ($index + 1) . " باید ۱۰ رقم باشد");
                     }
+                    
+                    // اعتبارسنجی اطلاعات سرپرست
+                    if ((int)$index === (int)$this->head_member_index) {
+                        if (empty($member['phone'])) {
+                            throw new \Exception("شماره تماس سرپرست خانوار را وارد کنید");
+                        }
+                        if (!preg_match('/^09[0-9]{9}$/', $member['phone'])) {
+                            throw new \Exception("شماره تماس سرپرست خانوار باید با ۰۹ شروع شود و ۱۱ رقم باشد");
+                        }
+                        if (empty($member['sheba'])) {
+                            throw new \Exception("شماره شبا سرپرست خانوار را وارد کنید");
+                        }
+                        if (!preg_match('/^IR[0-9]{24}$/', $member['sheba'])) {
+                            throw new \Exception("شماره شبا باید با IR شروع شود و ۲۶ کاراکتر باشد");
+                        }
+                    }
                 }
                 return true;
 
@@ -391,6 +407,7 @@ class FamilyWizard extends Component
                     'marital_status' => $member['marital_status'] ?? null,
                     'education' => $member['education'] ?? null,
                     'phone' => $member['phone'] ?? null,
+                    'sheba' => $member['sheba'] ?? null,
                 ]);
             }
 
@@ -492,5 +509,17 @@ class FamilyWizard extends Component
             }
             $this->family_photo = null;
         }
+    }
+
+    public function updatedHeadMemberIndex($value)
+    {
+        // ارسال رویداد به جاوا اسکریپت برای اعمال تغییرات
+        $this->dispatch('headMemberChanged', $value);
+        Log::info('Head member changed', ['index' => $value]);
+    }
+
+    public function updateHeadMemberIndex($value)
+    {
+        $this->head_member_index = $value;
     }
 } 

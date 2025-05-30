@@ -1,0 +1,25 @@
+/**
+ * اصلاح مشکلات SVG در محیط RTL
+ */
+
+svg {
+    /* تنظیم جهت آیکون‌ها به LTR برای جلوگیری از معکوس شدن */
+    direction: ltr;
+    transform-origin: center;
+}
+
+/* اصلاح آیکون‌هایی که باید در محیط RTL چرخانده شوند */
+.rtl-flip svg {
+    transform: scaleX(-1);
+}
+
+/* اصلاح آیکون‌های حساس به جهت */
+.svg-path-fix path {
+    transform-origin: center;
+    vector-effect: non-scaling-stroke;
+}
+
+/* تنظیم جهت متن درون آیکون‌های SVG */
+svg text {
+    unicode-bidi: plaintext;
+} 

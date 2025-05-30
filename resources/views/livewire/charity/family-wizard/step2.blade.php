@@ -1,5 +1,11 @@
 <!-- کارت اصلی -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible" x-data="{
+    init() {
+        $watch('$wire.head_member_index', value => {
+            console.log('Head member index changed:', value);
+        });
+    }
+}">
     <!-- هدر -->
     <div class="border-b border-gray-100 p-6">
         <div class="flex justify-between items-center">
@@ -9,6 +15,24 @@
     </div>
 
     <div class="p-6 relative overflow-visible">
+        <!-- راهنمای فرم -->
+        <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+            <div class="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01" />
+                </svg>
+                <div>
+                    <div class="text-sm font-medium text-blue-800 mb-1">راهنمای تکمیل فرم</div>
+                    <ul class="text-xs text-blue-700 space-y-1">
+                        <li>• لطفاً یکی از اعضا را به عنوان سرپرست خانوار انتخاب کنید (با انتخاب دکمه رادیویی)</li>
+                        <li>• فقط برای سرپرست خانوار، فیلدهای «شماره تماس» و «شماره شبا» نمایش داده می‌شود</li>
+                        <li>• موارد ستاره‌دار (<span class="text-red-500">*</span>) الزامی هستند</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- راهنمای فیلدها -->
         <div class="bg-gray-50 p-4 rounded-lg mb-6 overflow-visible relative z-10">
             <div class="flex items-center gap-4 text-sm text-gray-600">
@@ -39,18 +63,24 @@
         <!-- فرم ورودی -->
         <div class="space-y-4 overflow-visible relative z-20">
             @foreach($members as $index => $member)
-                <div class="flex items-center gap-4 bg-gray-50/50 p-4 rounded-lg hover:bg-gray-50 transition-colors duration-150 relative overflow-visible">
-                    @if($head_member_index === $index)
-                        <div class="absolute -right-2 top-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                <div class="flex items-center gap-4 bg-gray-50/50 p-4 rounded-lg hover:bg-gray-50 transition-colors duration-150 relative overflow-visible group {{ (string)$head_member_index === (string)$index ? 'border-r-4 border-green-500 bg-green-50/40' : '' }}">
+                    @if((string)$head_member_index === (string)$index)
+                        <div class="absolute -right-2 top-1/2 -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-full hidden">
                             سرپرست
                         </div>
                     @endif
                     <div class="w-8">
                         <input type="radio"
-                               wire:model.lazy="head_member_index"
+                               wire:model="head_member_index"
+                               wire:change="$refresh"
                                name="head_member_index"
                                value="{{ $index }}"
-                               class="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500">
+                               class="w-4 h-4 {{ (string)$head_member_index === (string)$index ? 'text-green-600 ring-2 ring-offset-2 ring-green-500' : 'text-gray-600' }} border-gray-300 focus:ring-green-500">
+                        @if((string)$head_member_index === (string)$index)
+                            <div class="mt-1 text-xs text-green-600 absolute hidden">سرپرست</div>
+                        @else
+                            <div class="mt-1 text-xs text-gray-400 absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200">انتخاب</div>
+                        @endif
                     </div>
                     <div class="w-32 relative">
                         <select wire:model="members.{{ $index }}.relationship"
@@ -306,32 +336,60 @@
                         </button>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 w-full @if($head_member_index === $index) animate-fade-in @endif">
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">شماره تماس سرپرست</label>
+                <!-- فیلدهای مخصوص سرپرست با نمایش بهتر -->
+                <div id="head-fields-{{ $index }}" 
+                     class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 w-full animate-fade-in bg-green-50 p-3 rounded-lg border border-green-200" 
+                     x-data="{}"
+                     x-show="$wire.head_member_index == {{ $index }}">
+                    <div class="relative">
+                        <div class="flex items-center mb-1">
+                            <label class="block text-sm text-gray-800 font-medium">شماره تماس سرپرست</label>
+                            <span class="mr-1 text-red-500">*</span>
+                            <div class="mr-2 group relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01" />
+                                </svg>
+                                <div class="absolute left-0 bottom-6 w-48 bg-white shadow-lg rounded-lg p-2 text-xs text-gray-600 hidden group-hover:block z-50 border border-gray-200">
+                                    این شماره برای ارتباط با خانواده و ارسال پیامک‌های تأیید استفاده خواهد شد.
+                                </div>
+                            </div>
+                        </div>
                         <input type="text"
                                wire:model="members.{{ $index }}.phone"
-                               :disabled="head_member_index !== {{ $index }}"
-                               :class="head_member_index !== {{ $index }} ? 'bg-gray-100 transition-colors duration-200' : 'bg-white transition-colors duration-200'"
-                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500"
+                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white"
                                placeholder="مثلاً 0912xxxxxxx">
                     </div>
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">شماره شبا</label>
+                    <div class="relative">
+                        <div class="flex items-center mb-1">
+                            <label class="block text-sm text-gray-800 font-medium">شماره شبا</label>
+                            <span class="mr-1 text-red-500">*</span>
+                            <div class="mr-2 group relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01" />
+                                </svg>
+                                <div class="absolute left-0 bottom-6 w-48 bg-white shadow-lg rounded-lg p-2 text-xs text-gray-600 hidden group-hover:block z-50 border border-gray-200">
+                                    شماره شبا برای واریز کمک‌های مالی و پرداخت خسارت بیمه استفاده می‌شود.
+                                </div>
+                            </div>
+                        </div>
                         <input type="text"
                                wire:model="members.{{ $index }}.sheba"
-                               :disabled="head_member_index !== {{ $index }}"
-                               :class="head_member_index !== {{ $index }} ? 'bg-gray-100 transition-colors duration-200' : 'bg-white transition-colors duration-200'"
-                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500"
-                               placeholder="IRxxxxxxxxxxxxxx">
+                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white ltr text-left"
+                               placeholder="IRxxxxxxxxxxxxxx"
+                               dir="ltr">
+                        <div class="mt-1 text-xs text-green-600">
+                            شماره شبا باید با IR شروع شود و بدون خط تیره یا فاصله وارد شود
+                        </div>
                     </div>
                 </div>
             @endforeach
             <!-- دکمه اضافه کردن -->
             <button type="button" wire:click="addMember" 
                     class="w-full flex items-center justify-center gap-2 p-4 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors duration-150">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M12 4v16M4 12h16" />
                 </svg>
                 <span>افزودن عضو جدید</span>
             </button>
@@ -339,8 +397,8 @@
         @if(!isset($head_member_index) && count($members) > 0)
             <div class="mt-4 p-4 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-200">
                 <div class="flex items-center">
-                    <svg class="h-5 w-5 text-yellow-400 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 19a7 7 0 100-14 7 7 0 000 14z" />
                     </svg>
                     <span>لطفاً سرپرست خانوار را مشخص کنید</span>
                 </div>
@@ -353,6 +411,7 @@
 <script src="/vendor/jalalidatepicker/jalalidatepicker.min.js"></script>
 <script>
     document.addEventListener('livewire:load', function () {
+        // تنظیمات تقویم جلالی
         jalaliDatepicker.startWatch({
             minDate: '1390/01/01',
             maxDate: '1450/12/29',
@@ -360,10 +419,32 @@
             format: 'YYYY/MM/DD',
             theme: 'green',
         });
+        
+        // مدیریت انتخاب سرپرست
+        Livewire.on('headMemberChanged', function(index) {
+            console.log('Head member changed to:', index);
+            
+            // به‌روزرسانی Alpine.js
+            Livewire.first().updateHeadMemberIndex(index);
+        });
     });
+    
     document.addEventListener('DOMContentLoaded', function () {
         jalaliDatepicker.startWatch();
+        
+        // اطمینان از نمایش صحیح فیلدهای سرپرست در بارگذاری اولیه
+        setTimeout(function() {
+            const currentHead = document.querySelector('input[name="head_member_index"]:checked');
+            if (currentHead) {
+                const index = currentHead.value;
+                const headFields = document.getElementById('head-fields-' + index);
+                if (headFields) {
+                    headFields.style.display = 'grid';
+                }
+            }
+        }, 200);
     });
+    
     window.addEventListener('refreshJalali', function () {
         jalaliDatepicker.startWatch();
     });
@@ -378,6 +459,12 @@
 }
 .animate-fade-in {
     animation: fade-in 0.3s ease-out;
+}
+
+/* اصلاح آیکون‌های SVG در محیط RTL */
+svg {
+    direction: ltr;
+    transform-origin: center;
 }
 </style>
 @endpush 
