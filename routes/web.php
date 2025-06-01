@@ -7,6 +7,7 @@ use Livewire\Volt\Volt;
 use App\Livewire\Auth\UserTypeSelection;
 use App\Livewire\Auth\MicroLogin;
 use App\Http\Middleware\CheckUserType;
+use App\Livewire\Examples\ToastExample;
 
 // Health Check Route for Liara
 Route::get('/health', function () {
@@ -52,6 +53,9 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
     Route::middleware('can:view dashboard')->get('/dashboard', function () {
         return view('admin.dashboard');
     })->name('dashboard');
+    
+    // تعویض نقش ادمین (جدید)
+    Route::post('/switch-role', [\App\Http\Controllers\Admin\SwitchRoleController::class, 'store'])->name('switch-role.store');
     
     // تنظیمات سیستم
     Route::middleware('can:manage system settings')->get('/settings', function () {
@@ -124,10 +128,6 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix
     Route::middleware('can:edit family member')->put('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'update'])->name('families.members.update');
     Route::middleware('can:remove family member')->delete('/families/{family}/members/{member}', [\App\Http\Controllers\Charity\MemberController::class, 'destroy'])->name('families.members.destroy');
     
-    // آپلود مدارک اعضای خانواده
-    Route::middleware('can:edit family member')->get('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'showUploadForm'])->name('charity.family.members.documents.upload');
-    Route::middleware('can:edit family member')->post('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'store'])->name('charity.family.members.documents.store');
-    
     // آپلود اکسل خانواده‌ها
     Route::middleware('can:create family')->get('/import', [\App\Http\Controllers\Charity\ImportController::class, 'index'])->name('import.index');
     Route::middleware('can:create family')->post('/import', [\App\Http\Controllers\Charity\ImportController::class, 'import'])->name('import.store');
@@ -138,9 +138,25 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':charity'])->prefix
     Route::middleware('can:export reports')->get('/export-excel', [App\Http\Controllers\Charity\FamilyController::class, 'exportExcel'])->name('export-excel');
 
     Route::middleware('can:view profile')->get('/settings', function () {
-        return view('charity.settings');
+        return view('charity.settings.index');
     })->name('settings');
+    
+    Route::middleware('can:view profile')->post('/settings/update', [\App\Http\Controllers\Charity\SettingsController::class, 'update'])->name('settings.update');
 });
+
+// مسیرهای آپلود مدارک اعضای خانواده (خارج از تمام گروه‌ها)
+Route::middleware(['auth', 'verified', 'can:edit family member'])->group(function () {
+    // مسیر family.members.documents.upload
+    Route::get('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'showUploadForm'])->name('family.members.documents.upload');
+    Route::post('/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'store'])->name('family.members.documents.store');
+    
+    // مسیر charity.family.members.documents.upload
+    Route::get('/charity-routes/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'showUploadForm'])->name('charity.family.members.documents.upload');
+    Route::post('/charity-routes/family/{family}/members/{member}/documents/upload', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'store'])->name('charity.family.members.documents.store');
+});
+
+// مسیر نمایش فایل‌های آپلود شده (به صورت مستقل)
+Route::middleware(['auth', 'verified'])->get('/family/{family}/members/{member}/documents/{collection}/{media}', [\App\Http\Controllers\Charity\MemberDocumentController::class, 'showDocument'])->name('family.members.documents.show');
 
 // مسیرهای بیمه
 Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->prefix('insurance')->name('insurance.')->group(function () {
@@ -186,6 +202,18 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
         return view('insurance.uninsured-families');
     })->name('uninsured-families');
 
+    // مسیرهای مدیریت تخصیص بودجه
+    Route::middleware('can:manage insurance policies')->get('/allocations', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'index'])->name('allocations.index');
+    Route::middleware('can:manage insurance policies')->get('/allocations/create', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'create'])->name('allocations.create');
+    Route::middleware('can:manage insurance policies')->post('/allocations', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'store'])->name('allocations.store');
+    Route::middleware('can:manage insurance policies')->get('/allocations/{allocation}', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'show'])->name('allocations.show');
+    Route::middleware('can:manage insurance policies')->get('/allocations/{allocation}/edit', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'edit'])->name('allocations.edit');
+    Route::middleware('can:manage insurance policies')->put('/allocations/{allocation}', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'update'])->name('allocations.update');
+    Route::middleware('can:manage insurance policies')->delete('/allocations/{allocation}', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'destroy'])->name('allocations.destroy');
+    Route::middleware('can:manage insurance policies')->post('/allocations/{allocation}/approve', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'approve'])->name('allocations.approve');
+    Route::middleware('can:manage insurance policies')->post('/allocations/{allocation}/mark-as-paid', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'markAsPaid'])->name('allocations.mark-as-paid');
+    Route::middleware('can:manage insurance policies')->get('/allocations/family/{familyId}', [\App\Http\Controllers\FamilyFundingAllocationController::class, 'familyReport'])->name('allocations.family-report');
+
     // گزارش مالی
     Route::middleware('can:view advanced reports')->get('/financial-report', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'index'])->name('financial-report');
     Route::middleware('can:view advanced reports')->get('/financial-report/export', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'exportExcel'])->name('financial-report.export');
@@ -194,16 +222,37 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
     // مدیریت سهم‌بندی حق بیمه
     Route::middleware('can:manage insurance policies')->resource('shares', \App\Http\Controllers\InsuranceShareController::class);
     Route::middleware('can:manage insurance policies')->get('/family-insurances/{familyInsurance}/shares', [\App\Http\Controllers\InsuranceShareController::class, 'byFamilyInsurance'])->name('family-insurances.shares');
-    Route::middleware('can:manage insurance policies')->post('/shares/{insuranceShare}/mark-paid', [\App\Http\Controllers\InsuranceShareController::class, 'markAsPaid'])->name('shares.mark-paid');
+    Route::middleware('can:manage insurance policies')->post('/shares/{share}/mark-paid', [\App\Http\Controllers\InsuranceShareController::class, 'markAsPaid'])->name('shares.mark-paid');
+    
     // صفحه مدیریت سهم‌بندی Real-Time
     Route::middleware('can:manage insurance shares')->get('/shares-manager', [\App\Http\Controllers\InsuranceShareController::class, 'manage'])->name('shares.manage');
-
+    
     // مدیریت پرداخت‌های بیمه
     Route::middleware('can:view advanced reports')->resource('payments', \App\Http\Controllers\InsurancePaymentController::class);
+    
+    // روت جزئیات سهم‌بندی بیمه - باید بعد از تعریف resource باشد و با نام متفاوت
+    Route::get('/share-details/{share}', [App\Http\Controllers\Insurance\FinancialReportController::class, 'shareDetails'])
+        ->name('shares.details');
 
+    // مسیرهای بخش بیمه
+    Route::prefix('families')->name('families.')->group(function () {
+        // مسیر به‌روزرسانی دسته‌ای وضعیت خانواده‌ها
+        Route::post('/bulk-update-status', [App\Http\Controllers\Insurance\FamilyStatusController::class, 'bulkUpdateStatus'])
+            ->name('bulk-update-status');
+            
+        // ... سایر مسیرهای موجود
+        // ... existing code ...
+    });
+
+    // مسیر به‌روزرسانی دسته‌ای وضعیت خانواده‌ها
+    Route::post('/families/bulk-update-status', [App\Http\Controllers\Api\InsuranceFamilyController::class, 'bulkUpdateStatus'])
+        ->name('families.bulk-update-status');
+        
+    // مسیر مدیریت منابع تأمین مالی
+    Route::middleware('can:manage insurance policies')->resource('funding-sources', \App\Http\Controllers\FundingSourceController::class);
 });
 
-// مسیرهای سازمان
-
+// مسیر تست اعلان‌های توست
+Route::get('/examples/toast-test', ToastExample::class)->name('examples.toast-test');
 
 require __DIR__.'/auth.php';

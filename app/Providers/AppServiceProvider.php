@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\Log;
 use App\Helpers\DateHelper;
 use App\Models\Family;
 use App\Models\Member;
+use App\Services\Admin\RoleImpersonationService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use App\Livewire\Charity\DashboardStats;
 use App\Livewire\Charity\FamilySearch;
 use App\Livewire\SidebarToggle;
 use App\Livewire\Insurance\DashboardStats as InsuranceDashboardStats;
+use Illuminate\Support\Facades\Session;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
         // ثبت DateHelper به عنوان یک سرویس
         $this->app->bind('date-helper', function () {
             return new DateHelper();
+        });
+        
+        // ثبت سرویس تغییر نقش ادمین به صورت singleton
+        $this->app->singleton(RoleImpersonationService::class, function ($app) {
+            return new RoleImpersonationService();
         });
     }
 
@@ -67,17 +74,27 @@ class AppServiceProvider extends ServiceProvider
                 $uninsuredFamilies = 0;
                 $uninsuredMembers = 0;
                 
+                // بررسی user_type فعلی (از سشن یا مدل کاربر)
+                $userType = Session::has('current_user_type') ? Session::get('current_user_type') : $user->user_type;
+                
                 // بررسی اینکه کاربر از نوع خیریه یا ادمین باشد
-                if ($user->user_type === 'charity' || $user->user_type === 'admin') {
+                if ($userType === 'charity' || $userType === 'admin') {
                     $charity_id = null;
+                    $isAdminImpersonating = false;
                     
-                    if ($user->user_type === 'charity') {
+                    // بررسی اگر ادمین در حال تقلید نقش است
+                    if (Session::has('original_admin_roles') && Session::has('is_impersonating') && Session::get('is_impersonating') === true) {
+                        $isAdminImpersonating = true;
+                        Log::info('ادمین در حال تقلید نقش است - نمایش آمار کلی');
+                    } else if ($userType === 'charity') {
+                        // فقط در حالت خیریه واقعی، فیلتر charity_id اعمال شود
                         $charity_id = $user->organization_id;
+                        Log::info('کاربر خیریه واقعی است - فیلتر بر اساس charity_id: ' . $charity_id);
                     }
                     
                     // بررسی مستقیم آمار با SQL برای اطمینان از صحت داده
-                    if ($user->user_type === 'admin') {
-                        // ادمین تمام آمار خانواده‌ها را می‌بیند
+                    if ($userType === 'admin' || $isAdminImpersonating) {
+                        // ادمین و ادمین در حال تقلید نقش خیریه، تمام آمار خانواده‌ها را می‌بینند
                         $insuredStats = DB::select("
                             SELECT 
                                 COUNT(DISTINCT f.id) as family_count,
@@ -95,6 +112,8 @@ class AppServiceProvider extends ServiceProvider
                             LEFT JOIN members m ON m.family_id = f.id
                             WHERE f.is_insured = 0
                         ");
+                        
+                        Log::info('آمار کلی نمایش داده می‌شود: insured=' . ($insuredStats[0]->family_count ?? 0) . ', uninsured=' . ($uninsuredStats[0]->family_count ?? 0));
                     } else {
                         // خیریه فقط آمار خانواده‌های خودش را می‌بیند
                         $insuredStats = DB::select("
@@ -114,6 +133,8 @@ class AppServiceProvider extends ServiceProvider
                             LEFT JOIN members m ON m.family_id = f.id
                             WHERE f.charity_id = ? AND f.is_insured = 0
                         ", [$charity_id]);
+                        
+                        Log::info('آمار فیلتر شده خیریه: charity_id=' . $charity_id . ', insured=' . ($insuredStats[0]->family_count ?? 0) . ', uninsured=' . ($uninsuredStats[0]->family_count ?? 0));
                     }
                     
                     $insuredFamilies = isset($insuredStats[0]) ? $insuredStats[0]->family_count : 0;
@@ -123,7 +144,7 @@ class AppServiceProvider extends ServiceProvider
                 }
                 
                 // بررسی اینکه کاربر از نوع بیمه باشد
-                if ($user->user_type === 'insurance') {
+                if ($userType === 'insurance') {
                     $insurance_id = $user->organization_id;
                     
                     // آمار خانواده‌های بیمه شده (کل خانواده‌هایی که بیمه دارند)
@@ -157,7 +178,8 @@ class AppServiceProvider extends ServiceProvider
                     'insuredFamilies' => $insuredFamilies,
                     'insuredMembers' => $insuredMembers,
                     'uninsuredFamilies' => $uninsuredFamilies,
-                    'uninsuredMembers' => $uninsuredMembers
+                    'uninsuredMembers' => $uninsuredMembers,
+                    'current_user_type' => $userType // اضافه کردن user_type فعلی به ویو
                 ]);
             } else {
                 // اگر کاربر لاگین نکرده، مقادیر پیش‌فرض

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Session;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -136,5 +137,63 @@ class User extends Authenticatable
     public function scopeInsurance($query)
     {
         return $query->where('user_type', 'insurance');
+    }
+
+    /**
+     * تشخیص نقش فعال کاربر (با در نظر گرفتن حالت impersonation)
+     * 
+     * @return string نقش فعال: 'admin', 'charity', یا 'insurance'
+     */
+    public function getActiveRole(): string
+    {
+        // بررسی حالت impersonation
+        if ($this->hasRole('admin') && Session::has('admin_acting_as')) {
+            return Session::get('admin_acting_as');
+        }
+        
+        // تشخیص نقش عادی
+        if ($this->hasRole('admin')) {
+            return 'admin';
+        } elseif ($this->hasRole('charity')) {
+            return 'charity';
+        } elseif ($this->hasRole('insurance')) {
+            return 'insurance';
+        }
+        
+        return '';
+    }
+    
+    /**
+     * بررسی آیا کاربر در حال impersonation است
+     * 
+     * @return bool
+     */
+    public function isImpersonating(): bool
+    {
+        return $this->hasRole('admin') && 
+               Session::has('is_impersonating') && 
+               Session::get('is_impersonating') === true;
+    }
+    
+    /**
+     * بررسی آیا کاربر در حال حاضر با نقش خاصی فعال است
+     * 
+     * @param string $role نقش مورد نظر ('admin', 'charity', 'insurance')
+     * @return bool
+     */
+    public function isActiveAs(string $role): bool
+    {
+        return $this->getActiveRole() === $role;
+    }
+
+    // اضافه کردن متد accessors برای دریافت organization_id موقت یا اصلی
+    public function getOrganizationIdAttribute($value)
+    {
+        // بررسی اگر در حالت شبیه‌سازی هستیم
+        if (session('is_impersonating') && session('current_organization_id')) {
+            return session('current_organization_id');
+        }
+        
+        return $value;
     }
 }

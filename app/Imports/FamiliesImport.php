@@ -525,6 +525,63 @@ class FamiliesImport implements ToCollection
         foreach ($members as $memberData) {
             $this->addMemberToFamily($family, $memberData);
         }
+        
+        // بروزرسانی معیارهای پذیرش و محاسبه رتبه خانواده
+        $this->updateAcceptanceCriteriaAndRank($family);
+    }
+
+    /**
+     * بروزرسانی معیارهای پذیرش و محاسبه رتبه خانواده
+     */
+    protected function updateAcceptanceCriteriaAndRank(Family $family): void
+    {
+        // دریافت همه اعضای خانواده با problem_type آن‌ها
+        $members = $family->members()->get();
+        
+        // جمع‌آوری معیارهای پذیرش از مشکلات اعضا
+        $acceptanceCriteria = [];
+        
+        foreach ($members as $member) {
+            if (is_array($member->problem_type) && !empty($member->problem_type)) {
+                foreach ($member->problem_type as $problem) {
+                    // تبدیل نوع مشکل به معیار پذیرش متناظر
+                    $criteria = $this->mapProblemToCriteria($problem);
+                    if (!empty($criteria) && !in_array($criteria, $acceptanceCriteria)) {
+                        $acceptanceCriteria[] = $criteria;
+                    }
+                }
+            }
+        }
+        
+        // بروزرسانی فیلد acceptance_criteria خانواده
+        if (!empty($acceptanceCriteria)) {
+            $family->acceptance_criteria = $acceptanceCriteria;
+            $family->save();
+            
+            // محاسبه رتبه خانواده
+            $family->calculateRank();
+            
+            Log::debug("معیارهای پذیرش و رتبه خانواده بروزرسانی شد", [
+                'family_id' => $family->id,
+                'criteria' => $acceptanceCriteria,
+                'rank' => $family->calculated_rank
+            ]);
+        }
+    }
+    
+    /**
+     * تبدیل نوع مشکل به معیار پذیرش متناظر
+     */
+    protected function mapProblemToCriteria(string $problem): string
+    {
+        $mapping = [
+            'addiction' => 'اعتیاد',
+            'special_disease' => 'بیماری خاص',
+            'work_disability' => 'ازکارافتادگی',
+            'unemployment' => 'بیکاری',
+        ];
+        
+        return $mapping[$problem] ?? '';
     }
 
     /**

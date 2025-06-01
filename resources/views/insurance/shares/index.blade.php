@@ -79,53 +79,53 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">
-                                {{ $share->familyInsurance->family->name }}
+                                {{ $share->familyInsurance && $share->familyInsurance->family ? $share->familyInsurance->family->name : 'نامشخص' }}
                             </div>
                             <div class="text-sm text-gray-500">
-                                کد: {{ $share->familyInsurance->family->family_code }}
+                                کد: {{ $share->familyInsurance && $share->familyInsurance->family ? $share->familyInsurance->family->family_code : 'نامشخص' }}
                             </div>
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">
                                 @if($share->payer_type === 'organization' && $share->payerOrganization)
-                                    {{ $share->payerOrganization->name }}
+                                    {{ $share->payerOrganization->name ?? 'نامشخص' }}
                                 @elseif($share->payer_type === 'user' && $share->payerUser)
-                                    {{ $share->payerUser->name }}
+                                    {{ $share->payerUser->name ?? 'نامشخص' }}
                                 @else
-                                    {{ $share->payer_name }}
+                                    {{ $share->payer_name ?? 'نامشخص' }}
                                 @endif
                             </div>
                             <div class="text-xs text-gray-500">
-                                {{ match($share->payer_type) {
+                                {{ match($share->payer_type ?? '') {
                                     'insurance' => '🏢 شرکت بیمه',
                                     'charity' => '🏥 خیریه',
                                     'bank' => '🏦 بانک',
                                     'government' => '🏛️ دولت',
                                     'benefactor' => '👤 فرد خیر',
                                     'csr' => '💼 بودجه CSR',
-                                    default => $share->payer_type
+                                    default => $share->payer_type ?? 'نامشخص'
                                 } }}
                             </div>
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $share->percentage }}%</span>
+                            <span class="text-sm font-medium text-gray-900">{{ $share->percentage ?? 0 }}%</span>
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-gray-900">{{ number_format($share->amount) }} تومان</span>
+                            <span class="text-sm text-gray-900">{{ number_format($share->amount ?? 0) }} تومان</span>
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {{ $share->payment_status === 'paid' ? 'bg-green-100 text-green-800' : 
-                                   ($share->payment_status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
-                                {{ match($share->payment_status) {
+                                {{ ($share->payment_status ?? '') === 'paid' ? 'bg-green-100 text-green-800' : 
+                                   (($share->payment_status ?? '') === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                {{ match($share->payment_status ?? '') {
                                     'pending' => 'در انتظار',
                                     'paid' => 'پرداخت شده',
                                     'overdue' => 'عقب‌افتاده',
-                                    default => $share->payment_status
+                                    default => $share->payment_status ?? 'نامشخص'
                                 } }}
                             </span>
                         </td>
@@ -155,7 +155,7 @@
                                 </a>
                                 @endcan
                                 
-                                @if($share->payment_status === 'pending')
+                                @if(($share->payment_status ?? '') === 'pending')
                                 <form action="{{ route('insurance.shares.mark-paid', $share) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" class="text-green-600 hover:text-green-900" title="علامت‌گذاری به عنوان پرداخت شده">

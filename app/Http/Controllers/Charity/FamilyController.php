@@ -85,7 +85,7 @@ class FamilyController extends Controller
         
         $family = $this->familyService->registerFamily($validated, $request->user());
         
-        return redirect()->route('charity.families.show', $family)
+        return redirect()->route('dashboard')
             ->with('success', 'خانواده با موفقیت ثبت شد. لطفاً اعضای خانواده را اضافه کنید.');
     }
 
@@ -94,7 +94,7 @@ class FamilyController extends Controller
      */
     public function show(Family $family)
     {
-        Gate::authorize('view families');
+        Gate::authorize('view own families');
         
         // اطمینان از اینکه خانواده متعلق به سازمان کاربر جاری است
         if ($family->charity_id !== request()->user()->organization_id) {
@@ -102,9 +102,11 @@ class FamilyController extends Controller
         }
         
         $members = $family->members;
-        $head = $family->head();
         
-        return view('charity.families.show', compact('family', 'members', 'head'));
+        return view('charity.families.show', [
+            'family' => $family,
+            'members' => $members,
+        ]);
     }
 
     /**
@@ -160,7 +162,7 @@ class FamilyController extends Controller
         
         $family->update($validated);
         
-        return redirect()->route('charity.families.show', $family)
+        return redirect()->route('dashboard')
             ->with('success', 'اطلاعات خانواده با موفقیت به‌روزرسانی شد.');
     }
 

@@ -64,7 +64,7 @@ class MemberDocumentController extends Controller
         $member->clearMediaCollection($mediaCollection);
 
         // آپلود فایل جدید
-        $member->addMediaFromRequest('document')
+        $media = $member->addMediaFromRequest('document')
             ->usingName($member->full_name . ' - ' . ($validated['document_type'] === 'special_disease' ? 'مدرک بیماری خاص' : 'مدرک معلولیت'))
             ->usingFileName(uniqid() . '-' . $request->file('document')->getClientOriginalName())
             ->toMediaCollection($mediaCollection);
@@ -72,8 +72,15 @@ class MemberDocumentController extends Controller
         // بروزرسانی وضعیت اطلاعات ناقص عضو (در صورت نیاز)
         $this->updateMemberIncompleteStatus($member, $validated['document_type']);
 
-        return redirect()->route('charity.families.show', $family)
-            ->with('success', 'مدرک با موفقیت آپلود شد');
+        $docType = $validated['document_type'] === 'special_disease' ? 'مدرک بیماری خاص' : 'مدرک معلولیت';
+        
+        // ساخت پیام موفقیت‌آمیز کوتاه‌تر
+        $successMessage = "{$docType} با موفقیت آپلود شد";
+
+        // ریدایرکت به صفحه خانواده‌ها و اسکرول به عضو
+        return redirect()->route('charity.families.show', ['family' => $family->id])
+            ->with('success', $successMessage)
+            ->with('scroll_to_member', $member->id);
     }
 
     /**
@@ -104,5 +111,51 @@ class MemberDocumentController extends Controller
             $member->incomplete_data_updated_at = now();
             $member->save();
         }
+    }
+    
+    /**
+     * نمایش فایل آپلود شده
+     * 
+     * @param Family $family
+     * @param Member $member
+     * @param string $collection
+     * @param int $media شناسه فایل آپلود شده
+     * @return \Illuminate\Http\Response
+     */
+    public function showDocument(Family $family, Member $member, string $collection, $media)
+    {
+        // بررسی احراز هویت کاربر
+        if (!Auth::check()) {
+            abort(401, 'برای دسترسی به این صفحه باید وارد شوید');
+        }
+
+        // بررسی اینکه عضو متعلق به خانواده باشد
+        if ($member->family_id !== $family->id) {
+            abort(404, 'عضو خانواده پیدا نشد');
+        }
+        
+        // تعیین مجموعه مدیا برای نمایش
+        $mediaCollection = in_array($collection, ['special_disease_documents', 'disability_documents']) 
+            ? $collection 
+            : abort(404, 'مجموعه مدرک نامعتبر است');
+        
+        // یافتن فایل مدیا با شناسه مشخص شده
+        $mediaItem = $member->getMedia($mediaCollection)
+            ->where('id', $media)
+            ->first();
+        
+        if (!$mediaItem) {
+            abort(404, 'فایل مورد نظر یافت نشد');
+        }
+        
+        // بررسی دسترسی فایل
+        $filePath = $mediaItem->getPath();
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'فایل مورد نظر یافت نشد');
+        }
+
+        // نمایش فایل با هدرهای مناسب
+        return response()->file($filePath);
     }
 } 

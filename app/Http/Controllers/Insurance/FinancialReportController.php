@@ -36,11 +36,16 @@ class FinancialReportController extends Controller
         // 1. تراکنش‌های بودجه
         $fundingTransactions = FundingTransaction::with('source')->get();
         foreach ($fundingTransactions as $trx) {
+            // بررسی نوع تراکنش (افزایش بودجه یا تخصیص بودجه)
+            $isAllocation = $trx->allocated ?? false;
+            $title = $isAllocation ? 'تخصیص بودجه' : __('financial.transaction_types.budget_allocation');
+            $type = $isAllocation ? 'debit' : 'credit';
+            
             $allTransactions->push([
                 'id' => $trx->id,
-                'title' => __('financial.transaction_types.budget_allocation'),
+                'title' => $title,
                 'amount' => $trx->amount,
-                'type' => 'credit',
+                'type' => $type,
                 'date' => $trx->created_at,
                 'date_formatted' => jdate($trx->created_at)->format('Y/m/d'),
                 'sort_timestamp' => $trx->created_at->timestamp,
@@ -54,7 +59,42 @@ class FinancialReportController extends Controller
                 'updated_family_codes' => [],
                 'members' => collect(),
                 'family' => null,
+                'is_allocation' => $isAllocation
             ]);
+        }
+
+        // 1.5. تخصیص‌های بودجه خانواده‌ها
+        $familyAllocations = \App\Models\FamilyFundingAllocation::with(['family.members', 'fundingSource', 'transaction'])
+            ->where('status', '!=', \App\Models\FamilyFundingAllocation::STATUS_PENDING)
+            ->get();
+            
+        foreach ($familyAllocations as $alloc) {
+            // فقط تخصیص‌هایی که به تراکنش مالی متصل نیستند را اضافه می‌کنیم
+            // تا از دوبار شمارش جلوگیری شود
+            if ($alloc->transaction_id === null) {
+                $membersCount = $alloc->family ? $alloc->family->members->count() : 0;
+                
+                $allTransactions->push([
+                    'id' => $alloc->id,
+                    'title' => 'تخصیص بودجه خانواده',
+                    'amount' => $alloc->amount,
+                    'type' => 'debit',
+                    'date' => $alloc->approved_at ?? $alloc->created_at,
+                    'date_formatted' => jdate($alloc->approved_at ?? $alloc->created_at)->format('Y/m/d'),
+                    'sort_timestamp' => ($alloc->approved_at ?? $alloc->created_at)->timestamp,
+                    'description' => $alloc->description ?: 'تخصیص ' . $alloc->percentage . '% از حق بیمه',
+                    'reference_no' => 'ALLOC-' . $alloc->id,
+                    'details' => $alloc->fundingSource ? $alloc->fundingSource->name : 'منبع مالی نامشخص',
+                    'payment_id' => $alloc->id,
+                    'family_count' => 1,
+                    'members_count' => $membersCount,
+                    'family' => $alloc->family,
+                    'members' => $alloc->family ? $alloc->family->members : collect(),
+                    'created_family_codes' => [],
+                    'updated_family_codes' => [],
+                    'allocation_type' => 'family_funding'
+                ]);
+            }
         }
 
         // 2. پرداخت‌های بیمه منفرد (InsuranceAllocation)
@@ -173,7 +213,15 @@ class FinancialReportController extends Controller
         $logs = InsuranceImportLog::with('user')->orderByDesc('created_at')->paginate(20, ['*'], 'logs_page');
         $totalAmount = InsuranceImportLog::sum('total_insurance_amount');
 
-        return view('insurance.financial-report', compact('transactionsPaginated', 'balance', 'logs', 'totalAmount'));
+        // اطلاعات خانواده‌های بیمه شده برای نمایش در گزارش
+        $insuredFamilies = \App\Models\Family::whereHas('insurances', function($query) {
+            $query->where('status', 'active');
+        })->with(['insurances' => function($query) {
+            $query->where('status', 'active')->with('shares');
+        }, 'members'])
+        ->paginate(10, ['*'], 'families_page');
+
+        return view('insurance.financial-report', compact('transactionsPaginated', 'balance', 'logs', 'totalAmount', 'insuredFamilies'));
     }
 
     /**
@@ -194,7 +242,7 @@ class FinancialReportController extends Controller
      */
     public function paymentDetails(Request $request, $paymentId)
     {
-        $type = $request->get('type', 'allocation'); // allocation, payment, import
+        $type = $request->get('type', 'allocation'); // allocation, payment, import, family_funding
         
         switch ($type) {
             case 'allocation':
@@ -216,11 +264,17 @@ class FinancialReportController extends Controller
                 $families = Family::whereIn('family_code', $allCodes)->with('members')->get();
                 break;
                 
+            case 'family_funding':
+                $allocation = \App\Models\FamilyFundingAllocation::with(['family.members', 'fundingSource'])->findOrFail($paymentId);
+                $families = collect([$allocation->family]);
+                $payment = $allocation;
+                break;
+                
             default:
                 abort(404);
         }
         
-        return view('insurance.payment-details', compact('families', 'type', 'paymentId'));
+        return view('insurance.payment-details', compact('families', 'type', 'paymentId', 'payment'));
     }
 
     public function importLogs()
@@ -228,5 +282,24 @@ class FinancialReportController extends Controller
         $logs = InsuranceImportLog::with('user')->orderByDesc('created_at')->paginate(20);
         $totalAmount = InsuranceImportLog::sum('total_insurance_amount');
         return view('insurance.financial-report', compact('logs', 'totalAmount'));
+    }
+
+    /**
+     * نمایش جزئیات تخصیص بیمه
+     */
+    public function shareDetails($shareId)
+    {
+        $share = \App\Models\InsuranceShare::with(['family.members', 'fundingSource', 'creator'])
+            ->findOrFail($shareId);
+        
+        $family = $share->family;
+        $shareService = new \App\Services\InsuranceShareService();
+        $shareSummary = $shareService->getSummary($family->id);
+        
+        return view('insurance.share-details', [
+            'share' => $share,
+            'family' => $family,
+            'shareSummary' => $shareSummary
+        ]);
     }
 } 

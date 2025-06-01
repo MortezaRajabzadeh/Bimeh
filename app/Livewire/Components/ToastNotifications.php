@@ -3,6 +3,7 @@
 namespace App\Livewire\Components;
 
 use Livewire\Component;
+use Illuminate\Support\Facades\Session;
 
 class ToastNotifications extends Component
 {
@@ -12,7 +13,39 @@ class ToastNotifications extends Component
 
     public function mount()
     {
+        // خواندن پیام‌های فلش از session و تبدیل آن‌ها به toast
+        $this->handleFlashMessages();
+        
+        // پاکسازی session بعد از خواندن پیام‌ها
+        Session::forget(['success', 'error', 'warning', 'info']);
+    }
+
+    /**
+     * تبدیل پیام‌های فلش به toast
+     */
+    protected function handleFlashMessages()
+    {
         $this->toasts = [];
+        
+        // بررسی پیام‌های موفقیت
+        if (Session::has('success')) {
+            $this->toast(Session::get('success'), 'success');
+        }
+        
+        // بررسی پیام‌های خطا
+        if (Session::has('error')) {
+            $this->toast(Session::get('error'), 'error');
+        }
+        
+        // بررسی پیام‌های هشدار
+        if (Session::has('warning')) {
+            $this->toast(Session::get('warning'), 'warning');
+        }
+        
+        // بررسی پیام‌های اطلاع‌رسانی
+        if (Session::has('info')) {
+            $this->toast(Session::get('info'), 'info');
+        }
     }
 
     public function toast($message, $type = 'success')
@@ -25,6 +58,9 @@ class ToastNotifications extends Component
         ];
 
         $this->dispatch('toast-start-timer', id: $id);
+        
+        // برنامه‌ریزی برای حذف اعلان بعد از 10 ثانیه
+        $this->dispatch('removeToastAfterDelay', id: $id, delay: 10000);
     }
 
     public function removeToast($id)

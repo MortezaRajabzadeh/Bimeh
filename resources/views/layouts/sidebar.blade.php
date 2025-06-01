@@ -9,7 +9,11 @@
 
     <!-- آیتم‌های منو -->
     <nav class="flex flex-col flex-grow py-2">
-        <a href="{{ auth()->check() && auth()->user()->user_type === 'admin' ? route('admin.dashboard') : (auth()->check() && auth()->user()->user_type === 'charity' ? route('charity.dashboard') : (auth()->check() && auth()->user()->user_type === 'insurance' ? route('insurance.dashboard') : '#')) }}" 
+        @php
+            $userType = $current_user_type ?? auth()->user()->user_type ?? 'guest';
+        @endphp
+        
+        <a href="{{ auth()->check() && $userType === 'admin' ? route('admin.dashboard') : (auth()->check() && $userType === 'charity' ? route('charity.dashboard') : (auth()->check() && $userType === 'insurance' ? route('insurance.dashboard') : '#')) }}" 
            class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('*.dashboard') ? 'bg-blue-500 text-white' : '' }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('*.dashboard') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
@@ -18,7 +22,7 @@
         </a>
 
         <!-- منوی مخصوص خیریه -->
-        @if(auth()->check() && (auth()->user()->user_type === 'charity' || auth()->user()->user_type === 'admin'))
+        @if(auth()->check() && ($userType === 'charity' || $userType === 'admin'))
             <a href="{{ route('charity.insured-families') }}" 
                class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.insured-families') ? 'bg-green-500 text-white' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('charity.insured-families') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +45,7 @@
                 </div>
             </a>
 
-            @if(auth()->check() && auth()->user()->user_type === 'charity')
+            @if(auth()->check() && $userType === 'charity')
                 <a href="{{ route('charity.add-family') }}" 
                    class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('charity.add-family') ? 'bg-blue-500 text-white' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('charity.add-family') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,7 +57,7 @@
         @endif
 
         <!-- منوی مخصوص بیمه -->
-        @if(auth()->check() && (auth()->user()->user_type === 'insurance' ))
+        @if(auth()->check() && ($userType === 'insurance'))
         
             <a href="{{ route('insurance.insured-families') }}" 
                class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.insured-families') ? 'bg-green-500 text-white' : '' }}">
@@ -77,29 +81,11 @@
                 </div>
             </a>
             
-            @can('view insurance shares')
-            <a href="{{ route('insurance.shares.index') }}" 
-               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.shares.index') ? 'bg-blue-500 text-white' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.shares.index') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                </svg>
-                <span class="sidebar-text">لیست سهم‌بندی</span>
-            </a>
-            @endcan
-            
-            @can('manage insurance shares')
-            <a href="{{ route('insurance.shares.manage') }}" 
-               class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.shares.manage') ? 'bg-purple-500 text-white' : '' }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.shares.manage') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <span class="sidebar-text">سهم‌بندی Real-Time</span>
-            </a>
-            @endcan
+
         @endif
 
         <!-- منوی فقط مخصوص ادمین -->
-        @if(auth()->check() && auth()->user()->user_type === 'admin')
+        @if(auth()->check() && $userType === 'admin' && (!isset($admin_acting_as) || $admin_acting_as === 'admin'))
             <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.users.*') ? 'bg-blue-500 text-white' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -115,7 +101,7 @@
             </a>
         @endif
 
-        @if(auth()->check() && auth()->user()->user_type === 'insurance')
+        @if(auth()->check() && $userType === 'insurance')
             <a href="{{ route('insurance.financial-report') }}"
                class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('insurance.financial-report') ? 'bg-blue-500 text-white' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('insurance.financial-report') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">

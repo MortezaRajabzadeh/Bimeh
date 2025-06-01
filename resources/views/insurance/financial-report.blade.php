@@ -50,6 +50,49 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- کارت راهنمای تخصیص سهم‌بندی -->
+            <div class="px-6 py-4 border-t border-gray-200">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                    <div class="flex items-start">
+                        <div class="bg-purple-100 p-3 rounded-full ml-4 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-md font-medium text-gray-900 mb-1">راهنمای تخصیص سهم‌بندی بیمه</h3>
+                            <p class="text-sm text-gray-700 mb-3">
+                                تخصیص سهم‌بندی به معنی تعیین درصد مشارکت هر منبع مالی (مانند سازمان‌ها، خیرین، دولت) در پرداخت حق بیمه خانواده‌هاست.
+                            </p>
+                            <div class="flex flex-wrap gap-3">
+                                <a href="{{ route('insurance.shares.index') }}" 
+                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    مشاهده تمام سهم‌های تخصیص داده شده
+                                </a>
+                                <a href="{{ route('insurance.families.approval') }}?tab=approved" 
+                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    تخصیص سهم جدید
+                                </a>
+                                <a href="{{ route('insurance.funding-sources.index') }}" 
+                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    مدیریت منابع مالی
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- جدول تراکنش‌ها -->
@@ -96,7 +139,7 @@
                                         {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]))
+                                                @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]) || ($t['is_allocation'] ?? false))
                                                     <button @click="open = !open"
                                                             type="button"
                                                             class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
@@ -187,6 +230,46 @@
                                                             @else
                                                                 <p class="text-sm text-gray-700">{{ __('financial.descriptions.import_payment') }}</p>
                                                             @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @elseif($t['is_allocation'] ?? false)
+                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
+                                            x-transition:enter-start="opacity-0 transform scale-95" 
+                                            x-transition:enter-end="opacity-100 transform scale-100" 
+                                            x-cloak class="bg-blue-50">
+                                            <td colspan="4" class="px-6 py-4">
+                                                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                                    <div class="flex items-start">
+                                                        <div class="flex-1">
+                                                            <h4 class="text-sm font-medium text-gray-900 mb-2">جزئیات تخصیص بودجه</h4>
+                                                            <p class="text-sm text-gray-700 mb-3">
+                                                                {{ $t['description'] }}
+                                                            </p>
+                                                            @if($t['reference_no'])
+                                                            <div class="flex items-center mt-2">
+                                                                <span class="text-xs text-gray-500 ml-2">شماره پیگیری:</span>
+                                                                <span class="text-sm font-medium text-gray-700">{{ $t['reference_no'] }}</span>
+                                                            </div>
+                                                            @endif
+                                                            @if($t['details'])
+                                                            <div class="flex items-center mt-2">
+                                                                <span class="text-xs text-gray-500 ml-2">منبع مالی:</span>
+                                                                <span class="text-sm font-medium text-gray-700">{{ $t['details'] }}</span>
+                                                            </div>
+                                                            @endif
+                                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                                                <a href="{{ route('insurance.allocations.index') }}" 
+                                                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                    مشاهده جزئیات تخصیص
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>

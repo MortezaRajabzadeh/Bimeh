@@ -96,7 +96,8 @@ class InsuranceShareController extends Controller
         $share = InsuranceShare::create($validated);
         
         // محاسبه مبلغ بر اساس درصد
-        $share->calculateAmount();
+        $familyInsurance = FamilyInsurance::find($validated['family_insurance_id']);
+        $share->calculateAmount($familyInsurance->premium_amount);
         $share->save();
 
         return redirect()->route('insurance.shares.index')
@@ -106,19 +107,19 @@ class InsuranceShareController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(InsuranceShare $insuranceShare)
+    public function show(InsuranceShare $share)
     {
-        $insuranceShare->load(['familyInsurance.family', 'payerOrganization', 'payerUser']);
+        $share->load(['familyInsurance.family', 'payerOrganization', 'payerUser']);
         
-        return view('insurance.shares.show', compact('insuranceShare'));
+        return view('insurance.shares.show', compact('share'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(InsuranceShare $insuranceShare)
+    public function edit(InsuranceShare $share)
     {
-        $insuranceShare->load('familyInsurance.family');
+        $share->load('familyInsurance.family');
         
         $organizations = Organization::active()->get();
         $users = User::active()->get();
@@ -133,13 +134,13 @@ class InsuranceShareController extends Controller
             'other' => 'سایر',
         ];
 
-        return view('insurance.shares.edit', compact('insuranceShare', 'organizations', 'users', 'payerTypes'));
+        return view('insurance.shares.edit', compact('share', 'organizations', 'users', 'payerTypes'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, InsuranceShare $insuranceShare)
+    public function update(Request $request, InsuranceShare $share)
     {
         $validated = $request->validate([
             'percentage' => 'required|numeric|min:0.01|max:100',
@@ -154,8 +155,8 @@ class InsuranceShareController extends Controller
         ]);
 
         // بررسی اینکه مجموع درصدها از ۱۰۰٪ تجاوز نکند
-        $currentTotal = InsuranceShare::where('family_insurance_id', $insuranceShare->family_insurance_id)
-            ->where('id', '!=', $insuranceShare->id)
+        $currentTotal = InsuranceShare::where('family_insurance_id', $share->family_insurance_id)
+            ->where('id', '!=', $share->id)
             ->sum('percentage');
 
         if ($currentTotal + $validated['percentage'] > 100) {
@@ -164,11 +165,12 @@ class InsuranceShareController extends Controller
             ])->withInput();
         }
 
-        $insuranceShare->update($validated);
+        $share->update($validated);
         
         // محاسبه مجدد مبلغ
-        $insuranceShare->calculateAmount();
-        $insuranceShare->save();
+        $familyInsurance = $share->familyInsurance;
+        $share->calculateAmount($familyInsurance->premium_amount);
+        $share->save();
 
         return redirect()->route('insurance.shares.index')
             ->with('success', 'سهم بیمه با موفقیت به‌روزرسانی شد.');
@@ -177,9 +179,9 @@ class InsuranceShareController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(InsuranceShare $insuranceShare)
+    public function destroy(InsuranceShare $share)
     {
-        $insuranceShare->delete();
+        $share->delete();
 
         return redirect()->route('insurance.shares.index')
             ->with('success', 'سهم بیمه با موفقیت حذف شد.');
@@ -200,14 +202,14 @@ class InsuranceShareController extends Controller
     /**
      * علامت‌گذاری سهم به عنوان پرداخت شده
      */
-    public function markAsPaid(Request $request, InsuranceShare $insuranceShare)
+    public function markAsPaid(Request $request, InsuranceShare $share)
     {
         $validated = $request->validate([
             'payment_date' => 'required|date',
             'payment_reference' => 'nullable|string|max:255',
         ]);
 
-        $insuranceShare->update([
+        $share->update([
             'is_paid' => true,
             'payment_date' => $validated['payment_date'],
             'payment_reference' => $validated['payment_reference'],

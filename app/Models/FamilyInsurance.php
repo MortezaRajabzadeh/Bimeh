@@ -19,12 +19,13 @@ class FamilyInsurance extends Model
         'start_date', 
         'end_date',
         'family_code',
+        'status',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        'premium_amount' => 'decimal:2',
+        'premium_amount' => 'float',
     ];
 
     /**

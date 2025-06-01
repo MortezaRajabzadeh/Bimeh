@@ -57,4 +57,26 @@ class InsuranceImportLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * تبدیل آرایه‌ها به JSON قبل از ذخیره در دیتابیس
+     *
+     * @param  mixed  $value
+     * @return string|null
+     */
+    public function setCreatedFamilyCodesAttribute($value)
+    {
+        $this->attributes['created_family_codes'] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
+    }
+
+    /**
+     * تبدیل آرایه‌ها به JSON قبل از ذخیره در دیتابیس
+     *
+     * @param  mixed  $value
+     * @return string|null
+     */
+    public function setUpdatedFamilyCodesAttribute($value)
+    {
+        $this->attributes['updated_family_codes'] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
+    }
 } 

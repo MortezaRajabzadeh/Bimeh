@@ -159,7 +159,7 @@ class ShareManager extends Component
         ]);
 
         // محاسبه مبلغ
-        $share->calculateAmount();
+        $share->calculateAmount($this->familyInsurance->premium_amount);
         $share->save();
 
         $this->loadShares();

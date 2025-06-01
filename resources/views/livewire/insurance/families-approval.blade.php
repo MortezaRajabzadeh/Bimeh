@@ -8,7 +8,7 @@
         <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'deleted' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('deleted')">حذف شده ها</button>
     </div>
     <!-- نوار ابزار عملیات دسته جمعی -->
-    <div x-data="{ showApproveModal: false, showReturnModal: false, showApproveAndContinueModal: false, showExcelUploadModal: false }" @keydown.escape.window="showApproveModal = false; showReturnModal = false; showApproveAndContinueModal = false">
+    <div x-data="{ showApproveModal: false, showReturnModal: false, showApproveAndContinueModal: false, showExcelUploadModal: false, showDeleteModal: false }" @keydown.escape.window="showApproveModal = false; showReturnModal = false; showApproveAndContinueModal = false; showDeleteModal = false">
         <!-- Modal -->
         <div x-show="showApproveModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
             <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
@@ -18,7 +18,7 @@
                     <div class="text-green-700 text-lg font-bold mb-2">اطلاعات هویتی تعداد <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر مورد تایید است</div>
                     <div class="text-gray-500 text-base mb-6">تایید این خانواده ها به منزله بررسی و تایید اطلاعات هویتی و مدارک مورد نیاز این افراد از نظر شما می‌باشد. پس از تایید این افراد در قسمت "در انتظار حمایت" قرار می‌گیرند تا در زمان مقتضی فرایند تایید جهت صدور بیمه نامه برای آنها انجام گردد.</div>
                     <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="$wire.approveSelected(); showApproveModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
+                        <button @click="updateFamiliesStatus($wire.selected, 'reviewing', 'pending'); showApproveModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
                             <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
                             تایید نهایی و ادامه
                         </button>
@@ -38,7 +38,7 @@
                     </div>
                     <div class="text-gray-500 text-base mb-6">با تایید این کار افراد و خانواده ها به مرحله "در انتظار تایید" منتقل خواهند شد.<br>این کار درصورتی انجام می‌گیرد که افراد به اشتباه به این قسمت انتقال پیدا کرده باشند.</div>
                     <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="$wire.returnToPendingSelected(); showReturnModal = false" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
+                        <button @click="updateFamiliesStatus($wire.selected, 'pending', 'reviewing'); showReturnModal = false" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
                             <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
                             تایید و بازگرداندن خانواده
                         </button>
@@ -56,11 +56,11 @@
                     <div class="text-green-700 text-lg font-bold mb-2">اطلاعات هویتی تعداد <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر مورد تایید است</div>
                     <div class="text-gray-500 text-base mb-6">تایید این خانواده ها به منزله بررسی و تایید اطلاعات هویتی و مدارک مورد نیاز این افراد از نظر شما می‌باشد. پس از تایید این افراد در قسمت "در انتظار صدور" قرار می‌گیرند تا در زمان مقتضی فرایند تایید جهت صدور بیمه نامه برای آنها انجام گردد.</div>
                     <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="$wire.approveAndContinueSelected(); showApproveAndContinueModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
+                        <button type="button" @click.prevent="updateFamiliesStatus($wire.selected, 'approved', 'reviewing'); showApproveAndContinueModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
                             <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
                             تایید نهایی و ادامه
                         </button>
-                        <button @click="showApproveAndContinueModal = false" wire:click.prevent="downloadInsuranceExcel" wire:loading.attr="disabled" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2">
+                        <button type="button" @click.prevent="showApproveAndContinueModal = false" wire:click="downloadInsuranceExcel" wire:loading.attr="disabled" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2">
                             دریافت فایل اکسل
                             <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6 inline-block mr-2' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4' /></svg>
                         </button>
@@ -68,6 +68,48 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Delete Families Modal -->
+        <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
+                <button @click="showDeleteModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold mb-4">حذف خانواده</h2>
+                    <div class="text-red-600 text-lg font-bold mb-2">
+                        حذف <span x-text="$wire.selected.length"></span> خانواده (<span>{{ $totalSelectedMembers }}</span> نفر) مورد تایید است
+                    </div>
+                    <div class="text-gray-600 text-base mb-6">
+                        حذف این خانواده ها به منزله بررسی و اطمینان از عدم تطابق آنها با معیار های سازمان شماست و 
+                        پس از حذف این خانواده ها به قسمت "حذف شده ها" منتقل میشوند.
+                        <p class="mt-2">لطفا دلیل عدم تطابق را انتخاب کنید.</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <select id="delete-reason" class="border border-gray-300 w-full py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="">انتخاب دلیل حذف...</option>
+                            <option value="duplicate">اطلاعات تکراری</option>
+                            <option value="incomplete">اطلاعات ناقص</option>
+                            <option value="fake">اطلاعات نادرست</option>
+                            <option value="not_eligible">عدم احراز شرایط</option>
+                            <option value="other">سایر دلایل</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex flex-row-reverse gap-2 mt-6">
+                        <button @click="showDeleteModal = false; $wire.deleteSelected()" class="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده
+                        </button>
+                        <button @click="showDeleteModal = false; $wire.setTab('deleted')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-3 text-lg font-bold">
+                            رفتن به بخش "حذف شده ها"
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Excel Upload Modal -->
         <div x-show="showExcelUploadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
             <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full p-8 relative">
@@ -80,20 +122,28 @@
                     @if (session()->has('error'))
                         <div class="bg-red-100 text-red-800 rounded px-4 py-2 mb-4">{{ session('error') }}</div>
                     @endif
-                    <h2 class="text-2xl font-bold mb-4">تایید و ادامه</h2>
+                    <h2 class="text-2xl font-bold mb-4">آپلود فایل اکسل</h2>
                     <div class="text-green-700 text-xl font-bold mb-2">
-                        اطلاعات <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر جهت تخصیص بیمه مورد تایید است
+                        اطلاعات <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر برای بیمه آماده شده است
                     </div>
                     <div class="text-gray-600 text-base mb-6 leading-8">
-                        تایید این خانواده ها به منزله این است که بیمه برای این افراد صادر شده است لذا لازم است فایل حاوی اطلاعات مربوط به نوع، مبلغ، زمان صدور در فایل اکسل که در مرحله قبل دانلود شده، پر شود و سپس در اینجا بارگذاری شود.<br>
-                        پس از بارگذاری و در صورت تکمیل بودن اطلاعات لیست افراد و خانواده های بیمه شده به قسمت "خانواده های بیمه شده" انتقال پیدا خواهد کرد.
+                        برای تکمیل فرآیند بیمه، لطفا ابتدا با کلیک روی دکمه زیر، فایل نمونه اکسل را دانلود کنید.<br>
+                        سپس فایل را با اطلاعات بیمه (شماره بیمه‌نامه، تاریخ صدور و...) تکمیل کرده و در قسمت زیر آپلود نمایید.
+                    </div>
+                    <div class="flex justify-center mb-6">
+                        <button type="button" wire:click="downloadInsuranceExcel" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-6 text-lg font-bold flex items-center justify-center gap-2 transition mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                            </svg>
+                            دانلود فایل نمونه اکسل
+                        </button>
                     </div>
                     <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8">
                         <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
                         <label for="excel-upload-input" class="block cursor-pointer">
                             <span class="flex items-center justify-center gap-2 {{ $insuranceExcelFile ? 'bg-green-700' : 'bg-green-600' }} hover:bg-green-700 text-white rounded-xl py-3 px-8 text-lg font-bold transition">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
-                                بارگذاری فایل اکسل
+                                آپلود فایل اکسل تکمیل شده
                             </span>
                         </label>
                         @if($insuranceExcelFile)
@@ -139,7 +189,7 @@
                         لغو انتخاب
                     </button>
                     <button type="button"
-                        wire:click="deleteSelected"
+                        @click="showDeleteModal = true"
                         class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded"
                         x-bind:disabled="selectedFamilies.length === 0">
                         حذف انتخاب شده
@@ -162,7 +212,12 @@
                             @click="showExcelUploadModal = true"
                             class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded"
                             x-bind:disabled="selectedFamilies.length === 0">
-                            تایید و ادامه
+                            آپلود فایل اکسل
+                        </button>
+                        <button type="button"
+                            @click="window.location.href = '/insurance/export-excel?status=approved'"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">
+                            دانلود فایل اکسل
                         </button>
                     @else
                         <button type="button"
@@ -332,14 +387,16 @@
                                 <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                                     <div class="flex items-center justify-end">
                                         @if($family->organization)
-                                            <span class="ml-2">{{ $family->organization->name }}</span>
-                                            @if($family->organization->logo)
-                                                <img src="{{ $family->organization->logo }}" alt="لوگوی خیریه" class="w-6 h-6 rounded-full object-cover">
+                                            @if($family->organization->logo_path)
+                                                <img src="{{ $family->organization->logoUrl }}" 
+                                                     alt="{{ $family->organization->name }}" 
+                                                     class="w-6 h-6 rounded-full object-cover"
+                                                     title="{{ $family->organization->name }}">
                                             @else
-                                                <img src="/images/sample-logo.png" alt="logo" class="w-6 h-6 rounded-full">
+                                                <span class="ml-0">{{ $family->organization->name }}</span>
                                             @endif
                                         @else
-                                            <img src="/images/sample-logo.png" alt="logo" class="w-6 h-6 rounded-full">
+                                            <span class="text-gray-400">-</span>
                                         @endif
                                     </div>
                                 </td>
@@ -500,30 +557,28 @@
                                                                 </span>
                                                             @endif
                                                         </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            <div class="flex items-center gap-2">
-                                                                @if($member->organization)
-                                                                    @if($member->organization->logo)
-                                                                        <img src="{{ $member->organization->logo }}" alt="لوگوی {{ $member->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $member->organization->name }}">
-                                                                    @else
-                                                                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $member->organization->name }}">
-                                                                            {{ substr($member->organization->name, 0, 1) }}
-                                                                        </div>
-                                                                    @endif
-                                                                    <span class="text-sm">{{ $member->organization->name }}</span>
-                                                                @elseif($family->organization)
-                                                                    @if($family->organization->logo)
-                                                                        <img src="{{ $family->organization->logo }}" alt="لوگوی {{ $family->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $family->organization->name }}">
-                                                                    @else
-                                                                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $family->organization->name }}">
-                                                                            {{ substr($family->organization->name, 0, 1) }}
-                                                                        </div>
-                                                                    @endif
-                                                                    <span class="text-sm">{{ $family->organization->name }}</span>
+                                                        <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
+                                                            @if($member->organization)
+                                                                @if($member->organization->logo_path)
+                                                                    <img src="{{ $member->organization->logoUrl }}" 
+                                                                         alt="{{ $member->organization->name }}" 
+                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                         title="{{ $member->organization->name }}">
                                                                 @else
-                                                                    <span class="text-gray-400">-</span>
+                                                                    <span class="charity-name text-sm">{{ $member->organization->name }}</span>
                                                                 @endif
-                                                            </div>
+                                                            @elseif($family->organization)
+                                                                @if($family->organization->logo_path)
+                                                                    <img src="{{ $family->organization->logoUrl }}" 
+                                                                         alt="{{ $family->organization->name }}" 
+                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                         title="{{ $family->organization->name }}">
+                                                                @else
+                                                                    <span class="charity-name text-sm">{{ $family->organization->name }}</span>
+                                                                @endif
+                                                            @else
+                                                                <span class="text-gray-400">-</span>
+                                                            @endif
                                                         </td>
                                                         <td class="px-3 py-3 text-sm text-gray-800">
                                                             @php $types = $family->insuranceTypes(); @endphp
@@ -553,7 +608,7 @@
                                                             @endphp
                                                             
                                                             @if($needsDocument)
-                                                                <a href="{{ route('charity.family.members.documents.upload', ['family' => $family->id, 'member' => $member->id]) }}" 
+                                                                <a href="{{ route('family.members.documents.upload', ['family' => $family->id, 'member' => $member->id]) }}" 
                                                                    class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -750,4 +805,173 @@
             transform: translateY(0);
         }
     }
+    
+    /* استایل برای سوئیچ تخصیص خودکار سهم‌ها */
+    input[type="checkbox"]:checked + .block {
+        background-color: #10B981;
+    }
+    
+    input[type="checkbox"]:checked ~ .dot {
+        transform: translateX(100%);
+    }
 </style>
+
+<!-- اسکریپت تغییر وضعیت و فراخوانی سهم‌بندی -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // فانکشن تغییر وضعیت خانواده‌ها
+        window.updateFamiliesStatus = function(familyIds, status, currentStatus = null) {
+            console.log('updateFamiliesStatus called with:', {
+                familyIds: familyIds,
+                status: status,
+                currentStatus: currentStatus
+            });
+            
+            // بررسی خالی بودن آرایه انتخاب‌ها
+            if (!familyIds || familyIds.length === 0) {
+                alert('لطفاً حداقل یک خانواده انتخاب کنید.');
+                return;
+            }
+            
+            // نمایش لودینگ
+            if (typeof Livewire !== 'undefined') {
+                Livewire.dispatch('showLoading', { message: 'در حال پردازش...' });
+            }
+            
+            // استفاده از مسیر مطلق بدون route()
+            fetch('/insurance/families/bulk-update-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    family_ids: familyIds,
+                    status: status,
+                    current_status: currentStatus
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                
+                // مخفی کردن لودینگ
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('hideLoading');
+                }
+                
+                if (data.success) {
+                    // اگر نیاز به سهم‌بندی داریم
+                    if (data.require_shares) {
+                        console.log('Opening share allocation modal with family_ids:', data.family_ids);
+                        
+                        // ارسال پارامتر familyIds به صورت مستقیم و ساده
+                        Livewire.dispatch('openShareAllocationModal', data.family_ids);
+                    } else {
+                        // نمایش پیام موفقیت
+                        if (typeof Livewire !== 'undefined') {
+                            Livewire.dispatch('showToast', { 
+                                type: 'success', 
+                                message: data.message 
+                            });
+                        } else {
+                            alert(data.message || 'عملیات با موفقیت انجام شد');
+                        }
+                        
+                        // بارگذاری مجدد برای نمایش تغییرات
+                        window.location.reload();
+                    }
+                } else {
+                    // نمایش پیام خطا
+                    if (typeof Livewire !== 'undefined') {
+                        Livewire.dispatch('showToast', { 
+                            type: 'error', 
+                            message: data.message || 'خطایی رخ داده است.' 
+                        });
+                    } else {
+                        alert(data.message || 'خطایی رخ داده است.');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // مخفی کردن لودینگ
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('hideLoading');
+                }
+                
+                // نمایش پیام خطا
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('showToast', { 
+                        type: 'error', 
+                        message: 'خطا در ارتباط با سرور: ' + error.message 
+                    });
+                } else {
+                    alert('خطا در ارتباط با سرور: ' + error.message);
+                }
+            });
+        };
+        
+        // تغییر تعریف رویداد sharesAllocated برای بارگذاری مجدد صفحه پس از تخصیص سهم‌ها
+        window.addEventListener('sharesAllocated', function() {
+            // نمایش پیام موفقیت آمیز
+            if (typeof Livewire !== 'undefined') {
+                Livewire.dispatch('showToast', { 
+                    type: 'success', 
+                    message: 'سهم‌بندی با موفقیت انجام شد.'
+                });
+            }
+        });
+        
+        // تنظیم رویداد closeModalAfterDelay برای بستن مودال‌ها پس از مدتی
+        window.addEventListener('closeModalAfterDelay', function() {
+            setTimeout(function() {
+                if (typeof Alpine !== 'undefined') {
+                    // بستن مودال‌های آلپاین
+                    document.querySelectorAll('[x-data]').forEach(function(el) {
+                        if (el.__x && typeof el.__x.$data.showShareModal !== 'undefined') {
+                            el.__x.$data.showShareModal = false;
+                        }
+                        if (el.__x && typeof el.__x.$data.showApproveModal !== 'undefined') {
+                            el.__x.$data.showApproveModal = false;
+                        }
+                        if (el.__x && typeof el.__x.$data.showApproveAndContinueModal !== 'undefined') {
+                            el.__x.$data.showApproveAndContinueModal = false;
+                        }
+                    });
+                }
+            }, 2000);
+        });
+        
+        // گوش‌دهنده برای تغییر مسیر پس از تخصیص سهم
+        window.addEventListener('redirectAfterShares', function(event) {
+            console.log('redirectAfterShares event received:', event.detail);
+            
+            if (event.detail && event.detail.url) {
+                // نمایش پیام هدایت
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('showToast', { 
+                        type: 'info', 
+                        message: 'در حال هدایت به صفحه گزارش مالی...' 
+                    });
+                }
+                
+                // ذخیره آدرس برای هدایت
+                const redirectUrl = event.detail.url;
+                
+                // تاخیر در هدایت
+                setTimeout(function() {
+                    console.log('Redirecting to:', redirectUrl);
+                    window.location.href = redirectUrl;
+                }, event.detail.delay || 2000);
+            }
+        });
+    });
+</script>
+
+<!-- کامپوننت مودال سهم‌بندی -->
+<livewire:insurance.share-allocation-modal />

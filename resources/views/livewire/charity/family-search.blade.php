@@ -325,7 +325,7 @@
                             </button>
                         </th>
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                            مشکلات خانواده
+                        معیار پذیرش
                         </th>
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('insurance_payer')" class="flex items-center justify-end w-full">
@@ -627,10 +627,16 @@
                             <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                                 <div class="flex items-center justify-end">
                                     @if($family->organization)
-                                        <span class="ml-2">{{ $family->organization->name }}</span>
-                                        @if($family->organization->logo)
-                                            <img src="{{ $family->organization->logo }}" alt="لوگوی خیریه" class="w-6 h-6 rounded-full object-cover">
+                                        @if($family->organization->logo_path)
+                                            <img src="{{ $family->organization->logoUrl }}" 
+                                                 alt="{{ $family->organization->name }}" 
+                                                 class="w-6 h-6 rounded-full object-cover"
+                                                 title="{{ $family->organization->name }}">
+                                        @else
+                                            <span class="ml-0">{{ $family->organization->name }}</span>
                                         @endif
+                                    @else
+                                        <span class="text-gray-400">-</span>
                                     @endif
                                 </div>
                             </td>
@@ -661,7 +667,7 @@
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                             <div class="flex items-center justify-center gap-2">
-                                <a href="{{ route('charity.families.show', $family->id) }}" class="bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out">
+                                <a href="{{ route('dashboard') }}" class="bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out">
                                     <i class="fas fa-edit text-blue-600 mr-1"></i>
                                     مشاهده
                                 </a>
@@ -778,30 +784,28 @@
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-3 text-sm text-gray-800">
-                                                <div class="flex items-center gap-2">
-                                                    @if($member->organization)
-                                                        @if($member->organization->logo)
-                                                            <img src="{{ $member->organization->logo }}" alt="لوگوی {{ $member->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $member->organization->name }}">
-                                                        @else
-                                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $member->organization->name }}">
-                                                                {{ substr($member->organization->name, 0, 1) }}
-                                                            </div>
-                                                        @endif
-                                                        <span class="text-sm">{{ $member->organization->name }}</span>
-                                                    @elseif($family->organization)
-                                                        @if($family->organization->logo)
-                                                            <img src="{{ $family->organization->logo }}" alt="لوگوی {{ $family->organization->name }}" class="w-6 h-6 rounded-full object-cover" title="{{ $family->organization->name }}">
-                                                        @else
-                                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-800" title="{{ $family->organization->name }}">
-                                                                {{ substr($family->organization->name, 0, 1) }}
-                                                            </div>
-                                                        @endif
-                                                        <span class="text-sm">{{ $family->organization->name }}</span>
+                                            <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
+                                                @if($member->organization)
+                                                    @if($member->organization->logo_path)
+                                                        <img src="{{ $member->organization->logoUrl }}" 
+                                                             alt="{{ $member->organization->name }}" 
+                                                             class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                             title="{{ $member->organization->name }}">
                                                     @else
-                                                        <span class="text-gray-400">-</span>
+                                                        <span class="charity-name text-sm">{{ $member->organization->name }}</span>
                                                     @endif
-                                                </div>
+                                                @elseif($family->organization)
+                                                    @if($family->organization->logo_path)
+                                                        <img src="{{ $family->organization->logoUrl }}" 
+                                                             alt="{{ $family->organization->name }}" 
+                                                             class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                             title="{{ $family->organization->name }}">
+                                                    @else
+                                                        <span class="charity-name text-sm">{{ $family->organization->name }}</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
                                             </td>
                                             <td class="px-3 py-3 text-sm text-gray-800">
                                                 @php $types = $family->insuranceTypes(); @endphp

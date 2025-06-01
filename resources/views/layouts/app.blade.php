@@ -55,12 +55,23 @@
             #sidebar-overlay {
                 transition: opacity 0.3s ease;
             }
+            
+            /* استایل برای هایلایت کردن عنصر اسکرول شده */
+            .highlight-member {
+                animation: highlight-pulse 3s ease-in-out;
+            }
+            
+            @keyframes highlight-pulse {
+                0% { background-color: rgba(59, 130, 246, 0.3); }
+                50% { background-color: rgba(59, 130, 246, 0.1); }
+                100% { background-color: transparent; }
+            }
         </style>
         
         <!-- Livewire Styles -->
         @livewireStyles
     </head>
-    <body class="font-vazirmatn antialiased bg-gray-100">
+    <body class="font-vazirmatn antialiased bg-gray-100 font-iranyekan text-gray-900">
         <!-- Sidebar overlay for mobile - hidden by default -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
         
@@ -68,6 +79,9 @@
             @include('layouts.sidebar')
             <div class="flex-1">
                 @include('layouts.navigation')
+                <div class="container mx-auto px-4">
+                    <x-impersonation-banner />
+                </div>
                 <main class="p-4">
                     {{ $slot }}
                 </main>
@@ -131,6 +145,31 @@
                         document.body.classList.remove('overflow-hidden');
                     }
                 });
+            });
+        </script>
+        
+        <!-- اسکریپت اسکرول به عنصر مشخص شده -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // بررسی وجود اطلاعات اسکرول در localStorage
+                const scrollMemberId = "{{ session('scroll_to_member') }}";
+                if (scrollMemberId) {
+                    window.scrollToMember = scrollMemberId;
+                    
+                    // اسکرول به عنصر مشخص شده
+                    const memberElement = document.getElementById('member-' + scrollMemberId);
+                    if (memberElement) {
+                        setTimeout(function() {
+                            memberElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            memberElement.classList.add('highlight-member');
+                            
+                            // حذف کلاس هایلایت بعد از چند ثانیه
+                            setTimeout(function() {
+                                memberElement.classList.remove('highlight-member');
+                            }, 3000);
+                        }, 500);
+                    }
+                }
             });
         </script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -287,3 +287,47 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* استایل‌های نمایش لوگوی خیریه */
+.charity-logo {
+    max-height: 32px;
+    max-width: 80px;
+    object-fit: contain;
+    border-radius: 4px;
+    cursor: help;
+}
+
+.charity-name {
+    font-size: 14px;
+    color: #666;
+}
+
+.charity-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* استایل‌های مربوط به نقش فعال ادمین */
+.role-charity .charity-only,
+.role-insurance .insurance-only,
+.role-admin .admin-only {
+    display: block !important;
+}
+
+.active-role-menu {
+    background-color: rgba(79, 70, 229, 0.1);
+    border-right: 3px solid #4F46E5;
+}
+
+/* استایل‌های نوار زرد وضعیت */
+.role-status-bar {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border: 1px solid #F59E0B;
+}

@@ -181,20 +181,40 @@
         $membersNeedingDocument = 0;
         $membersWithDocument = 0;
         
+        // پیدا کردن اولین عضو بدون مدرک بیماری خاص برای لینک آپلود
+        $targetMember = null;
+        
         foreach ($family->members as $member) {
+            // فقط اعضایی که در problem_type آنها 'special_disease' وجود دارد
             if (is_array($member->problem_type) && in_array('special_disease', $member->problem_type)) {
                 $membersNeedingDocument++;
+                
                 // بررسی وجود مدرک
                 if ($member->getMedia('special_disease_documents')->count() > 0) {
                     $membersWithDocument++;
+                } else {
+                    // اولین عضو بدون مدرک را برای لینک آپلود انتخاب می‌کنیم
+                    if (!$targetMember) {
+                        $targetMember = $member;
+                    }
                 }
             }
         }
         
+        // اگر تمام اعضا مدرک دارند، ولی هنوز targetMember تعیین نشده است
+        if ($membersNeedingDocument > 0 && !$targetMember) {
+            // از اولین عضو دارای بیماری خاص استفاده می‌کنیم
+            $targetMember = $family->members->first(function ($member) {
+                return is_array($member->problem_type) && in_array('special_disease', $member->problem_type);
+            });
+        }
+        
+        // محاسبه دقیق درصد تکمیل
         $documentCompletionPercentage = $membersNeedingDocument > 0 
             ? round(($membersWithDocument / $membersNeedingDocument) * 100) 
             : -1; // -1 یعنی نیازی به مدرک نیست
         
+        // تعیین وضعیت نمایش آیکون بر اساس شرایط
         if ($membersNeedingDocument === 0) {
             $documentStatus = 'none';
             $documentMessage = "هیچ عضوی بیماری خاص ندارد";
@@ -206,7 +226,6 @@
         } elseif ($membersWithDocument === 0) {
             $documentStatus = 'incomplete';
             $documentMessage = "{$membersNeedingDocument} عضو نیاز به مدرک بیماری خاص دارند";
-            // استفاده از کلید 'incomplete' به صورت ایمن با ?? operator
             $documentColors = $colorConfig['incomplete'] ?? ['bg_class' => 'bg-red-100', 'border_class' => 'border-red-300', 'icon_class' => 'text-red-600', 'text_class' => 'text-red-800'];
         } else {
             $documentStatus = 'warning';
@@ -216,44 +235,79 @@
     @endphp
     
     @if($membersNeedingDocument > 0)
-    <a href="{{ route('charity.families.show', $family->id) }}" class="relative group validation-icon-wrapper hover:scale-110 transition-transform">
-        <div class="validation-icon {{ $iconSize }} {{ $documentColors['bg_class'] }} {{ $documentColors['border_class'] }} 
-                    border-2 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:z-30">
-            {{-- آیکون مدرک --}}
-            <svg class="w-4 h-4 {{ $documentColors['icon_class'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-            </svg>
-            
-            {{-- نمایش درصد --}}
-            @if($documentCompletionPercentage >= 0 && $documentCompletionPercentage < 100)
-                <span class="absolute -bottom-1 -right-1 bg-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border text-[10px] {{ $documentColors['text_class'] }}">
-                    {{ $documentCompletionPercentage }}%
-                </span>
-            @elseif($membersWithDocument < $membersNeedingDocument)
-                <span class="absolute -bottom-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                    {{ $membersNeedingDocument - $membersWithDocument }}
-                </span>
-            @endif
-        </div>
-        
-        {{-- Tooltip --}}
-        @if($showTooltips)
-            <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 
-                        transition-all duration-300 pointer-events-none z-50 group-hover:opacity-100 group-hover:pointer-events-auto">
-                <div class="bg-gray-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap max-w-xs">
-                    <div class="font-semibold">مدارک بیماری خاص</div>
-                    <div class="text-xs mt-1">{{ $documentMessage }}</div>
-                    @if($membersNeedingDocument > 0)
-                        <div class="text-xs mt-1 border-t border-gray-600 pt-1">
-                            {{ $membersWithDocument }}/{{ $membersNeedingDocument }} مدرک آپلود شده - {{ $documentCompletionPercentage }}% تکمیل
+        @if($documentStatus === 'complete')
+            {{-- آیکون بدون لینک برای وضعیت تکمیل شده --}}
+            <div class="relative group validation-icon-wrapper">
+                <div class="validation-icon {{ $iconSize }} {{ $documentColors['bg_class'] }} {{ $documentColors['border_class'] }} 
+                            border-2 rounded-lg flex items-center justify-center cursor-help transition-all duration-200 hover:scale-110 hover:z-30">
+                    {{-- آیکون مدرک --}}
+                    <svg class="w-4 h-4 {{ $documentColors['icon_class'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    
+                    {{-- نمایش آیکون تکمیل --}}
+                    <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </span>
+                </div>
+                
+                {{-- Tooltip --}}
+                @if($showTooltips)
+                    <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 
+                                transition-all duration-300 pointer-events-none z-50 group-hover:opacity-100 group-hover:pointer-events-auto">
+                        <div class="bg-gray-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap max-w-xs">
+                            <div class="font-semibold">مدارک بیماری خاص</div>
+                            <div class="text-xs mt-1">{{ $documentMessage }}</div>
+                            <div class="text-xs mt-1 border-t border-gray-600 pt-1">
+                                {{ $membersWithDocument }}/{{ $membersNeedingDocument }} مدرک آپلود شده - 100% تکمیل
+                            </div>
                         </div>
+                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                @endif
+            </div>
+        @else
+            {{-- آیکون با لینک برای وضعیت‌های دیگر --}}
+            <a href="{{ route('family.members.documents.upload', ['family' => $family->id, 'member' => $targetMember->id ?? $family->members->first()->id]) }}" class="relative group validation-icon-wrapper hover:scale-110 transition-transform">
+                <div class="validation-icon {{ $iconSize }} {{ $documentColors['bg_class'] }} {{ $documentColors['border_class'] }} 
+                            border-2 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:z-30">
+                    {{-- آیکون مدرک --}}
+                    <svg class="w-4 h-4 {{ $documentColors['icon_class'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    
+                    {{-- نمایش درصد یا تعداد باقیمانده --}}
+                    @if($documentCompletionPercentage >= 0 && $documentCompletionPercentage < 100)
+                        <span class="absolute -bottom-1 -right-1 bg-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border text-[10px] {{ $documentColors['text_class'] }}">
+                            {{ $documentCompletionPercentage }}%
+                        </span>
+                    @elseif($membersWithDocument < $membersNeedingDocument)
+                        <span class="absolute -bottom-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                            {{ $membersNeedingDocument - $membersWithDocument }}
+                        </span>
                     @endif
                 </div>
-                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-            </div>
+                
+                {{-- Tooltip --}}
+                @if($showTooltips)
+                    <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 
+                                transition-all duration-300 pointer-events-none z-50 group-hover:opacity-100 group-hover:pointer-events-auto">
+                        <div class="bg-gray-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap max-w-xs">
+                            <div class="font-semibold">مدارک بیماری خاص</div>
+                            <div class="text-xs mt-1">{{ $documentMessage }}</div>
+                            <div class="text-xs mt-1 border-t border-gray-600 pt-1">
+                                {{ $membersWithDocument }}/{{ $membersNeedingDocument }} مدرک آپلود شده - {{ $documentCompletionPercentage }}% تکمیل
+                            </div>
+                        </div>
+                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                @endif
+            </a>
         @endif
-    </a>
     @endif
 </div>
 

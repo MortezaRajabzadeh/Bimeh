@@ -24,7 +24,7 @@ class Organization extends Model
         'phone',
         'email',
         'address',
-        'logo',
+        'logo_path',
         'description',
         'is_active',
     ];
@@ -102,8 +102,8 @@ class Organization extends Model
      */
     public function getLogoUrlAttribute()
     {
-        if ($this->logo) {
-            return asset('storage/' . $this->logo);
+        if ($this->logo_path) {
+            return asset('storage/' . $this->logo_path);
         }
         
         return asset('images/default-organization.png');

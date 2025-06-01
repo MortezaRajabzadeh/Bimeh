@@ -768,4 +768,46 @@ class Family extends Model implements HasMedia
             'documents' => $this->getDocumentsValidationStatus()
         ];
     }
+
+    /**
+     * محاسبه مجموع حق بیمه برای این خانواده
+     * از طریق جدول family_insurances
+     */
+    public function getTotalPremiumAttribute()
+    {
+        // کش کردن مقدار برای بهبود عملکرد
+        return Cache::remember('family_premium_' . $this->id, now()->addMinutes(60), function () {
+            return \App\Models\FamilyInsurance::where('family_id', $this->id)
+                ->sum('premium_amount') ?? 0;
+        });
+    }
+    
+    /**
+     * محاسبه مجموع حق بیمه پرداخت شده
+     */
+    public function getTotalPaidPremiumAttribute()
+    {
+        return Cache::remember('family_paid_premium_' . $this->id, now()->addMinutes(60), function () {
+            return $this->insurances()
+                ->whereHas('shares', function($query) {
+                    $query->where('is_paid', true);
+                })
+                ->sum('premium_amount') ?? 0;
+        });
+    }
+
+    /**
+     * رابطه با سهم‌های بیمه (از طریق FamilyInsurance)
+     */
+    public function insuranceShares()
+    {
+        return $this->hasManyThrough(
+            \App\Models\InsuranceShare::class,
+            \App\Models\FamilyInsurance::class,
+            'family_id', // کلید خارجی در جدول واسط (family_insurances)
+            'family_insurance_id', // کلید خارجی در جدول هدف (insurance_shares)
+            'id', // کلید اصلی در این مدل (families)
+            'id' // کلید اصلی در جدول واسط (family_insurances)
+        );
+    }
 } 
