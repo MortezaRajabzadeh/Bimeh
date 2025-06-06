@@ -38,9 +38,6 @@ class FamilySearch extends Component
     public $province = '';
     public $city = '';
     public $deprivation_rank = '';
-    public $page = 1;
-    
-    // فیلترهای رتبه‌بندی جدید
     public $family_rank_range = '';
     public $specific_criteria = '';
     public $availableRankSettings = [];
@@ -62,13 +59,12 @@ class FamilySearch extends Component
         'charity' => ['except' => ''],
         'sortField' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
-        'perPage' => ['except' => 15],
         'family_rank_range' => ['except' => ''],
         'specific_criteria' => ['except' => ''],
         'province' => ['except' => ''],
         'city' => ['except' => ''],
         'deprivation_rank' => ['except' => ''],
-        'page' => ['except' => 1],
+        'perPage' => ['except' => 15],
     ];
     
     public function mount()
@@ -82,11 +78,6 @@ class FamilySearch extends Component
         // مقداردهی اولیه فیلترهای مودالی - حتماً آرایه خالی
         $this->tempFilters = [];
         $this->activeFilters = [];
-        
-        // مقدار پیشفرض برای تعداد نمایش
-        if (!$this->perPage) {
-            $this->perPage = 15;
-        }
     }
     
     public function render()
@@ -176,45 +167,11 @@ class FamilySearch extends Component
     }
     
     /**
-     * متد فعلی برای صفحه‌بندی
-     */
-    public function getPage()
-    {
-        return $this->getPropertyValue('page');
-    }
-
-    /**
-     * رفتن به صفحه بعد با بررسی محدودیت
-     */
-    public function nextPage()
-    {
-        $currentPage = $this->getPage();
-        $families = $this->getFamiliesQuery();
-        $totalPages = ceil($families->count() / $this->perPage);
-        
-        if ($currentPage < $totalPages) {
-            $this->setPage($currentPage + 1);
-        }
-    }
-
-    /**
-     * رفتن به صفحه قبل با بررسی محدودیت
-     */
-    public function previousPage()
-    {
-        $currentPage = $this->getPage();
-        
-        if ($currentPage > 1) {
-            $this->setPage($currentPage - 1);
-        }
-    }
-
-    /**
      * دریافت کوئری اصلی خانواده‌ها
      */
-    private function getFamiliesQuery()
+    public function getFamiliesQuery()
     {
-        return $this->applyFiltersToQuery(Family::query());
+        return Family::query();
     }
 
     /**
@@ -329,11 +286,6 @@ class FamilySearch extends Component
         }
 
         return $query;
-    }
-
-    public function gotoPage($page)
-    {
-        $this->setPage($page);
     }
 
     /**

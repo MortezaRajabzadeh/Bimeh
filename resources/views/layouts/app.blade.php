@@ -5,7 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ config('app.name', 'میکرو بیمه') }}</title>
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/mb6.svg') }}">
+        <link rel="icon" type="image/png" href="{{ asset('images/mb6.svg') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -176,7 +180,7 @@
         <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/min/moment.min.js"></script>
         <script type="text/javascript" src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
-        @livewire('components.toast-notifications')
+        
         @stack('scripts')
     </body>
 </html>

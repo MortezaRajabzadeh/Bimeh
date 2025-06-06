@@ -28,22 +28,26 @@
             </div>
         </div>
 
-        <!-- Family Information (Read-only) -->
+        <!-- Insurance Batch Information (Read-only) -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 class="text-lg font-semibold text-blue-800 mb-3">اطلاعات خانواده</h3>
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">اطلاعات تخصیص بیمه</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
-                    <span class="text-blue-600 font-medium">نام خانواده:</span>
-                    <span class="text-blue-800 font-semibold">{{ $insuranceShare->familyInsurance->family->name }}</span>
+                    <span class="text-blue-600 font-medium">شناسه تخصیص:</span>
+                    <span class="text-blue-800 font-semibold">{{ $insuranceShare->family_insurance_id ?? ('تخصیص #' . $insuranceShare->id) }}</span>
                 </div>
                 <div>
                     <span class="text-blue-600 font-medium">کد خانواده:</span>
-                    <span class="text-blue-800">{{ $insuranceShare->familyInsurance->family->family_code }}</span>
+                    <span class="text-blue-800">{{ $insuranceShare->familyInsurance->family->family_code ?? 'چندین خانواده' }}</span>
                 </div>
                 <div>
                     <span class="text-blue-600 font-medium">حق بیمه کل:</span>
                     <span class="text-blue-800">{{ number_format($insuranceShare->familyInsurance->premium_amount ?? 0) }} تومان</span>
+                </div>
+                <div>
+                    <span class="text-blue-600 font-medium">تاریخ ایجاد:</span>
+                    <span class="text-blue-800">{{ $insuranceShare->created_at ? jdate($insuranceShare->created_at)->format('Y/m/d') : '-' }}</span>
                 </div>
             </div>
         </div>
@@ -60,12 +64,12 @@
                         درصد سهم <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500">%</span>
                         <input type="number" name="percentage" id="percentage" 
                                min="0" max="100" step="0.01" required
                                value="{{ old('percentage', $insuranceShare->percentage) }}"
                                placeholder="مثال: 30"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <span class="absolute right-3 top-2 text-gray-500">%</span>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right pl-8">
                     </div>
                     @error('percentage')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -77,12 +81,12 @@
                         مبلغ سهم (اختیاری)
                     </label>
                     <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500">تومان</span>
                         <input type="number" name="amount" id="amount" 
                                min="0" step="1000"
                                value="{{ old('amount', $insuranceShare->amount) }}"
                                placeholder="مبلغ به تومان"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <span class="absolute right-3 top-2 text-gray-500">تومان</span>
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right pl-16">
                     </div>
                     <p class="mt-1 text-sm text-gray-500">اگر خالی باشد، بر اساس درصد محاسبه می‌شود</p>
                     @error('amount')
@@ -97,7 +101,8 @@
                     نوع پرداخت‌کننده <span class="text-red-500">*</span>
                 </label>
                 <select name="payer_type" id="payer_type" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right appearance-none bg-no-repeat pr-4"
+                        style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E'); background-position: left 0.5rem center; background-size: 1.5em 1.5em;">
                     <option value="">انتخاب کنید...</option>
                     @foreach($payerTypes as $value => $label)
                         <option value="{{ $value }}" {{ old('payer_type', $insuranceShare->payer_type) === $value ? 'selected' : '' }}>
@@ -118,7 +123,8 @@
                         سازمان پرداخت‌کننده
                     </label>
                     <select name="payer_organization_id" id="payer_organization_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right appearance-none bg-no-repeat pr-4"
+                            style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E'); background-position: left 0.5rem center; background-size: 1.5em 1.5em;">
                         <option value="">انتخاب کنید...</option>
                         @foreach($organizations as $org)
                             <option value="{{ $org->id }}" {{ old('payer_organization_id', $insuranceShare->payer_organization_id) == $org->id ? 'selected' : '' }}>
@@ -134,7 +140,8 @@
                         فرد پرداخت‌کننده
                     </label>
                     <select name="payer_user_id" id="payer_user_id"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right appearance-none bg-no-repeat pr-4"
+                            style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3E%3C/svg%3E'); background-position: left 0.5rem center; background-size: 1.5em 1.5em;">
                         <option value="">انتخاب کنید...</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}" {{ old('payer_user_id', $insuranceShare->payer_user_id) == $user->id ? 'selected' : '' }}>
@@ -152,7 +159,7 @@
                     <input type="text" name="payer_name" id="payer_name" 
                            value="{{ old('payer_name', $insuranceShare->payer_name) }}"
                            placeholder="نام پرداخت‌کننده را وارد کنید"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right">
                     @error('payer_name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -166,53 +173,10 @@
                 </label>
                 <textarea name="description" id="description" rows="3"
                           placeholder="توضیحات اضافی در مورد این سهم..."
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">{{ old('description', $insuranceShare->description) }}</textarea>
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right">{{ old('description', $insuranceShare->description) }}</textarea>
                 @error('description')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
-            </div>
-
-            <!-- Payment Status (if permitted) -->
-            <div class="border-t pt-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">وضعیت پرداخت</h3>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div>
-                        <label for="is_paid" class="block text-sm font-medium text-gray-700 mb-2">
-                            وضعیت پرداخت
-                        </label>
-                        <select name="is_paid" id="is_paid"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            <option value="0" {{ old('is_paid', $insuranceShare->is_paid ? '1' : '0') === '0' ? 'selected' : '' }}>پرداخت نشده</option>
-                            <option value="1" {{ old('is_paid', $insuranceShare->is_paid ? '1' : '0') === '1' ? 'selected' : '' }}>پرداخت شده</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label for="payment_date" class="block text-sm font-medium text-gray-700 mb-2">
-                            تاریخ پرداخت
-                        </label>
-                        <input type="date" name="payment_date" id="payment_date" 
-                               value="{{ old('payment_date', $insuranceShare->payment_date ? $insuranceShare->payment_date->format('Y-m-d') : '') }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        @error('payment_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    
-                    <div>
-                        <label for="payment_reference" class="block text-sm font-medium text-gray-700 mb-2">
-                            شماره پیگیری
-                        </label>
-                        <input type="text" name="payment_reference" id="payment_reference" 
-                               value="{{ old('payment_reference', $insuranceShare->payment_reference) }}"
-                               placeholder="شماره پیگیری پرداخت"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        @error('payment_reference')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
             </div>
 
             <!-- Submit Buttons -->
@@ -248,15 +212,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show relevant field
         if (selectedType === 'organization') {
             organizationDiv.style.display = 'block';
-            customDiv.style.display = 'none';
         } else if (selectedType === 'user') {
             userDiv.style.display = 'block';
-            customDiv.style.display = 'none';
         }
     }
 
+    // Initial toggle
+    togglePayerFields();
+
+    // Toggle on change
     payerTypeSelect.addEventListener('change', togglePayerFields);
-    togglePayerFields(); // Initial call
 });
 </script>
 </x-app-layout> 

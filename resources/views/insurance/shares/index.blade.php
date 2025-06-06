@@ -8,48 +8,16 @@
                 <p class="text-gray-600 mt-1">مدیریت سهم‌های مختلف در پرداخت حق بیمه خانواده‌ها</p>
             </div>
             
-            @can('create insurance shares')
-            <a href="{{ route('insurance.shares.create') }}" 
-               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                افزودن سهم جدید
-            </a>
-            @endcan
         </div>
 
         <!-- Filter Section -->
         <div class="bg-gray-50 rounded-lg p-4 mb-6">
-            <form method="GET" action="{{ route('insurance.shares.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form method="GET" action="{{ route('insurance.shares.index') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">خانواده</label>
                     <input type="text" name="family" value="{{ request('family') }}" 
                            placeholder="نام خانواده..." 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">نوع پرداخت‌کننده</label>
-                    <select name="payer_type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                        <option value="">همه</option>
-                        <option value="insurance" {{ request('payer_type') == 'insurance' ? 'selected' : '' }}>شرکت بیمه</option>
-                        <option value="charity" {{ request('payer_type') == 'charity' ? 'selected' : '' }}>خیریه</option>
-                        <option value="bank" {{ request('payer_type') == 'bank' ? 'selected' : '' }}>بانک</option>
-                        <option value="government" {{ request('payer_type') == 'government' ? 'selected' : '' }}>دولت</option>
-                        <option value="benefactor" {{ request('payer_type') == 'benefactor' ? 'selected' : '' }}>فرد خیر</option>
-                        <option value="csr" {{ request('payer_type') == 'csr' ? 'selected' : '' }}>بودجه CSR</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">وضعیت پرداخت</label>
-                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                        <option value="">همه</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>در انتظار</option>
-                        <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>پرداخت شده</option>
-                        <option value="overdue" {{ request('status') == 'overdue' ? 'selected' : '' }}>عقب‌افتاده</option>
-                    </select>
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-right">
                 </div>
                 
                 <div class="flex items-end">
@@ -65,11 +33,11 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">شناسه تخصیص</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">خانواده</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">پرداخت‌کننده</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">درصد</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">مبلغ</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">وضعیت</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاریخ ایجاد</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">عملیات</th>
                     </tr>
@@ -79,10 +47,28 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-medium text-gray-900">
-                                {{ $share->familyInsurance && $share->familyInsurance->family ? $share->familyInsurance->family->name : 'نامشخص' }}
+                                {{ $share->family_insurance_id ?? ('تخصیص #' . $share->id) }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                @if($share->created_at)
+                                    <span>تاریخ تخصیص: {{ jdate($share->created_at)->format('Y/m/d') }}</span>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                @if($share->familyInsurance && $share->familyInsurance->family)
+                                    {{ $share->familyInsurance->family->name }}
+                                @else
+                                    <span class="text-gray-500">چندین خانواده</span>
+                                @endif
                             </div>
                             <div class="text-sm text-gray-500">
-                                کد: {{ $share->familyInsurance && $share->familyInsurance->family ? $share->familyInsurance->family->family_code : 'نامشخص' }}
+                                @if($share->familyInsurance && $share->familyInsurance->family)
+                                    کد: {{ $share->familyInsurance->family->family_code }}
+                                @else
+                                    <span class="text-xs text-blue-500">تخصیص دسته‌ای از فایل</span>
+                                @endif
                             </div>
                         </td>
                         
@@ -117,21 +103,8 @@
                             <span class="text-sm text-gray-900">{{ number_format($share->amount ?? 0) }} تومان</span>
                         </td>
                         
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {{ ($share->payment_status ?? '') === 'paid' ? 'bg-green-100 text-green-800' : 
-                                   (($share->payment_status ?? '') === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
-                                {{ match($share->payment_status ?? '') {
-                                    'pending' => 'در انتظار',
-                                    'paid' => 'پرداخت شده',
-                                    'overdue' => 'عقب‌افتاده',
-                                    default => $share->payment_status ?? 'نامشخص'
-                                } }}
-                            </span>
-                        </td>
-                        
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ $share->created_at ? $share->created_at->format('Y/m/d') : '-' }}
+                            {{ $share->created_at ? jdate($share->created_at)->format('Y/m/d') : '-' }}
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">

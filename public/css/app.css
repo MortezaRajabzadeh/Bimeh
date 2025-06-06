@@ -3,4 +3,70 @@
 }
 #sidebar.sidebar-expanded .logo-container {
     display: flex !important;
-} 
+}
+
+/* Sortable Table Headers */
+th[scope="col"] button {
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    text-align: right;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    color: #4b5563; /* text-gray-600 */
+}
+
+th[scope="col"] button:hover {
+    color: #3b82f6; /* text-blue-500 */
+    background-color: #f3f4f6; /* bg-gray-100 */
+}
+
+th[scope="col"] button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 */
+}
+
+/* Sort indicators */
+th[scope="col"] .fa-arrow-up,
+th[scope="col"] .fa-arrow-down {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+}
+
+th[scope="col"] .fa-arrows-alt-v {
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+    opacity: 0.5;
+}
+
+th[scope="col"]:hover .fa-arrows-alt-v {
+    opacity: 1;
+    color: #9ca3af; /* text-gray-400 */
+}
+
+/* Active sort column */
+th[scope="col"].sort-asc button,
+th[scope="col"].sort-desc button {
+    color: #1d4ed8; /* text-blue-700 */
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    th[scope="col"] button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    th[scope="col"] .fa-arrow-up,
+    th[scope="col"] .fa-arrow-down,
+    th[scope="col"] .fa-arrows-alt-v {
+        font-size: 0.625rem;
+    }
+}

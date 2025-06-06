@@ -31,7 +31,7 @@
                     label = 'شهر';
                     break;
                 case 'deprivation_rank':
-                    label = 'رتبه محرومیت';
+                    label = 'رتبه';
                     break;
                 case 'charity':
                     label = 'خیریه معرف';
@@ -185,7 +185,7 @@
                     <tr class="bg-gray-50 text-xs text-gray-700">
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('province_deprivation_rank')" class="flex items-center justify-end w-full">
-                                رتبه محرومیت
+                                رتبه 
                                 @php $sf = $sortField ?? ''; $sd = $sortDirection ?? ''; @endphp
                                 @if($sf === 'province_deprivation_rank')
                                     <span class="mr-1 text-[0.5rem]">
@@ -248,26 +248,6 @@
                             <button wire:click="sortBy('is_insured')" class="flex items-center justify-end w-full">
                                 تعداد بیمه ها
                                 @if($sf === 'is_insured')
-                                    <span class="mr-1 text-[0.5rem]">
-                                        @if($sd === 'asc')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                        @else
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @endif
-                                    </span>
-                                @else
-                                    <span class="mr-1 text-[0.5rem]">▼</span>
-                                @endif
-                            </button>
-                        </th>
-                        <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                            <button wire:click="sortBy('acceptance_criteria')" class="flex items-center justify-end w-full">
-                                معیار پذیرش
-                                @if($sf === 'acceptance_criteria')
                                     <span class="mr-1 text-[0.5rem]">
                                         @if($sd === 'asc')
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -391,8 +371,8 @@
                         @else
                             <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                                 <button wire:click="sortBy('charity')" class="flex items-center justify-end w-full" title="خیریه معرف">
-                                    <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
-                                    @if($sf === 'charity')
+                                <span>خیریه معرف</span>
+                                @if($sf === 'charity')
                                         <span class="mr-1 text-[0.5rem]">
                                             @if($sd === 'asc')
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -449,8 +429,6 @@
                                             </svg>
                                         @endif
                                     </span>
-                                @else
-                                    <span class="mr-1 text-[0.5rem]">▼</span>
                                 @endif
                             </button>
                         </th>
@@ -502,23 +480,7 @@
                                 </span>
                             </div>
                         </td>
-                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                            @if(is_array($family->acceptance_criteria) || $family->acceptance_criteria instanceof \Illuminate\Support\Collection)
-                                @if(count($family->acceptance_criteria))
-                                    @foreach($family->acceptance_criteria as $criteria)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">
-                                            {{ $criteria }}
-                                        </span>
-                                    @endforeach
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1">-</span>
-                                @endif
-                            @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1">
-                                    {{ $family->acceptance_criteria ? $family->acceptance_criteria : '-' }}
-                                </span>
-                            @endif
-                        </td>
+                    
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                             {{ $family->members->count() ?? 0 }}
                         </td>
@@ -563,6 +525,7 @@
                                     }
                                 }
                                 
+                                
                                 $problemLabels = [
                                     'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-purple-100 text-purple-800'],
                                     'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-orange-100 text-orange-800'],
@@ -606,7 +569,7 @@
                                 @endif
                             </div>
                             <div>
-                                <span class="font-bold">پرداخت‌کننده:</span>
+                                <span class="font-bold">پرداخت کننده:</span>
                                 @if($payers->count())
                                     @foreach($payers as $payer)
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-1 mb-1">{{ $payer }}</span>
@@ -628,12 +591,19 @@
                                 <div class="flex items-center justify-end">
                                     @if($family->organization)
                                         @if($family->organization->logo_path)
-                                            <img src="{{ $family->organization->logoUrl }}" 
-                                                 alt="{{ $family->organization->name }}" 
-                                                 class="w-6 h-6 rounded-full object-cover"
-                                                 title="{{ $family->organization->name }}">
+                                            <div class="relative group">
+                                                
+                                                <img src="{{ $family->organization->logoUrl }}" 
+                                                     alt="{{ $family->organization->name }}" 
+                                                     class="w-6 h-6 rounded-full object-cover transition-opacity duration-200 group-hover:opacity-75"
+                                                     title="{{ $family->organization->name }}">
+                                                <div class="absolute bottom-full mb-2 right-0 bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                                    {{ $family->organization->name }}
+                                                    <div class="absolute top-full right-1/2 transform translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                                                </div>
+                                            </div>
                                         @else
-                                            <span class="ml-0">{{ $family->organization->name }}</span>
+                                            <span class="text-gray-900">{{ $family->organization->name }}</span>
                                         @endif
                                     @else
                                         <span class="text-gray-400">-</span>
@@ -666,11 +636,7 @@
                             </div>
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                            <div class="flex items-center justify-center gap-2">
-                                <a href="{{ route('dashboard') }}" class="bg-blue-200 hover:bg-blue-300 text-blue-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out">
-                                    <i class="fas fa-edit text-blue-600 mr-1"></i>
-                                    مشاهده
-                                </a>
+                            <div class="flex items-center justify-center">
                                 <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out toggle-family-btn" data-family-id="{{ $family->id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -904,7 +870,7 @@
     
     <!-- اعلان کپی -->
     <div id="copy-notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50 flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
         <span id="copy-notification-text">متن با موفقیت کپی شد</span>
@@ -918,7 +884,7 @@
             <div class="flex items-center order-1">
                 <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
                 <select wire:model.live="perPage" 
-                        class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                        class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
                         style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
                     <option value="10">10</option>
                     <option value="15">15</option>
@@ -931,11 +897,18 @@
             <!-- شماره صفحات - وسط -->
             <div class="flex items-center justify-center order-2 flex-grow mx-4">
                 <!-- دکمه صفحه قبل -->
-                <button type="button" wire:click="{{ !$families->onFirstPage() ? 'previousPage' : '' }}" 
-                   class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                <button type="button" wire:click="previousPage" wire:loading.attr="disabled" wire:target="previousPage" @if($families->onFirstPage()) disabled @endif class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1 transition-colors duration-200">
+                    <span wire:loading.remove wire:target="previousPage">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    <span wire:loading wire:target="previousPage" class="inline-block">
+                        <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                        </svg>
+                    </span>
                 </button>
                 
                 <!-- شماره صفحات -->
@@ -954,11 +927,21 @@
                             <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
                         @endif
                     @endif
-                    
+                     
                     @for($i = $start; $i <= $end; $i++)
-                        <button type="button" wire:click="gotoPage({{ $i }})" 
-                           class="{{ (isset($families) && $families->currentPage() == $i) ? 'bg-green-100 text-green-800 font-medium' : 'bg-white text-gray-600 hover:bg-gray-50' }} h-full px-3 inline-flex items-center justify-center text-sm">
-                            {{ $i }}
+                        <button type="button" 
+                                wire:click="gotoPage({{ $i }})" 
+                                wire:key="page-{{ $i }}" 
+                                wire:loading.attr="disabled" 
+                                wire:target="gotoPage" 
+                                class="{{ ($families->currentPage() == $i) ? 'bg-green-100 text-green-800 font-medium' : 'bg-white text-gray-600 hover:bg-gray-50' }} h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">
+                            <span wire:loading.remove wire:target="gotoPage">{{ $i }}</span>
+                            <span wire:loading wire:target="gotoPage" class="inline-block">
+                                <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                                </svg>
+                            </span>
                         </button>
                     @endfor
                     
@@ -971,11 +954,18 @@
                 </div>
                 
                 <!-- دکمه صفحه بعد -->
-                <button type="button" wire:click="{{ (isset($families) && $families->hasMorePages()) ? 'nextPage' : '' }}" 
-                   class="{{ (isset($families) && $families->hasMorePages()) ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
+                <button type="button" wire:click="nextPage" wire:loading.attr="disabled" wire:target="nextPage" @if(!$families->hasMorePages()) disabled @endif class="{{ $families->hasMorePages() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1 transition-colors duration-200">
+                    <span wire:loading.remove wire:target="nextPage">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    <span wire:loading wire:target="nextPage" class="inline-block">
+                        <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                        </svg>
+                    </span>
                 </button>
             </div>
 
@@ -989,7 +979,7 @@
     
     <!-- اعلان toast -->
     <div id="toast-notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-md shadow-lg z-50 flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
         <span id="toast-notification-text"></span>
@@ -1175,7 +1165,7 @@
                                                 <option value="status">وضعیت</option>
                                                 <option value="province">استان</option>
                                                 <option value="city">شهر</option>
-                                                <option value="deprivation_rank">رتبه محرومیت</option>
+                                                <option value="deprivation_rank">رتبه</option>
                                                 <option value="charity">خیریه معرف</option>
                                                 <option value="members_count">تعداد اعضا</option>
                                                 <option value="created_at">تاریخ پایان بیمه</option>
@@ -1244,7 +1234,7 @@
                                             <select x-model="filter.value"
                                                     class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
                                                     style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب رتبه محرومیت...</option>
+                                                <option value="">انتخاب رتبه...</option>
                                                 <option value="high">محرومیت بالا (1-3)</option>
                                                 <option value="medium">محرومیت متوسط (4-6)</option>
                                                 <option value="low">محرومیت پایین (7-10)</option>
@@ -1615,8 +1605,7 @@
                     uploadButton.disabled = true;
                     uploadButton.innerHTML = `
                         <svg class="animate-spin w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
-                            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
                         در حال آپلود...
                     `;
@@ -1811,7 +1800,7 @@
                 <div class="flex items-center gap-3">
                     <!-- دکمه ذخیره فیلتر -->
                     <button wire:click="saveRankFilter" 
-                            class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                            class="inline-flex items-center px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
                         ذخیره فیلتر
                     </button>
                     
@@ -1951,7 +1940,7 @@
                                     <!-- حذف -->
                                     <td class="px-6 py-5 text-center">
                                         <button @click="removeRankFilter(index)" 
-                                                class="inline-flex items-center justify-center w-10 h-10 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-all duration-200 group">
+                                                class="inline-flex items-center justify-center w-10 h-10 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-all duration-200">
                                             <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -1964,7 +1953,7 @@
                             <tr>
                                 <td colspan="4" class="px-6 py-6">
                                     <button @click="addRankFilter()" 
-                                            class="w-full flex items-center justify-center gap-3 p-4 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-xl border-2 border-dashed border-green-300 hover:border-green-400 transition-all duration-200 group">
+                                            class="w-full flex items-center justify-center gap-3 p-4 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-xl border-2 border-dashed border-green-300 transition-all duration-200 group">
                                         <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                         </svg>
@@ -1988,7 +1977,7 @@
                         بازگشت به تنظیمات پیشفرض
                     </button>
                 </div>
-                
+
                 <button wire:click="applyRankFilters" @click="showRankModal = false"
                         class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

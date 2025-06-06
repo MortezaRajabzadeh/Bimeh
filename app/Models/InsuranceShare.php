@@ -24,7 +24,7 @@ class InsuranceShare extends Model
         'description',
         'created_by',
         'import_log_id',
-        'payer_type',
+        'payer_type_id',
         'payer_name',
         'payer_organization_id',
         'payer_user_id',
@@ -41,6 +41,8 @@ class InsuranceShare extends Model
     protected $casts = [
         'percentage' => 'decimal:2',
         'amount' => 'decimal:2',
+        'is_paid' => 'boolean',
+        'payment_date' => 'datetime',
     ];
 
     /**
@@ -133,5 +135,35 @@ class InsuranceShare extends Model
     public function payerUser()
     {
         return $this->belongsTo(User::class, 'payer_user_id');
+    }
+
+    /**
+     * رابطه با نوع پرداخت کننده
+     */
+    public function payerType()
+    {
+        return $this->belongsTo(PayerType::class, 'payer_type_id');
+    }
+
+    /**
+     * دریافت نام پرداخت کننده بر اساس نوع
+     */
+    public function getPayerNameAttribute($value)
+    {
+        if ($this->payer_organization_id) {
+            return $this->payerOrganization?->name ?? $value;
+        } elseif ($this->payer_user_id) {
+            return $this->payerUser?->name ?? $value;
+        }
+        
+        return $value;
+    }
+
+    /**
+     * دریافت نوع پرداخت کننده
+     */
+    public function getPayerTypeNameAttribute()
+    {
+        return $this->payerType?->name ?? '';
     }
 }

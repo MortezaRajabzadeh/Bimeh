@@ -45,7 +45,7 @@ class OrganizationRepository extends BaseRepository
     public function saveLogo(Organization $organization, $file): string
     {
         $fileName = 'logo_' . $organization->id . '_' . time() . '.' . $file->extension();
-        $path = $file->storeAs('organizations/logos', $fileName, 'public');
+        $path = $file->storeAs('logos', $fileName, 'public');
         
         $organization->update([
             'logo_path' => $path

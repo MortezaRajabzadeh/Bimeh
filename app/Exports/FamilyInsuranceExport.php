@@ -27,7 +27,26 @@ class FamilyInsuranceExport implements FromCollection, WithHeadings, WithMapping
     
     public function collection()
     {
+        if (empty($this->familyIds)) {
+            return collect([]);
+        }
+        
         $families = Family::whereIn('id', $this->familyIds)->get();
+        
+        if ($families->isEmpty()) {
+            if ($this->addSampleRow) {
+                // ایجاد یک ردیف نمونه برای راهنمایی کاربر حتی اگر هیچ خانواده‌ای یافت نشد
+                $sample = [
+                    'family_code' => 'نمونه (مثال - تغییر ندهید)',
+                    'insurance_type' => 'مثال: تامین اجتماعی',
+                    'premium_amount' => 'مثال: 5000000 (ریال)',
+                    'start_date' => 'مثال: 1403/03/01',
+                    'end_date' => 'مثال: 1404/03/01',
+                ];
+                return collect([(object)$sample]);
+            }
+            return collect([]);
+        }
         
         if ($this->addSampleRow && $families->count() > 0) {
             // Use the first selected family's code for consistency
@@ -72,16 +91,28 @@ class FamilyInsuranceExport implements FromCollection, WithHeadings, WithMapping
                 is_array($family) ? $family['end_date'] : $family->end_date,
             ];
         }
-
-        // Get first insurance or empty values
-        $firstInsurance = $family->insurances()->first();
         
+        // بررسی خالی بودن کد خانواده و استفاده از آیدی به عنوان کد خانواده در صورت خالی بودن
+        $familyCode = $family->family_code;
+        if (empty($familyCode)) {
+            $familyCode = (string)$family->id;
+            
+            // به‌روزرسانی کد خانواده در دیتابیس
+            try {
+                $family->family_code = $familyCode;
+                $family->save();
+            } catch (\Exception $e) {
+                // خطا را نادیده می‌گیریم
+            }
+        }
+        
+        // فقط کد خانواده را پر می‌کنیم و بقیه فیلدها را خالی می‌گذاریم تا ادمین پر کند
         return [
-            "\t" . $family->family_code, // Add invisible tab to force text format
-            $firstInsurance->insurance_type ?? '',
-            $firstInsurance->premium_amount ?? '',
-            $this->formatDate($firstInsurance->start_date ?? null),
-            $this->formatDate($firstInsurance->end_date ?? null),
+            $familyCode, // شناسه خانواده - فقط این مقدار پر می‌شود
+            '',  // نوع بیمه - خالی می‌گذاریم تا ادمین پر کند
+            '',  // مبلغ بیمه - خالی می‌گذاریم تا ادمین پر کند
+            '',  // تاریخ صدور - خالی می‌گذاریم تا ادمین پر کند
+            '',  // تاریخ پایان - خالی می‌گذاریم تا ادمین پر کند
         ];
     }
     

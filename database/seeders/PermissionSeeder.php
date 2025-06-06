@@ -21,6 +21,10 @@ class PermissionSeeder extends Seeder
         // تعریف دسترسی‌های مدیریت سیستم (فقط ادمین)
         $adminPermissions = [
             'manage users',
+            'view users',
+            'create user',
+            'edit user',
+            'delete user',
             'manage organizations', 
             'manage roles',
             'manage permissions',

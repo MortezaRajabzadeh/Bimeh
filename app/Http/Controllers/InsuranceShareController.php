@@ -111,7 +111,9 @@ class InsuranceShareController extends Controller
     {
         $share->load(['familyInsurance.family', 'payerOrganization', 'payerUser']);
         
-        return view('insurance.shares.show', compact('share'));
+        $insuranceShare = $share;
+        
+        return view('insurance.shares.show', compact('insuranceShare'));
     }
 
     /**
@@ -134,7 +136,9 @@ class InsuranceShareController extends Controller
             'other' => 'سایر',
         ];
 
-        return view('insurance.shares.edit', compact('share', 'organizations', 'users', 'payerTypes'));
+        $insuranceShare = $share;
+
+        return view('insurance.shares.edit', compact('insuranceShare', 'organizations', 'users', 'payerTypes'));
     }
 
     /**
