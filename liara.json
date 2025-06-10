@@ -1,5 +1,12 @@
 {
+  "platform": "laravel",
+  "app": "mikrobimehh",
+  "port": 8000,
   "cron": [
     "0 2 * * * cd $ROOT && php artisan app:move-expired-insurances-to-renewal >> /tmp/insurance-renewal.log 2>&1"
-  ]
-} 
+  ],
+  "build": {
+    "location": "iran"
+  },
+  "disks": []
+}
