@@ -69,7 +69,7 @@ return [
             'title' => 'اطلاعات هویتی',
             'description' => 'تکمیل بودن اطلاعات هویتی اعضای خانواده',
             'icon' => 'user-circle',
-            'required_fields' => ['first_name', 'last_name', 'national_code', 'birth_date'],
+            'required_fields' => ['first_name', 'last_name', 'national_code'],
         ],
         'location' => [
             'title' => 'وضعیت محرومیت منطقه',
@@ -97,8 +97,8 @@ return [
     |
     */
     'validation_thresholds' => [
-        'complete_min' => 100, // حداقل درصد برای وضعیت کامل
-        'partial_min' => 30,   // حداقل درصد برای وضعیت جزئی
+        'complete_min' => 90,  // 90% یا بیشتر = وضعیت کامل
+        'partial_min' => 50,   // 50-89% = وضعیت ناقص
         // کمتر از partial_min = وضعیت none
     ],
 ]; 

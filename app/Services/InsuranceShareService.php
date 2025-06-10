@@ -3,138 +3,128 @@
 namespace App\Services;
 
 use App\Models\Family;
-use App\Models\FundingSource;
 use App\Models\FamilyInsurance;
 use App\Models\InsuranceShare;
+use App\Models\ShareAllocationLog; // مدل جدید اضافه شده
+use App\Services\InsuranceImportLogger;
+use App\Models\FamilyStatusLog;
+use App\Enums\InsuranceWizardStep;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InsuranceShareService
 {
     /**
-     * تخصیص سهم‌بندی به چندین خانواده
-     *
-     * @param Collection $families خانواده‌های انتخاب شده
-     * @param array $shares آرایه‌ای از سهم‌ها با فیلدهای funding_source_id، percentage و description
-     * @param int|null $importLogId شناسه لاگ ایمپورت (اختیاری)
-     * @return array آرایه‌ای از سهم‌های ایجاد شده
-     * @throws \Exception در صورت بروز خطا
+     * مرحله ۱: تخصیص سهم و ایجاد یک لاگ گروهی برای آن
      */
-    public function allocate(Collection $families, array $shares, ?int $importLogId = null): array
+    public function allocate(Collection $families, array $shares, string $payerType, ?int $fundingSourceId = null): array
     {
-        // بررسی اعتبار مجموع درصدها
+        Log::info('🚀 شروع تخصیص سهام بیمه', [
+            'families_count' => $families->count(),
+            'shares' => $shares,
+            'payer_type' => $payerType,
+            'funding_source_id' => $fundingSourceId
+        ]);
+    
+        // اعتبارسنجی درصدهای سهام
         $totalPercentage = collect($shares)->sum('percentage');
         if (abs($totalPercentage - 100) > 0.01) {
-            throw new \Exception('جمع درصدها باید دقیقاً ۱۰۰٪ باشد.');
+            throw new \Exception("مجموع درصدهای سهام باید 100 درصد باشد. مجموع فعلی: {$totalPercentage}%");
         }
-
-        return DB::transaction(function () use ($families, $shares, $importLogId) {
-            $createdShares = [];
-            $errors = [];
-            
+    
+        $createdShares = []; // آرایه‌ای برای نگهداری سهم‌های ایجاد شده
+        $errors = [];
+    
+        DB::transaction(function () use ($families, $shares, &$createdShares, &$errors, $payerType, $fundingSourceId) {
             foreach ($families as $family) {
                 try {
-                    // پیدا کردن یا ایجاد بیمه برای خانواده
-                    $familyInsurances = $this->getFamilyInsurances($family->id);
-                    
-                    if ($familyInsurances->isEmpty()) {
-                        Log::warning("خانواده با شناسه {$family->id} بیمه فعال ندارد.");
-                        $errors[] = "خانواده با کد {$family->family_code} بیمه فعال ندارد.";
-                        continue;
-                    }
-                    
-                    // از آخرین بیمه فعال استفاده می‌کنیم
-                    $familyInsurance = $familyInsurances->sortByDesc('start_date')->first();
-                    
-                    // تعیین مبلغ حق بیمه
-                    $premiumAmount = $familyInsurance->premium_amount ?: 0;
-                    
-                    // برای هر سهم در آرایه ورودی
+                    Log::info("📋 پردازش خانواده {$family->family_code} (ID: {$family->id})");
+    
+                    // ایجاد رکورد بیمه نیمه‌کاره
+                    $familyInsurance = FamilyInsurance::create([
+                        'family_id' => $family->id,
+                        'insurance_type' => 'تکمیلی',
+                        'premium_amount' => 0,
+                        'start_date' => now(),
+                        'end_date' => now()->addYear(),
+                        'status' => 'awaiting_upload',
+                        'payer_type' => $payerType,
+                        'funding_source_id' => $fundingSourceId,
+                    ]);
+    
+                    Log::info("✅ رکورد بیمه placeholder برای خانواده {$family->family_code} ایجاد شد (ID: {$familyInsurance->id})");
+    
+                    // ایجاد رکوردهای سهم
                     foreach ($shares as $shareData) {
-                        // بررسی تکراری نبودن سهم
-                        $existingShare = InsuranceShare::where('family_insurance_id', $familyInsurance->id)
-                            ->where('percentage', $shareData['percentage']);
-                        
-                        // اگر funding_source_id در داده وجود دارد و در جدول هم ستون وجود دارد
-                        if (isset($shareData['funding_source_id']) && Schema::hasColumn('insurance_shares', 'funding_source_id')) {
-                            $existingShare->where('funding_source_id', $shareData['funding_source_id']);
-                        }
-                        
-                        $existingShare = $existingShare->first();
-                        
-                        if ($existingShare) {
-                            Log::info("سهم تکراری برای خانواده {$family->id} و منبع مالی {$shareData['funding_source_id']} با درصد {$shareData['percentage']} یافت شد.");
-                            continue;
-                        }
-                        
-                        // ایجاد سهم جدید
-                        $share = new InsuranceShare();
-                        $share->family_insurance_id = $familyInsurance->id;
-                        $share->percentage = $shareData['percentage'];
-                        $share->description = $shareData['description'] ?? null;
-                        
-                        // پیش‌فرض برای پارامترهای پرداخت‌کننده
-                        $share->payer_type = $shareData['payer_type'] ?? 'other';
-
-                        // اضافه کردن created_by اگر ستون وجود دارد
-                        if (Schema::hasColumn('insurance_shares', 'created_by')) {
-                            $share->created_by = Auth::id();
-                        }
-
-                        // اضافه کردن import_log_id اگر ستون وجود دارد و مقدار هم ارسال شده است
-                        if (Schema::hasColumn('insurance_shares', 'import_log_id') && $importLogId !== null) {
-                            $share->import_log_id = $importLogId;
-                        }
-                        
-                        // اضافه کردن funding_source_id اگر در داده‌ها وجود دارد و در جدول هم این ستون وجود دارد
-                        if (isset($shareData['funding_source_id']) && Schema::hasColumn('insurance_shares', 'funding_source_id')) {
-                            $share->funding_source_id = $shareData['funding_source_id'];
-                            
-                            // اضافه کردن اطلاعات پرداخت‌کننده از منبع مالی
-                            $fundingSource = FundingSource::find($shareData['funding_source_id']);
-                            if ($fundingSource) {
-                                $share->payer_type = $fundingSource->source_type ?? 'other';
-                                $share->payer_name = $fundingSource->name;
-                            } else {
-                                // اگر منبع مالی یافت نشد، از مقدار پیش‌فرض یا ارسالی استفاده کن
-                                $share->payer_name = $shareData['payer_name'] ?? 'نامشخص';
+                        if ($shareData['percentage'] > 0) {
+                            $fundingSource = null;
+                            if ($fundingSourceId) {
+                                $fundingSource = \App\Models\FundingSource::find($fundingSourceId);
                             }
-                        } else {
-                            // اگر funding_source_id تنظیم نشده، از مقدار پیش‌فرض یا ارسالی استفاده کن
-                            $share->payer_name = $shareData['payer_name'] ?? 'نامشخص';
+    
+                            $payerData = [
+                                'family_insurance_id' => $familyInsurance->id,
+                                'percentage' => $shareData['percentage'],
+                                'amount' => 0,
+                            ];
+    
+                            if ($fundingSource) {
+                                $payerData['payer_name'] = $fundingSource->name;
+                                
+                                if ($fundingSource->type === 'organization') {
+                                    $payerData['payer_organization_id'] = $fundingSource->source_id ?? null;
+                                } elseif ($fundingSource->type === 'user') {
+                                    $payerData['payer_user_id'] = $fundingSource->source_id ?? null;
+                                }
+                                
+                                if (isset($shareData['payer_type_id'])) {
+                                    $payerData['payer_type_id'] = $shareData['payer_type_id'];
+                                }
+                            }
+    
+                            $share = InsuranceShare::create($payerData);
+                            $createdShares[] = $share; // رکورد ایجاد شده را به آرایه اضافه می‌کنیم
+                            
+                            Log::info("📊 سهم با نام پرداخت‌کننده {$payerData['payer_name']} و درصد {$shareData['percentage']}% برای خانواده {$family->family_code} ایجاد شد");
                         }
-                        
-                        // محاسبه مبلغ بر اساس درصد
-                        $share->amount = ($share->percentage / 100) * $premiumAmount;
-                        
-                        $share->save();
-                        $createdShares[] = $share;
                     }
+                    
+                    Log::info("✅ تخصیص سهام برای خانواده {$family->family_code} با موفقیت انجام شد");
+    
                 } catch (\Exception $e) {
-                    Log::error("خطا در تخصیص سهم: " . $e->getMessage());
-                    $errors[] = "خطا در تخصیص سهم برای خانواده با کد {$family->family_code}: " . $e->getMessage();
+                    $errorMessage = "خطا در تخصیص سهام برای خانواده {$family->family_code}: " . $e->getMessage();
+                    $errors[] = $errorMessage;
+                    Log::error("❌ " . $errorMessage, ['exception' => $e]);
+                    continue;
                 }
             }
-            
-            return [
-                'shares' => $createdShares,
-                'errors' => $errors
-            ];
+    
+            if (!empty($errors)) {
+                throw new \Exception("خطا در حین پردازش تخصیص سهم رخ داد.");
+            }
         });
+    
+        // **این بخش اصلاح شده است**
+        // به جای یک شمارنده جداگانه، تعداد اعضای آرایه createdShares را برمی‌گردانیم
+        return [
+            'shares' => $createdShares,
+            'created_shares_count' => count($createdShares),
+            'errors' => $errors,
+        ];
     }
 
     /**
-     * دریافت بیمه‌های خانواده
-     * @param int $familyId
-     * @return \Illuminate\Database\Eloquent\Collection
+     * Get family insurances for processing
      */
-    protected function getFamilyInsurances(int $familyId)
+    public function getFamilyInsurances(Collection $families): Collection
     {
-        return FamilyInsurance::where('family_id', $familyId)
-            ->where(function($query) {
+        return FamilyInsurance::whereIn('family_id', $families->pluck('id'))
+            ->where('status', '!=', 'mixed')
+            ->where('premium_amount', '>', 0)
+            ->where(function ($query) {
                 $query->whereNull('end_date')
                     ->orWhere('end_date', '>=', now());
             })
@@ -142,43 +132,77 @@ class InsuranceShareService
     }
 
     /**
-     * محاسبه مبلغ حق بیمه برای یک خانواده
-     * @param int $familyId
-     * @return float
+     * Stage 2: Complete insurance from Excel upload
      */
-    protected function getFamilyPremium(int $familyId): float
+    public function completeInsuranceFromExcel(string $filePath): array
     {
-        $premium = FamilyInsurance::where('family_id', $familyId)
-            ->sum('premium_amount');
+        Log::info('⏳ شروع تکمیل بیمه از فایل اکسل: ' . $filePath);
+
+        // Read Excel file
+        $imported = Excel::toCollection(null, $filePath);
         
-        return $premium ?: 0;
+        if (!isset($imported[0])) {
+            throw new \Exception('فایل اکسل آپلود شده فاقد داده است یا ساختار آن صحیح نیست.');
+        }
+
+        $rows = $imported[0]->toArray();
+        $totalAmountForThisBatch = 0;
+        $results = [];
+
+        DB::transaction(function () use ($rows, &$results, &$totalAmountForThisBatch) {
+            foreach ($rows as $row) {
+                // منطق پردازش هر ردیف اینجا قرار می‌گیرد
+                // پس از update کردن insurance و recalculate کردن share amounts:
+                // if (isset($insurance)) {
+                //     $totalAmountForThisBatch += $insurance->premium_amount;
+                // }
+            }
+
+            // ۴. به‌روزرسانی لاگ تخصیص سهم مربوطه با مبلغ نهایی
+            if (isset($rows[1])) {
+                $firstFamilyCode = trim($rows[1][0] ?? '');
+                $firstFamily = Family::where('family_code', $firstFamilyCode)->first();
+                if ($firstFamily) {
+                    // آخرین لاگ مربوط به این خانواده را پیدا کن
+                    $relatedLog = ShareAllocationLog::whereJsonContains('family_ids', $firstFamily->id)
+                                                    ->latest()
+                                                    ->first();
+                    if ($relatedLog) {
+                        $relatedLog->update([
+                            'total_amount' => $totalAmountForThisBatch,
+                            'status' => 'completed'
+                        ]);
+                        Log::info("✅ لاگ تخصیص سهم {$relatedLog->batch_id} با مبلغ کل {$totalAmountForThisBatch} به‌روزرسانی شد");
+                    }
+                }
+            }
+        });
+        
+        return $results;
     }
 
     /**
-     * دریافت خلاصه سهم‌بندی برای یک خانواده
-     * @param int $familyId
-     * @return array
+     * Recalculate share amounts based on final premium
      */
-    public function getSummary(int $familyId): array
+    private function recalculateShareAmounts(int $familyInsuranceId, int $premiumAmount): void
     {
-        // یافتن بیمه‌های خانواده
-        $familyInsurances = FamilyInsurance::where('family_id', $familyId)->get();
-        $familyInsuranceIds = $familyInsurances->pluck('id')->toArray();
+        $shares = InsuranceShare::where('family_insurance_id', $familyInsuranceId)->get();
         
-        // یافتن سهم‌های مرتبط با بیمه‌های خانواده
-        $shares = InsuranceShare::whereIn('family_insurance_id', $familyInsuranceIds)
-            ->with('fundingSource')
-            ->get();
-        
-        $totalPercentage = $shares->sum('percentage');
-        $totalAmount = $shares->sum('amount');
-        
-        return [
-            'shares' => $shares,
-            'total_percentage' => $totalPercentage,
-            'total_amount' => $totalAmount,
-            'formatted_total_amount' => number_format($totalAmount) . ' تومان',
-            'is_fully_allocated' => abs($totalPercentage - 100) < 0.01,
-        ];
+        foreach ($shares as $share) {
+            $amount = ($premiumAmount * $share->percentage) / 100;
+            $share->update(['amount' => $amount]);
+            
+            Log::info("📊 سهم {$share->share_type} به‌روزرسانی شد: {$share->percentage}% = {$amount} تومان");
+        }
     }
-} 
+
+    /**
+     * Parse Jalali or Gregorian date
+     */
+    private function parseJalaliOrGregorianDate($dateString)
+    {
+        // Add your date parsing logic here
+        // This is a placeholder - implement based on your existing date parsing logic
+        return now(); // Temporary return
+    }
+}

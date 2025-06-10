@@ -1,9 +1,11 @@
 <!-- منوی اصلی سایت -->
-<aside id="sidebar" class="fixed top-0 bottom-0 right-0 z-40 h-screen transition-transform lg:translate-x-0 bg-white shadow-lg sidebar-collapsed">
+<aside id="sidebar" class="fixed top-0 bottom-0 right-0 z-40 h-screen transition-all duration-300 bg-white shadow-lg
+                           w-64 lg:w-16 translate-x-full lg:translate-x-0">
     <!-- بخش لوگو -->
     <div class="flex items-center justify-center py-3 border-b border-gray-200">
         <div class="logo-container">
-            <img src="{{ asset('images/image.png') }}" alt="لوگو خیریه" class="logo-image">
+            <img src="{{ asset('images/logo.jpg') }}" alt="لوگو خیریه" class="logo-image collapsed-logo">
+            <img src="{{ asset('images/image.png') }}" alt="لوگو خیریه" class="logo-image expanded-logo">
         </div>
     </div>
 
@@ -145,7 +147,7 @@
                 @csrf
                 <button type="submit" class="sidebar-item w-full flex items-center py-3 px-6 hover:bg-gray-100 text-red-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.5 12L10 19l-2.5-2.5M10 5l7.5 7-2.5 2.5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                     <span class="sidebar-text">خروج</span>
                 </button>
@@ -236,32 +238,45 @@
         // پاسخگویی به تغییر اندازه صفحه
         window.addEventListener('resize', function() {
             if (window.innerWidth < 1024) {
-                // در نمای موبایل، منو را به صورت کامل پنهان کن
-                sidebar.classList.add('-translate-x-full');
+                // در نمای موبایل، منو را پنهان کن
+                if (!sidebar.classList.contains('sidebar-mobile-open')) {
+                    sidebar.classList.add('-translate-x-full');
+                }
             } else {
                 // در نمای دسکتاپ، منو را نمایش بده
                 sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.remove('sidebar-mobile-open');
+            }
+        });
+        
+        // دکمه موبایل برای باز و بسته کردن منو
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        if (mobileMenuButton) {
+            mobileMenuButton.addEventListener('click', function() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('sidebar-mobile-open');
+            });
+        }
+        
+        // بستن منو موبایل با کلیک بیرون از آن
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth < 1024 && sidebar.classList.contains('sidebar-mobile-open')) {
+                if (!sidebar.contains(event.target) && !mobileMenuButton?.contains(event.target)) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('sidebar-mobile-open');
+                }
             }
         });
     });
 </script>
 
 <style>
-    /* استایل‌های سایدبار */
+    /* استایل‌های سایدبار برای RTL */
     #sidebar {
-        width: 4rem; /* حالت پیش‌فرض بسته */
-        transition: width 0.3s ease-in-out;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
-    }
-    
-    /* استایل‌های جدید برای حالت جمع شده */
-    #sidebar.sidebar-collapsed {
-        width: 4rem; /* 64px */
-    }
-    
-    #sidebar.sidebar-expanded {
-        width: 16rem; /* 256px */
+        transform: translateX(0);
     }
     
     /* استایل‌های لوگو */
@@ -272,54 +287,147 @@
         align-items: center;
         justify-content: center;
         transition: all 0.3s ease-in-out;
-    }
-    
-    #sidebar.sidebar-expanded .logo-container {
-        width: 5rem;
-        height: 5rem;
+        position: relative;
     }
     
     .logo-image {
         width: 100%;
         height: 100%;
         object-fit: contain;
+        transition: all 0.3s ease-in-out;
     }
     
-    /* مخفی کردن متن‌ها در حالت جمع شده */
-    #sidebar.sidebar-collapsed .sidebar-text {
+    .collapsed-logo {
+        display: block;
+    }
+    
+    .expanded-logo {
         display: none;
     }
     
-    /* تنظیم آیکون‌ها در حالت جمع شده */
-    #sidebar.sidebar-collapsed .sidebar-item {
-        justify-content: center;
-        padding-left: 0;
-        padding-right: 0;
-    }
-    
-    #sidebar.sidebar-collapsed .sidebar-item svg {
-        margin-left: 0;
-    }
-
-    /* حالت دسکتاپ - تنظیم فضای اصلی با توجه به وضعیت منو */
-    /* @media (min-width: 1024px) {
-        #main-wrapper:not(.sidebar-collapsed) {
-            margin-right: 16rem;
-            transition: margin 0.3s ease-in-out;
+    @media (min-width: 1024px) {
+        #sidebar.sidebar-expanded .logo-container {
+            width: 5rem;
+            height: 5rem;
         }
         
-        #main-wrapper.sidebar-collapsed {
-            margin-right: 4rem;
-            transition: margin 0.3s ease-in-out;
+        #sidebar.sidebar-expanded .collapsed-logo {
+            display: none;
         }
-    } */
-    
-    /* اصلاح مشکل مارجین در حالت جمع شده و گسترده */
-    /* #sidebar.sidebar-collapsed ~ #main-wrapper {
-        margin-right: 4rem !important;
+        
+        #sidebar.sidebar-expanded .expanded-logo {
+            display: block;
+        }
     }
     
-    #sidebar.sidebar-expanded ~ #main-wrapper {
-        margin-right: 16rem !important;
-    } */
-</style> 
+    /* حالت موبایل - پنهان به صورت کامل */
+    @media (max-width: 1023px) {
+        #sidebar {
+            width: 16rem !important; /* عرض کامل در موبایل */
+        }
+        
+        #sidebar.sidebar-mobile-open {
+            transform: translateX(0);
+        }
+        
+        /* در موبایل همیشه متن‌ها نمایش داده شوند */
+        #sidebar .sidebar-text {
+            display: block !important;
+        }
+        
+        #sidebar .sidebar-item {
+            justify-content: flex-start !important;
+            padding: 0.75rem 1.5rem !important;
+        }
+        
+        #sidebar .sidebar-item svg {
+            margin-left: 0.75rem !important;
+        }
+        
+        /* در موبایل همیشه لوگوی بزرگ نمایش داده شود */
+        .collapsed-logo {
+            display: none !important;
+        }
+        
+        .expanded-logo {
+            display: block !important;
+        }
+    }
+    
+    /* حالت دسکتاپ */
+    @media (min-width: 1024px) {
+        /* استایل‌های جدید برای حالت جمع شده */
+        #sidebar.sidebar-collapsed {
+            width: 4rem; /* 64px */
+        }
+        
+        #sidebar.sidebar-expanded {
+            width: 16rem; /* 256px */
+        }
+        
+        /* مخفی کردن متن‌ها در حالت جمع شده فقط در دسکتاپ */
+        #sidebar.sidebar-collapsed .sidebar-text {
+            display: none;
+        }
+        
+        /* تنظیم آیکون‌ها در حالت جمع شده فقط در دسکتاپ */
+        #sidebar.sidebar-collapsed .sidebar-item {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        
+        #sidebar.sidebar-collapsed .sidebar-item svg {
+            margin-left: 0;
+        }
+    }
+    
+    /* تنظیمات ویژه برای رزولوشن 1600x900 */
+    @media (min-width: 1600px) and (max-height: 900px) {
+        #sidebar.sidebar-collapsed {
+            width: 3.5rem; /* 56px - کمی کوچکتر */
+        }
+        
+        #sidebar.sidebar-expanded {
+            width: 14rem; /* 224px - کمی کوچکتر */
+        }
+        
+        /* تنظیم اندازه لوگو */
+        #sidebar.sidebar-expanded .logo-container {
+            width: 4rem;
+            height: 4rem;
+        }
+        
+        /* تنظیم padding آیتم‌ها */
+        #sidebar.sidebar-expanded .sidebar-item {
+            padding: 0.5rem 1rem;
+        }
+        
+        /* تنظیم اندازه آیکون‌ها */
+        #sidebar .sidebar-item svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+    }
+    
+    /* تنظیمات RTL */
+    .sidebar-item {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* Overlay برای موبایل */
+    @media (max-width: 1023px) {
+        #sidebar.sidebar-mobile-open::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+    }
+
+</style

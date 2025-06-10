@@ -64,6 +64,10 @@ class PaidClaims extends Component
             'paid_at' => $this->paid_at,
             'description' => $this->description,
         ]);
+        
+        // پاک کردن کش بودجه پس از ایجاد خسارت
+        \Illuminate\Support\Facades\Cache::forget('remaining_budget');
+        
         $this->resetForm();
         $this->resetPage();
         $this->addMode = false;
@@ -170,4 +174,4 @@ class PaidClaims extends Component
             'claims' => $this->getClaimsProperty(),
         ]);
     }
-} 
+}

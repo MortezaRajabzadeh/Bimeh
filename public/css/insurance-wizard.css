@@ -1,0 +1,377 @@
+/* استایل‌های ویزارد بیمه */
+.wizard-container {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(4, 120, 87, 0.2);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.wizard-steps {
+    display: flex;
+    position: relative;
+    z-index: 1;
+}
+
+.wizard-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0.5rem;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.wizard-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 40px;
+    width: 100%;
+    right: 50%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: -1;
+}
+
+.wizard-step.completed:not(:last-child)::after {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.step-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+}
+
+.wizard-step.active .step-icon {
+    background: white;
+    color: #047857;
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+    border-color: #047857;
+}
+
+.wizard-step.completed .step-icon {
+    background: rgba(255, 255, 255, 0.8);
+    color: #047857;
+}
+
+.step-count {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #fff;
+    color: #047857;
+    font-size: 0.75rem;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #047857;
+}
+
+.step-title {
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.family-card {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.family-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: #e2e8f0;
+}
+
+.family-member-table {
+    min-width: 1200px;
+}
+
+.family-member-table th,
+.family-member-table td {
+    white-space: nowrap;
+}
+
+/* انیمیشن fade-in */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* استایل‌های اسکرول */
+.scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* استایل مودال‌ها */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 1rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* استایل‌های جدید برای نوار کناری عمودی */
+.sidebar-wizard {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    width: 80px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-wizard:hover {
+    width: 100px;
+}
+
+.sidebar-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 0;
+    transition: all 0.3s ease;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.sidebar-step:hover {
+    background-color: #f8fafc;
+}
+
+.sidebar-step.active {
+    color: #4f46e5;
+    background-color: #f0f7ff;
+}
+
+.sidebar-step .badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #ef4444;
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+}
+
+/* استایل برای صفحه‌بندی جدید */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pagination-numbers a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pagination-numbers a.active {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.pagination-numbers a:not(.active) {
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.pagination-numbers a:not(.active):hover {
+    background-color: #f8fafc;
+}
+
+.pagination-nav {
+    color: #64748b;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.pagination-nav:hover {
+    color: #1e293b;
+}
+
+.pagination-info {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* استایل‌های جدید برای تب‌های ویزارد افقی */
+.progress-wizard {
+    position: relative;
+    z-index: 1;
+}
+
+.progress-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.progress-step-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.progress-step-icon.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+}
+
+.progress-step-icon.completed {
+    background-color: #10B981;
+    color: white;
+}
+
+.progress-step-line {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-color: #E5E7EB;
+    z-index: -1;
+}
+
+.progress-step-line.active {
+    background-color: #4F46E5;
+}
+
+.progress-step-line.completed {
+    background-color: #10B981;
+}
+
+.progress-step-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.progress-step-title.active {
+    color: #4F46E5;
+}
+
+.progress-step-title.completed {
+    color: #10B981;
+}
+
+/* انیمیشن پالس برای مرحله فعال */
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 1.5s infinite;
+}
+
+/* استایل برای جدول اعضای خانواده */
+.family-members-table {
+    min-width: 100%;
+    border-collapse: collapse;
+}
+
+.family-members-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #dcfce7;
+}
+
+.family-members-table th,
+.family-members-table td {
+    white-space: nowrap;
+    padding: 8px 12px;
+} 

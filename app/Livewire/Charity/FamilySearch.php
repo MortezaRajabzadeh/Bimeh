@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class FamilySearch extends Component
 {
@@ -38,12 +40,32 @@ class FamilySearch extends Component
     public $province = '';
     public $city = '';
     public $deprivation_rank = '';
-    public $page = 1;
-    
-    // فیلترهای رتبه‌بندی جدید
     public $family_rank_range = '';
     public $specific_criteria = '';
     public $availableRankSettings = [];
+    
+    // Properties for new Rank Settings Modal
+    public $rankSettings = [];
+    public $editingRankSettingId = null;
+    public $editingRankSetting = [
+        'name' => '',
+        'weight' => 5,
+        'description' => '',
+        'requires_document' => true,
+        'color' => '#60A5FA'
+    ];
+    public $isCreatingNew = false;
+    
+    // اضافه کردن پراپرتی‌های مورد نیاز
+    public $rankingSchemes = [];
+    public $availableCriteria = [];
+    
+    // پراپرتی‌های جدید سیستم رتبه‌بندی پویا
+    public $selectedSchemeId = null;
+    public array $schemeWeights = [];
+    public $newSchemeName = '';
+    public $newSchemeDescription = '';
+    public $appliedSchemeId = null;
     
     // مدیریت فیلترهای پیشرفته
     public $tempFilters = [];
@@ -52,6 +74,10 @@ class FamilySearch extends Component
     // New ranking properties
     public $showRankModal = false;
     public $rankFilters = [];
+    
+    // متغیرهای مورد نیاز برای مودال رتبه‌بندی جدید
+    public $selectedCriteria = [];
+    public $criteriaRequireDocument = [];
     
     protected $paginationTheme = 'tailwind';
 
@@ -62,13 +88,12 @@ class FamilySearch extends Component
         'charity' => ['except' => ''],
         'sortField' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
-        'perPage' => ['except' => 15],
         'family_rank_range' => ['except' => ''],
         'specific_criteria' => ['except' => ''],
         'province' => ['except' => ''],
         'city' => ['except' => ''],
         'deprivation_rank' => ['except' => ''],
-        'page' => ['except' => 1],
+        'perPage' => ['except' => 15],
     ];
     
     public function mount()
@@ -79,55 +104,82 @@ class FamilySearch extends Component
         $this->organizations = Organization::where('type', 'charity')->orderBy('name')->get();
         $this->availableRankSettings = RankSetting::active()->ordered()->get();
         
+        // مقداردهی اولیه متغیرهای رتبه‌بندی
+        $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
+        $this->availableCriteria = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
+        
         // مقداردهی اولیه فیلترهای مودالی - حتماً آرایه خالی
         $this->tempFilters = [];
         $this->activeFilters = [];
         
-        // مقدار پیشفرض برای تعداد نمایش
-        if (!$this->perPage) {
-            $this->perPage = 15;
-        }
+        // تست ارسال نوتیفیکیشن
+        $this->dispatch('notify', [
+            'message' => 'صفحه جستجوی خانواده‌ها با موفقیت بارگذاری شد',
+            'type' => 'success'
+        ]);
     }
     
-    public function render()
-    {
-        // ساخت کوئری اصلی
-        $query = Family::query()
-            ->with([
+    public function render() 
+    { 
+        $query = Family::query() 
+            ->with([ 
                 'province', 
                 'city', 
-                'members' => function($q) {
-                    $q->orderBy('is_head', 'desc');
-                }, 
-                'organization',
-                'familyCriteria.rankSetting'
+                'members' => fn($q) => $q->orderBy('is_head', 'desc'), 
+                'organization', 
+                'familyCriteria.rankSetting' 
+            ]); 
+    
+        $this->applyFiltersToQuery($query); 
+    
+        // Dynamic Ranking Logic 
+        if ($this->appliedSchemeId) { 
+            $schemeCriteria = \App\Models\RankingSchemeCriterion::where('ranking_scheme_id', $this->appliedSchemeId) 
+                ->pluck('weight', 'rank_setting_id'); 
+            
+            if ($schemeCriteria->isNotEmpty()) { 
+                $cases = []; 
+                foreach ($schemeCriteria as $rank_setting_id => $weight) { 
+                    // Assumption: A 'family_criteria' pivot table exists. 
+                    $cases[] = "CASE WHEN EXISTS (SELECT 1 FROM family_criteria fc WHERE fc.family_id = families.id AND fc.rank_setting_id = {$rank_setting_id} AND fc.has_criteria = true) THEN {$weight} ELSE 0 END"; 
+                } 
+                
+                if (!empty($cases)) { 
+                    $selectRaw = 'families.*, (' . implode(' + ', $cases) . ') as calculated_score'; 
+                    $query->selectRaw($selectRaw); 
+                } 
+            } 
+        } 
+    
+        // Sorting Logic 
+        if ($this->sortField === 'calculated_score' && $this->appliedSchemeId) { 
+            $query->orderBy('calculated_score', $this->sortDirection); 
+        } elseif ($this->sortField) { 
+            $query->orderBy($this->sortField, $this->sortDirection); 
+        } 
+    
+        $families = $query->paginate($this->perPage); 
+        
+        // نمایش تعداد خانواده‌های فیلتر شده (فقط موقع تغییر فیلترها)
+        if ($this->hasActiveFilters() && request()->has(['status', 'province', 'city', 'deprivation_rank', 'family_rank_range', 'specific_criteria', 'charity', 'region'])) {
+            $totalCount = $families->total();
+            $activeFiltersCount = $this->getActiveFiltersCount();
+            $this->dispatch('notify', [
+                'message' => "نمایش {$totalCount} خانواده براساس {$activeFiltersCount} فیلتر فعال",
+                'type' => 'info'
             ]);
-
-        // اعمال فیلترها
-        $this->applyFiltersToQuery($query);
-
-        // مرتب‌سازی
-        $query->orderBy($this->sortField, $this->sortDirection);
-
-        // صفحه‌بندی
-        $families = $query->paginate($this->perPage);
-
-        // اگر خانواده‌ای باز شده، اعضای آن را بارگذاری کن
-        if ($this->expandedFamily) {
-            $this->familyMembers = Member::where('family_id', $this->expandedFamily)
-                ->orderBy('is_head', 'desc')
-                ->orderBy('created_at')
-                ->get();
         }
-
-        // بازگشت view با داده‌ها
-        return view('livewire.charity.family-search', [
-            'families' => $families,
-            'provinces' => $this->provinces,
-            'cities' => $this->cities,
-            'organizations' => $this->organizations,
-            'availableRankSettings' => $this->availableRankSettings,
-        ]);
+    
+        if ($this->expandedFamily) { 
+            $this->familyMembers = Member::where('family_id', $this->expandedFamily) 
+                ->orderBy('is_head', 'desc') 
+                ->orderBy('created_at') 
+                ->get(); 
+        } 
+    
+        return view('livewire.charity.family-search', [ 
+            'families' => $families, 
+        ]); 
     }
     
     public function updatingSearch()
@@ -176,45 +228,11 @@ class FamilySearch extends Component
     }
     
     /**
-     * متد فعلی برای صفحه‌بندی
-     */
-    public function getPage()
-    {
-        return $this->getPropertyValue('page');
-    }
-
-    /**
-     * رفتن به صفحه بعد با بررسی محدودیت
-     */
-    public function nextPage()
-    {
-        $currentPage = $this->getPage();
-        $families = $this->getFamiliesQuery();
-        $totalPages = ceil($families->count() / $this->perPage);
-        
-        if ($currentPage < $totalPages) {
-            $this->setPage($currentPage + 1);
-        }
-    }
-
-    /**
-     * رفتن به صفحه قبل با بررسی محدودیت
-     */
-    public function previousPage()
-    {
-        $currentPage = $this->getPage();
-        
-        if ($currentPage > 1) {
-            $this->setPage($currentPage - 1);
-        }
-    }
-
-    /**
      * دریافت کوئری اصلی خانواده‌ها
      */
-    private function getFamiliesQuery()
+    public function getFamiliesQuery()
     {
-        return $this->applyFiltersToQuery(Family::query());
+        return Family::query();
     }
 
     /**
@@ -329,11 +347,6 @@ class FamilySearch extends Component
         }
 
         return $query;
-    }
-
-    public function gotoPage($page)
-    {
-        $this->setPage($page);
     }
 
     /**
@@ -595,6 +608,7 @@ class FamilySearch extends Component
             $this->region = '';
             
             $appliedCount = 0;
+            $appliedFilters = [];
             
             // اعمال فیلترهای جدید
             foreach ($this->tempFilters as $filter) {
@@ -610,26 +624,34 @@ class FamilySearch extends Component
                         // وضعیت بیمه یا وضعیت عمومی خانواده
                         $this->status = $filter['value'];
                         $appliedCount++;
+                        $appliedFilters[] = 'وضعیت: ' . $filter['value'];
                         logger('Applied status filter:', ['value' => $filter['value']]);
                         break;
                     case 'province':
                         $this->province = $filter['value'];
                         $appliedCount++;
+                        $provinceName = Province::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'استان: ' . $provinceName;
                         logger('Applied province filter:', ['value' => $filter['value']]);
                         break;
                     case 'city':
                         $this->city = $filter['value'];
                         $appliedCount++;
+                        $cityName = City::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'شهر: ' . $cityName;
                         logger('Applied city filter:', ['value' => $filter['value']]);
                         break;
                     case 'deprivation_rank':
                         $this->deprivation_rank = $filter['value'];
                         $appliedCount++;
+                        $appliedFilters[] = 'رتبه محرومیت: ' . $filter['value'];
                         logger('Applied deprivation_rank filter:', ['value' => $filter['value']]);
                         break;
                     case 'charity':
                         $this->charity = $filter['value'];
                         $appliedCount++;
+                        $charityName = Organization::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'موسسه: ' . $charityName;
                         logger('Applied charity filter:', ['value' => $filter['value']]);
                         break;
                     case 'members_count':
@@ -656,10 +678,16 @@ class FamilySearch extends Component
                 'appliedCount' => $appliedCount
             ]);
             
+            // پیام با جزئیات فیلترهای اعمال شده
+            if ($appliedCount > 0) {
+                $filtersList = implode('، ', $appliedFilters);
+                $message = "فیلترها با موفقیت اعمال شدند: {$filtersList}";
+            } else {
+                $message = 'هیچ فیلتر معتبری برای اعمال یافت نشد';
+            }
+            
             $this->dispatch('notify', [
-                'message' => $appliedCount > 0 ? 
-                    "فیلترها با موفقیت اعمال شدند ($appliedCount فیلتر)" : 
-                    'هیچ فیلتر معتبری برای اعمال یافت نشد',
+                'message' => $message,
                 'type' => $appliedCount > 0 ? 'success' : 'error'
             ]);
             
@@ -673,143 +701,327 @@ class FamilySearch extends Component
     }
     
     /**
-     * بازگشت به تنظیمات پیش‌فرض
-     * 
-     * @return void
+     * بازگشت به تنظیمات پیشفرض
      */
-    public function resetToDefault()
+    public function resetToDefaultSettings()
     {
-        $this->tempFilters = [];
-        $this->activeFilters = [];
-        $this->clearAllFilters();
+        // پاک کردن معیارهای انتخاب شده
+        $this->selectedCriteria = [];
+        $this->criteriaRequireDocument = [];
         
-        $this->dispatch('notify', [
-            'message' => 'تنظیمات به حالت پیش‌فرض بازگشت',
-            'type' => 'success'
-        ]);
-    }
-    
-    /**
-     * تست فیلترها - برای debugging
-     * 
-     * @return void
-     */
-    public function testFilters()
-    {
-        // تست محدود کردن نتایج با فیلترهای فعلی
-        $filteredQuery = $this->getFamiliesQuery();
-        $this->applyFiltersToQuery($filteredQuery);
-        
-        $count = $filteredQuery->count();
-        
-        $this->dispatch('notify', [
-            'message' => "فیلترهای انتخاب شده {$count} خانواده را نمایش می‌دهد",
-            'type' => 'success'
-        ]);
-    }
-    
-    // توابع مودال رتبه‌بندی
-    public function openRankModal()
-    {
-        $this->showRankModal = true;
-        $this->availableRankSettings = RankSetting::active()->ordered()->get();
-        
-        // اگر فیلتری وجود ندارد، یک فیلتر پیشفرض اضافه کن
-        if (empty($this->rankFilters)) {
-            $this->rankFilters = [
-                [
-                    'type' => 'rank_range',
-                    'operator' => 'equals',
-                    'value' => '',
-                    'label' => ''
-                ]
-            ];
+        // مقداردهی مجدد با مقادیر پیشفرض
+        foreach ($this->availableCriteria as $criterion) {
+            $this->selectedCriteria[$criterion->id] = false;
+            $this->criteriaRequireDocument[$criterion->id] = true;
         }
-    }
-    
-    public function closeRankModal()
-    {
-        $this->showRankModal = false;
-    }
-    
-    public function clearRankFilters()
-    {
-        $this->family_rank_range = '';
-        $this->specific_criteria = '';
-        $this->resetPage();
-    }
-    
-    public function saveRankFilter()
-    {
-        // ذخیره فیلترها - می‌توانید منطق ذخیره در دیتابیس را اینجا اضافه کنید
-        $this->dispatch('notify', [
-            'message' => 'فیلترها ذخیره شد',
-            'type' => 'success'
-        ]);
-    }
-    
-    public function resetRankToDefault()
-    {
-        $this->rankFilters = [];
-        $this->family_rank_range = '';
-        $this->specific_criteria = '';
-        $this->resetPage();
         
-        $this->dispatch('notify', [
-            'message' => 'تنظیمات به حالت پیشفرض بازگشت',
-            'type' => 'success'
-        ]);
+        $this->dispatch('notify', ['message' => 'تنظیمات به حالت پیشفرض بازگشت.', 'type' => 'info']);
     }
     
-    public function applyRankFilters()
-    {
+    //====================================================================== 
+    //== متدهای سیستم رتبه‌بندی پویا 
+    //====================================================================== 
+    
+    /** 
+     * مودال تنظیمات رتبه‌بندی را باز می‌کند. 
+     */ 
+    public function openRankModal() 
+    { 
+        $this->loadRankSettings(); // <--- این خط را اضافه کنید
+
+        $this->showRankModal = true; 
+    } 
+    
+    /** 
+     * وزن‌های یک الگوی رتبه‌بندی ذخیره‌شده را بارگیری می‌کند. 
+     */ 
+    public function loadScheme($schemeId) 
+    { 
+        if (empty($schemeId)) { 
+            $this->reset(['selectedSchemeId', 'schemeWeights', 'newSchemeName', 'newSchemeDescription']); 
+            return; 
+        } 
+    
+        $this->selectedSchemeId = $schemeId; 
+        $scheme = \App\Models\RankingScheme::with('criteria')->find($schemeId); 
+        
+        if ($scheme) { 
+            $this->newSchemeName = $scheme->name; 
+            $this->newSchemeDescription = $scheme->description; 
+            $this->schemeWeights = $scheme->criteria->pluck('pivot.weight', 'id')->toArray(); 
+        } 
+    } 
+    
+    /** 
+     * یک الگوی رتبه‌بندی جدید را ذخیره یا یک الگوی موجود را به‌روزرسانی می‌کند. 
+     */ 
+    public function saveScheme() 
+    { 
+        $this->validate([ 
+            'newSchemeName' => 'required|string|max:255', 
+            'newSchemeDescription' => 'nullable|string', 
+            'schemeWeights' => 'required|array', 
+            'schemeWeights.*' => 'nullable|integer|min:0' 
+        ]); 
+    
+        $scheme = \App\Models\RankingScheme::updateOrCreate( 
+            ['id' => $this->selectedSchemeId], 
+            [ 
+                'name' => $this->newSchemeName, 
+                'description' => $this->newSchemeDescription, 
+                'user_id' => \Illuminate\Support\Facades\Auth::id() 
+            ] 
+        ); 
+        
+        $weightsToSync = []; 
+        foreach ($this->schemeWeights as $criterionId => $weight) { 
+            if (!is_null($weight) && $weight > 0) { 
+                $weightsToSync[$criterionId] = ['weight' => $weight]; 
+            } 
+        } 
+        
+        $scheme->criteria()->sync($weightsToSync); 
+        
+        $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get(); 
+        $this->selectedSchemeId = $scheme->id; 
+    
+        $this->dispatch('notify', ['message' => 'الگو با موفقیت ذخیره شد.', 'type' => 'success']); 
+    } 
+    
+    /** 
+     * الگوی انتخاب‌شده را برای فیلتر کردن و مرتب‌سازی اعمال می‌کند. 
+     */ 
+    public function applyRankingScheme() 
+    { 
+        if (!$this->selectedSchemeId) { 
+             $this->dispatch('notify', ['message' => 'لطفا ابتدا یک الگو را انتخاب یا ذخیره کنید.', 'type' => 'error']); 
+             return; 
+        } 
+        $this->appliedSchemeId = $this->selectedSchemeId; 
+        $this->sortBy('calculated_score'); 
+        $this->resetPage(); 
+        $this->showRankModal = false; 
+        
+        // دریافت نام الگوی انتخاب شده برای نمایش در پیام
+        $schemeName = \App\Models\RankingScheme::find($this->selectedSchemeId)->name ?? '';
+        $this->dispatch('notify', [
+            'message' => "الگوی رتبه‌بندی «{$schemeName}» با موفقیت اعمال شد.",
+            'type' => 'success'
+        ]); 
+    } 
+    
+    /** 
+     * رتبه‌بندی اعمال‌شده را پاک می‌کند. 
+     */ 
+    public function clearRanking() 
+    { 
+        $this->appliedSchemeId = null; 
+        $this->sortBy('created_at'); 
+        $this->resetPage(); 
+        $this->showRankModal = false; 
+        $this->dispatch('notify', ['message' => 'فیلتر رتبه‌بندی حذف شد.', 'type' => 'info']); 
+    }
+    public function applyAndClose() 
+    { 
         try {
-            $appliedCount = 0;
+            // اطمینان از ذخیره همه تغییرات
+            $this->loadRankSettings();
             
-            // پاک کردن فیلترهای قبلی
-            $this->family_rank_range = '';
-            $this->specific_criteria = '';
-            $this->province = '';
-            $this->city = '';
+            // بروزرسانی لیست معیارهای در دسترس
+            $this->availableRankSettings = \App\Models\RankSetting::active()->ordered()->get();
             
-            // اعمال فیلترهای جدید
-            foreach ($this->rankFilters as $filter) {
-                if (empty($filter['value'])) continue;
-                
-                switch ($filter['type']) {
-                    case 'rank_range':
-                        $this->family_rank_range = $filter['value'];
-                        $appliedCount++;
-                        break;
-                    case 'criteria':
-                        $this->specific_criteria = $filter['value'];
-                        $appliedCount++;
-                        break;
-                    case 'province':
-                        $this->province = $filter['value'];
-                        $appliedCount++;
-                        break;
-                    case 'city':
-                        $this->city = $filter['value'];
-                        $appliedCount++;
-                        break;
-                }
+            // اعمال تغییرات به خانواده‌ها
+            if ($this->appliedSchemeId) {
+                // اگر یک طرح رتبه‌بندی انتخاب شده باشد، دوباره آن را اعمال می‌کنیم
+                $this->applyRankingScheme();
+
+                $this->sortBy('calculated_score');
             }
             
-            $this->resetPage();
-            
+            // بستن مودال و نمایش پیام
+            $this->showRankModal = false;
             $this->dispatch('notify', [
-                'message' => $appliedCount > 0 ? 
-                    "فیلترهای رتبه‌بندی با موفقیت اعمال شدند ($appliedCount فیلتر)" : 
-                    'هیچ فیلتر معتبری برای اعمال یافت نشد',
-                'type' => $appliedCount > 0 ? 'success' : 'error'
+                'message' => 'تغییرات با موفقیت اعمال شد.',
+                'type' => 'success'
             ]);
-            
         } catch (\Exception $e) {
+            // خطا در اعمال تغییرات
             $this->dispatch('notify', [
-                'message' => 'خطا در اعمال فیلترها: ' . $e->getMessage(),
+                'message' => 'خطا در اعمال تغییرات: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
+    
+    public function loadRankSettings()
+    {
+        $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+        // نمایش پیام مناسب برای باز شدن تنظیمات
+        $this->dispatch('notify', [
+            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . $this->rankSettings->count() . ' معیار',
+            'type' => 'info'
+        ]);
+    }
+    
+    /**
+     * فرم افزودن معیار جدید را نمایش می‌دهد.
+     */
+    public function showCreateForm()
+    {
+        $this->reset('editingRankSettingId');
+        $this->isCreatingNew = true;
+        $this->editingRankSetting = [
+            'name' => '',
+            'weight' => 5,
+            'description' => '',
+            'requires_document' => true,
+            'color' => '#'.substr(str_shuffle('ABCDEF0123456789'), 0, 6)
+        ];
+    }
+    
+    /**
+     * یک معیار را برای ویرایش انتخاب می‌کند.
+     * @param int $id
+     */
+    public function edit($id)
+    {
+        $this->isCreatingNew = false;
+        $this->editingRankSettingId = $id;
+        $setting = \App\Models\RankSetting::find($id);
+        if ($setting) {
+            $this->editingRankSetting = $setting->toArray();
+        }
+    }
+    
+    /**
+     * تغییرات را ذخیره می‌کند (هم برای افزودن جدید و هم ویرایش).
+     */
+    public function save()
+    {
+        $this->validate([
+            'editingRankSetting.name' => 'required|string|max:255',
+            'editingRankSetting.weight' => 'required|integer|min:0|max:10',
+            'editingRankSetting.description' => 'nullable|string',
+            'editingRankSetting.requires_document' => 'boolean',
+            'editingRankSetting.color' => 'nullable|string',
+        ]);
+        
+        try {
+            // محاسبه sort_order برای رکورد جدید
+            if (!$this->editingRankSettingId) {
+                $maxOrder = \App\Models\RankSetting::max('sort_order') ?? 0;
+                $this->editingRankSetting['sort_order'] = $maxOrder + 10;
+                $this->editingRankSetting['is_active'] = true;
+                $this->editingRankSetting['slug'] = Str::slug($this->editingRankSetting['name']);
+            }
+            
+            // ذخیره
+            $setting = \App\Models\RankSetting::updateOrCreate(
+                ['id' => $this->editingRankSettingId],
+                $this->editingRankSetting
+            );
+            
+            // بازنشانی فرم
+            $this->resetForm();
+            
+            // بروزرسانی لیست
+            $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+            
+            // پیام موفقیت
+            $this->dispatch('notify', ['message' => 'معیار «' . $setting->name . '» با موفقیت ذخیره شد.', 'type' => 'success']);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['message' => 'خطا در ذخیره معیار: ' . $e->getMessage(), 'type' => 'error']);
+        }
+    }
+    
+    /**
+     * یک معیار را حذف می‌کند.
+     * @param int $id
+     */
+    public function delete($id)
+    {
+        $setting = RankSetting::find($id);
+        
+        if ($setting) {
+            $settingName = $setting->name; // نام معیار را قبل از حذف ذخیره می‌کنیم
+            $setting->delete();
+            
+            // در پیام، نام معیار حذف شده را نمایش می‌دهیم
+            $this->dispatch('notify', [
+                'message' => "معیار '{$settingName}' با موفقیت حذف شد.",  
+                'type' => 'warning'
+            ]);
+            
+            $this->loadRankSettings();
+        } else {
+             $this->dispatch('notify', [
+                'message' => 'خطا: معیار مورد نظر یافت نشد.',  
+                'type' => 'error'
+             ]);
+        }
+    }
+    
+    /**
+     * فرم ویرایش/افزودن را مخفی و ریست می‌کند.
+     */
+    public function cancel()
+    {
+        $this->resetForm();
+        $this->dispatch('notify', [
+            'message' => 'عملیات ویرایش لغو شد',
+            'type' => 'info'
+        ]);
+    }
+    
+    /**
+     * متد کمکی برای ریست کردن state فرم.
+     */
+    private function resetForm()
+    {
+        $this->isCreatingNew = false;
+        $this->editingRankSettingId = null;
+        $this->reset('editingRankSetting');
+    }
+    
+    /**
+     * تنظیمات رتبه‌بندی را به حالت پیشفرض بازمی‌گرداند.
+     */
+    public function resetToDefault()
+    {
+        // 1. حذف تمام تنظیمات قبلی برای جلوگیری از تکرار 
+        RankSetting::query()->delete();
+
+        // 2. تعریف معیارهای پیش‌فرض 
+        $defaultSettings = [ 
+            ['name' => 'بیکاری', 'weight' => 7, 'color' => '#FF5733', 'requires_document' => true, 'description' => 'عضو یا سرپرست خانواده بیکار است.'], 
+            ['name' => 'معلولیت', 'weight' => 8, 'color' => '#33A8FF', 'requires_document' => true, 'description' => 'وجود فرد معلول در خانواده.'], 
+            ['name' => 'بیماری خاص', 'weight' => 9, 'color' => '#FF33A8', 'requires_document' => true, 'description' => 'وجود فرد مبتلا به بیماری خاص.'], 
+            ['name' => 'بی‌سرپرست', 'weight' => 10, 'color' => '#A833FF', 'requires_document' => true, 'description' => 'خانواده‌های بی‌سرپرست یا بدسرپرست.'], 
+            ['name' => 'چند فرزند', 'weight' => 6, 'color' => '#33FFA8', 'requires_document' => false, 'description' => 'خانواده‌های دارای ۳ فرزند یا بیشتر.'], 
+        ];
+        
+        // 3. ایجاد مجدد تنظیمات از لیست پیش‌فرض 
+        foreach ($defaultSettings as $index => $setting) { 
+            RankSetting::create([ 
+                'name'              => $setting['name'], 
+                'weight'            => $setting['weight'], 
+                'description'       => $setting['description'], 
+                'requires_document' => $setting['requires_document'], 
+                'color'             => $setting['color'], 
+                'sort_order'        => $index + 1, 
+                'is_active'         => true, 
+            ]); 
+        }
+        
+        // 4. بارگذاری مجدد لیست برای نمایش 
+        $this->loadRankSettings(); 
+        $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
+        
+        // 5. ارسال نوتیفیکیشن به کاربر 
+        $this->dispatch('notify', [ 
+            'message' => 'تنظیمات با موفقیت به حالت پیش‌فرض بازگردانده شد.', 
+            'type' => 'success' 
+        ]); 
+    }
 }
+    

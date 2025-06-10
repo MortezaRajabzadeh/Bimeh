@@ -44,6 +44,8 @@ class Family extends Model implements HasMedia
         'acceptance_criteria',
         'calculated_rank',
         'rank_calculated_at',
+        'wizard_status',
+        'last_step_at',
     ];
 
     /**
@@ -57,6 +59,8 @@ class Family extends Model implements HasMedia
         'acceptance_criteria' => 'array',
         'is_insured' => 'boolean',
         'rank_calculated_at' => 'datetime',
+        'wizard_status' => 'string',
+        'last_step_at' => 'array',
     ];
 
     /**
@@ -65,6 +69,10 @@ class Family extends Model implements HasMedia
     protected static function boot()
     {
         parent::boot();
+
+        static::creating(function ($family) {
+            $family->wizard_status = 'pending';
+        });
 
         // محاسبه رتبه موقع ایجاد خانواده جدید
         static::created(function ($family) {
@@ -120,6 +128,14 @@ class Family extends Model implements HasMedia
     }
 
     /**
+     * رابطه با خیریه (alias برای organization)
+     */
+    public function charity()
+    {
+        return $this->belongsTo(Organization::class, 'charity_id');
+    }
+
+    /**
      * رابطه با استان
      */
     public function province()
@@ -146,7 +162,7 @@ class Family extends Model implements HasMedia
     /**
      * رابطه با سازمان بیمه
      */
-    public function insurance()
+    public function insuranceOrganization()
     {
         return $this->belongsTo(Organization::class, 'insurance_id');
     }
@@ -273,11 +289,27 @@ class Family extends Model implements HasMedia
     }
 
     /**
+     * رابطه فقط با بیمه‌های نهایی شده (insured)
+     */
+    public function finalInsurances()
+    {
+        return $this->hasMany(FamilyInsurance::class)->where('status', 'insured');
+    }
+
+    /**
      * تعداد بیمه‌های این خانواده
      */
     public function insuranceCount()
     {
         return $this->insurances()->count();
+    }
+
+    /**
+     * تعداد بیمه‌های نهایی شده این خانواده
+     */
+    public function finalInsuranceCount()
+    {
+        return $this->finalInsurances()->count();
     }
     
     /**
@@ -305,19 +337,63 @@ class Family extends Model implements HasMedia
     }
 
     /**
+     * آیا این خانواده بیمه نهایی شده دارد؟
+     */
+    public function hasFinalInsurance()
+    {
+        return $this->finalInsurances()->exists();
+    }
+
+    /**
      * لیست انواع بیمه‌های این خانواده
      */
     public function insuranceTypes()
     {
-        return $this->insurances()->pluck('insurance_type')->unique();
+        // فقط از بیمه‌های نهایی شده استفاده می‌کنیم
+        $types = $this->finalInsurances()->pluck('insurance_type')->unique();
+        
+        // اگر داده‌ای پیدا نشد، از insuranceShares با فیلتر استفاده کن
+        if ($types->isEmpty()) {
+            // از طریق رابطه insurance_shares به insurance_type دسترسی پیدا کن
+            $insuranceIds = $this->finalInsurances()->pluck('id');
+            $types = \App\Models\InsuranceShare::whereIn('family_insurance_id', $insuranceIds)
+                ->join('family_insurances', 'insurance_shares.family_insurance_id', '=', 'family_insurances.id')
+                ->where('family_insurances.status', 'insured')
+                ->pluck('family_insurances.insurance_type')
+                ->unique();
+        }
+        
+        return $types;
     }
 
     /**
-     * لیست پرداخت‌کنندگان حق بیمه این خانواده
+     * لیست پرداخت‌کنندگان حق بیمه‌های نهایی شده این خانواده
      */
     public function insurancePayers()
     {
-        return $this->insurances()->pluck('insurance_payer')->unique();
+        // فقط از بیمه‌های نهایی شده استفاده می‌کنیم
+        $insuranceIds = $this->finalInsurances()->pluck('id')->toArray();
+        
+        if (empty($insuranceIds)) {
+            return collect([]);
+        }
+        
+        // استفاده از payer_type و payer_name از جدول insurance_shares
+        $shares = \App\Models\InsuranceShare::whereIn('family_insurance_id', $insuranceIds)
+            ->with(['payerType', 'payerOrganization', 'payerUser'])
+            ->get();
+        
+        if ($shares->isEmpty()) {
+            // اگر سهامی وجود نداشت، از insurance_payer استفاده کن (فقط از نهایی شده‌ها)
+            return $this->finalInsurances()->pluck('insurance_payer')->unique();
+        }
+        
+        // نمایش نام پرداخت‌کننده‌ها با استفاده از اکسسور getPayerNameAttribute
+        $payerNames = $shares->map(function($share) {
+            return $share->payer_name;
+        })->filter()->unique()->values();
+        
+        return $payerNames;
     }
 
     /**
@@ -344,45 +420,49 @@ class Family extends Model implements HasMedia
      */
     public function calculateRank()
     {
-        $totalWeight = 0;
+        // تنظیمات رتبه‌بندی فعال را دریافت کن
+        $rankSettings = RankSetting::where('is_active', true)->get();
         
-        // 1. دریافت معیارهای فعال از جدول family_criteria
-        $activeCriteria = $this->familyCriteria()
-            ->with('rankSetting')
-            ->where('has_criteria', true)
-            ->get();
+        $totalScore = 0;
+        $maxPossibleScore = 0;
         
-        foreach ($activeCriteria as $criterion) {
-            if ($criterion->rankSetting && $criterion->rankSetting->is_active) {
-                $totalWeight += $criterion->rankSetting->weight;
-            }
-        }
-        
-        // 2. اگر فیلد acceptance_criteria وجود دارد، از آن هم امتیاز بگیر
-        if ($this->acceptance_criteria && is_array($this->acceptance_criteria) && count($this->acceptance_criteria) > 0) {
-            // Cache کردن RankSetting ها برای بهبود عملکرد
-            $rankSettings = Cache::remember('rank_settings_active', 60, function() {
-                return \App\Models\RankSetting::where('is_active', true)
-                    ->get()
-                    ->keyBy('name');
-            });
-            
-            foreach ($this->acceptance_criteria as $criteriaName) {
-                if ($rankSettings->has($criteriaName)) {
-                    $totalWeight += $rankSettings[$criteriaName]->weight;
+        // امتیاز براساس معیارهای تعریف شده در acceptance_criteria
+        if ($this->acceptance_criteria && is_array($this->acceptance_criteria)) {
+            foreach ($rankSettings as $setting) {
+                $key = $setting->key;
+                $weight = $setting->weight;
+                
+                // اگر معیار در acceptance_criteria وجود دارد
+                if (isset($this->acceptance_criteria[$key]) && $this->acceptance_criteria[$key]) {
+                    $totalScore += $weight;
                 }
+                
+                $maxPossibleScore += $weight;
             }
         }
         
-        // 3. به‌روزرسانی رتبه محاسبه شده (فقط اگر تغییر کرده باشد)
-        if ($this->calculated_rank !== $totalWeight) {
-            $this->updateQuietly([
-                'calculated_rank' => $totalWeight,
-                'rank_calculated_at' => now(),
-            ]);
-        }
+        // امتیاز براساس معیارهای ثبت شده در جدول family_criteria
+        $this->familyCriteria()
+            ->where('has_criteria', true)
+            ->with('rankSetting')
+            ->get()
+            ->each(function ($criteria) use (&$totalScore) {
+                if ($criteria->rankSetting && $criteria->rankSetting->is_active) {
+                    $totalScore += $criteria->rankSetting->weight;
+                }
+            });
         
-        return $totalWeight;
+        // محاسبه رتبه نهایی (بین 0 تا 100)
+        $normalizedRank = $maxPossibleScore > 0 
+            ? min(100, round(($totalScore / $maxPossibleScore) * 100)) 
+            : 0;
+        
+        // ذخیره رتبه محاسبه شده
+        $this->calculated_rank = $normalizedRank;
+        $this->rank_calculated_at = now();
+        $this->save();
+        
+        return $normalizedRank;
     }
 
     /**
@@ -479,25 +559,29 @@ class Family extends Model implements HasMedia
      */
     public function testRankCalculation()
     {
+        $startTime = microtime(true);
+        
+        // محاسبه رتبه
+        $rank = $this->calculateRank();
+        
+        $endTime = microtime(true);
+        $executionTime = ($endTime - $startTime) * 1000; // به میلی‌ثانیه
+        
         return [
-            'family_id' => $this->id,
-            'acceptance_criteria' => $this->acceptance_criteria,
-            'family_criteria_count' => $this->familyCriteria()->where('has_criteria', true)->count(),
-            'current_calculated_rank' => $this->calculated_rank,
-            'new_calculated_rank' => $this->calculateRank(),
-            'rank_calculated_at' => $this->rank_calculated_at,
+            'rank' => $rank,
+            'execution_time_ms' => round($executionTime, 2)
         ];
     }
 
     /**
-     * محاسبه درصد تکمیل اطلاعات هویتی اعضای خانواده
+     * دریافت درصد تکمیل اطلاعات هویتی اعضای خانواده
      * 
      * @return array
      */
     public function getIdentityValidationStatus(): array
     {
         $requiredFields = config('ui.family_validation_icons.identity.required_fields', [
-            'first_name', 'last_name', 'national_code', 'birth_date'
+            'first_name', 'last_name', 'national_code'
         ]);
         
         $members = $this->members;
@@ -532,7 +616,8 @@ class Family extends Model implements HasMedia
             
             $memberCompletionRate = ($completedFields / count($requiredFields)) * 100;
             
-            if ($memberCompletionRate === 100) {
+            // در نظر گرفتن اعضای با تکمیل‌شدگی بالای 80% به عنوان عضو کامل
+            if ($memberCompletionRate >= 80) {
                 $completeMembers++;
             }
             
@@ -810,4 +895,199 @@ class Family extends Model implements HasMedia
             'id' // کلید اصلی در جدول واسط (family_insurances)
         );
     }
-} 
+
+    /**
+     * دریافت wizard_status به صورت enum اگر مقدار موجود باشد
+     *
+     * @param mixed $value
+     * @return \App\InsuranceWizardStep|null
+     */
+    public function getWizardStatusAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+        
+        try {
+            return \App\InsuranceWizardStep::from($value);
+        } catch (\ValueError $e) {
+            return null;
+        }
+    }
+    
+    /**
+     * بررسی اینکه آیا مرحله wizard تکمیل شده است
+     *
+     * @param \App\InsuranceWizardStep $step
+     * @return bool
+     */
+    public function isStepCompleted(\App\InsuranceWizardStep $step): bool
+    {
+        if (!$this->last_step_at) {
+            return false;
+        }
+        
+        $lastStepAt = is_array($this->last_step_at) ? $this->last_step_at : json_decode($this->last_step_at, true);
+        return isset($lastStepAt[$step->value]);
+    }
+    
+    /**
+     * تکمیل یک مرحله از wizard
+     *
+     * @param \App\InsuranceWizardStep $step
+     * @param string|null $comment
+     * @param array $extraData
+     * @return void
+     */
+    public function completeStep(\App\InsuranceWizardStep $step, ?string $comment = null, array $extraData = []): void
+    {
+        $lastStepAt = $this->last_step_at ?? [];
+        if (is_string($lastStepAt)) {
+            $lastStepAt = json_decode($lastStepAt, true) ?? [];
+        }
+        
+        $lastStepAt[$step->value] = now()->toDateTimeString();
+        $this->last_step_at = $lastStepAt;
+        
+        // اگر wizard_status تنظیم نشده باشد، آن را تنظیم می‌کنیم
+        if (!$this->wizard_status) {
+            $this->wizard_status = $step->value;
+        }
+        
+        $this->save();
+        
+        // ثبت لاگ تکمیل مرحله
+        $fromStatus = $this->wizard_status && $this->wizard_status !== $step->value ? 
+            \App\InsuranceWizardStep::from($this->wizard_status) : null;
+            
+        FamilyStatusLog::logTransition(
+            $this,
+            $fromStatus ?? $step, // اگر وضعیت قبلی وجود نداشت، وضعیت فعلی را استفاده می‌کنیم
+            $step,
+            $comment ?? "مرحله {$step->label()} تکمیل شد",
+            $extraData
+        );
+    }
+    
+    /**
+     * انتقال به مرحله بعدی wizard
+     *
+     * @param string|null $comment
+     * @param array $extraData
+     * @return \App\InsuranceWizardStep|null
+     */
+    public function moveToNextStep(?string $comment = null, array $extraData = []): ?\App\InsuranceWizardStep
+    {
+        if (!$this->wizard_status) {
+            $initialStep = \App\InsuranceWizardStep::PENDING;
+            $this->wizard_status = $initialStep->value;
+            $this->completeStep($initialStep, $comment, $extraData);
+            $this->save();
+            return $initialStep;
+        }
+        
+        $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
+        $nextStep = $currentStep->nextStep();
+        
+        if ($nextStep) {
+            // تکمیل مرحله فعلی اگر هنوز تکمیل نشده باشد
+            if (!$this->isStepCompleted($currentStep)) {
+                $this->completeStep($currentStep, "مرحله {$currentStep->label()} تکمیل شد", $extraData);
+            }
+            
+            // تنظیم مرحله بعدی
+            $this->wizard_status = $nextStep->value;
+            $this->save();
+            
+            // ثبت لاگ انتقال به مرحله بعدی
+            FamilyStatusLog::logTransition(
+                $this,
+                $currentStep,
+                $nextStep,
+                $comment ?? "انتقال به مرحله {$nextStep->label()}",
+                $extraData
+            );
+            
+            return $nextStep;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * انتقال به مرحله قبلی wizard
+     *
+     * @param string|null $comment
+     * @param array $extraData
+     * @return \App\InsuranceWizardStep|null
+     */
+    public function moveToPreviousStep(?string $comment = null, array $extraData = []): ?\App\InsuranceWizardStep
+    {
+        if (!$this->wizard_status) {
+            return null;
+        }
+        
+        $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
+        $prevStep = $currentStep->previousStep();
+        
+        if ($prevStep) {
+            // تنظیم مرحله قبلی
+            $this->wizard_status = $prevStep->value;
+            $this->save();
+            
+            // ثبت لاگ برگشت به مرحله قبلی
+            FamilyStatusLog::logTransition(
+                $this,
+                $currentStep,
+                $prevStep,
+                $comment ?? "بازگشت به مرحله {$prevStep->label()}",
+                $extraData
+            );
+            
+            return $prevStep;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * همگام‌سازی وضعیت قدیمی با wizard جدید
+     * 
+     * @return \App\InsuranceWizardStep
+     */
+    public function syncWizardStatus()
+    {
+        $oldStatus = $this->status;
+        
+        // تبدیل وضعیت قدیمی به wizard جدید
+        $wizardStatus = match($oldStatus) {
+            'pending' => \App\InsuranceWizardStep::PENDING,
+            'reviewing' => \App\InsuranceWizardStep::REVIEWING,
+            'approved' => \App\InsuranceWizardStep::APPROVED,
+            'insured' => \App\InsuranceWizardStep::INSURED,
+            'renewal' => \App\InsuranceWizardStep::RENEWAL,
+            default => \App\InsuranceWizardStep::PENDING
+        };
+        
+        // بررسی وضعیت بیمه شدن
+        if ($oldStatus === 'approved' && $this->is_insured) {
+            $wizardStatus = \App\InsuranceWizardStep::INSURED;
+        }
+        
+        // ذخیره وضعیت wizard
+        $this->wizard_status = $wizardStatus->value;
+        $this->save();
+        
+        return $wizardStatus;
+    }
+    
+    /**
+     * دریافت لاگ‌های تغییر وضعیت wizard برای این خانواده
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function statusLogs()
+    {
+        return $this->hasMany(FamilyStatusLog::class)->orderBy('created_at', 'desc');
+    }
+}

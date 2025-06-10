@@ -32,7 +32,21 @@ class FamiliesExport implements
      */
     public function collection()
     {
-        $query = Family::with(['charity', 'insurance', 'region']);
+        $query = Family::with([
+            'province', 
+            'city', 
+            'district',
+            'region',
+            'members' => function($q) {
+                $q->orderBy('is_head', 'desc');
+            }, 
+            'head',
+            'charity',
+            'organization',
+            'insurances' => fn($q) => $q->orderBy('created_at', 'desc'),
+            'finalInsurances',
+            'familyCriteria.rankSetting'
+        ]);
         
         if (isset($this->filters['charity_id'])) {
             $query->where('charity_id', $this->filters['charity_id']);
@@ -118,4 +132,4 @@ class FamiliesExport implements
 
         return $statuses[$status] ?? $status;
     }
-} 
+}

@@ -111,7 +111,9 @@ class InsuranceShareController extends Controller
     {
         $share->load(['familyInsurance.family', 'payerOrganization', 'payerUser']);
         
-        return view('insurance.shares.show', compact('share'));
+        $insuranceShare = $share;
+        
+        return view('insurance.shares.show', compact('insuranceShare'));
     }
 
     /**
@@ -134,7 +136,9 @@ class InsuranceShareController extends Controller
             'other' => 'سایر',
         ];
 
-        return view('insurance.shares.edit', compact('share', 'organizations', 'users', 'payerTypes'));
+        $insuranceShare = $share;
+
+        return view('insurance.shares.edit', compact('insuranceShare', 'organizations', 'users', 'payerTypes'));
     }
 
     /**
@@ -223,14 +227,30 @@ class InsuranceShareController extends Controller
      */
     public function manage(Request $request)
     {
-        // گرفتن لیست خانواده‌هایی که بیمه دارند
-        $families = Family::whereHas('insurance')->with('insurance')->get();
+        // استفاده از Eager Loading برای جلوگیری از مشکل N+1
+        $families = Family::whereHas('insurance')
+            ->with([
+                'insurance',
+                'province', 
+                'city',
+                'members' => function($query) {
+                    $query->select('id', 'family_id', 'name', 'relationship');
+                }
+            ])
+            ->select('id', 'name', 'family_code', 'province_id', 'city_id')
+            ->get();
         
         $selectedFamily = null;
         $familyInsurance = null;
         
         if ($request->filled('family_id')) {
-            $selectedFamily = Family::with(['insurance', 'members'])->find($request->family_id);
+            $selectedFamily = Family::with([
+                'insurance.shares.fundingSource',
+                'members',
+                'province',
+                'city'
+            ])->find($request->family_id);
+            
             if ($selectedFamily && $selectedFamily->insurance) {
                 $familyInsurance = $selectedFamily->insurance;
             }

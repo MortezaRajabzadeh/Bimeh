@@ -23,6 +23,8 @@ class RankSetting extends Model
         'category',
         'is_active',
         'sort_order',
+        'requires_document', // فیلد جدید
+        // 'color',            // فیلد جدید
     ];
 
     /**
@@ -34,6 +36,7 @@ class RankSetting extends Model
         'is_active' => 'boolean',
         'weight' => 'integer',
         'sort_order' => 'integer',
+        'requires_document' => 'boolean', // اضافه کردن cast برای فیلد جدید
     ];
 
     /**
@@ -42,6 +45,16 @@ class RankSetting extends Model
     public function familyCriteria()
     {
         return $this->hasMany(FamilyCriterion::class);
+    }
+
+    /**
+     * رابطه با طرح‌های رتبه‌بندی
+     */
+    public function rankingSchemes()
+    {
+        return $this->belongsToMany(RankingScheme::class, 'ranking_scheme_criteria')
+                    ->withPivot('weight')
+                    ->withTimestamps();
     }
 
     /**

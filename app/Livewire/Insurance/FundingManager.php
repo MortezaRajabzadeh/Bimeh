@@ -91,6 +91,10 @@ class FundingManager extends Component
                 'description' => $this->description,
                 'reference_no' => $this->reference_no,
             ]);
+            
+            // پاک کردن کش بودجه پس از ایجاد تراکنش
+            \Illuminate\Support\Facades\Cache::forget('remaining_budget');
+            
             $this->resetTransactionForm();
             $this->formKey = uniqid();
             $this->sources = FundingSource::where('is_active', true)->get();

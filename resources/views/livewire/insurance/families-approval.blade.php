@@ -1,977 +1,1342 @@
-<div class="bg-white rounded-lg shadow p-2">
-    <!-- Tabs -->
-    <div class="flex border-b text-center text-sm font-bold mb-4">
-        <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'pending' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('pending')">در انتظار تایید</button>
-        <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'reviewing' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('reviewing')">در انتظار حمایت</button>
-        <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'approved' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('approved')">در انتظار صدور</button>
-        <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'renewal' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('renewal')">در انتظار تمدید</button>
-        <button class="flex-1 py-3 border-b-4 border-transparent focus:outline-none {{ $tab === 'deleted' ? 'border-green-700 bg-green-700 text-white' : '' }}" wire:click="setTab('deleted')">حذف شده ها</button>
-    </div>
-    <!-- نوار ابزار عملیات دسته جمعی -->
-    <div x-data="{ showApproveModal: false, showReturnModal: false, showApproveAndContinueModal: false, showExcelUploadModal: false, showDeleteModal: false }" @keydown.escape.window="showApproveModal = false; showReturnModal = false; showApproveAndContinueModal = false; showDeleteModal = false">
-        <!-- Modal -->
-        <div x-show="showApproveModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
-                <button @click="showApproveModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                <div class="text-center">
-                    <h2 class="text-2xl font-bold mb-4">تایید و ادامه</h2>
-                    <div class="text-green-700 text-lg font-bold mb-2">اطلاعات هویتی تعداد <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر مورد تایید است</div>
-                    <div class="text-gray-500 text-base mb-6">تایید این خانواده ها به منزله بررسی و تایید اطلاعات هویتی و مدارک مورد نیاز این افراد از نظر شما می‌باشد. پس از تایید این افراد در قسمت "در انتظار حمایت" قرار می‌گیرند تا در زمان مقتضی فرایند تایید جهت صدور بیمه نامه برای آنها انجام گردد.</div>
-                    <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="updateFamiliesStatus($wire.selected, 'reviewing', 'pending'); showApproveModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
-                            <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
-                            تایید نهایی و ادامه
-                        </button>
-                        <button @click="showApproveModal = false" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold">بازگشت و ایجاد تغییر</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Return to Pending Modal -->
-        <div x-show="showReturnModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
-                <button @click="showReturnModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                <div class="text-center">
-                    <h2 class="text-2xl font-bold mb-4">بازگشت به مرحله قبل</h2>
-                    <div class="text-indigo-600 text-lg font-bold mb-2">
-                        با بازگشت <span x-text="$wire.selected.length"></span> خانواده (<span>{{ $totalSelectedMembers }}</span> نفر) به مرحله "در انتظار تایید" موافقم
-                    </div>
-                    <div class="text-gray-500 text-base mb-6">با تایید این کار افراد و خانواده ها به مرحله "در انتظار تایید" منتقل خواهند شد.<br>این کار درصورتی انجام می‌گیرد که افراد به اشتباه به این قسمت انتقال پیدا کرده باشند.</div>
-                    <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="updateFamiliesStatus($wire.selected, 'pending', 'reviewing'); showReturnModal = false" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
-                            <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
-                            تایید و بازگرداندن خانواده
-                        </button>
-                        <button @click="showReturnModal = false" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold">بازگشت و ایجاد تغییر</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Approve & Continue Modal (for reviewing tab) -->
-        <div x-show="showApproveAndContinueModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
-                <button @click="showApproveAndContinueModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                <div class="text-center">
-                    <h2 class="text-2xl font-bold mb-4">تایید و ادامه</h2>
-                    <div class="text-green-700 text-lg font-bold mb-2">اطلاعات هویتی تعداد <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر مورد تایید است</div>
-                    <div class="text-gray-500 text-base mb-6">تایید این خانواده ها به منزله بررسی و تایید اطلاعات هویتی و مدارک مورد نیاز این افراد از نظر شما می‌باشد. پس از تایید این افراد در قسمت "در انتظار صدور" قرار می‌گیرند تا در زمان مقتضی فرایند تایید جهت صدور بیمه نامه برای آنها انجام گردد.</div>
-                    <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button type="button" @click.prevent="updateFamiliesStatus($wire.selected, 'approved', 'reviewing'); showApproveAndContinueModal = false" class="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
-                            <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7' /></svg>
-                            تایید نهایی و ادامه
-                        </button>
-                        <button type="button" @click.prevent="showApproveAndContinueModal = false" wire:click="downloadInsuranceExcel" wire:loading.attr="disabled" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2">
-                            دریافت فایل اکسل
-                            <svg xmlns='http://www.w3.org/2000/svg' class='h-6 w-6 inline-block mr-2' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4' /></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+<div x-data="{ 
+    downloading: false, 
+    downloadFile(url) { 
+        this.downloading = true; 
         
-        <!-- Delete Families Modal -->
-        <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 relative">
-                <button @click="showDeleteModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                <div class="text-center">
-                    <h2 class="text-2xl font-bold mb-4">حذف خانواده</h2>
-                    <div class="text-red-600 text-lg font-bold mb-2">
-                        حذف <span x-text="$wire.selected.length"></span> خانواده (<span>{{ $totalSelectedMembers }}</span> نفر) مورد تایید است
-                    </div>
-                    <div class="text-gray-600 text-base mb-6">
-                        حذف این خانواده ها به منزله بررسی و اطمینان از عدم تطابق آنها با معیار های سازمان شماست و 
-                        پس از حذف این خانواده ها به قسمت "حذف شده ها" منتقل میشوند.
-                        <p class="mt-2">لطفا دلیل عدم تطابق را انتخاب کنید.</p>
-                    </div>
-                    
-                    <div class="mb-6">
-                        <select id="delete-reason" class="border border-gray-300 w-full py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
-                            <option value="">انتخاب دلیل حذف...</option>
-                            <option value="duplicate">اطلاعات تکراری</option>
-                            <option value="incomplete">اطلاعات ناقص</option>
-                            <option value="fake">اطلاعات نادرست</option>
-                            <option value="not_eligible">عدم احراز شرایط</option>
-                            <option value="other">سایر دلایل</option>
-                        </select>
-                    </div>
-                    
-                    <div class="flex flex-row-reverse gap-2 mt-6">
-                        <button @click="showDeleteModal = false; $wire.deleteSelected()" class="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            حذف خانواده
-                        </button>
-                        <button @click="showDeleteModal = false; $wire.setTab('deleted')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-3 text-lg font-bold">
-                            رفتن به بخش "حذف شده ها"
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        // ایجاد یک لینک مخفی و کلیک روی آن برای شروع دانلود 
+        const link = document.createElement('a'); 
+        link.href = url; 
+        link.setAttribute('download', ''); // نام فایل در سمت سرور تعیین می‌شود 
+        document.body.appendChild(link); 
+        link.click(); 
+        document.body.removeChild(link); 
         
-        <!-- Excel Upload Modal -->
-        <div x-show="showExcelUploadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full p-8 relative">
-                <button @click="showExcelUploadModal = false" class="absolute left-4 top-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                <div class="text-center">
-                    {{-- پیام موفقیت/خطا داخل پاپ‌آپ اکسل --}}
-                    @if (session()->has('success'))
-                        <div class="bg-green-100 text-green-800 rounded px-4 py-2 mb-4">{{ session('success') }}</div>
-                    @endif
-                    @if (session()->has('error'))
-                        <div class="bg-red-100 text-red-800 rounded px-4 py-2 mb-4">{{ session('error') }}</div>
-                    @endif
-                    <h2 class="text-2xl font-bold mb-4">آپلود فایل اکسل</h2>
-                    <div class="text-green-700 text-xl font-bold mb-2">
-                        اطلاعات <span x-text="$wire.selected.length"></span> خانواده معادل <span>{{ $totalSelectedMembers }}</span> نفر برای بیمه آماده شده است
-                    </div>
-                    <div class="text-gray-600 text-base mb-6 leading-8">
-                        برای تکمیل فرآیند بیمه، لطفا ابتدا با کلیک روی دکمه زیر، فایل نمونه اکسل را دانلود کنید.<br>
-                        سپس فایل را با اطلاعات بیمه (شماره بیمه‌نامه، تاریخ صدور و...) تکمیل کرده و در قسمت زیر آپلود نمایید.
-                    </div>
-                    <div class="flex justify-center mb-6">
-                        <button type="button" wire:click="downloadInsuranceExcel" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-6 text-lg font-bold flex items-center justify-center gap-2 transition mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                            </svg>
-                            دانلود فایل نمونه اکسل
-                        </button>
-                    </div>
-                    <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8">
-                        <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
-                        <label for="excel-upload-input" class="block cursor-pointer">
-                            <span class="flex items-center justify-center gap-2 {{ $insuranceExcelFile ? 'bg-green-700' : 'bg-green-600' }} hover:bg-green-700 text-white rounded-xl py-3 px-8 text-lg font-bold transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
-                                آپلود فایل اکسل تکمیل شده
-                            </span>
-                        </label>
-                        @if($insuranceExcelFile)
-                            <div class="mt-3 text-green-700 text-sm font-bold flex items-center justify-center gap-2 animate-fade-in">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                                فایل انتخاب شد: {{ $insuranceExcelFile->getClientOriginalName() }}
-                            </div>
-                            <button type="submit" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3 text-lg font-bold transition animate-fade-in">تایید و ارسال فایل</button>
-                        @endif
-                        @error('insuranceExcelFile')
-                            <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
-                        @enderror
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div x-data="{
-            selectAll: false,
-            selectedFamilies: [],
-            toggleAllFamilies() {
-                if (this.selectAll) {
-                    this.selectedFamilies = this.getIds();
-                } else {
-                    this.selectedFamilies = [];
-                }
-            },
-            getIds() {
-                return Array.from(document.querySelectorAll('input[name=\'family_ids[]\']')).map(el => el.value);
-            },
-            get hasSelected() {
-                return this.selectedFamilies.length > 0;
-            }
-        }" x-init="$watch('selectedFamilies', value => $wire.set('selected', value)); window.addEventListener('reset-checkboxes', () => { selectedFamilies = []; selectAll = false; });" class="mb-4">
-            <div x-show="hasSelected" x-cloak class="mb-4 p-3 bg-gray-100 rounded-lg flex justify-between items-center">
+        // کمی تاخیر برای اطمینان از شروع دانلود قبل از پنهان کردن لودینگ 
+        setTimeout(() => { 
+            this.downloading = false; 
+        }, 1000); 
+    } 
+}" @file-download.window="downloadFile($event.detail.url)">
+    @push('styles')
+        <link href="{{ asset('css/insurance-wizard.css') }}" rel="stylesheet">
+        <style>
+            [x-cloak] { display: none !important; }
+        </style>
+    @endpush
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded - Debugging modal');
+            
+            // گوش دادن به رویداد نمایش مودال
+            window.addEventListener('showDeleteModal', event => {
+                console.log('showDeleteModal event received');
+            });
+            
+            // گوش دادن به رویداد بستن مودال
+            window.addEventListener('closeDeleteModal', event => {
+                console.log('closeDeleteModal event received');
+            });
+        });
+    </script>
+
+    {{-- Debug Panel --}}
+    @if(config('app.debug'))
+        <div class="bg-gray-800 text-white p-4 mb-4 rounded-lg text-sm overflow-auto max-h-60 font-mono" id="debug-panel">
+            <h3 class="text-yellow-400 font-bold mb-2">🐞 Debug Panel</h3>
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <span class="text-sm text-gray-700">
-                        <span x-text="selectedFamilies.length"></span> خانواده انتخاب شده است
+                    <h4 class="text-green-400 font-bold">Selected Items ({{ count($selected) }})</h4>
+                    <pre class="text-xs overflow-auto max-h-20 bg-gray-900 p-2 rounded mt-1">{{ json_encode($selected, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                </div>
+                <div>
+                    <h4 class="text-green-400 font-bold">Status</h4>
+                    <pre class="text-xs overflow-auto max-h-20 bg-gray-900 p-2 rounded mt-1">
+selectAll: {{ $selectAll ? 'true' : 'false' }}
+activeTab: {{ $activeTab }}
+total items: {{ $families->count() ?? 0 }}</pre>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <div class="mb-2 bg-blue-900 p-2 rounded text-xs">
+                    <strong class="text-blue-300">📝 Note:</strong> Fixed "Unable to call lifecycle method" error by changing from <code class="text-orange-400">wire:click="updatedSelectAll"</code> to <code class="text-green-400">wire:change="toggleSelectAll"</code>
+                </div>
+                <div class="mb-2 bg-green-900 p-2 rounded text-xs">
+                    <strong class="text-green-300">🚀 Updates:</strong> Fixed conversion errors in <code class="text-green-400">approveSelected</code> method for enum-to-string conversion and added loading state to approval button
+                </div>
+                <div class="mb-2 bg-purple-900 p-2 rounded text-xs">
+                    <strong class="text-purple-300">🔄 Database Fix:</strong> Added missing <code class="text-purple-400">extra_data</code> column to <code class="text-purple-400">family_status_logs</code> table and simplified log creation
+                </div>
+                <div class="mb-2 bg-gray-900 p-2 rounded text-xs">
+                    <strong class="text-yellow-300">Wizard Flow:</strong>
+                    <span class="text-gray-300">PENDING → REVIEWING → SHARE_ALLOCATION → APPROVED → EXCEL_UPLOAD → INSURED</span>
+                </div>
+                <button onclick="clearLogs()" class="bg-red-600 text-white px-2 py-1 rounded text-xs">Clear Logs</button>
+                <div id="action-logs" class="mt-2 text-xs bg-gray-900 p-2 rounded max-h-24 overflow-auto"></div>
+            </div>
+        </div>
+        
+        <script>
+            function addLog(message) {
+                const logsEl = document.getElementById('action-logs');
+                const time = new Date().toLocaleTimeString();
+                logsEl.innerHTML += `<div>[${time}] ${message}</div>`;
+                logsEl.scrollTop = logsEl.scrollHeight;
+            }
+            
+            function clearLogs() {
+                document.getElementById('action-logs').innerHTML = '';
+            }
+            
+            document.addEventListener('livewire:initialized', () => {
+                addLog('Component initialized');
+                
+                // Listen for Livewire events
+                Livewire.on('reset-checkboxes', () => {
+                    addLog('Event: reset-checkboxes received');
+                });
+
+                Livewire.on('show-persistent-error', ({ detail }) => {
+                    if (detail && detail.message) {
+                        alert(detail.message);
+                        if (typeof addLog === 'function') {
+                            addLog(`Persistent error shown: ${detail.message}`);
+                        }
+                    } else {
+                        const errorMessage = detail || 'یک خطای ناشناخته در نمایش پیام رخ داد.';
+                        alert(errorMessage);
+                        if (typeof addLog === 'function') {
+                            addLog(`Persistent error shown (fallback): ${errorMessage}`);
+                        }
+                    }
+                });
+                
+                // Monitor checkbox interactions
+                document.getElementById('select-all')?.addEventListener('change', function(e) {
+                    addLog(`Select All checkbox changed: ${e.target.checked} (calling toggleSelectAll)`);
+                });
+                
+                // Monitor individual checkboxes
+                document.querySelectorAll('input[wire\\:model="selected"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', function(e) {
+                        addLog(`Checkbox ${e.target.value} changed: ${e.target.checked}`);
+                    });
+                });
+                
+                // Monitor approve button
+                const approveButton = document.querySelector('button[wire\\:click="approveSelected"]');
+                if (approveButton) {
+                    approveButton.addEventListener('click', function() {
+                        addLog('Approve button clicked');
+                    });
+                }
+            });
+        </script>
+    @endif
+
+    {{-- Notification Messages --}}
+    @if (session()->has('message'))
+        <div class="rounded-md bg-green-50 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="mr-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('message') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="rounded-md bg-red-50 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="mr-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <div class="bg-white rounded-lg shadow p-8">
+        <!-- نوار پیشرفت -->
+        <div class="mb-8">
+            <!-- Main wizard tabs with separate tabs on the sides -->
+            <div class="relative flex justify-between items-center">
+                <!-- Renewal Tab (Left side) -->
+                <div class="flex flex-col items-center relative z-10">
+                    <button 
+                        wire:click="changeTab('renewal')" 
+                        class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                            {{ $activeTab === 'renewal' ? 'bg-emerald-500 shadow-lg shadow-emerald-100 ring-4 ring-emerald-100' : 'bg-gray-100' }}">
+                        <span class="text-{{ $activeTab === 'renewal' ? 'white' : 'gray-600' }}">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </span>
+                    </button>
+                    <span class="mt-3 text-sm font-medium {{ $activeTab === 'renewal' ? 'text-emerald-600' : 'text-gray-500' }}">
+                        در انتظار تمدید
                     </span>
                 </div>
-                <div class="flex gap-2">
-                    <button @click="selectAll = false; selectedFamilies = []"
-                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 text-xs px-3 py-1 rounded">
-                        لغو انتخاب
+
+                <!-- Progress bars and wizard tabs (middle) -->
+                <div class="mx-6 flex-1 flex items-center justify-between">
+                    <!-- Empty space to push wizard to center -->
+                    <div class="w-8"></div>
+                    
+                    <!-- Pending Tab -->
+                    <div class="flex flex-col items-center relative z-10">
+                        <button 
+                            wire:click="changeTab('pending')" 
+                            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                                {{ $activeTab === 'pending' ? 'bg-blue-600 shadow-lg shadow-blue-100 ring-4 ring-blue-100' : 
+                                   (in_array($activeTab, ['reviewing', 'approved', 'excel']) ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-gray-100') }}">
+                            <span class="text-{{ $activeTab === 'pending' ? 'white' : (in_array($activeTab, ['reviewing', 'approved', 'excel']) ? 'white' : 'gray-600') }}">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </span>
+                        </button>
+                        <span class="mt-3 text-sm font-medium {{ $activeTab === 'pending' ? 'text-blue-600' : (in_array($activeTab, ['reviewing', 'approved', 'excel']) ? 'text-emerald-600' : 'text-gray-500') }}">
+                            در انتظار تایید
+                        </span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="flex-1 flex items-center mx-2">
+                        <div class="h-2 w-full rounded-full transition-all duration-500 relative overflow-hidden
+                            {{ in_array($activeTab, ['reviewing', 'approved', 'excel']) ? 'bg-emerald-500' : ($activeTab === 'pending' ? 'bg-blue-600' : 'bg-gray-200') }}">
+                            @if($activeTab === 'pending')
+                                <div class="absolute inset-0 bg-blue-200 animate-pulse"></div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Reviewing Tab -->
+                    <div class="flex flex-col items-center relative z-10">
+                        <button 
+                            wire:click="changeTab('reviewing')" 
+                            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                                {{ $activeTab === 'reviewing' ? 'bg-blue-600 shadow-lg shadow-blue-100 ring-4 ring-blue-100' : 
+                                   (in_array($activeTab, ['approved', 'excel']) ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-gray-100') }}">
+                            <span class="text-{{ $activeTab === 'reviewing' ? 'white' : (in_array($activeTab, ['approved', 'excel']) ? 'white' : 'gray-600') }}">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </span>
+                        </button>
+                        <span class="mt-3 text-sm font-medium {{ $activeTab === 'reviewing' ? 'text-blue-600' : (in_array($activeTab, ['approved', 'excel']) ? 'text-emerald-600' : 'text-gray-500') }}">
+                            تخصیص سهمیه
+                        </span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="flex-1 flex items-center mx-2">
+                        <div class="h-2 w-full rounded-full transition-all duration-500 relative overflow-hidden
+                            {{ in_array($activeTab, ['approved', 'excel']) ? 'bg-emerald-500' : ($activeTab === 'reviewing' ? 'bg-blue-600' : 'bg-gray-200') }}">
+                            @if($activeTab === 'reviewing')
+                                <div class="absolute inset-0 bg-blue-200 animate-pulse"></div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Approved Tab -->
+                    <div class="flex flex-col items-center relative z-10">
+                        <button 
+                            wire:click="changeTab('approved')" 
+                            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                                {{ $activeTab === 'approved' ? 'bg-blue-600 shadow-lg shadow-blue-100 ring-4 ring-blue-100' : 
+                                   (in_array($activeTab, ['excel']) ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-gray-100') }}">
+                            <span class="text-{{ $activeTab === 'approved' ? 'white' : (in_array($activeTab, ['excel']) ? 'white' : 'gray-600') }}">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                        </button>
+                        <span class="mt-3 text-sm font-medium {{ $activeTab === 'approved' ? 'text-blue-600' : (in_array($activeTab, ['excel']) ? 'text-emerald-600' : 'text-gray-500') }}">
+                            در انتظار حمایت
+                        </span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="flex-1 flex items-center mx-2">
+                        <div class="h-2 w-full rounded-full transition-all duration-500 relative overflow-hidden
+                            {{ in_array($activeTab, ['excel']) ? 'bg-emerald-500' : ($activeTab === 'approved' ? 'bg-blue-600' : 'bg-gray-200') }}">
+                            @if($activeTab === 'approved')
+                                <div class="absolute inset-0 bg-blue-200 animate-pulse"></div>
+                            @endif
+                        </div>
+                    </div>
+                    
+                    <!-- Excel Tab -->
+                    <div class="flex flex-col items-center relative z-10">
+                        <button 
+                            wire:click="changeTab('excel')" 
+                            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                                {{ $activeTab === 'excel' ? 'bg-blue-600 shadow-lg shadow-blue-100 ring-4 ring-blue-100' : 'bg-gray-100' }}">
+                            <span class="text-{{ $activeTab === 'excel' ? 'white' : 'gray-600' }}">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </span>
+                        </button>
+                        <span class="mt-3 text-sm font-medium {{ $activeTab === 'excel' ? 'text-blue-600' : 'text-gray-500' }}">
+                            در انتظار صدور
+                        </span>
+                    </div>
+                    
+                    <!-- Empty space to push wizard to center -->
+                    <div class="w-8"></div>
+                </div>
+                
+                <!-- Insured Tab (Right side) -->
+                <div class="flex flex-col items-center relative z-10">
+                    <button 
+                        wire:click="changeTab('deleted')" 
+                        class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+                            {{ $activeTab === 'insured' ? 'bg-emerald-500 shadow-lg shadow-emerald-100 ring-4 ring-emerald-100' : 'bg-gray-100' }}">
+                        <span class="text-{{ $activeTab === 'insured' ? 'white' : 'gray-600' }}">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </span>
                     </button>
-                    <button type="button"
-                        @click="showDeleteModal = true"
-                        class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded"
-                        x-bind:disabled="selectedFamilies.length === 0">
-                        حذف انتخاب شده
-                    </button>
-                    @if($tab === 'reviewing')
-                        <button type="button"
-                            @click="showApproveAndContinueModal = true"
-                            class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded"
-                            x-bind:disabled="selectedFamilies.length === 0">
-                            تایید و ادامه
+                    <span class="mt-3 text-sm font-medium {{ $activeTab === 'deleted' ? 'text-red-600' : 'text-gray-500' }}">
+                    حذف شده ها
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- محتوای اصلی -->
+        <div class="bg-white rounded-xl shadow p-6 mb-8">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">
+                        @if($activeTab === 'renewal')
+                            لیست خانواده‌های در انتظار تمدید
+                        @elseif($activeTab === 'pending')
+                            لیست خانواده‌های در انتظار تایید
+                        @elseif($activeTab === 'reviewing')
+                            لیست خانواده‌های تخصیص سهمیه
+                        @elseif($activeTab === 'approved')
+                            لیست خانواده‌های در انتظار حمایت
+                        @elseif($activeTab === 'excel')
+                            لیست خانواده‌های در انتظار صدور
+                        @elseif($activeTab === 'deleted')
+                            لیست خانواده‌های حذف شده
+                        @else
+                            لیست خانواده‌های بیمه شده
+                        @endif
+                    </h2>
+
+                    {{-- دکمه دانلود جدید مشابه family-search.blade.php --}}
+                    @if(isset($families) && $families->count() > 0)
+                        <div x-data="{ downloading: false }">
+                            <button 
+                                wire:click="export"
+                                wire:loading.attr="disabled"
+                                wire:target="export"
+                                x-on:livewire-upload-start="() => {}"
+                                type="button"
+                                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                
+                                <span wire:loading.remove wire:target="export">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    دانلود اکسل
+                                </span>
+                                <span wire:loading wire:target="export">
+                                    <svg class="animate-spin h-4 w-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    در حال آماده‌سازی...
+                                </span>
+                            </button>
+                        </div>
+                    @endif
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    @if($activeTab === 'pending')
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="approveSelected"
+                            wire:loading.attr="disabled"
+                            wire:target="approveSelected"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            تایید و انتقال به مرحله بعد
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
-                        <button type="button"
-                            @click="showReturnModal = true"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded"
-                            x-bind:disabled="selectedFamilies.length === 0">
-                            بازگرداندن به مرحله قبل
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="showDeleteConfirmation"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده‌ها
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
-                    @elseif($tab === 'approved')
-                        <button type="button"
-                            @click="showExcelUploadModal = true"
-                            class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded"
-                            x-bind:disabled="selectedFamilies.length === 0">
-                            آپلود فایل اکسل
+                    @elseif($activeTab === 'reviewing')
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="approveAndContinueSelected"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            تخصیص سهم و تایید
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
-                        <button type="button"
-                            @click="window.location.href = '/insurance/export-excel?status=approved'"
-                            class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">
-                            دانلود فایل اکسل
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="showDeleteConfirmation"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده‌ها
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
-                    @else
-                        <button type="button"
-                            @click="showApproveModal = true"
-                            class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded"
-                            x-bind:disabled="selectedFamilies.length === 0">
-                            تایید انتخاب شده
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="returnToPreviousStage"
+                            wire:loading.attr="disabled"
+                            wire:target="returnToPreviousStage"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            بازگشت به مرحله قبل
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                    @elseif($activeTab === 'approved')
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="prepareInsuranceExcelDownload"
+                            :disabled="downloading || {{ count($selected) === 0 ? 'true' : 'false' }}">
+                            
+                            <!-- آیکون لودینگ Alpine.js -->
+                            <svg x-show="downloading" class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            
+                            <!-- آیکون دانلود -->
+                            <svg x-show="!downloading" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 8m4-4v12" />
+                            </svg>
+                            
+                            <span x-text="downloading ? 'در حال دانلود...' : 'دریافت فایل'"></span>
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="showDeleteConfirmation"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده‌ها
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="returnToPreviousStage"
+                            wire:loading.attr="disabled"
+                            wire:target="returnToPreviousStage"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            بازگشت به مرحله قبل
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                    @elseif($activeTab === 'excel')
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 disabled:opacity-50"
+                            x-on:click="showExcelUploadModal = true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 8m4-4v12" />
+                            </svg>
+                            ثبت اطلاعات صدور
+                        </button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="showDeleteConfirmation"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده‌ها
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="returnToPreviousStage"
+                            wire:loading.attr="disabled"
+                            wire:target="returnToPreviousStage"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            بازگشت به مرحله قبل
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                    @elseif($activeTab === 'insured')
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="showDeleteConfirmation"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            حذف خانواده‌ها
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
+                        </button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 bg-gray-500 border border-transparent rounded-md font-semibold text-white hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors duration-200 disabled:opacity-50"
+                            wire:click="returnToPreviousStage"
+                            wire:loading.attr="disabled"
+                            wire:target="returnToPreviousStage"
+                            {{ count($selected) === 0 ? 'disabled' : '' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                            بازگشت به مرحله قبل
+                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
                     @endif
                 </div>
             </div>
-            <!-- جدول -->
+            
+            {{-- نمایش لیست خانواده‌ها --}}
             <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
+                @if($activeTab === 'excel')
+                    <div class="bg-white p-8 text-center">
+                        <div class="mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="mt-4 text-xl font-bold text-gray-800">ثبت اطلاعات صدور بیمه</h3>
+                            <p class="mt-2 text-gray-600">فایل اطلاعات صدور بیمه را آپلود کنید تا اطلاعات بیمه‌نامه ثبت شود.</p>
+                        </div>
+                        
+                        <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8 max-w-lg mx-auto">
+                            <div class="flex flex-col items-center">
+                                <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
+                                <label for="excel-upload-input" class="w-full cursor-pointer">
+                                    <div class="bg-green-600 hover:bg-green-700 text-white rounded-xl py-4 text-lg font-bold flex items-center justify-center gap-2 transition duration-200 ease-in-out">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        آپلود فایل اطلاعات صدور
+                                    </div>
+                                </label>
+                                
+                                @if($insuranceExcelFile)
+                                    <div class="mt-4 text-green-700 text-sm font-bold flex items-center justify-center gap-2 animate-fade-in">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        فایل انتخاب شد: {{ $insuranceExcelFile->getClientOriginalName() }}
+                                    </div>
+                                    <button type="submit" class="mt-4 w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 text-lg font-bold transition duration-200 ease-in-out animate-fade-in">
+                                        تایید و ارسال فایل
+                                    </button>
+                                @endif
+                                
+                                @error('insuranceExcelFile')
+                                    <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </form>
+                        
+                        <div class="mt-8 text-gray-600 text-sm">
+                            <p class="font-bold mb-2">راهنمای آپلود فایل:</p>
+                            <ul class="list-disc list-inside text-right">
+                                <li>فایل باید در فرمت اکسل (.xlsx یا .xls) باشد</li>
+                                <li>برای هر خانواده، اطلاعات بیمه را به طور کامل وارد کنید</li>
+                                <li>از تغییر ساختار فایل خودداری کنید</li>
+                            </ul>
+                        </div>
+                    </div>
+                @else
                 <div class="w-full overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr class="bg-gray-50 text-xs text-gray-700">
-                                <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
-                                    <input type="checkbox"
-                                        x-model="selectAll"
-                                        @change="toggleAllFamilies()"
-                                        class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <thead class="bg-gray-50">
+                            <tr class="text-xs text-gray-700">
+                                <!-- ستون چک‌باکس -->
+                                <th scope="col" class="px-3 py-3 text-right font-medium">
+                                    <input type="checkbox" id="select-all" 
+                                           wire:model.live="selectAll" 
+                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                 </th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">شناسه</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">رتبه محرومیت</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">استان</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">شهر/روستا</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">تعداد بیمه‌ها</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">معیار پذیرش</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">تعداد اعضا</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">سرپرست خانوار</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">خیریه معرف</th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                                    @if(in_array($tab, ['insured', 'approved']))
-                                        تاریخ پایان بیمه
-                                    @else
-                                        تاریخ ثبت
-                                    @endif
+
+                                <!-- 1. رتبه -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('province_deprivation_rank')" class="flex items-center justify-end w-full">
+                                        رتبه
+                                        @php $sf = $sortField ?? ''; $sd = $sortDirection ?? ''; @endphp
+                                        @if($sf === 'province_deprivation_rank')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem]">▼</span>
+                                        @endif
+                                    </button>
                                 </th>
-                                <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">وضعیت</th>
-                                <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">آیکون‌های اعتبارسنجی</th>
-                                <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">جزئیات</th>
+
+                                <!-- 2. استان -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('province_id')" class="flex items-center justify-end w-full">
+                                        استان
+                                        @if($sf === 'province_id')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem]">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+
+                                <!-- 3. شهر/روستا -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('city_id')" class="flex items-center justify-end w-full">
+                                        شهر/روستا
+                                        @if($sf === 'city_id')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem]">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+
+                                <!-- 4. تعداد بیمه‌ها -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('final_insurances_count')" class="flex items-center justify-end w-full">
+                                        تعداد بیمه‌ها
+                                        @if($sf === 'final_insurances_count')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem]">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+
+                                <!-- 5. معیار پذیرش -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    معیار پذیرش
+                                </th>
+                                
+                                <!-- 6. تعداد اعضا -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    {{ $activeTab === 'pending' ? 'تعداد اعضای خانواده' : 'تعداد اعضا' }}
+                                </th>
+
+                                <!-- 7. سرپرست خانوار -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('head_name')" class="flex items-center justify-end w-full">
+                                        سرپرست خانوار
+                                        @if($sf === 'head_name')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem] text-gray-400">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+
+                                <!-- 8. خیریه معرف -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('charity_id')" class="flex items-center justify-end w-full">
+                                        خیریه معرف
+                                        @if($sf === 'charity_id')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem]">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+
+                                <!-- 9. تاریخ عضویت -->
+                                <th scope="col" class="px-5 py-3 text-right font-medium">
+                                    <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">
+                                        تاریخ عضویت
+                                        @if($sf === 'created_at')
+                                            <span class="mr-1 text-[0.5rem]">
+                                                @if($sd === 'asc')
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                                    </svg>
+                                                @else
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                @endif
+                                            </span>
+                                        @else
+                                            <span class="mr-1 text-[0.5rem] text-gray-400">▼</span>
+                                        @endif
+                                    </button>
+                                </th>
+                                
+                                <!-- 10. آیکون‌های اعتبارسنجی -->
+                                <th scope="col" class="px-5 py-3 text-center font-medium">اعتبارسنجی</th>
+                                
+                                <!-- 11. جزئیات -->
+                                <th scope="col" class="px-5 py-3 text-center font-medium">جزئیات</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($families as $family)
-                            <tr class="hover:bg-gray-50" data-family-id="{{ $family->id }}">
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    <input type="checkbox" name="family_ids[]" value="{{ $family->id }}" x-model="selectedFamilies" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">{{ $family->id }}</td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    @if($family->province && isset($family->province->deprivation_rank))
-                                        <div class="flex items-center justify-center">
-                                            <div class="w-8 h-8 rounded-full flex items-center justify-center
-                                                {{ $family->province->deprivation_rank <= 3 ? 'bg-red-100 text-red-800' : 
-                                                   ($family->province->deprivation_rank <= 6 ? 'bg-yellow-100 text-yellow-800' : 
-                                                    'bg-green-100 text-green-800') }}">
-                                                {{ $family->province->deprivation_rank }}
-                                            </div>
+                            @forelse(($families ?? collect([])) as $family)
+                                <tr class="hover:bg-gray-50" data-family-id="{{ $family->id }}">
+                                    <!-- ستون چک‌باکس -->
+                                    <td class="px-3 py-4 whitespace-nowrap border-b border-gray-200">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="family-{{ $family->id }}" 
+                                                value="{{ $family->id }}" 
+                                                wire:model="selected" 
+                                                wire:key="checkbox-{{ $family->id }}"
+                                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                         </div>
-                                    @else
-                                        <div class="flex items-center justify-center">
-                                            <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800">
-                                                {{ $family->rank ?? '-' }}
+                                    </td>
+
+                                    <!-- 1. رتبه -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        @if($family->province && isset($family->province->deprivation_rank))
+                                            <div class="flex items-center justify-center">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center
+                                                    {{ $family->province->deprivation_rank <= 3 ? 'bg-red-100 text-red-800' : 
+                                                       ($family->province->deprivation_rank <= 6 ? 'bg-yellow-100 text-yellow-800' : 
+                                                        'bg-green-100 text-green-800') }}">
+                                                    {{ $family->province->deprivation_rank }}
+                                                </div>
                                             </div>
+                                        @else
+                                            <div class="flex items-center justify-center">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-800">
+                                                    {{ $loop->iteration }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </td>
+
+                                    <!-- 2. استان -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        {{ $family->province->name ?? 'نامشخص' }}
+                                    </td>
+
+                                    <!-- 3. شهر/روستا -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        {{ $family->city->name ?? 'نامشخص' }}
+                                    </td>
+
+                                    <!-- 4. تعداد بیمه‌ها -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        <div class="flex flex-col items-center">
+                                            <span class="text-lg font-bold {{ $family->final_insurances_count > 0 ? 'text-green-600' : 'text-gray-400' }}">
+                                                {{ $family->final_insurances_count ?? 0 }}
+                                            </span>
+                                            <span class="text-xs text-gray-500">
+                                                {{ $family->final_insurances_count > 0 ? 'عضو بیمه‌دار' : 'بدون بیمه' }}
+                                            </span>
                                         </div>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">{{ $family->province->name ?? '-' }}</td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">{{ $family->city->name ?? '-' }}</td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    <div class="flex flex-col items-center">
-                                        <span class="text-lg font-bold {{ $family->insurances_count > 0 ? 'text-green-600' : 'text-gray-400' }}">
-                                            {{ $family->insurances_count ?? 0 }}
-                                        </span>
-                                        <span class="text-xs text-gray-500">
-                                            {{ $family->insurances_count > 0 ? 'بیمه فعال' : 'بدون بیمه' }}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    @php
-                                        // تجمیع مشکلات از همه اعضای خانواده
-                                        $problemCounts = [
-                                            'addiction' => 0,
-                                            'special_disease' => 0,
-                                            'unemployment' => 0,
-                                            'work_disability' => 0
-                                        ];
-                                        
-                                        foreach ($family->members as $member) {
-                                            if (is_array($member->problem_type)) {
-                                                foreach ($member->problem_type as $problem) {
-                                                    if (isset($problemCounts[$problem])) {
-                                                        $problemCounts[$problem]++;
+                                    </td>
+
+                                    <!-- 5. معیار پذیرش -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        @php
+                                            // شمارش مشکلات تجمیعی خانواده
+                                            $familyProblems = [];
+                                            foreach ($family->members as $member) {
+                                                if (is_array($member->problem_type)) {
+                                                    foreach ($member->problem_type as $problem) {
+                                                        if (!isset($familyProblems[$problem])) {
+                                                            $familyProblems[$problem] = 0;
+                                                        }
+                                                        $familyProblems[$problem]++;
                                                     }
                                                 }
                                             }
-                                        }
-                                        
-                                        // فیلتر کردن مشکلاتی که حداقل یک عضو دارد
-                                        $activeProblems = array_filter($problemCounts, fn($count) => $count > 0);
-                                        
-                                        // نام‌های فارسی مشکلات
-                                        $problemLabels = [
-                                            'addiction' => 'اعتیاد',
-                                            'special_disease' => 'بیماری خاص',
-                                            'unemployment' => 'بیکاری', 
-                                            'work_disability' => 'ازکارافتادگی'
-                                        ];
-                                        
-                                        // رنگ‌های مختلف برای هر مشکل
-                                        $problemColors = [
-                                            'addiction' => ['bg' => 'bg-red-100', 'text' => 'text-red-800'],
-                                            'special_disease' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-800'],
-                                            'unemployment' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800'],
-                                            'work_disability' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800']
-                                        ];
-                                    @endphp
-
-                                    @if(!empty($activeProblems))
+                                            
+                                            $problemLabels = [
+                                                'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-purple-100 text-purple-800'],
+                                                'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-orange-100 text-orange-800'],
+                                                'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-red-100 text-red-800'],
+                                                'work_disability' => ['label' => 'ازکارافتادگی', 'color' => 'bg-yellow-100 text-yellow-800'],
+                                            ];
+                                        @endphp
+                                 
                                         <div class="flex flex-wrap gap-1">
-                                            @foreach($activeProblems as $problem => $count)
-                                                @php $colors = $problemColors[$problem]; @endphp
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $colors['bg'] }} {{ $colors['text'] }} mr-1 mb-1">
-                                                    {{ $problemLabels[$problem] }}
-                                                    @if($count > 1)
-                                                        <span class="mr-1 bg-white bg-opacity-60 rounded-full px-1 text-xs">×{{ $count }}</span>
+                                            @if(count($familyProblems) > 0)
+                                                @foreach($familyProblems as $problem => $count)
+                                                    @if(isset($problemLabels[$problem]))
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $problemLabels[$problem]['color'] }}">
+                                                            {{ $problemLabels[$problem]['label'] }}
+                                                            @if($count > 1)
+                                                                <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
+                                                            @endif
+                                                        </span>
                                                     @endif
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            بدون مشکل خاص
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">{{ $family->members->count() ?? 0 }}</td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    @php
-                                        $head = $family->members?->where('is_head', true)->first();
-                                    @endphp
-                                    @if($head)
-                                        <div class="flex items-center justify-center">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                                </svg>
-                                                {{ $head->first_name }} {{ $head->last_name }}
-                                            </span>
-                                        </div>
-                                        @if($head->national_code)
-                                            <div class="text-center mt-1">
-                                                <span class="text-xs text-gray-500">کد ملی: {{ $head->national_code }}</span>
-                                            </div>
-                                        @endif
-                                    @else
-                                        <div class="flex items-center justify-center">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                                ⚠️ بدون سرپرست
-                                            </span>
-                                        </div>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    <div class="flex items-center justify-end">
-                                        @if($family->organization)
-                                            @if($family->organization->logo_path)
-                                                <img src="{{ $family->organization->logoUrl }}" 
-                                                     alt="{{ $family->organization->name }}" 
-                                                     class="w-6 h-6 rounded-full object-cover"
-                                                     title="{{ $family->organization->name }}">
+                                                @endforeach
                                             @else
-                                                <span class="ml-0">{{ $family->organization->name }}</span>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    بدون مشکل خاص
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- 6. تعداد اعضا -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        {{ $family->members->count() ?? 0 }}
+                                    </td>
+
+                                    <!-- 7. سرپرست خانوار -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        @php
+                                            $head = $family->members?->where('is_head', true)->first();
+                                        @endphp
+                                        @if($head)
+                                            <div class="flex items-center justify-center">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                    {{ $head->first_name }} {{ $head->last_name }}
+                                                </span>
+                                            </div>
+                                            @if($head->national_code)
+                                                <div class="text-center mt-1">
+                                                    <span class="text-xs text-gray-500">کد ملی: {{ $head->national_code }}</span>
+                                                </div>
                                             @endif
                                         @else
-                                            <span class="text-gray-400">-</span>
+                                            <div class="flex items-center justify-center">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                                    ⚠️ بدون سرپرست
+                                                </span>
+                                            </div>
                                         @endif
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    @if($family->created_at)
-                                        @php
-                                            try {
-                                                echo jdate($family->created_at)->format('Y/m/d');
-                                            } catch (\Exception $e) {
-                                                echo $family->created_at->format('Y/m/d');
-                                            }
-                                        @endphp
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    @switch($family->status)
-                                        @case('pending')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">در انتظار بررسی</span>
-                                            @break
-                                        @case('reviewing')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">در حال بررسی</span>
-                                            @break
-                                        @case('approved')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">تایید شده</span>
-                                            @break
-                                        @case('insured')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">بیمه شده</span>
-                                            @break
-                                        @case('renewal')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">در انتظار تمدید</span>
-                                            @break
-                                        @case('rejected')
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">رد شده</span>
-                                            @break
-                                        @default
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{{ $family->status_label ?? '-' }}</span>
-                                    @endswitch
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    <div class="flex items-center justify-center">
-                                        <x-family-validation-icons :family="$family" size="sm" />
-                                    </div>
-                                </td>
-                                <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                    <button wire:click="toggleFamily({{ $family->id }})"
-                                        class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-colors duration-150 ease-in-out toggle-family-btn"
-                                        data-family-id="{{ $family->id }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="h-4 w-4 inline-block transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}"
-                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            @if($expandedFamily === $family->id)
-                            <tr class="bg-green-50">
-                                <td colspan="14" class="p-0">
-                                    <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
-                                        <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-                                            <table class="min-w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
-                                                <thead>
-                                                    <tr class="bg-green-100 border-b border-green-200">
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right sticky left-0 bg-green-100">سرپرست؟</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نسبت</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نام و نام خانوادگی</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">کد ملی</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">تاریخ تولد</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">جنسیت</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">شغل</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع مشکل</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">
-                                                            <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
-                                                        </th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع بیمه</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">پرداخت کننده حق بیمه</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">درصد مشارکت</th>
-                                                        <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">اعتبارسنجی</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @forelse($family->members as $member)
-                                                    <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200" wire:key="member-{{ $member->id }}">
-                                                        <td class="px-3 py-3 text-sm text-gray-800 text-center sticky left-0 bg-green-100">
-                                                            @if($member->is_head)
-                                                                <span class="text-blue-500 font-bold inline-flex items-center">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                                    </svg>
-                                                                    سرپرست
-                                                                </span>
-                                                            @else
-                                                                <span class="text-gray-400">-</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            {{ $member->relationship_fa ?? '-' }}
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            {{ $member->first_name }} {{ $member->last_name }}
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            @if($member->birth_date)
-                                                                @php
-                                                                    try {
-                                                                        echo jdate($member->birth_date)->format('Y/m/d');
-                                                                    } catch (\Exception $e) {
-                                                                        echo \Carbon\Carbon::parse($member->birth_date)->format('Y/m/d');
-                                                                    }
-                                                                @endphp
-                                                            @else
-                                                                -
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            @if($member->gender === 'male')
-                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">مرد</span>
-                                                            @elseif($member->gender === 'female')
-                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">زن</span>
-                                                            @else
-                                                                -
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
+                                    </td>
+
+                                    <!-- 8. خیریه معرف -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        {{ $family->charity->name ?? 'نامشخص' }}
+                                    </td>
+
+                                    <!-- 9. تاریخ عضویت -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        @if($family->created_at)
+                                            @php
+                                                try {
+                                                    echo \App\Helpers\DateHelper::toJalali($family->created_at);
+                                                } catch (\Exception $e) {
+                                                    echo $family->created_at->format('Y/m/d');
+                                                }
+                                            @endphp
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- 10. آیکون‌های اعتبارسنجی -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        <div class="flex items-center justify-center">
+                                            <x-family-validation-icons :family="$family" size="sm" />
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- 11. جزئیات -->
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
+                                        <div class="flex items-center justify-center">
+                                            <button wire:click="toggleFamily({{ $family->id }})" class="bg-green-200 hover:bg-green-300 text-green-800 text-xs py-1 px-2 rounded-full transition-all duration-200 ease-in-out toggle-family-btn" data-family-id="{{ $family->id }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                    @if($expandedFamily === $family->id)
+                                <tr class="bg-green-50">
+                                <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 14 }}" class="p-0">
+                                <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
+                                <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+                                                        <table class="w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
+                                                        <thead>
+                                        <tr class="bg-green-100 border-b border-green-200">
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right sticky left-0 bg-green-100">سرپرست؟</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نسبت</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نام و نام خانوادگی</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">کد ملی</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">تاریخ تولد</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">شغل</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع مشکل</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">خیریه معرف</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">نوع بیمه</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">پرداخت کننده حق بیمه</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">درصد مشارکت</th>
+                                            @if(!auth()->user()->hasRole('admin'))
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-right">اعتبارسنجی</th>
+                                            @endif
+                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                                @forelse($familyMembers ?? $family->members ?? [] as $member)
+                                                                    <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200" wire:key="member-{{ $member->id }}">
+                                                                    <td class="px-5 py-3 text-sm text-gray-800 text-center sticky left-0 bg-green-100">
+                                                                            {{-- کاربر بیمه نباید بتواند سرپرست را تغییر دهد --}}
+                                                                        @if($member->is_head)
+                                                                            <span class="text-blue-500 font-bold inline-flex items-center">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                                </svg>
+                                                                                سرپرست
+                                                                            </span>
+                                                                        @else
+                                                                            <span class="text-gray-400">-</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">
+                                                                        {{ $member->relationship_fa ?? ($member->relationship === 'head' ? 'سرپرست' : 
+                                                                        ($member->relationship === 'spouse' ? 'همسر' : 
+                                                                        ($member->relationship === 'child' ? 'فرزند' : 
+                                                                            ($member->relationship === 'parent' ? 'والدین' : 'سایر')))) }}
+                                                                    </td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">
+                                                                        {{ $member->first_name }} {{ $member->last_name }}
+                                                                    </td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">{{ $member->national_code ?? '-' }}</td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">
+                                                        @if($member->birth_date)
                                                             @php
-                                                                $memberProblems = [];
-                                                                $problemLabels = [
-                                                                    'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-red-100 text-red-800'],
-                                                                    'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-purple-100 text-purple-800'],
-                                                                    'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-orange-100 text-orange-800'],
-                                                                    'work_disability' => ['label' => 'ازکارافتادگی', 'color' => 'bg-blue-100 text-blue-800']
-                                                                ];
-                                                                
-                                                                if (is_array($member->problem_type)) {
-                                                                    foreach ($member->problem_type as $problem) {
-                                                                        if (isset($problemLabels[$problem])) {
-                                                                            $memberProblems[] = $problemLabels[$problem];
-                                                                        }
-                                                                    }
+                                                                try {
+                                                                    echo \App\Helpers\DateHelper::toJalali($member->birth_date);
+                                                                } catch (\Exception $e) {
+                                                                    echo \Carbon\Carbon::parse($member->birth_date)->format('Y/m/d');
                                                                 }
                                                             @endphp
-                                                            
-                                                            @if(count($memberProblems) > 0)
-                                                                <div class="flex flex-wrap gap-1">
-                                                                    @foreach($memberProblems as $problem)
-                                                                        <span class="px-2 py-0.5 rounded-md text-xs {{ $problem['color'] }}">
-                                                                            {{ $problem['label'] }}
-                                                                        </span>
-                                                                    @endforeach
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
+                                                                    <td class="px-3 py-3 text-sm text-gray-800">
+                                                                        @php
+                                                                            $memberProblems = [];
+                                                                            if (is_array($member->problem_type)) {
+                                                                                foreach ($member->problem_type as $problem) {
+                                                                                    if (isset($problemLabels[$problem])) {
+                                                                                        $memberProblems[] = $problemLabels[$problem];
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        @endphp
+                                                                        
+                                                                        @if(count($memberProblems) > 0)
+                                                                            <div class="flex flex-wrap gap-1">
+                                                                                @foreach($memberProblems as $problem)
+                                                                                    <span class="px-2 py-0.5 rounded-md text-xs {{ $problem['color'] }}">
+                                                                                        {{ $problem['label'] }}
+                                                                                    </span>
+                                                                                @endforeach
+                                                                            </div>
+                                                                        @else
+                                                                            <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                                                                بدون مشکل
+                                                                            </span>
+                                                                        @endif
+                                                                    </td>
+                                                                        <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
+                                                                            @if($member->organization)
+                                                                                @if($member->organization->logo_path)
+                                                                                    <img src="{{ $member->organization->logoUrl }}" 
+                                                                                         alt="{{ $member->organization->name }}" 
+                                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                                         title="{{ $member->organization->name }}">
+                                                                                @else
+                                                                                    <span class="charity-name text-sm">{{ $member->organization->name }}</span>
+                                                                                @endif
+                                                                            @elseif($family->charity)
+                                                                                @if($family->charity->logo_path)
+                                                                                    <img src="{{ $family->charity->logoUrl }}" 
+                                                                                         alt="{{ $family->charity->name }}" 
+ی                                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                                         title="{{ $family->charity->name }}">
+ا                                                                                @else
+                                                                                    <span class="charity-name text-sm">{{ $family->charity->name }}</span>
+                                                                                @endif
+                                                                            @else
+                                                                                <span class="text-gray-400">-</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="px-3 py-3 text-sm text-gray-800">
+                                                                            @php $types = $family->insuranceTypes(); @endphp
+                                                                            @if($types->count())
+                                                                                @foreach($types as $type)
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-1">{{ $type }}</span>
+                                                                                @endforeach
+                                                                            @else
+                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">-</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="px-3 py-3 text-sm text-gray-800">
+                                                                            @php $payers = $family->insurancePayers(); @endphp
+                                                                            @if($payers->count())
+                                                                                @foreach($payers as $payer)
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-1 mb-1">{{ $payer }}</span>
+                                                                                @endforeach
+                                                                            @else
+                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">-</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="px-3 py-3 text-sm text-gray-800">۱۰۰٪</td>
+
+                                                                    @if(!auth()->user()->hasRole('admin'))
+                                                                    <td class="px-3 py-3 text-sm text-gray-800 text-center">
+                                                                        @php
+                                                                            // چک کنیم آیا این عضو نیاز به مدرک دارد
+                                                                            $needsDocument = isset($member->needs_document) && $member->needs_document;
+                                                                        @endphp
+                                                                            
+                                                                        @if($needsDocument)
+                                                                            <a href="{{ route('charity.family.members.documents.upload', ['family' => $family->id, 'member' => $member->id]) }}" 
+                                                                                   class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                                </svg>
+                                                                                آپلود مدرک
+                                                                            </a>
+                                                                        @else
+                                                                            <x-member-validation-icons :member="$member" size="sm" />
+                                                                        @endif
+                                                                    </td>
+                                                                        @endif
+                                                                </tr>
+                                                                @empty
+                                                                    <tr>
+                                                                        <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 12 }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                                                            عضوی برای این خانواده ثبت نشده است.
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                        
+                                                        <div class="bg-green-100 py-4 px-4 rounded-b border-r border-l border-b border-green-100 flex flex-wrap justify-between items-center gap-4">
+                                                            <div class="flex items-center">
+                                                                <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
+                                                                <div class="bg-white rounded px-3 py-2 flex items-center">
+                                                                    <span class="text-sm text-gray-800">{{ $family->head()?->mobile ?? '09347964873' }}</span>
+                                                                    <button type="button" wire:click="copyText('{{ $family->head()?->mobile ?? '09347964873' }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                                                        </svg>
+                                                                    </button>
                                                                 </div>
-                                                            @else
-                                                                <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                                                    بدون مشکل
-                                                                </span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
-                                                            @if($member->organization)
-                                                                @if($member->organization->logo_path)
-                                                                    <img src="{{ $member->organization->logoUrl }}" 
-                                                                         alt="{{ $member->organization->name }}" 
-                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
-                                                                         title="{{ $member->organization->name }}">
-                                                                @else
-                                                                    <span class="charity-name text-sm">{{ $member->organization->name }}</span>
-                                                                @endif
-                                                            @elseif($family->organization)
-                                                                @if($family->organization->logo_path)
-                                                                    <img src="{{ $family->organization->logoUrl }}" 
-                                                                         alt="{{ $family->organization->name }}" 
-                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
-                                                                         title="{{ $family->organization->name }}">
-                                                                @else
-                                                                    <span class="charity-name text-sm">{{ $family->organization->name }}</span>
-                                                                @endif
-                                                            @else
-                                                                <span class="text-gray-400">-</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            @php $types = $family->insuranceTypes(); @endphp
-                                                            @if($types->count())
-                                                                @foreach($types as $type)
-                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-1 mb-1">{{ $type }}</span>
-                                                                @endforeach
-                                                            @else
-                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">-</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">
-                                                            @php $payers = $family->insurancePayers(); @endphp
-                                                            @if($payers->count())
-                                                                @foreach($payers as $payer)
-                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-1 mb-1">{{ $payer }}</span>
-                                                                @endforeach
-                                                            @else
-                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-1 mb-1">-</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800">۱۰۰٪</td>
-                                                        <td class="px-3 py-3 text-sm text-gray-800 text-center">
-                                                            @php
-                                                                // چک کنیم آیا این عضو نیاز به مدرک دارد
-                                                                $needsDocument = isset($member->needs_document) && $member->needs_document;
-                                                            @endphp
+                                                            </div>
                                                             
-                                                            @if($needsDocument)
-                                                                <a href="{{ route('family.members.documents.upload', ['family' => $family->id, 'member' => $member->id]) }}" 
-                                                                   class="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full hover:bg-yellow-200 transition-colors">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                                    </svg>
-                                                                    آپلود مدرک
-                                                                </a>
-                                                            @else
-                                                                <x-member-validation-icons :member="$member" size="sm" />
-                                                            @endif
-                                                        </td>
-                                                    </tr>
-                                                    @empty
-                                                    <tr>
-                                                        <td colspan="13" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
-                                                            عضوی برای این خانواده ثبت نشده است.
-                                                        </td>
-                                                    </tr>
-                                                    @endforelse
-                                                </tbody>
-                                            </table>
-                                            
-                                            <div class="bg-green-100 py-4 px-4 rounded-b border-r border-l border-b border-green-100 flex flex-wrap justify-between items-center gap-4">
-                                                <div class="flex items-center">
-                                                    <span class="text-sm text-gray-600 ml-2">شماره موبایل سرپرست:</span>
-                                                    <div class="bg-white rounded px-3 py-2 flex items-center">
-                                                        <span class="text-sm text-gray-800">{{ $family->head()?->mobile ?? '09347964873' }}</span>
-                                                        <button type="button" wire:click="copyText('{{ $family->head()?->mobile ?? '09347964873' }}')" class="text-blue-500 mr-2 cursor-pointer">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="flex items-center">
-                                                    <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
-                                                    <div class="bg-white rounded px-3 py-2 flex items-center">
-                                                        <span class="text-sm text-gray-800 ltr">{{ $family->head()?->sheba ?? 'IR056216845813188' }}</span>
-                                                        <button type="button" wire:click="copyText('{{ $family->head()?->sheba ?? 'IR056216845813188' }}')" class="text-blue-500 mr-2 cursor-pointer">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
+                                                            <div class="flex items-center">
+                                                                <span class="text-sm text-gray-600 ml-2">شماره شبا جهت پرداخت خسارت:</span>
+                                                                <div class="bg-white rounded px-3 py-2 flex items-center">
+                                                                    <span class="text-sm text-gray-800 ltr">{{ $family->head()?->sheba ?? 'IR056216845813188' }}</span>
+                                                                    <button type="button" wire:click="copyText('{{ $family->head()?->sheba ?? 'IR056216845813188' }}')" class="text-blue-500 mr-2 cursor-pointer">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endif
-                            @empty
-                            <tr>
-                                <td colspan="14" class="py-4 text-gray-400">داده‌ای یافت نشد.</td>
-                            </tr>
+                                        </td>
+                                    </tr>
+                                @endif
+                                                            @empty
+                                <tr>
+                                    <td colspan="11" class="px-6 py-4 text-center text-gray-500">
+                                        هیچ خانواده‌ای یافت نشد.
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+                @endif
             </div>
             
-            <!-- صفحه‌بندی -->
-            @if($families->hasPages())
-            <div class="mt-6 border-t border-gray-200 pt-4" id="pagination-section">
-                <div class="flex flex-wrap items-center justify-between">
-                    <!-- تعداد نمایش - سمت راست -->
-                    <div class="flex items-center order-1">
-                        <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
-                        <select wire:model.live="perPage" 
-                                class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                            <option value="10">10</option>
-                            <option value="15">15</option>
-                            <option value="30">30</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-
-                    <!-- شماره صفحات - وسط -->
-                    <div class="flex items-center justify-center order-2 flex-grow mx-4">
-                        <!-- دکمه صفحه قبل -->
-                        <button type="button" wire:click="{{ !$families->onFirstPage() ? 'previousPage' : '' }}" 
-                           class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        
-                        <!-- شماره صفحات -->
-                        <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300">
-                            @php
-                                $start = max($families->currentPage() - 2, 1);
-                                $end = min($start + 4, $families->lastPage());
-                                if ($end - $start < 4 && $start > 1) {
-                                    $start = max(1, $end - 4);
-                                }
-                            @endphp
-                            
-                            @if($start > 1)
-                                <button type="button" wire:click="gotoPage(1)" class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">1</button>
-                                @if($start > 2)
-                                    <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
-                                @endif
-                            @endif
-                            
-                            @for($i = $start; $i <= $end; $i++)
-                                <button type="button" wire:click="gotoPage({{ $i }})" 
-                                   class="{{ $families->currentPage() == $i ? 'bg-green-100 text-green-800 font-medium' : 'bg-white text-gray-600 hover:bg-gray-50' }} h-full px-3 inline-flex items-center justify-center text-sm">
-                                    {{ $i }}
-                                </button>
-                            @endfor
-                            
-                            @if($end < $families->lastPage())
-                                @if($end < $families->lastPage() - 1)
-                                    <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
-                                @endif
-                                <button type="button" wire:click="gotoPage({{ $families->lastPage() }})" class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">{{ $families->lastPage() }}</button>
-                            @endif
+            {{-- صفحه‌بندی --}}
+            @if($activeTab !== 'excel' && $families->hasPages())
+                <div class="mt-6 border-t border-gray-200 pt-4" id="pagination-section">
+                    <div class="flex flex-wrap items-center justify-between">
+                        <!-- تعداد نمایش - سمت راست -->
+                        <div class="flex items-center order-1">
+                            <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
+                            <select wire:model.live="perPage" 
+                                    class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                <option value="10">{{ persianNumbers(10) }}</option>
+                                <option value="15">{{ persianNumbers(15) }}</option>
+                                <option value="30">{{ persianNumbers(30) }}</option>
+                                <option value="50">{{ persianNumbers(50) }}</option>
+                                <option value="100">{{ persianNumbers(100) }}</option>
+                            </select>
                         </div>
-                        
-                        <!-- دکمه صفحه بعد -->
-                        <button type="button" wire:click="{{ $families->hasMorePages() ? 'nextPage' : '' }}" 
-                           class="{{ $families->hasMorePages() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
 
-                    <!-- شمارنده - سمت چپ -->
-                    <div class="text-sm text-gray-600 order-3">
-                        نمایش {{ $families->firstItem() ?? 0 }} تا {{ $families->lastItem() ?? 0 }} از {{ $families->total() ?? 0 }} خانواده
+                        <!-- دکمه‌های صفحه‌بندی -->
+                        <div class="flex items-center justify-center order-2 flex-grow mx-4">
+                            <!-- دکمه صفحه قبلی (راست) -->
+                            <button 
+                                @if(!$families->onFirstPage())
+                                    wire:click="previousPage"
+                                @endif
+                                wire:loading.attr="disabled"
+                                type="button"
+                                class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1"
+                                @if($families->onFirstPage()) disabled @endif>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <!-- شماره صفحات -->
+                            <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300">
+                                @php
+                                    $start = max($families->currentPage() - 2, 1);
+                                    $end = min($start + 4, $families->lastPage());
+                                    if ($end - $start < 4 && $start > 1) {
+                                        $start = max(1, $end - 4);
+                                    }
+                                @endphp
+                                
+                                @if($start > 1)
+                                    <button 
+                                        wire:click="gotoPage(1)" 
+                                        wire:target="gotoPage"
+                                        wire:loading.class="opacity-50"
+                                        type="button" 
+                                        class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">
+                                        {{ persianNumbers(1) }}
+                                    </button>
+                                    @if($start > 2)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                @endif
+                                
+                                @for($i = $start; $i <= $end; $i++)
+                                    <button 
+                                        wire:click="gotoPage({{ $i }})" 
+                                        wire:loading.class="opacity-50"
+                                        type="button"
+                                        class="{{ $families->currentPage() == $i ? 'bg-green-100 text-green-800 font-medium' : 'bg-white text-gray-600 hover:bg-gray-50' }} h-full px-3 inline-flex items-center justify-center text-sm">
+                                        {{ persianNumbers($i) }}
+                                    </button>
+                                @endfor
+                                
+                                @if($end < $families->lastPage())
+                                    @if($end < $families->lastPage() - 1)
+                                        <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
+                                    @endif
+                                    <button 
+                                        wire:click="gotoPage({{ $families->lastPage() }})" 
+                                        wire:target="gotoPage"
+                                        wire:loading.class="opacity-50"
+                                        type="button"
+                                        class="bg-white text-gray-600 hover:bg-gray-50 h-full px-3 inline-flex items-center justify-center text-sm">
+                                        {{ persianNumbers($families->lastPage()) }}
+                                    </button>
+                                @endif
+                            </div>
+                            
+                            <!-- دکمه صفحه بعدی (چپ) -->
+                            <button 
+                                @if($families->hasMorePages())
+                                    wire:click="nextPage"
+                                @endif
+                                wire:loading.attr="disabled"
+                                type="button"
+                                class="{{ $families->hasMorePages() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1"
+                                @if(!$families->hasMorePages()) disabled @endif>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L9.414 10l3.293 3.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- شمارنده - سمت چپ -->
+                        <div class="text-sm text-gray-600 order-3">
+                            نمایش {{ persianNumbers($families->firstItem() ?? 0) }} تا {{ persianNumbers($families->lastItem() ?? 0) }} از {{ persianNumbers($families->total() ?? 0) }} نتیجه
+                        </div>
                     </div>
                 </div>
-            </div>
             @endif
         </div>
     </div>
+
+    {{-- لوادینگ --}}
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50" wire:loading wire:target="changeTab, approveSelected, returnToPendingSelected, deleteSelected, approveAndContinueSelected">
+        <div class="bg-white p-8 rounded-xl shadow-2xl flex items-center max-w-lg mx-auto">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-xl font-semibold text-gray-800">در حال بارگذاری...</span>
+        </div>
+    </div>
+
+    {{-- مودال‌ها --}}
+    <div>
+        <!-- مودال حذف خانواده - نسخه بدون Alpine -->
+        @if($showDeleteModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <!-- پس‌زمینه تاری -->
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" wire:click="closeDeleteModal">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+    </div>
+    
+                <!-- این المان برای مرکز قرار دادن مودال استفاده می‌شود -->
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                
+                <!-- مودال -->
+                <div class="inline-block align-bottom bg-white rounded-lg text-right overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    
+                    <!-- سربرگ مودال -->
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <!-- دکمه بستن در گوشه بالا سمت چپ -->
+                        <button wire:click="closeDeleteModal" type="button" class="absolute top-3 left-3 text-gray-400 hover:text-gray-500">
+                            <span class="sr-only">بستن</span>
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">حذف خانواده</h3>
+                        
+                        <div class="text-center text-xl text-red-500 font-bold mb-6">
+                            @if(count($selected) > 1)
+                                حذف {{ count($selected) }} خانواده ({{ $totalMembers }} نفر) مورد تایید است
+                            @else
+                                حذف این خانواده مورد تایید است
+                            @endif
+                        </div>
+                        
+                        <div class="text-gray-700 mb-6 leading-relaxed">
+                            حذف این خانواده ها به منزله بررسی و اطمینان از عدم تطابق آنها با معیار های سازمان شماست و
+                            پس از حذف این خانواده ها به قسمت "حذم شده ها" منتقل میشوند.
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 mb-2">لطفا دلیل عدم تطابق را انتخاب کنید:</label>
+                            <select wire:model.defer="deleteReason" class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-3">
+                                <option value="">انتخاب کنید...</option>
+                                <option value="incomplete_info">اطلاعات ناقص</option>
+                                <option value="duplicate">تکراری</option>
+                                <option value="not_eligible">عدم احراز شرایط</option>
+                                <option value="address_problem">مشکل در آدرس سکونت</option>
+                                <option value="other">سایر موارد</option>
+                            </select>
+                            @error('deleteReason') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                    
+                    <!-- دکمه‌های اقدام -->
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse justify-between">
+                        <div>
+                            <button 
+                                wire:click="deleteSelected"
+                                wire:loading.attr="disabled" 
+                                wire:target="deleteSelected"
+                                type="button" 
+                                class="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto sm:text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                حذف خانواده
+                            </button>
+                        </div>
+                        <div>
+                            <button wire:click="closeDeleteModal" type="button" class="inline-flex items-center justify-center px-4 py-2 bg-gray-200 text-gray-700 text-base font-medium rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                انصراف
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
+    
+    {{-- مودال تخصیص سهم --}}
+    @livewire('insurance.share-allocation-modal')
+    {{-- پایان مودال تخصیص سهم --}}
 </div>
-<!-- Trigger for Excel Modal (example, should be called after approveAndContinue) -->
-<script>
-    window.addEventListener('show-excel-upload-modal', () => {
-        document.querySelector('[x-data]')?.__x.$data.showExcelUploadModal = true;
-    });
-</script>
-
-<style>
-    /* استایل‌های مربوط به جدول اعضای خانواده */
-    .family-members-table {
-        table-layout: auto;
-        width: 100%;
-        min-width: 1200px;
-    }
-    
-    .family-members-table th,
-    .family-members-table td {
-        white-space: nowrap;
-        min-width: 100px;
-    }
-    
-    /* استایل برای اسکرول افقی */
-    .scrollbar-thin::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 4px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background: #a0aec0;
-    }
-    
-    /* انیمیشن fade-in */
-    .animate-fade-in {
-        animation: fadeIn 0.3s ease-in-out;
-    }
-    
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    /* استایل برای سوئیچ تخصیص خودکار سهم‌ها */
-    input[type="checkbox"]:checked + .block {
-        background-color: #10B981;
-    }
-    
-    input[type="checkbox"]:checked ~ .dot {
-        transform: translateX(100%);
-    }
-</style>
-
-<!-- اسکریپت تغییر وضعیت و فراخوانی سهم‌بندی -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // فانکشن تغییر وضعیت خانواده‌ها
-        window.updateFamiliesStatus = function(familyIds, status, currentStatus = null) {
-            console.log('updateFamiliesStatus called with:', {
-                familyIds: familyIds,
-                status: status,
-                currentStatus: currentStatus
-            });
-            
-            // بررسی خالی بودن آرایه انتخاب‌ها
-            if (!familyIds || familyIds.length === 0) {
-                alert('لطفاً حداقل یک خانواده انتخاب کنید.');
-                return;
-            }
-            
-            // نمایش لودینگ
-            if (typeof Livewire !== 'undefined') {
-                Livewire.dispatch('showLoading', { message: 'در حال پردازش...' });
-            }
-            
-            // استفاده از مسیر مطلق بدون route()
-            fetch('/insurance/families/bulk-update-status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    family_ids: familyIds,
-                    status: status,
-                    current_status: currentStatus
-                })
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                
-                // مخفی کردن لودینگ
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.dispatch('hideLoading');
-                }
-                
-                if (data.success) {
-                    // اگر نیاز به سهم‌بندی داریم
-                    if (data.require_shares) {
-                        console.log('Opening share allocation modal with family_ids:', data.family_ids);
-                        
-                        // ارسال پارامتر familyIds به صورت مستقیم و ساده
-                        Livewire.dispatch('openShareAllocationModal', data.family_ids);
-                    } else {
-                        // نمایش پیام موفقیت
-                        if (typeof Livewire !== 'undefined') {
-                            Livewire.dispatch('showToast', { 
-                                type: 'success', 
-                                message: data.message 
-                            });
-                        } else {
-                            alert(data.message || 'عملیات با موفقیت انجام شد');
-                        }
-                        
-                        // بارگذاری مجدد برای نمایش تغییرات
-                        window.location.reload();
-                    }
-                } else {
-                    // نمایش پیام خطا
-                    if (typeof Livewire !== 'undefined') {
-                        Livewire.dispatch('showToast', { 
-                            type: 'error', 
-                            message: data.message || 'خطایی رخ داده است.' 
-                        });
-                    } else {
-                        alert(data.message || 'خطایی رخ داده است.');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                
-                // مخفی کردن لودینگ
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.dispatch('hideLoading');
-                }
-                
-                // نمایش پیام خطا
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.dispatch('showToast', { 
-                        type: 'error', 
-                        message: 'خطا در ارتباط با سرور: ' + error.message 
-                    });
-                } else {
-                    alert('خطا در ارتباط با سرور: ' + error.message);
-                }
-            });
-        };
-        
-        // تغییر تعریف رویداد sharesAllocated برای بارگذاری مجدد صفحه پس از تخصیص سهم‌ها
-        window.addEventListener('sharesAllocated', function() {
-            // نمایش پیام موفقیت آمیز
-            if (typeof Livewire !== 'undefined') {
-                Livewire.dispatch('showToast', { 
-                    type: 'success', 
-                    message: 'سهم‌بندی با موفقیت انجام شد.'
-                });
-            }
-        });
-        
-        // تنظیم رویداد closeModalAfterDelay برای بستن مودال‌ها پس از مدتی
-        window.addEventListener('closeModalAfterDelay', function() {
-            setTimeout(function() {
-                if (typeof Alpine !== 'undefined') {
-                    // بستن مودال‌های آلپاین
-                    document.querySelectorAll('[x-data]').forEach(function(el) {
-                        if (el.__x && typeof el.__x.$data.showShareModal !== 'undefined') {
-                            el.__x.$data.showShareModal = false;
-                        }
-                        if (el.__x && typeof el.__x.$data.showApproveModal !== 'undefined') {
-                            el.__x.$data.showApproveModal = false;
-                        }
-                        if (el.__x && typeof el.__x.$data.showApproveAndContinueModal !== 'undefined') {
-                            el.__x.$data.showApproveAndContinueModal = false;
-                        }
-                    });
-                }
-            }, 2000);
-        });
-        
-        // گوش‌دهنده برای تغییر مسیر پس از تخصیص سهم
-        window.addEventListener('redirectAfterShares', function(event) {
-            console.log('redirectAfterShares event received:', event.detail);
-            
-            if (event.detail && event.detail.url) {
-                // نمایش پیام هدایت
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.dispatch('showToast', { 
-                        type: 'info', 
-                        message: 'در حال هدایت به صفحه گزارش مالی...' 
-                    });
-                }
-                
-                // ذخیره آدرس برای هدایت
-                const redirectUrl = event.detail.url;
-                
-                // تاخیر در هدایت
-                setTimeout(function() {
-                    console.log('Redirecting to:', redirectUrl);
-                    window.location.href = redirectUrl;
-                }, event.detail.delay || 2000);
-            }
-        });
-    });
-</script>
-
-<!-- کامپوننت مودال سهم‌بندی -->
-<livewire:insurance.share-allocation-modal />
+</div>

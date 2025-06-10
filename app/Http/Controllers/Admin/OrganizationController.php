@@ -71,7 +71,7 @@ class OrganizationController extends Controller
         
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('organizations', 'public');
-            $organization->logo = $path;
+            $organization->logo_path = $path;
         }
         
         $organization->save();
@@ -118,12 +118,12 @@ class OrganizationController extends Controller
         
         if ($request->hasFile('logo')) {
             // Remove old logo if exists
-            if ($organization->logo) {
-                Storage::disk('public')->delete($organization->logo);
+            if ($organization->logo_path) {
+                Storage::disk('public')->delete($organization->logo_path);
             }
             
             $path = $request->file('logo')->store('organizations', 'public');
-            $organization->logo = $path;
+            $organization->logo_path = $path;
         }
         
         $organization->save();
@@ -144,8 +144,8 @@ class OrganizationController extends Controller
         }
         
         // Delete logo if exists
-        if ($organization->logo) {
-            Storage::disk('public')->delete($organization->logo);
+        if ($organization->logo_path) {
+            Storage::disk('public')->delete($organization->logo_path);
         }
         
         $organization->delete();
@@ -172,8 +172,8 @@ class OrganizationController extends Controller
             }
             
             // Delete logo if exists
-            if ($organization->logo) {
-                Storage::disk('public')->delete($organization->logo);
+            if ($organization->logo_path) {
+                Storage::disk('public')->delete($organization->logo_path);
             }
             
             $organization->delete();
@@ -182,4 +182,4 @@ class OrganizationController extends Controller
         return redirect()->route('admin.organizations.index')
             ->with('success', 'سازمان‌های انتخاب شده با موفقیت حذف شدند');
     }
-} 
+}

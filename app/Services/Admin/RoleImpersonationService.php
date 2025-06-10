@@ -70,8 +70,7 @@ class RoleImpersonationService
                     // فقط در سشن ذخیره می‌کنیم، accessor در مدل خودش مقدار را برمی‌گرداند
                     Session::put('current_organization_id', $organization->id);
                     
-                    // اطمینان از ذخیره وضعیت impersonation
-                    // Session::put('is_impersonating', true);
+   
                     
                     // ذخیره در کش با TTL مناسب (24 ساعت)
                     $cacheKey = $this->getCacheKey($user->id);

@@ -1,5 +1,12 @@
 import './bootstrap';
 import './validation';
+// import Alpine from 'alpinejs';
+
+// // Alpine.js را به عنوان یک متغیر سراسری تنظیم کنیم
+// window.Alpine = Alpine;
+
+// // Alpine.js را راه‌اندازی کنیم
+// Alpine.start();
 
 // تشخیص نقش فعال کاربر ادمین
 function getActiveRole() {

@@ -7,6 +7,9 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/mb6.svg') }}">
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,7 +39,7 @@
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
                 transition: all 0.3s ease;
                 z-index: 40;
-                margin-right: 4rem; /* ثابت نگه داشتن */
+                margin-right: 16rem;
             }
             
             @media (max-width: 768px) {
@@ -46,9 +49,25 @@
                 }
             }
             
+            /* حالت منوی بسته */
+            .sidebar-collapsed .back-button {
+                margin-right: 4rem;
+            }
+            
             .back-button:hover {
                 background-color: #22C55E;
                 width: 50px;
+            }
+            
+            /* CSS برای حالت باز/بسته بودن منو */
+            .main-with-normal-sidebar {
+                margin-right: 16rem; /* 64px */
+                transition: margin 0.3s ease-in-out;
+            }
+            
+            .main-with-collapsed-sidebar {
+                margin-right: 4rem; /* 16px */
+                transition: margin 0.3s ease-in-out;
             }
             
             /* استایل overlay سایدبار */
@@ -56,22 +75,23 @@
                 transition: opacity 0.3s ease;
             }
             
-            /* استایل برای هایلایت کردن عنصر اسکرول شده */
-            .highlight-member {
-                animation: highlight-pulse 3s ease-in-out;
-            }
-            
-            @keyframes highlight-pulse {
-                0% { background-color: rgba(59, 130, 246, 0.3); }
-                50% { background-color: rgba(59, 130, 246, 0.1); }
-                100% { background-color: transparent; }
+            @media (min-width: 1024px) {
+                #main-wrapper {
+                    margin-right: 16rem; /* برابر عرض سایدبار */
+                    transition: all 0.3s ease-in-out;
+                }
+                
+                #main-wrapper.sidebar-collapsed {
+                    margin-right: 4rem; /* برابر عرض سایدبار جمع شده */
+                    transition: all 0.3s ease-in-out;
+                }
             }
         </style>
         
         <!-- Livewire Styles -->
         @livewireStyles
     </head>
-    <body class="font-vazirmatn antialiased bg-gray-100 font-iranyekan text-gray-900">
+    <body class="font-vazirmatn antialiased bg-gray-100">
         <!-- Sidebar overlay for mobile - hidden by default -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
         
@@ -79,9 +99,6 @@
             @include('layouts.sidebar')
             <div class="flex-1">
                 @include('layouts.navigation')
-                <div class="container mx-auto px-4">
-                    <x-impersonation-banner />
-                </div>
                 <main class="p-4">
                     {{ $slot }}
                 </main>
@@ -103,6 +120,19 @@
                 const mainWrapper = document.getElementById('main-wrapper');
                 const sidebarToggle = document.getElementById('sidebar-toggle');
                 const sidebarOverlay = document.getElementById('sidebar-overlay');
+                
+                // گوش دادن به رویداد تغییر وضعیت منو
+                document.addEventListener('sidebar-toggle', function(event) {
+                    if (event.detail && mainWrapper) {
+                        if (event.detail.collapsed) {
+                            mainWrapper.classList.add('sidebar-collapsed');
+                            mainWrapper.classList.remove('sidebar-expanded');
+                        } else {
+                            mainWrapper.classList.remove('sidebar-collapsed');
+                            mainWrapper.classList.add('sidebar-expanded');
+                        }
+                    }
+                });
                 
                 // تنظیم رویدادهای مربوط به موبایل برای overlay
                 if (sidebarToggle && sidebar && sidebarOverlay) {
@@ -145,29 +175,17 @@
                         document.body.classList.remove('overflow-hidden');
                     }
                 });
-            });
-        </script>
-        
-        <!-- اسکریپت اسکرول به عنصر مشخص شده -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // بررسی وجود اطلاعات اسکرول در localStorage
-                const scrollMemberId = "{{ session('scroll_to_member') }}";
-                if (scrollMemberId) {
-                    window.scrollToMember = scrollMemberId;
-                    
-                    // اسکرول به عنصر مشخص شده
-                    const memberElement = document.getElementById('member-' + scrollMemberId);
-                    if (memberElement) {
-                        setTimeout(function() {
-                            memberElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            memberElement.classList.add('highlight-member');
-                            
-                            // حذف کلاس هایلایت بعد از چند ثانیه
-                            setTimeout(function() {
-                                memberElement.classList.remove('highlight-member');
-                            }, 3000);
-                        }, 500);
+                
+                // تنظیم حالت اولیه سایدبار
+                const storedState = localStorage.getItem('sidebarState');
+                if (mainWrapper) {
+                    if (storedState === 'collapsed') {
+                        mainWrapper.classList.add('sidebar-collapsed');
+                        mainWrapper.classList.remove('sidebar-expanded');
+                    } else {
+                        // حالت پیش‌فرض: منو باز است
+                        mainWrapper.classList.remove('sidebar-collapsed');
+                        mainWrapper.classList.add('sidebar-expanded');
                     }
                 }
             });

@@ -1,0 +1,9 @@
+{
+    "This action is unauthorized.": "شما اجازه دسترسی به این بخش را ندارید.",
+    "Forbidden": "دسترسی غیرمجاز",
+    "The page has expired due to inactivity.": "نشست کاری شما به دلیل عدم فعالیت منقضی شده است. لطفاً دوباره تلاش کنید.",
+    "Server Error": "خطای سرور",
+    "Service Unavailable": "سرویس در دسترس نیست",
+    "Please try again later.": "لطفاً بعداً دوباره تلاش کنید.",
+    "Too Many Requests": "درخواست‌های بیش از حد مجاز"
+} 

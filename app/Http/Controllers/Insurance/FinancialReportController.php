@@ -10,9 +10,12 @@ use App\Models\Family;
 use Carbon\Carbon;
 use Morilog\Jalali\Jalalian;
 use App\Models\InsuranceImportLog;
+use App\Models\InsuranceShare;
 use App\Models\InsurancePayment;
+use App\Models\ShareAllocationLog; // مدل جدید اضافه شده
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\FinancialReportExport;
+use Illuminate\Support\Facades\Cache;
 
 class FinancialReportController extends Controller
 {
@@ -23,11 +26,18 @@ class FinancialReportController extends Controller
     {
         $perPage = $request->get('per_page', 15);
         
-        // محاسبه موجودی کل
-        $totalCredit = FundingTransaction::sum('amount');
-        $totalDebit = InsuranceAllocation::sum('amount') + 
-                     InsuranceImportLog::sum('total_insurance_amount') +
-                     InsurancePayment::sum('total_amount');
+        // محاسبه موجودی کل با کش (مدت زمان کش: 10 دقیقه)
+        $totalCredit = Cache::remember('financial_report_total_credit', 600, function () {
+            return FundingTransaction::sum('amount');
+        });
+        
+        $totalDebit = Cache::remember('financial_report_total_debit', 600, function () {
+            return InsuranceAllocation::sum('amount') + 
+                   InsuranceImportLog::sum('total_insurance_amount') +
+                   InsurancePayment::sum('total_amount') +
+                   ShareAllocationLog::where('status', 'completed')->sum('total_amount');
+        });
+        
         $balance = $totalCredit - $totalDebit;
 
         // گرفتن همه تراکنش‌ها با جزئیات بهتر
@@ -36,7 +46,6 @@ class FinancialReportController extends Controller
         // 1. تراکنش‌های بودجه
         $fundingTransactions = FundingTransaction::with('source')->get();
         foreach ($fundingTransactions as $trx) {
-            // بررسی نوع تراکنش (افزایش بودجه یا تخصیص بودجه)
             $isAllocation = $trx->allocated ?? false;
             $title = $isAllocation ? 'تخصیص بودجه' : __('financial.transaction_types.budget_allocation');
             $type = $isAllocation ? 'debit' : 'credit';
@@ -49,17 +58,8 @@ class FinancialReportController extends Controller
                 'date' => $trx->created_at,
                 'date_formatted' => jdate($trx->created_at)->format('Y/m/d'),
                 'sort_timestamp' => $trx->created_at->timestamp,
-                'description' => $trx->description,
-                'reference_no' => $trx->reference_no,
-                'details' => $trx->source ? $trx->source->name : null,
-                'payment_id' => null,
-                'family_count' => 0,
-                'members_count' => 0,
-                'created_family_codes' => [],
-                'updated_family_codes' => [],
-                'members' => collect(),
-                'family' => null,
-                'is_allocation' => $isAllocation
+                'description' => $trx->description ?? 'تراکنش مالی',
+                'source' => $trx->source->name ?? 'نامشخص',
             ]);
         }
 
@@ -190,6 +190,62 @@ class FinancialReportController extends Controller
             ]);
         }
 
+        // 5. سهم‌های بیمه (InsuranceShare)
+        $insuranceShares = InsuranceShare::with(['familyInsurance.family.members', 'fundingSource'])
+            ->whereHas('familyInsurance', function($query) {
+                $query->where('status', 'insured');
+            })
+            ->where('amount', '>', 0) // فقط سهم‌هایی که مبلغ نهایی دارند
+            ->get();
+
+        foreach ($insuranceShares as $share) {
+            $family = $share->familyInsurance->family;
+            $membersCount = $family ? $family->members->count() : 0;
+            
+            // هر سهم را به عنوان یک تراکنش بدهی جداگانه در نظر می‌گیریم
+            $allTransactions->push([
+                'id' => 'share-' . $share->id, // یک شناسه منحصر به فرد
+                'title' => 'پرداخت سهم بیمه',
+                'amount' => $share->amount, // مبلغ نهایی سهم
+                'type' => 'debit',
+                'date' => $share->updated_at, // تاریخ نهایی شدن مبلغ
+                'date_formatted' => jdate($share->updated_at)->format('Y/m/d'),
+                'sort_timestamp' => $share->updated_at->timestamp,
+                'description' => "پرداخت سهم {$share->percentage}% برای خانواده " . ($family->name ?? $family->family_code),
+                'reference_no' => 'SHARE-' . $share->id,
+                'details' => $share->fundingSource ? $share->fundingSource->name : 'منبع مالی نامشخص',
+                'payment_id' => $share->id,
+                'family_count' => 1,
+                'members_count' => $membersCount,
+                'family' => $family,
+                'members' => $family ? $family->members : collect(),
+                'created_family_codes' => [],
+                'updated_family_codes' => [],
+                'is_share' => true // برای تشخیص در view
+            ]);
+        }
+
+        // 5. خواندن لاگ‌های تخصیص سهم گروهی (جایگزین سهم‌های تکی)
+        $allocationLogs = ShareAllocationLog::where('status', 'completed')
+                                          ->where('total_amount', '>', 0)
+                                          ->get();
+        foreach ($allocationLogs as $log) {
+            $allTransactions->push([
+                'id' => 'alloc-' . $log->id,
+                'title' => 'تخصیص سهم گروهی',
+                'amount' => $log->total_amount,
+                'type' => 'debit',
+                'date' => $log->updated_at,
+                'date_formatted' => jdate($log->updated_at)->format('Y/m/d'),
+                'sort_timestamp' => $log->updated_at->timestamp,
+                'description' => $log->description,
+                'details' => $log->families_count . ' خانواده',
+                'payment_id' => $log->id,
+                'family_count' => $log->families_count,
+                'batch_id' => $log->batch_id,
+            ]);
+        }
+
         // ساده‌ترین sorting - فقط بر اساس timestamp
         $sortedTransactions = $allTransactions->sortByDesc('sort_timestamp')->values();
 
@@ -302,4 +358,18 @@ class FinancialReportController extends Controller
             'shareSummary' => $shareSummary
         ]);
     }
-} 
+
+    /**
+     * پاک کردن کش گزارش مالی
+     */
+    public function clearCache()
+    {
+        Cache::forget('financial_report_total_credit');
+        Cache::forget('financial_report_total_debit');
+        Cache::forget('funding_transactions_with_source');
+        Cache::forget('family_allocations_with_relations');
+        Cache::forget('insurance_allocations_with_family');
+        
+        return back()->with('success', 'کش گزارش مالی پاک شد.');
+    }
+}

@@ -194,16 +194,85 @@ class FamilyController extends Controller
      *
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        // فعلاً برای جلوگیری از خطا، به صفحه قبل برمی‌گردیم
-        // در آینده می‌توان از پکیج مناسب مثل maatwebsite/excel استفاده کرد
-        return back()->with('success', 'فعلاً دانلود اکسل در حال پیاده‌سازی است.');
-        
-        // نمونه کد برای استفاده در آینده
-        /*
-        return Excel::download(new FamiliesExport(request()->user()->organization_id), 'families.xlsx');
-        */
+        try {
+            $charity_id = Auth::user()->organization_id;
+            $query = $request->input('q');
+            $status = $request->input('status');
+            $province_id = $request->input('province_id');
+            $city_id = $request->input('city_id');
+            $district_id = $request->input('district_id');
+            $region_id = $request->input('region_id');
+            $organization_id = $request->input('organization_id');
+            $wizard_status = $request->input('wizard_status');
+            $deprivation_rank = $request->input('deprivation_rank');
+            $family_rank_range = $request->input('family_rank_range');
+            $specific_criteria = $request->input('specific_criteria');
+            
+            $filters = [];
+            
+            // اضافه کردن فیلترهای اضافی اگر وجود داشته باشند
+            if ($charity_id) {
+                $filters['charity_id'] = $charity_id;
+            }
+            
+            if ($status === 'insured') {
+                $filters['is_insured'] = true;
+            } elseif ($status === 'uninsured') {
+                $filters['is_insured'] = false;
+            }
+            
+            if ($province_id) {
+                $filters['province_id'] = $province_id;
+            }
+            
+            if ($city_id) {
+                $filters['city_id'] = $city_id;
+            }
+            
+            if ($district_id) {
+                $filters['district_id'] = $district_id;
+            }
+            
+            if ($region_id) {
+                $filters['region_id'] = $region_id;
+            }
+            
+            if ($organization_id) {
+                $filters['organization_id'] = $organization_id;
+            }
+            
+            if ($wizard_status) {
+                $filters['wizard_status'] = $wizard_status;
+            }
+            
+            if ($deprivation_rank) {
+                $filters['deprivation_rank'] = $deprivation_rank;
+            }
+            
+            if ($family_rank_range) {
+                $filters['family_rank_range'] = $family_rank_range;
+            }
+            
+            if ($specific_criteria) {
+                $filters['specific_criteria'] = $specific_criteria;
+            }
+            
+            if ($query) {
+                $filters['search'] = $query;
+            }
+            
+            $fileName = 'families_' . now()->format('Y_m_d_H_i_s') . '.xlsx';
+            
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\FamiliesExport($filters),
+                $fileName
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('خطا در دانلود اکسل: ' . $e->getMessage());
+            return back()->with('error', 'خطا در دانلود فایل اکسل: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -287,4 +356,4 @@ class FamilyController extends Controller
         
         return view('charity.search-results', compact('results', 'query', 'status'));
     }
-} 
+}

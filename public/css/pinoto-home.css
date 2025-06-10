@@ -413,4 +413,23 @@ input:checked + .slider:before {
     .chart-container {
         @apply overflow-x-auto;
     }
-} 
+}
+
+/* رفع مشکل همپوشانی در سایز 1600x900 */
+@media (min-width: 1600px) and (max-height: 900px) {
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        height: auto;
+        min-height: 100vh;
+    }
+    
+    .content {
+        max-width: 600px;
+        padding: 30px;
+    }
+    
+    .toggle-container {
+        margin: 20px 0;
+    }
+}

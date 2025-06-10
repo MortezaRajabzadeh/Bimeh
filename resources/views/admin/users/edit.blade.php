@@ -80,7 +80,7 @@
                         <div>
                             <label for="role" class="block text-sm font-medium text-gray-700 mb-1">سطح دسترسی</label>
                             <select name="role" id="role"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right appearance-none bg-no-repeat bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] pr-10">
                                 <option value="">انتخاب کنید</option>
                                 @foreach($roles as $role)
                                     <option value="{{ $role->name }}" {{ (old('role', $user->roles->first()->name ?? null) == $role->name) ? 'selected' : '' }}>
@@ -124,4 +124,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

@@ -343,6 +343,9 @@ class FamilyFundingAllocationService
                 'created_by' => Auth::id(),
             ]);
             
+            // پاک کردن کش بودجه پس از ایجاد تراکنش
+            \Illuminate\Support\Facades\Cache::forget('remaining_budget');
+            
             // ایجاد تخصیص برای هر خانواده
             foreach ($families as $family) {
                 try {
@@ -440,4 +443,4 @@ class FamilyFundingAllocationService
         // اگر حداقل برای یک خانواده تخصیص انجام شده باشد، به عنوان تخصیص قبلی در نظر می‌گیریم
         return $existingAllocationCount > 0;
     }
-} 
+}

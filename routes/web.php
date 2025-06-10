@@ -8,7 +8,7 @@ use App\Livewire\Auth\UserTypeSelection;
 use App\Livewire\Auth\MicroLogin;
 use App\Http\Middleware\CheckUserType;
 use App\Livewire\Examples\ToastExample;
-
+use App\Http\Controllers\FamilyDownloadController;
 // Health Check Route for Liara
 Route::get('/health', function () {
     return response()->json([
@@ -234,6 +234,7 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
     Route::get('/share-details/{share}', [App\Http\Controllers\Insurance\FinancialReportController::class, 'shareDetails'])
         ->name('shares.details');
 
+
     // مسیرهای بخش بیمه
     Route::prefix('families')->name('families.')->group(function () {
         // مسیر به‌روزرسانی دسته‌ای وضعیت خانواده‌ها
@@ -244,6 +245,7 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
         // ... existing code ...
     });
 
+
     // مسیر به‌روزرسانی دسته‌ای وضعیت خانواده‌ها
     Route::post('/families/bulk-update-status', [App\Http\Controllers\Api\InsuranceFamilyController::class, 'bulkUpdateStatus'])
         ->name('families.bulk-update-status');
@@ -252,6 +254,12 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
     Route::middleware('can:manage insurance policies')->resource('funding-sources', \App\Http\Controllers\FundingSourceController::class);
 });
 
+Route::get('/families/download', [FamilyDownloadController::class, 'download'])
+    ->name('families.download-route')
+    ->middleware(['auth', 'signed']);
+Route::post('/families/download-excel', [App\Http\Controllers\FamilyController::class, 'downloadExcel'])
+->name('families.download-excel')
+->middleware('auth');
 // مسیر تست اعلان‌های توست
 Route::get('/examples/toast-test', ToastExample::class)->name('examples.toast-test');
 

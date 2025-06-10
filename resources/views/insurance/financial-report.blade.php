@@ -25,7 +25,7 @@
                     </div>
                 </div>
             </div>
-            
+    
             <!-- کارت خلاصه مالی -->
             <div class="px-6 py-4">
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
@@ -81,13 +81,6 @@
                                     </svg>
                                     تخصیص سهم جدید
                                 </a>
-                                <a href="{{ route('insurance.funding-sources.index') }}" 
-                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    مدیریت منابع مالی
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -139,10 +132,8 @@
                                         {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]) || ($t['is_allocation'] ?? false))
-                                                    <button @click="open = !open"
-                                                            type="button"
-                                                            class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                                                @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), 'تخصیص سهم گروهی', __('financial.transaction_types.premium_import')]) || ($t['is_allocation'] ?? false))
+                                                    <button @click="open = !open" type="button" class="flex-shrink-0 ml-3 bg-gray-100 hover:bg-gray-200 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                                                             :class="open ? 'rotate-180' : ''">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -576,4 +567,4 @@
             @endif
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

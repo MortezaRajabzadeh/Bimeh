@@ -369,6 +369,8 @@ class FamilyWizard extends Component
                 'charity_id' => Auth::user()->organization_id,
                 'registered_by' => Auth::id(),
                 'status' => 'pending', // در انتظار تایید بیمه
+                'wizard_status' => 'pending'
+                
             ]);
 
             // ذخیره تصویر خانواده (انتقال از tmp به media)
