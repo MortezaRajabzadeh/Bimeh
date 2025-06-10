@@ -75,11 +75,31 @@ class FamilySearch extends Component
     public $showRankModal = false;
     public $rankFilters = [];
     
+    // اضافه کردن متغیرهای فرم معیار جدید
+    public $rankSettingName = '';
+    public $rankSettingDescription = '';
+    public $rankSettingWeight = 5;
+    public $rankSettingColor = 'bg-green-100';
+    public $rankSettingNeedsDoc = 1;
+    
     // متغیرهای مورد نیاز برای مودال رتبه‌بندی جدید
     public $selectedCriteria = [];
     public $criteriaRequireDocument = [];
     
     protected $paginationTheme = 'tailwind';
+
+    // Define Livewire event listeners to enable frontend component interactions
+    protected $listeners = [
+        'openRankModal',
+        'closeRankModal',
+        'applyCriteria',
+        'editRankSetting',
+        'saveRankSetting',
+        'deleteRankSetting',
+        'resetToDefaults',
+        'applyAndClose',
+        'copyText',
+    ];
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -102,6 +122,8 @@ class FamilySearch extends Component
         $this->provinces = Province::orderBy('name')->get();
         $this->cities = City::orderBy('name')->get();
         $this->organizations = Organization::where('type', 'charity')->orderBy('name')->get();
+        
+        // بارگذاری معیارهای رتبه‌بندی در ابتدای لود صفحه
         $this->availableRankSettings = RankSetting::active()->ordered()->get();
         
         // مقداردهی اولیه متغیرهای رتبه‌بندی
@@ -723,18 +745,9 @@ class FamilySearch extends Component
     //====================================================================== 
     
     /** 
-     * مودال تنظیمات رتبه‌بندی را باز می‌کند. 
-     */ 
-    public function openRankModal() 
-    { 
-        $this->loadRankSettings(); // <--- این خط را اضافه کنید
-
-        $this->showRankModal = true; 
-    } 
-    
-    /** 
      * وزن‌های یک الگوی رتبه‌بندی ذخیره‌شده را بارگیری می‌کند. 
      */ 
+    
     public function loadScheme($schemeId) 
     { 
         if (empty($schemeId)) { 
@@ -855,10 +868,12 @@ class FamilySearch extends Component
     
     public function loadRankSettings()
     {
-        $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+        // استفاده از آبجکت کالکشن بدون تبدیل به آرایه
+        $this->rankSettings = RankSetting::orderBy('sort_order')->get();
+        
         // نمایش پیام مناسب برای باز شدن تنظیمات
         $this->dispatch('notify', [
-            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . $this->rankSettings->count() . ' معیار',
+            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . count($this->rankSettings) . ' معیار',
             'type' => 'info'
         ]);
     }
@@ -877,151 +892,278 @@ class FamilySearch extends Component
             'requires_document' => true,
             'color' => '#'.substr(str_shuffle('ABCDEF0123456789'), 0, 6)
         ];
-    }
-    
-    /**
-     * یک معیار را برای ویرایش انتخاب می‌کند.
-     * @param int $id
-     */
-    public function edit($id)
-    {
-        $this->isCreatingNew = false;
-        $this->editingRankSettingId = $id;
-        $setting = \App\Models\RankSetting::find($id);
-        if ($setting) {
-            $this->editingRankSetting = $setting->toArray();
-        }
-    }
-    
-    /**
-     * تغییرات را ذخیره می‌کند (هم برای افزودن جدید و هم ویرایش).
-     */
-    public function save()
-    {
-        $this->validate([
-            'editingRankSetting.name' => 'required|string|max:255',
-            'editingRankSetting.weight' => 'required|integer|min:0|max:10',
-            'editingRankSetting.description' => 'nullable|string',
-            'editingRankSetting.requires_document' => 'boolean',
-            'editingRankSetting.color' => 'nullable|string',
-        ]);
         
-        try {
-            // محاسبه sort_order برای رکورد جدید
-            if (!$this->editingRankSettingId) {
-                $maxOrder = \App\Models\RankSetting::max('sort_order') ?? 0;
-                $this->editingRankSetting['sort_order'] = $maxOrder + 10;
-                $this->editingRankSetting['is_active'] = true;
-                $this->editingRankSetting['slug'] = Str::slug($this->editingRankSetting['name']);
-            }
-            
-            // ذخیره
-            $setting = \App\Models\RankSetting::updateOrCreate(
-                ['id' => $this->editingRankSettingId],
-                $this->editingRankSetting
-            );
-            
-            // بازنشانی فرم
-            $this->resetForm();
-            
-            // بروزرسانی لیست
-            $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
-            
-            // پیام موفقیت
-            $this->dispatch('notify', ['message' => 'معیار «' . $setting->name . '» با موفقیت ذخیره شد.', 'type' => 'success']);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', ['message' => 'خطا در ذخیره معیار: ' . $e->getMessage(), 'type' => 'error']);
-        }
-    }
-    
-    /**
-     * یک معیار را حذف می‌کند.
-     * @param int $id
-     */
-    public function delete($id)
-    {
-        $setting = RankSetting::find($id);
-        
-        if ($setting) {
-            $settingName = $setting->name; // نام معیار را قبل از حذف ذخیره می‌کنیم
-            $setting->delete();
-            
-            // در پیام، نام معیار حذف شده را نمایش می‌دهیم
-            $this->dispatch('notify', [
-                'message' => "معیار '{$settingName}' با موفقیت حذف شد.",  
-                'type' => 'warning'
-            ]);
-            
-            $this->loadRankSettings();
-        } else {
-             $this->dispatch('notify', [
-                'message' => 'خطا: معیار مورد نظر یافت نشد.',  
-                'type' => 'error'
-             ]);
-        }
-    }
-    
-    /**
-     * فرم ویرایش/افزودن را مخفی و ریست می‌کند.
-     */
-    public function cancel()
-    {
-        $this->resetForm();
         $this->dispatch('notify', [
-            'message' => 'عملیات ویرایش لغو شد',
+            'message' => 'فرم ایجاد معیار جدید آماده شد',
             'type' => 'info'
         ]);
     }
     
     /**
-     * متد کمکی برای ریست کردن state فرم.
+     * باز کردن مودال تنظیمات رتبه
      */
-    private function resetForm()
+    public function openRankModal()
     {
-        $this->isCreatingNew = false;
-        $this->editingRankSettingId = null;
-        $this->reset('editingRankSetting');
+        // بارگذاری مجدد معیارهای رتبه‌بندی با اسکوپ active و ordered
+        // با لود کردن به صورت collection (بدون ->toArray())
+        $this->availableRankSettings = RankSetting::active()->ordered()->get();
+        
+        // ثبت در لاگ برای اشکال‌زدایی - با استفاده از متد count() کالکشن
+        Log::info('مودال رتبه باز شد', [
+            'loaded_criteria_count' => count($this->availableRankSettings)
+        ]);
+        
+        // مقداردهی اولیه فیلدهای فرم معیار جدید
+        $this->resetRankSettingForm();
+        
+        // Initialize selectedCriteria from specific_criteria if set
+        if ($this->specific_criteria) {
+            $this->selectedCriteria = explode(',', $this->specific_criteria);
+        } else {
+            $this->selectedCriteria = [];
+        }
+        
+        $this->showRankModal = true;
+        $this->dispatch('show-rank-modal');
+        
+        // نمایش پیام برای کاربر - با استفاده از متد count() کالکشن
+        $this->dispatch('notify', [
+            'message' => count($this->availableRankSettings) . ' معیار رتبه‌بندی بارگذاری شد',
+            'type' => 'info'
+        ]);
     }
     
     /**
-     * تنظیمات رتبه‌بندی را به حالت پیشفرض بازمی‌گرداند.
+     * بستن مودال تنظیمات رتبه
      */
-    public function resetToDefault()
+    public function closeRankModal()
     {
-        // 1. حذف تمام تنظیمات قبلی برای جلوگیری از تکرار 
-        RankSetting::query()->delete();
-
-        // 2. تعریف معیارهای پیش‌فرض 
-        $defaultSettings = [ 
-            ['name' => 'بیکاری', 'weight' => 7, 'color' => '#FF5733', 'requires_document' => true, 'description' => 'عضو یا سرپرست خانواده بیکار است.'], 
-            ['name' => 'معلولیت', 'weight' => 8, 'color' => '#33A8FF', 'requires_document' => true, 'description' => 'وجود فرد معلول در خانواده.'], 
-            ['name' => 'بیماری خاص', 'weight' => 9, 'color' => '#FF33A8', 'requires_document' => true, 'description' => 'وجود فرد مبتلا به بیماری خاص.'], 
-            ['name' => 'بی‌سرپرست', 'weight' => 10, 'color' => '#A833FF', 'requires_document' => true, 'description' => 'خانواده‌های بی‌سرپرست یا بدسرپرست.'], 
-            ['name' => 'چند فرزند', 'weight' => 6, 'color' => '#33FFA8', 'requires_document' => false, 'description' => 'خانواده‌های دارای ۳ فرزند یا بیشتر.'], 
-        ];
-        
-        // 3. ایجاد مجدد تنظیمات از لیست پیش‌فرض 
-        foreach ($defaultSettings as $index => $setting) { 
-            RankSetting::create([ 
-                'name'              => $setting['name'], 
-                'weight'            => $setting['weight'], 
-                'description'       => $setting['description'], 
-                'requires_document' => $setting['requires_document'], 
-                'color'             => $setting['color'], 
-                'sort_order'        => $index + 1, 
-                'is_active'         => true, 
-            ]); 
+        $this->showRankModal = false;
+    }
+    
+    /**
+     * اعمال معیارهای انتخاب شده
+     */
+    public function applyCriteria()
+    {
+        if (!empty($this->selectedCriteria)) {
+            $this->specific_criteria = implode(',', $this->selectedCriteria);
+        } else {
+            $this->specific_criteria = null;
         }
         
-        // 4. بارگذاری مجدد لیست برای نمایش 
-        $this->loadRankSettings(); 
-        $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
+        $this->resetPage();
+        $this->closeRankModal();
         
-        // 5. ارسال نوتیفیکیشن به کاربر 
-        $this->dispatch('notify', [ 
-            'message' => 'تنظیمات با موفقیت به حالت پیش‌فرض بازگردانده شد.', 
-            'type' => 'success' 
-        ]); 
+        // Clear cache to ensure fresh data
+        if (Auth::check()) {
+            cache()->forget('families_query_' . Auth::id());
+        }
+        
+        $this->dispatch('notify', [
+            'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
+            'type' => 'success'
+        ]);
+    }
+    
+    /**
+     * ویرایش تنظیمات رتبه
+     */
+    public function editRankSetting($id)
+    {
+        $setting = RankSetting::find($id);
+        if ($setting) {
+            // پر کردن فرم با مقادیر معیار موجود
+            $this->rankSettingName = $setting->name;
+            $this->rankSettingDescription = $setting->description;
+            $this->rankSettingWeight = $setting->weight;
+            $this->rankSettingColor = $setting->sort_order ?? 'bg-green-100';
+            $this->rankSettingNeedsDoc = $setting->requires_document ? 1 : 0;
+            $this->editingRankSettingId = $id;
+            $this->isCreatingNew = false;
+            
+            $this->dispatch('notify', [
+                'message' => 'در حال ویرایش معیار: ' . $setting->name,
+                'type' => 'info'
+            ]);
+        }
+    }
+    
+    /**
+     * ذخیره تنظیمات رتبه (جدید یا ویرایش شده)
+     */
+    public function saveRankSetting()
+    {
+        // ثبت لاگ برای اشکال‌زدایی قبل از شروع فرآیند
+        Log::info('درخواست ذخیره معیار رتبه', [
+            'data' => [
+                'name' => $this->rankSettingName,
+                'description' => $this->rankSettingDescription,
+                'weight' => $this->rankSettingWeight,
+                'requires_document' => $this->rankSettingNeedsDoc,
+                'color' => $this->rankSettingColor,
+                'is_editing' => !empty($this->editingRankSettingId),
+                'editing_id' => $this->editingRankSettingId
+            ]
+        ]);
+
+        // ابتدا اعتبارسنجی مقادیر ورودی
+        if (empty($this->rankSettingName)) {
+            $this->dispatch('notify', [
+                'message' => 'نام معیار الزامی است',
+                'type' => 'error'
+            ]);
+            return;
+        }
+        
+        try {
+            // تعیین آیا در حال ایجاد معیار جدید هستیم یا ویرایش معیار موجود
+            if (empty($this->editingRankSettingId)) {
+                // ایجاد معیار جدید با استفاده از مدل
+$setting = new RankSetting();
+$setting->fill([
+    'name' => $this->rankSettingName,
+    'weight' => (int)$this->rankSettingWeight,
+    'description' => $this->rankSettingDescription,
+    'requires_document' => (bool)$this->rankSettingNeedsDoc,
+    'color' => $this->rankSettingColor, // Fixed: color field instead of sort_order
+    'sort_order' => RankSetting::max('sort_order') + 10,
+    'is_active' => true,
+    'slug' => Str::slug($this->rankSettingName) ?: 'rank-' . Str::random(6),
+    'created_by' => \Illuminate\Support\Facades\Auth::id() // Track who created it using facade
+]);
+
+// Save with error handling
+try {
+    $setting->save();
+} catch (\Exception $e) {
+    throw new \Exception('Failed to save rank setting: ' . $e->getMessage());
+}
+                
+                Log::info('معیار جدید ایجاد شد', [
+                    'id' => $setting->id,
+                    'name' => $setting->name
+                ]);
+                
+                $this->dispatch('notify', [
+                    'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
+                    'type' => 'success'
+                ]);
+            } else {
+                // ویرایش معیار موجود
+                $setting = RankSetting::find($this->editingRankSettingId);
+                if ($setting) {
+                    $setting->name = $this->rankSettingName;
+                    $setting->weight = $this->rankSettingWeight;
+                    $setting->description = $this->rankSettingDescription;
+                    $setting->requires_document = (bool)$this->rankSettingNeedsDoc;
+                    $setting->sort_order = $this->rankSettingColor;
+                    $setting->save();
+                    
+                    Log::info('معیار ویرایش شد', [
+                        'id' => $setting->id,
+                        'name' => $setting->name
+                    ]);
+                    
+                    $this->dispatch('notify', [
+                        'message' => 'معیار با موفقیت به‌روزرسانی شد: ' . $this->rankSettingName,
+                        'type' => 'success'
+                    ]);
+                }
+            }
+            
+            // بارگذاری مجدد تنظیمات و ریست فرم
+            $this->availableRankSettings = RankSetting::active()->ordered()->get();
+            $this->resetRankSettingForm();
+            
+            // ریست کردن فرم بعد از ذخیره موفق
+            $this->rankSettingName = '';
+            $this->rankSettingDescription = '';
+            $this->rankSettingWeight = 5;
+            $this->rankSettingColor = 'bg-green-100';
+            $this->rankSettingNeedsDoc = 1;
+            $this->editingRankSettingId = null;
+        } catch (\Exception $e) {
+            // ثبت خطا در لاگ
+            Log::error('خطا در ذخیره معیار', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * ریست کردن فرم معیار
+     */
+    private function resetRankSettingForm()
+    {
+        $this->rankSettingName = '';
+        $this->rankSettingDescription = '';
+        $this->rankSettingWeight = 5;
+        $this->rankSettingColor = 'bg-green-100';
+        $this->rankSettingNeedsDoc = 1;
+        $this->editingRankSettingId = null;
+    }
+    
+    /**
+     * بازگشت به تنظیمات پیشفرض
+     */
+    public function resetToDefaults()
+    {
+        // پاک کردن فیلترهای رتبه
+        $this->family_rank_range = null;
+        $this->specific_criteria = null;
+        $this->selectedCriteria = [];
+        
+        // بازنشانی صفحه‌بندی و به‌روزرسانی لیست
+        $this->resetPage();
+        $this->closeRankModal();
+        
+        // پاک کردن کش برای اطمینان از به‌روزرسانی داده‌ها
+        if (Auth::check()) {
+            cache()->forget('families_query_' . Auth::id());
+        }
+        
+        $this->dispatch('notify', [
+            'message' => 'تنظیمات رتبه با موفقیت به حالت پیشفرض بازگردانده شد',
+            'type' => 'success'
+        ]);
+    }
+
+    /**
+     * حذف معیار
+     */
+    public function deleteRankSetting($id)
+    {
+        try {
+            $setting = RankSetting::find($id);
+            if ($setting) {
+                $name = $setting->name;
+                $setting->delete();
+                
+                $this->dispatch('notify', [
+                    'message' => "معیار «{$name}» با موفقیت حذف شد",
+                    'type' => 'warning'
+                ]);
+                
+                // بارگذاری مجدد لیست
+                $this->availableRankSettings = RankSetting::active()->ordered()->get();
+            }
+        } catch (\Exception $e) {
+            Log::error('خطا در حذف معیار', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 }
-    

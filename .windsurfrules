@@ -1,0 +1,27 @@
+# Laravel Development Rules
+
+## کد نویسی:
+- همیشه PSR-12 رعایت کن
+- Laravel 12 syntax استفاده کن  
+- Eloquent ORM ترجیح بده به Query Builder
+- همیشه type hints بنویس
+- error handling با try-catch
+
+## Laravel Standards:
+- Controller ها Resource pattern
+- Model ها با proper relationships
+- Request validation با FormRequest
+- Service pattern برای business logic
+- Repository pattern برای complex queries
+
+## Database:
+- Migration ها descriptive names
+- Foreign key constraints
+- Index برای کلیدهای جستجو
+- Soft delete برای User models
+
+## Security:
+- Input validation همیشه
+- CSRF protection 
+- XSS prevention با {{ }} syntax
+- SQL injection prevention با Eloquent

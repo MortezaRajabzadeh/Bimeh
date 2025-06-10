@@ -49,6 +49,30 @@ class FamilySearch extends Component
     
     #[Url]
     public $sortDirection = 'desc';
+
+    // متغیرهای مورد نیاز برای فیلتر رتبه
+    #[Url]
+    public $family_rank_range = '';
+    
+    #[Url]
+    public $specific_criteria = '';
+    
+    // متغیر نمایش مودال تنظیمات رتبه
+    public $showRankModal = false;
+    
+    // متغیرهای مورد نیاز برای تنظیمات رتبه
+    public $availableRankSettings = [];
+    
+    // متغیرهای مورد نیاز برای مدیریت ویرایش و حذف معیارهای رتبه
+    public $selectedCriteria = [];
+    public $editingRankSetting = null;
+    public $isEditingRankSetting = false;
+    public $rankSettingName = '';
+    public $rankSettingWeight = 0;
+    public $rankSettingNeedsDoc = false;
+    public $rankSettingColor = 'bg-green-100';
+    public $rankSettingDescription = '';
+    public $showAddCriteriaForm = false;
     
     // تعداد آیتم‌ها در هر صفحه
     public $perPage = 10;
@@ -70,6 +94,8 @@ class FamilySearch extends Component
         'region' => ['except' => ''],
         'sortField' => ['except' => 'created_at'],
         'sortDirection' => ['except' => 'desc'],
+        'family_rank_range' => ['except' => ''],
+        'specific_criteria' => ['except' => ''],
     ];
     
     // این متد برای مطابقت با لایوایر ۳ اضافه می‌شود
@@ -195,175 +221,140 @@ class FamilySearch extends Component
     #[Computed]
     public function families()
     {
-        $query = Family::query()->with(['members']);
+        // جستجو در خانواده‌ها
+        $query = Family::query()
+            ->select('families.*')
+            ->with(['city', 'province', 'organization', 'members', 'region'])
+            ->withCount('members');
         
-        if ($this->search) {
-            $originalSearchTerm = $this->search;
-            $searchTerm = $this->normalizeText($this->search);
+        // ایجاد کوئری برای جستجو در اعضای خانواده
+        $searchQuery = function($q) {
+            // نرمال‌سازی متن جستجو برای فارسی
+            $normalizedSearch = $this->normalizeText($this->search);
             
-            $query->where(function ($q) use ($searchTerm, $originalSearchTerm) {
-                // جستجو در اعضا
-                $q->whereHas('members', function ($sub) use ($searchTerm) {
-                    $sub->where('first_name', 'like', '%' . $searchTerm . '%')
-                        ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
-                        ->orWhere('national_code', 'like', '%' . $searchTerm . '%');
-                    if (in_array('mobile', Schema::getColumnListing('members'))) {
-                        $sub->orWhere('mobile', 'like', '%' . $searchTerm . '%');
-                    }
-                    if (in_array('birth_date', Schema::getColumnListing('members'))) {
-                        $sub->orWhere('birth_date', 'like', '%' . $searchTerm . '%');
-                    }
-                });
-                // جستجوی خاص سرپرست
-                $q->orWhereHas('members', function ($sub) use ($searchTerm) {
-                    $sub->where('is_head', true)
-                        ->where(function ($s) use ($searchTerm) {
-                            $s->where('first_name', 'like', '%' . $searchTerm . '%')
-                              ->orWhere('last_name', 'like', '%' . $searchTerm . '%')
-                              ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'like', '%' . $searchTerm . '%');
-                        });
-                });
-                if (in_array(mb_strtolower($searchTerm, 'UTF-8'), ['سرپرست', 'سرپرست خانوار', 'سرپرستان'])) {
-                    $q->orWhereHas('members', function($s) {
-                        $s->where('is_head', true);
-                    });
-                }
-                // جستجو در فیلدهای خانواده
-                $q->orWhere('id', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('family_code', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('address', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('region', 'like', '%' . $searchTerm . '%'); // فقط فیلد متنی
-                // جستجو بر اساس تعداد اعضا
-                if (is_numeric($searchTerm)) {
-                    $memberCount = (int)$searchTerm;
-                    $familiesWithMemberCount = DB::table('families')
-                        ->join('members', function($join) {
-                            $join->on('families.id', '=', 'members.family_id')
-                                 ->whereNull('members.deleted_at');
-                        })
-                        ->select('families.id', DB::raw('count(*) as member_count'))
-                        ->whereNull('families.deleted_at')
-                        ->groupBy('families.id')
-                        ->having('member_count', '=', $memberCount)
-                        ->pluck('families.id')
-                        ->toArray();
-                    if (!empty($familiesWithMemberCount)) {
-                        $q->orWhereIn('id', $familiesWithMemberCount);
-                    }
-                }
-                // جستجو بر اساس وضعیت بیمه
-                $insuredKeywords = ['بیمه شده', 'بیمه', 'بیمه دارد', 'دارای بیمه', 'با بیمه', 'تحت پوشش بیمه'];
-                $uninsuredKeywords = ['بدون بیمه', 'بیمه ندارد', 'فاقد بیمه', 'بیمه نشده'];
-                if (in_array(mb_strtolower($searchTerm, 'UTF-8'), $insuredKeywords)) {
-                    $q->orWhere('is_insured', true);
-                } elseif (in_array(mb_strtolower($searchTerm, 'UTF-8'), $uninsuredKeywords)) {
-                    $q->orWhere('is_insured', false);
-                }
-                $q->orWhere('created_at', 'like', '%' . $searchTerm . '%');
-                $datePattern = '/^[0-9۰-۹]{2,4}[\/\-][0-9۰-۹]{1,2}[\/\-][0-9۰-۹]{1,2}$/';
-                if (preg_match($datePattern, $originalSearchTerm) || preg_match($datePattern, $searchTerm)) {
-                    $q->orWhere('created_at', 'like', '%' . str_replace(['/', '-'], ['-', '-'], $searchTerm) . '%');
-                }
-                if (in_array('acceptance_criteria', Schema::getColumnListing('families'))) {
-                    $q->orWhere('acceptance_criteria', 'like', '%' . $searchTerm . '%');
-                }
-                if (in_array('payer', Schema::getColumnListing('families'))) {
-                    $q->orWhere('payer', 'like', '%' . $searchTerm . '%');
-                }
-                if (in_array('participation_percentage', Schema::getColumnListing('families'))) {
-                    $q->orWhere('participation_percentage', 'like', '%' . $searchTerm . '%');
-                }
-                if (in_array('verified_at', Schema::getColumnListing('families'))) {
-                    $q->orWhere('verified_at', 'like', '%' . $searchTerm . '%');
-                }
-                // جستجو برای درصد مشارکت
-                if (in_array($searchTerm, ['۵۰٪', '50%', '50', '۵۰', 'درصد مشارکت', 'ضریب مشارکت'])) {
-                    $q->orWhere('id', '>', 0);
+            $q->where(function($subQ) use ($normalizedSearch) {
+                $searchTerms = explode(' ', $normalizedSearch);
+                
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) < 2) continue;
+                    
+                    $subQ->orWhere('members.first_name', 'LIKE', "%{$term}%")
+                          ->orWhere('members.last_name', 'LIKE', "%{$term}%")
+                          ->orWhere('members.national_code', 'LIKE', "%{$term}%")
+                          ->orWhere('members.mobile', 'LIKE', "%{$term}%")
+                          ->orWhere('members.birth_certificate_number', 'LIKE', "%{$term}%");
                 }
             });
+        };
+        
+        // اعمال جستجو بر اساس نام خانواده، شماره، کد ملی، یا موبایل اعضا
+        if ($this->search && strlen($this->search) >= 2) {
+            $normalizedSearch = $this->normalizeText($this->search);
+            
+            $query->where(function($q) use ($normalizedSearch, $searchQuery) {
+                $searchTerms = explode(' ', $normalizedSearch);
+                
+                foreach ($searchTerms as $term) {
+                    if (strlen($term) < 2) continue;
+                    
+                    $q->orWhere('families.code', 'LIKE', "%{$term}%")
+                      ->orWhere('families.name', 'LIKE', "%{$term}%");
+                }
+                
+                // جستجو در اعضای خانواده
+                $q->orWhereHas('members', $searchQuery);
+            });
         }
+        
+        // فیلتر بر اساس وضعیت
         if ($this->status) {
-            if ($this->status === 'insured') {
-                $query->where('status', 'insured');
-            } elseif ($this->status === 'uninsured') {
-                $query->where('status', 'uninsured');
+            if ($this->status == 'verified') {
+                $query->whereNotNull('verified_at');
+            } elseif ($this->status == 'unverified') {
+                $query->whereNull('verified_at');
+            } elseif ($this->status == 'insured') {
+                $query->whereHas('familyInsurance', function($q) {
+                    $q->whereNotNull('insured_at');
+                });
+            } elseif ($this->status == 'uninsured') {
+                $query->whereDoesntHave('familyInsurance', function($q) {
+                    $q->whereNotNull('insured_at');
+                });
             }
         }
+        
+        // فیلتر بر اساس استان
         if ($this->province) {
             $query->where('province_id', $this->province);
         }
+        
+        // فیلتر بر اساس رتبه محرومیت
         if ($this->deprivation_rank) {
             $query->whereHas('province', function($q) {
-                if ($this->deprivation_rank === 'high') {
-                    $q->whereBetween('deprivation_rank', [1, 3]);
-                } elseif ($this->deprivation_rank === 'medium') {
-                    $q->whereBetween('deprivation_rank', [4, 6]);
-                } elseif ($this->deprivation_rank === 'low') {
-                    $q->whereBetween('deprivation_rank', [7, 10]);
+                $q->where('deprivation_rank', $this->deprivation_rank);
+            });
+        }
+        
+        // فیلتر بر اساس محدوده رتبه خانواده
+        if ($this->family_rank_range) {
+            $rangeParts = explode('-', $this->family_rank_range);
+            if (count($rangeParts) == 2) {
+                $minRank = (int)$rangeParts[0];
+                $maxRank = (int)$rangeParts[1];
+                $query->whereBetween('family_rank', [$minRank, $maxRank]);
+            }
+        }
+        
+        // فیلتر بر اساس معیارهای خاص
+        if ($this->specific_criteria) {
+            $criteria = explode(',', $this->specific_criteria);
+            $query->where(function($q) use ($criteria) {
+                foreach ($criteria as $criterion) {
+                    $q->orWhere('rank_criteria', 'LIKE', "%{$criterion}%");
                 }
             });
         }
+
+        // فیلتر بر اساس شهر
         if ($this->city) {
             $query->where('city_id', $this->city);
         }
-        if ($this->charity) {
-            $query->where('charity_id', $this->charity);
-        }
+        
+        // فیلتر بر اساس منطقه
         if ($this->region) {
             $query->where('region_id', $this->region);
         }
-        // مرتب‌سازی
-        if ($this->sortField) {
-            if ($this->sortField === 'province') {
-                $query->orderBy('province_id', $this->sortDirection);
-            } elseif ($this->sortField === 'city') {
-                $query->orderBy('city_id', $this->sortDirection);
-            } elseif ($this->sortField === 'region_deprivation_rank') {
-                $query->leftJoin('regions', 'families.region_id', '=', 'regions.id')
-                      ->orderBy('regions.deprivation_rank', $this->sortDirection)
-                      ->select('families.*');
-            } elseif ($this->sortField === 'province_deprivation_rank') {
-                $query->leftJoin('provinces', 'families.province_id', '=', 'provinces.id')
-                      ->orderBy('provinces.deprivation_rank', $this->sortDirection)
-                      ->select('families.*');
-            } elseif ($this->sortField === 'head_name') {
-                $query->leftJoin('members', function($join) {
-                    $join->on('families.id', '=', 'members.family_id')
-                         ->where('members.is_head', true)
-                         ->whereNull('members.deleted_at');
-                })
-                ->orderBy('members.first_name', $this->sortDirection)
-                ->orderBy('members.last_name', $this->sortDirection)
-                ->select('families.*');
-            } elseif ($this->sortField === 'members_count') {
-                $query->withCount('members')
-                      ->orderBy('members_count', $this->sortDirection);
-            } elseif ($this->sortField === 'consumption_coefficient') {
-                $query->orderBy('id', $this->sortDirection);
-            } elseif ($this->sortField === 'payer') {
-                if (in_array('payer', Schema::getColumnListing('families'))) {
-                    $query->orderBy('payer', $this->sortDirection);
-                } else {
-                    $query->orderBy('created_at', $this->sortDirection);
-                }
-            } elseif ($this->sortField === 'participation_percentage') {
-                if (in_array('participation_percentage', Schema::getColumnListing('families'))) {
-                    $query->orderBy('participation_percentage', $this->sortDirection);
-                } else {
-                    $query->orderBy('created_at', $this->sortDirection);
-                }
-            } elseif ($this->sortField === 'verified_at') {
-                if (in_array('verified_at', Schema::getColumnListing('families'))) {
-                    $query->orderBy('verified_at', $this->sortDirection);
-                } else {
-                    $query->orderBy('created_at', $this->sortDirection);
-                }
-            } else {
-                $query->orderBy($this->sortField, $this->sortDirection);
-            }
-        } else {
-            $query->latest();
+        
+        // فیلتر بر اساس خیریه
+        if ($this->charity) {
+            $query->where('organization_id', $this->charity);
         }
+        
+        // نمایش فقط خانواده‌های قابل دسترسی برای کاربر غیر ادمین
+        if (!auth()->user()->hasRole('admin')) {
+            $query->where(function($q) {
+                // خانواده‌های مربوط به خیریه کاربر
+                $q->where('organization_id', auth()->user()->organization_id);
+                
+                // یا خانواده‌های بدون خیریه
+                $q->orWhereNull('organization_id');
+            });
+        }
+        
+        // مرتب‌سازی
+        if ($this->sortField === 'province.name') {
+            $query->join('provinces', 'families.province_id', '=', 'provinces.id')
+                  ->orderBy('provinces.name', $this->sortDirection);
+        } elseif ($this->sortField === 'city.name') {
+            $query->join('cities', 'families.city_id', '=', 'cities.id')
+                  ->orderBy('cities.name', $this->sortDirection);
+        } elseif ($this->sortField === 'organization.name') {
+            $query->leftJoin('organizations', 'families.organization_id', '=', 'organizations.id')
+                  ->orderBy('organizations.name', $this->sortDirection);
+        } else {
+            $query->orderBy($this->sortField, $this->sortDirection);
+        }
+        
         return $query->paginate($this->perPage);
     }
     
@@ -483,6 +474,195 @@ class FamilySearch extends Component
             'type' => 'success'
         ]);
     }
+    
+    /**
+     * باز کردن مودال تنظیمات رتبه
+     * 
+     * @return void
+     */
+    public function openRankModal()
+    {
+        $this->availableRankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+        
+        // Initialize selectedCriteria from specific_criteria if set
+        if ($this->specific_criteria) {
+            $this->selectedCriteria = explode(',', $this->specific_criteria);
+        } else {
+            $this->selectedCriteria = [];
+        }
+        
+        $this->showRankModal = true;
+        $this->dispatch('show-rank-modal');
+    }
+    
+    /**
+     * بستن مودال تنظیمات رتبه
+     * 
+     * @return void
+     */
+    public function closeRankModal()
+    {
+        $this->showRankModal = false;
+    }
+    
+    /**
+     * اعمال فیلتر رتبه با محدوده مشخص
+     * 
+     * @param string $range محدوده رتبه (مثال: "1-3")
+     * @return void
+     */
+    public function applyRankRange($range)
+    {
+        $this->family_rank_range = $range;
+        $this->showRankModal = false;
+        $this->resetPage();
+    }
+    
+    /**
+     * اعمال فیلتر معیارهای خاص
+     * 
+     * @param array $criteria لیست معیارها
+     * @return void
+     */
+    public function applyCriteria()
+    {
+        if (!empty($this->selectedCriteria)) {
+            $this->specific_criteria = implode(',', $this->selectedCriteria);
+        } else {
+            $this->specific_criteria = null;
+        }
+        $this->resetPage();
+        $this->closeRankModal();
+        
+        // Clear cache to ensure fresh data
+        cache()->forget('families_query_' . auth()->id());
+    }
+    
+    /**
+     * ویرایش تنظیمات رتبه
+     * 
+     * @param int $id شناسه تنظیمات رتبه
+     * @return void
+     */
+    public function editRankSetting($id)
+    {
+        $this->editingRankSetting = \App\Models\RankSetting::find($id);
+        if ($this->editingRankSetting) {
+            $this->rankSettingName = $this->editingRankSetting->name;
+            $this->rankSettingWeight = $this->editingRankSetting->weight;
+            $this->rankSettingNeedsDoc = $this->editingRankSetting->needs_doc;
+            $this->rankSettingColor = $this->editingRankSetting->bg_color;
+            $this->rankSettingDescription = $this->editingRankSetting->description;
+            $this->isEditingRankSetting = true;
+        }
+    }
+    
+    /**
+     * ذخیره تنظیمات رتبه
+     * 
+     * @return void
+     */
+    public function saveRankSetting()
+    {
+        // Validate
+        $this->validate([
+            'rankSettingName' => 'required|string|max:255',
+            'rankSettingWeight' => 'required|numeric|min:0|max:10',
+        ]);
+        
+        if ($this->isEditingRankSetting && $this->editingRankSetting) {
+            // Update existing
+            $this->editingRankSetting->update([
+                'name' => $this->rankSettingName,
+                'weight' => $this->rankSettingWeight,
+                'needs_doc' => $this->rankSettingNeedsDoc,
+                'bg_color' => $this->rankSettingColor,
+                'description' => $this->rankSettingDescription,
+            ]);
+        } else {
+            // Create new
+            \App\Models\RankSetting::create([
+                'name' => $this->rankSettingName,
+                'weight' => $this->rankSettingWeight,
+                'needs_doc' => $this->rankSettingNeedsDoc,
+                'bg_color' => $this->rankSettingColor,
+                'description' => $this->rankSettingDescription,
+                'sort_order' => \App\Models\RankSetting::max('sort_order') + 1,
+            ]);
+        }
+        
+        // Reset form and refresh available settings
+        $this->resetRankSettingForm();
+        $this->availableRankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+    }
+    
+    /**
+     * حذف تنظیمات رتبه
+     * 
+     * @param int $id شناسه تنظیمات رتبه
+     * @return void
+     */
+    public function deleteRankSetting($id)
+    {
+        $setting = \App\Models\RankSetting::find($id);
+        if ($setting) {
+            $setting->delete();
+            $this->availableRankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+        }
+    }
+    
+    /**
+     * بازنشانی فرم تنظیمات رتبه
+     * 
+     * @return void
+     */
+    public function resetRankSettingForm()
+    {
+        $this->editingRankSetting = null;
+        $this->isEditingRankSetting = false;
+        $this->rankSettingName = '';
+        $this->rankSettingWeight = 0;
+        $this->rankSettingNeedsDoc = false;
+        $this->rankSettingColor = 'bg-green-100';
+        $this->rankSettingDescription = '';
+    }
+    
+    /**
+     * بازگرداندن تنظیمات به حالت پیشفرض
+     * 
+     * @return void
+     */
+    public function resetToDefaults()
+    {
+        // پاک کردن فیلترهای رتبه
+        $this->family_rank_range = null;
+        $this->specific_criteria = null;
+        $this->selectedCriteria = [];
+        
+        // بازنشانی فرم و بستن مودال
+        $this->resetRankSettingForm();
+        $this->closeRankModal();
+        
+        // بازنشانی صفحه‌بندی و به‌روزرسانی لیست
+        $this->resetPage();
+        
+        // پاک کردن کش برای اطمینان از به‌روزرسانی داده‌ها
+        cache()->forget('families_query_' . auth()->id());
+    }
+    
+    // Livewire listeners
+    protected $listeners = [
+        'refresh-family-list' => '$refresh',
+        'updateProvince' => 'updateProvince',
+        'openRankModal' => 'openRankModal',
+        'closeRankModal' => 'closeRankModal',
+        'applyCriteria' => 'applyCriteria',
+        'resetToDefaults' => 'resetToDefaults',
+        'editRankSetting' => 'editRankSetting',
+        'deleteRankSetting' => 'deleteRankSetting',
+        'saveRankSetting' => 'saveRankSetting',
+        'resetRankSettingForm' => 'resetRankSettingForm'
+    ];
     
     public function render()
     {

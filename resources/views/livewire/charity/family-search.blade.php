@@ -192,7 +192,7 @@
                     <!-- آیکون لودینگ -->
                     <svg wire:loading wire:target="downloadPageExcel" class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
                     </svg>
 
                     <!-- آیکون دانلود -->
@@ -426,15 +426,15 @@
                                                 </svg>
                                             @else
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            @endif
-                                        </span>
-                                    @else
-                                        <span class="mr-1 text-[0.5rem]">▼</span>
-                                    @endif
-                                </button>
-                            </th>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        @endif
+                                    </span>
+                                @else
+                                    <span class="mr-1 text-[0.5rem]">▼</span>
+                                @endif
+                            </button>
+                        </th>
                         @endif
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">
@@ -517,7 +517,7 @@
                             @if($head)
                                 <div class="flex items-center justify-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         {{ $head->first_name }} {{ $head->last_name }}
@@ -564,7 +564,7 @@
                                 @if(count($familyProblems) > 0)
                                     @foreach($familyProblems as $problem => $count)
                                         @if(isset($problemLabels[$problem]))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $problemLabels[$problem]['color'] }}">
+                                            <span class="px-2 py-0.5 rounded-md text-xs {{ $problemLabels[$problem]['color'] }}">
                                                 {{ $problemLabels[$problem]['label'] }}
                                                 @if($count > 1)
                                                     <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
@@ -573,7 +573,7 @@
                                         @endif
                                     @endforeach
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
                                         بدون مشکل خاص
                                     </span>
                                 @endif
@@ -678,7 +678,7 @@
                                         class="inline-flex items-center justify-center w-8 h-8 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 rounded-lg transition-all duration-200 group toggle-family-btn" 
                                         data-family-id="{{ $family->id }}"
                                         title="مشاهده جزئیات">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }} group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg class="w-5 h-5 transition-transform duration-200 {{ $expandedFamily === $family->id ? 'rotate-180' : '' }} group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
@@ -719,7 +719,7 @@
                                                     {{-- خانواده تایید شده - فقط نمایش --}}
                                                     @if($member->is_head)
                                                         <span class="text-blue-500 font-bold inline-flex items-center">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                             سرپرست
@@ -736,7 +736,7 @@
                                                         wire:model="selectedHead" 
                                                         {{ $member->is_head ? 'checked' : '' }}
                                                         wire:change="setFamilyHead({{ $family->id }}, {{ $member->id }})" 
-                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                                                        class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer hover:scale-110 transition-transform"
                                                         title="{{ $member->is_head ? 'سرپرست فعلی' : 'انتخاب به عنوان سرپرست' }}"
                                                     >
                                                 @endif
@@ -774,19 +774,22 @@
                                                     }
                                                 @endphp
                                                 
-                                                @if(count($memberProblems) > 0)
-                                                    <div class="flex flex-wrap gap-1">
+                                                <div class="flex flex-wrap gap-1">
+                                                    @if(count($memberProblems) > 0)
                                                         @foreach($memberProblems as $problem)
                                                             <span class="px-2 py-0.5 rounded-md text-xs {{ $problem['color'] }}">
                                                                 {{ $problem['label'] }}
+                                                                @if($count > 1)
+                                                                    <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
+                                                                @endif
                                                             </span>
                                                         @endforeach
-                                                    </div>
-                                                @else
-                                                    <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                                        بدون مشکل
-                                                    </span>
-                                                @endif
+                                                    @else
+                                                        <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                                            بدون مشکل
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
                                                 @if($member->organization)
@@ -886,8 +889,8 @@
                                         <div class="bg-white rounded px-3 py-2 flex items-center">
                                             <span class="text-sm text-gray-800">{{ $family->head()?->mobile ?? '09347964873' }}</span>
                                             <button type="button" wire:click="copyText('09347964873')" class="text-blue-500 mr-2 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -898,7 +901,7 @@
                                         <div class="bg-white rounded px-3 py-2 flex items-center">
                                             <span class="text-sm text-gray-800 ltr">{{ $family->head()?->sheba ?? 'IR056216845813188' }}</span>
                                             <button type="button" wire:click="copyText('IR056216845813188')" class="text-blue-500 mr-2 cursor-pointer">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                                 </svg>
                                             </button>
@@ -952,17 +955,17 @@
             <div class="flex items-center justify-center order-2 flex-grow mx-4">
                 <!-- دکمه صفحه قبل -->
                 <button type="button" wire:click="previousPage" wire:loading.attr="disabled" wire:target="previousPage" @if($families->onFirstPage()) disabled @endif class="{{ !$families->onFirstPage() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm mr-1 transition-colors duration-200">
-                    <span wire:loading.remove wire:target="previousPage">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
-                    <span wire:loading wire:target="previousPage" class="inline-block">
-                        <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
-                        </svg>
-                    </span>
+                    
+                    <!-- آیکون لودینگ -->
+                    <svg wire:loading wire:target="previousPage" class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                    </svg>
+
+                    <!-- آیکون -->
+                    <svg wire:loading.remove wire:target="previousPage" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
                 </button>
                 
                 <!-- شماره صفحات -->
@@ -1009,11 +1012,9 @@
                 
                 <!-- دکمه صفحه بعد -->
                 <button type="button" wire:click="nextPage" wire:loading.attr="disabled" wire:target="nextPage" @if(!$families->hasMorePages()) disabled @endif class="{{ $families->hasMorePages() ? 'text-green-600 hover:bg-green-50 cursor-pointer' : 'text-gray-400 opacity-50 cursor-not-allowed' }} bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm ml-1 transition-colors duration-200">
-                    <span wire:loading.remove wire:target="nextPage">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </span>
+                    <svg wire:loading.remove wire:target="nextPage" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
                     <span wire:loading wire:target="nextPage" class="inline-block">
                         <svg class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1084,13 +1085,13 @@
             // تعیین نوع آیکون بر اساس نوع اعلان
             let iconSvg = '';
             if (params.type === 'success') {
-                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
             } else if (params.type === 'error') {
-                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
             } else if (params.type === 'info') {
-                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
             } else {
-                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                iconSvg = '<svg class="w-6 h-6 ml-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
             }
             
             // قرار دادن آیکون و متن
@@ -1117,7 +1118,7 @@
             // اضافه کردن دکمه بستن
             const closeButton = document.createElement('button');
             closeButton.className = 'ml-2 text-white hover:text-gray-200 focus:outline-none transition-colors duration-200';
-            closeButton.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            closeButton.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
             closeButton.addEventListener('click', () => {
                 toast.classList.add('hidden');
             });
@@ -1197,361 +1198,15 @@
     });
     </script>
     
-    <!-- مودال فیلتر -->
-    <div x-show="showFilterModal" 
-    @keydown.escape.window="showFilterModal = false"
-    x-transition:enter="transition ease-out duration-300"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="transition ease-in duration-200"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
-    style="display: none;">
-        
-        <div @click.away="showFilterModal = false"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform scale-95"
-             x-transition:enter-end="opacity-100 transform scale-100"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100 transform scale-100"
-             x-transition:leave-end="opacity-0 transform scale-95"
-             class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            
-            <!-- هدر مودال -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900">فیلتر جدول</h3>
-                        <p class="text-sm text-gray-600">لطفاً فیلترهای مدنظر خود را اعمال کنید. انتخاب محدوده زمانی اجباری است.</p>
-                    </div>
-                </div>
-                <button @click="showFilterModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- محتوای مودال -->
-            <div class="p-6 overflow-y-auto max-h-[70vh]">
-                <!-- جدول فیلترها -->
-                <div class="overflow-x-auto bg-white rounded-lg border border-gray-200">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-sm text-gray-700">
-                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[140px]">نوع فیلتر</th>
-                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[200px]">جزئیات فیلتر</th>
-                                <th class="px-6 py-4 text-right border-b border-gray-200 font-semibold min-w-[120px]">شرط</th>
-                                <th class="px-6 py-4 text-center border-b border-gray-200 font-semibold w-20">حذف</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <template x-for="(filter, index) in filters" :key="index">
-                                <tr class="hover:bg-blue-25 transition-colors duration-200">
-                                    <!-- نوع فیلتر -->
-                                    <td class="px-6 py-5">
-                                        <div class="relative">
-                                            <select x-model="filter.type" @change="updateFilterLabel(index)"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="status">وضعیت</option>
-                                                <option value="province">استان</option>
-                                                <option value="city">شهر</option>
-                                                <option value="deprivation_rank">رتبه</option>
-                                                <option value="charity">خیریه معرف</option>
-                                                <option value="members_count">تعداد اعضا</option>
-                                                <option value="created_at">تاریخ پایان بیمه</option>
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- جزئیات فیلتر -->
-                                    <td class="px-6 py-5">
-                                        <div x-show="filter.type === 'status'" class="relative">
-                                            <select x-model="filter.value"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب وضعیت...</option>
-                                                <option value="insured">بیمه شده</option>
-                                                <option value="uninsured">بدون بیمه</option>
-                                                <option value="pending">در انتظار بررسی</option>
-                                                <option value="approved">تایید شده</option>
-                                                <option value="rejected">رد شده</option>
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'province'" class="relative">
-                                            <select x-model="filter.value"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب استان...</option>
-                                                @foreach($provinces as $province)
-                                                    <option value="{{ $province->id }}">{{ $province->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'city'" class="relative">
-                                            <select x-model="filter.value"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب شهر...</option>
-                                                @foreach($cities as $city)
-                                                    <option value="{{ $city->id }}">{{ $city->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'deprivation_rank'" class="relative">
-                                            <select x-model="filter.value"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب رتبه...</option>
-                                                <option value="high">محرومیت بالا (1-3)</option>
-                                                <option value="medium">محرومیت متوسط (4-6)</option>
-                                                <option value="low">محرومیت پایین (7-10)</option>
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'charity'" class="relative">
-                                            <select x-model="filter.value"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="">انتخاب خیریه...</option>
-                                                @foreach($organizations as $organization)
-                                                    <option value="{{ $organization->id }}">{{ $organization->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'members_count'">
-                                            <input type="number" x-model="filter.value" min="1" max="20"
-                                                   class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200"
-                                                   placeholder="تعداد اعضا">
-                                        </div>
-                                        
-                                        <div x-show="filter.type === 'created_at'">
-                                            <input type="date" x-model="filter.value"
-                                                   class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200">
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- شرط -->
-                                    <td class="px-6 py-5">
-                                        <div class="relative">
-                                            <select x-model="filter.operator" @change="updateFilterLabel(index)"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                                <option value="equals">برابر</option>
-                                                <option value="not_equals">مخالف</option>
-                                                <template x-if="['members_count', 'created_at'].includes(filter.type)">
-                                                    <template>
-                                                        <option value="greater_than">بیشتر از</option>
-                                                        <option value="less_than">کمتر از</option>
-                                                    </template>
-                                                </template>
-                                            </select>
-                                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- حذف -->
-                                    <td class="px-6 py-5 text-center">
-                                        <button @click="removeFilter(index)" 
-                                                class="inline-flex items-center justify-center w-10 h-10 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-all duration-200 group">
-                                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                            
-                            <!-- خط اضافه کردن فیلتر جدید -->
-                            <tr>
-                                <td colspan="4" class="px-6 py-6">
-                                    <button @click="addFilter()" 
-                                            class="w-full flex items-center justify-center gap-3 p-4 text-green-700 hover:text-green-800 hover:bg-green-50 rounded-xl border-2 border-dashed border-green-300 hover:border-green-400 transition-all duration-200 group">
-                                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                        <span class="font-medium">افزودن فیلتر جدید</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- فوتر مودال -->
-            <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-                <div class="flex gap-2">
-                    <button wire:click="resetToDefault" @click="showFilterModal = false"
-                            class="inline-flex items-center px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        بازگشت به پیشفرض
-                    </button>
-                    
-                    <button wire:click="testFilters"
-                            class="inline-flex items-center px-4 py-2.5 bg-blue-100 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        تست فیلترها
-                    </button>
-                </div>
-                
-                <button @click="setTimeout(() => { $wire.applyFilters(); showFilterModal = false; }, 100)"
-                        class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
-                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    تایید و اعمال فیلترها
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <style>
-    @keyframes slideIn {
-        from {
-            transform: translate(-50%, -20px);
-            opacity: 0;
-        }
-        to {
-            transform: translate(-50%, 0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translate(-50%, 0);
-            opacity: 1;
-        }
-        to {
-            transform: translate(-50%, -20px);
-            opacity: 0;
-        }
-    }
-    
-    .notification-show {
-        animation: slideIn 0.3s ease forwards;
-    }
-    
-    .notification-hide {
-        animation: slideOut 0.3s ease forwards;
-    }
-    
-    #copy-notification {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
-    }
-    
-    /* اضافه کردن استایل جدید برای چرخش ایکون */
-    .icon-rotate-180 {
-        transform: rotate(180deg);
-        transition: transform 0.3s ease;
-    }
-    
-    /* انیمیشن‌های مربوط به toast */
-    .toast-show {
-        animation: slideIn 0.3s ease forwards;
-    }
-    
-    .toast-hide {
-        animation: slideOut 0.3s ease forwards;
-    }
-    
-    #toast-notification {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
-    }
-    
-    /* استایل‌های مربوط به جدول اعضای خانواده */
-    .family-members-table {
-        table-layout: auto;
-        width: 100%;
-        min-width: 1200px;
-    }
-    
-    .family-members-table th,
-    .family-members-table td {
-        white-space: nowrap;
-        min-width: 100px;
-    }
-    
-    /* استایل برای اسکرول افقی */
-    .scrollbar-thin::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 4px;
-    }
-    
-    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background: #a0aec0;
-    }
-    </style>
-    
-  <!-- مودال آپلود اکسل خانواده‌ها -->
-  <div id="uploadModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden" onclick="closeUploadModalOnBackdrop(event)">
+    <!-- مودال آپلود اکسل خانواده‌ها -->
+    <div id="uploadModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden" onclick="closeUploadModalOnBackdrop(event)">
         <div class="flex min-h-screen items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative" onclick="event.stopPropagation()">
                 <!-- هدر مودال -->
                 <div class="border-b border-gray-200 p-6 text-center relative">
                     <button type="button" onclick="closeUploadModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">وارد کردن با فایل اکسل</h3>
@@ -1600,355 +1255,244 @@
     </form>
 
     <script>
-        // باز کردن مودال
-        function openUploadModal() {
-            const modal = document.getElementById('uploadModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-                // ریست کردن محتوای مودال
-                resetModalContent();
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('excelFile');
+        const dropZoneText = document.getElementById('dropZoneText');
+        
+        if (!dropZone || !fileInput) {
+            return;
         }
         
-        // بستن مودال
-        function closeUploadModal() {
-            const modal = document.getElementById('uploadModal');
-            if (modal) {
-                modal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-                // ریست کردن محتوای مودال
-                resetModalContent();
-            }
-        }
-        
-        // بستن مودال با کلیک روی پس‌زمینه
-        function closeUploadModalOnBackdrop(event) {
-            if (event.target === event.currentTarget) {
-                closeUploadModal();
-            }
-        }
-        
-        // ریست کردن محتوای مودال
-        function resetModalContent() {
-            const fileInput = document.getElementById('excelFile');
-            const dropZoneText = document.getElementById('dropZoneText');
-            const dropZone = document.getElementById('dropZone');
-            
-            if (fileInput) {
-                fileInput.value = '';
-            }
-            if (dropZoneText) {
-                dropZoneText.textContent = 'فایل آماده شده را در اینجا قرار دهید';
-            }
-            if (dropZone) {
-                dropZone.classList.remove('border-green-400', 'bg-green-50');
-            }
-        }
-        
-        // دانلود فایل نمونه
-        function downloadTemplate() {
-            // تست Ajax برای نمایش خطای دقیق
-            fetch('{{ route("charity.import.template.families") }}', {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    // اگر موفقیت‌آمیز بود، دانلود فایل
-                    window.open('{{ route("charity.import.template.families") }}', '_blank');
-                } else {
-                    // نمایش خطا
-                    response.text().then(text => {
-                        console.error('خطا:', response.status, text);
-                        if (response.status === 401) {
-                            alert('ابتدا وارد سیستم شوید.');
-                        } else if (response.status === 403) {
-                            alert('شما مجوز دانلود فایل نمونه را ندارید.');
-                        } else {
-                            alert('خطا در دانلود فایل: ' + response.status);
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('خطا در درخواست:', error);
-                alert('خطا در ارتباط با سرور.');
-            });
-        }
-        
-        // آپلود فایل
-        function uploadFile() {
-            const fileInput = document.getElementById('excelFile');
-            const hiddenInput = document.getElementById('hiddenFileInput');
-            const uploadButton = document.querySelector('button[onclick="uploadFile()"]');
-            
-            if (!fileInput || fileInput.files.length === 0) {
-                alert('لطفا ابتدا فایل را انتخاب کنید.');
-                return;
-            }
-            
-            if (!hiddenInput) {
-                alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
-                return;
-            }
-            
-            try {
-                // نمایش loading state
-                if (uploadButton) {
-                    uploadButton.disabled = true;
-                    uploadButton.innerHTML = `
-                        <svg class="animate-spin w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        در حال آپلود...
-                    `;
-                }
-                
-                // کپی فایل انتخاب شده به فرم مخفی
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(fileInput.files[0]);
-                hiddenInput.files = dataTransfer.files;
-                
-                // ارسال فرم
-                const form = document.getElementById('uploadForm');
-                if (form) {
-                    form.submit();
-                } else {
-                    alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
-                    // بازگشت به حالت عادی
-                    if (uploadButton) {
-                        uploadButton.disabled = false;
-                        uploadButton.innerHTML = `
-                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            آپلود فایل
-                        `;
-                    }
-                }
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                alert('خطا در آپلود فایل. لطفا مجدد تلاش کنید.');
-                
-                // بازگشت به حالت عادی
-                if (uploadButton) {
-                    uploadButton.disabled = false;
-                    uploadButton.innerHTML = `
-                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        آپلود فایل
-                    `;
-                }
-            }
-        }
-        
-        // Event listeners برای drag & drop
-        document.addEventListener('DOMContentLoaded', function() {
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('excelFile');
-            const dropZoneText = document.getElementById('dropZoneText');
-            
-            if (!dropZone || !fileInput) {
-                return;
-            }
-            
-            // کلیک برای انتخاب فایل
-            dropZone.addEventListener('click', function() {
-                fileInput.click();
-            });
-            
-            // تغییر فایل انتخاب شده
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    const fileName = this.files[0].name;
-                    if (dropZoneText) {
-                        dropZoneText.textContent = fileName;
-                    }
-                    dropZone.classList.add('border-green-400', 'bg-green-50');
-                }
-            });
-            
-            // Drag & Drop events
-            dropZone.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.classList.add('border-green-400', 'bg-green-50');
-            });
-            
-            dropZone.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.classList.remove('border-green-400', 'bg-green-50');
-            });
-            
-            dropZone.addEventListener('drop', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.classList.remove('border-green-400', 'bg-green-50');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const fileName = files[0].name;
-                    fileInput.files = files;
-                    if (dropZoneText) {
-                        dropZoneText.textContent = fileName;
-                    }
-                    this.classList.add('border-green-400', 'bg-green-50');
-                }
-            });
-            
-            // بستن مودال با کلید ESC
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('uploadModal');
-                    if (modal && !modal.classList.contains('hidden')) {
-                        closeUploadModal();
-                    }
-                }
-            });
+        // کلیک برای انتخاب فایل
+        dropZone.addEventListener('click', function() {
+            fileInput.click();
         });
+        
+        // تغییر فایل انتخاب شده
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const fileName = this.files[0].name;
+                if (dropZoneText) {
+                    dropZoneText.textContent = fileName;
+                }
+                dropZone.classList.add('border-green-400', 'bg-green-50');
+            }
+        });
+        
+        // Drag & Drop events
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('border-green-400', 'bg-green-50');
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('border-green-400', 'bg-green-50');
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('border-green-400', 'bg-green-50');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileName = files[0].name;
+                fileInput.files = files;
+                if (dropZoneText) {
+                    dropZoneText.textContent = fileName;
+                }
+                this.classList.add('border-green-400', 'bg-green-50');
+            }
+        });
+        
+        // بستن مودال با کلید ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('uploadModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeUploadModal();
+                }
+            }
+        });
+    });
     </script>
     
-    <!-- Modal for Rank Settings (New Design) -->
-<div x-show="showRankModal" 
-     @keydown.escape.window="showRankModal = false; @this.call('cancel')"
-     x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-    
-    <div @click.away="showRankModal = false; @this.call('cancel')" class="relative bg-white rounded-xl shadow-xl w-full max-w-3xl mx-auto">
+    <!-- مودال تنظیمات رتبه -->
+    <div x-show="showRankModal" 
+         @keydown.escape.window="showRankModal = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90"
+         x-cloak
+         class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black bg-opacity-50">
         
-        <!-- Modal Header -->
-        <div class="absolute top-4 right-4">
-            <button @click="showRankModal = false; @this.call('cancel')" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
+        <div @click.away="showRankModal = false"
+             class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-lg">
+            
+            <div class="flex items-center justify-between p-4 border-b">
+                <h3 class="text-xl font-bold text-gray-800">تنظیمات رتبه</h3>
+                <button @click="showRankModal = false" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <p class="mb-6 text-center text-gray-700">
+                    لطفا برای <span class="font-bold">معیار پذیرش</span> لیست شده وزن انتخاب کنید تا پس از تایید در رتبه بندی ها اعمال شود
+                </p>
 
-        <div class="p-6 text-center">
-            <h3 class="text-2xl font-bold text-gray-700 mb-2">تنظیمات رتبه</h3>
-            <p class="text-gray-600">لطفا برای <span class="font-bold">معیار پذیرش</span> لیست شده وزن انتخاب کنید تا پس از تایید در رتبه بندی ها اعمال شود</p>
-        </div>
+                <!-- جدول معیارهای پذیرش -->
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-gray-200">
+                                <th class="py-3 px-4 text-right">شرح</th>
+                                <th class="py-3 px-4 text-center">نیاز به مدرک؟</th>
+                                <th class="py-3 px-4 text-center">وزن (10-0)</th>
+                                <th class="py-3 px-4 text-right">معیار پذیرش</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if(!empty($availableRankSettings))
+                                @foreach($availableRankSettings as $criterion)
+                                    <tr class="hover:bg-gray-50" wire:key="rank-setting-{{ $criterion->id }}">
+                                        <td class="px-6 py-3 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ $criterion->description }}</div>
+                                        </td>
+                                        <td class="px-6 py-3 whitespace-nowrap text-center">
+                                            @if($criterion->requires_document)
+                                                <span class="text-green-500">✓</span>
+                                            @else
+                                                <span class="text-red-500">✗</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-3 whitespace-nowrap text-center">
+                                            <span class="font-medium">{{ $criterion->weight }}</span>
+                                        </td>
+                                        <td class="px-6 py-3 whitespace-nowrap">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" wire:model="selectedCriteria" value="{{ $criterion->id }}" 
+                                                           class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 ml-2">
+                                                    <div class="px-6 py-2 rounded-md {{ $criterion->bg_color ?? $criterion->color ?? 'bg-green-100' }} text-center w-48">
+                                                        {{ $criterion->name }}
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <button class="text-orange-500" wire:click="editRankSetting({{ $criterion->id }})">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button class="text-red-500 ml-2" wire:click="deleteRankSetting({{ $criterion->id }})" onclick="return confirm('آیا از حذف این معیار اطمینان دارید؟')">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="4" class="py-4 text-center text-gray-500">
+                                        معیار رتبه‌بندی تعریف نشده است
+                                    </td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
 
-        <!-- Modal Body -->
-        <div class="px-6">
-            <table class="min-w-full border-t border-gray-300">
-                <thead>
-                    <tr class="border-b border-gray-300">
-                        <th class="py-3 px-6 text-right text-gray-500 font-medium">معیار پذیرش</th>
-                        <th class="py-3 px-6 text-center text-gray-500 font-medium">وزن (۰-۱۰)</th>
-                        <th class="py-3 px-6 text-center text-gray-500 font-medium">نیاز به مدرک؟</th>
-                        <th class="py-3 px-6 text-center text-gray-500 font-medium">شرح</th>
-                        <th class="py-3 px-6 text-center text-gray-500 font-medium">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                        @foreach($rankSettings ?? [] as $setting)
-        @if($editingRankSettingId == $setting->id)
-            <!-- Inline Edit Form -->
-            <tr class="bg-green-50 border-b border-gray-200">
-                <td colspan="5" class="p-4">
-                    @include('livewire.charity.partials.rank-setting-form')
-                </td>
-            </tr>
-        @else
-            <!-- Display Row -->
-            <tr class="border-b border-gray-200 hover:bg-gray-50 my-4">
-                <td class="py-4 px-6 font-medium">
-                    {{ $setting->name }}
-                </td>
-                <td class="py-4 px-6 text-center font-bold text-xl">{{ $setting->weight }}</td>
-                <td class="py-4 px-6 text-center">
-                    @if($setting->requires_document)
-                        <span class="text-green-500 inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                        </span>
-                    @else
-                        <span class="text-red-500 inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                            </svg>
-                        </span>
-                    @endif
-                </td>
-                <td class="py-4 px-6 text-center">
-                    <div x-data="{ tooltip: false }" class="relative inline-block">
-                        <button @click.prevent="tooltip = !tooltip" @keydown.escape.window="tooltip = false" class="text-gray-400">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </button>
-                        <div x-show="tooltip" 
-                             @click.away="tooltip = false"
-                             x-transition
-                             class="absolute z-20 p-3 text-sm text-white bg-gray-800 rounded-lg shadow-lg w-64 right-full mr-2 bottom-0"
-                             style="display: none;">
-                            <p class="font-sans">{{ $setting->description ?: 'توضیحات ثبت نشده است.' }}</p>
+                <!-- فرم اضافه کردن معیار جدید -->
+                <div class="border border-green-500 rounded-lg p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <div class="relative">
+                                <select wire:model="rankSettingNeedsDoc" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
+                                    <option value="1">نیاز به مدرک دارد</option>
+                                    <option value="0">نیاز به مدرک ندارد</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="relative">
+                                <select wire:model="rankSettingWeight" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
+                                    @for($i = 0; $i <= 10; $i++)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="relative">
+                                <select wire:model="rankSettingColor" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
+                                    <option value="bg-green-100">سبز</option>
+                                    <option value="bg-blue-100">آبی</option>
+                                    <option value="bg-red-100">قرمز</option>
+                                    <option value="bg-yellow-100">زرد</option>
+                                    <option value="bg-purple-100">بنفش</option>
+                                    <option value="bg-pink-100">صورتی</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </td>
-                
-                <td class="py-4 px-6 text-center">
-                    <div class="flex items-center justify-center gap-2">
-                        <button wire:click="edit({{ $setting->id }})" 
-                                class="inline-flex items-center justify-center w-10 h-10 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-800 rounded-lg transition-all duration-200 group" 
-                                title="ویرایش">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    
+                    <input type="text" placeholder="اسم معیار پذیرش" class="w-full border border-gray-300 rounded-md p-2 mb-4" 
+                           wire:model="rankSettingName">
+                    
+                    <textarea placeholder="شرح معیار پذیرش در اینجا ذکر میشود و مدارک و نحوه پذیرش در اینجا تعیین میشود" 
+                              class="w-full border border-gray-300 rounded-md p-3 h-24 mb-4 resize-none"
+                              wire:model="rankSettingDescription"></textarea>
+                    
+                    <div class="flex justify-center">
+                        <button type="button" wire:click="saveRankSetting" class="bg-green-500 hover:bg-green-600 transition-colors text-white rounded-md py-3 px-6 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                        </button>
-
-                        <button wire:click="delete({{ $setting->id }})" 
-                                class="inline-flex items-center justify-center w-10 h-10 bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 rounded-lg transition-all duration-200 group"
-                                title="حذف" 
-                                onclick="return confirm('آیا از حذف این معیار اطمینان دارید؟')">
-                            <svg class="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
+                            ذخیره معیار جدید
                         </button>
                     </div>
-                </td>
-            </tr>
-        @endif
-    @endforeach
-</tbody>
-            </table>
-
-            <!-- Add New Button -->
-            @if(isset($isCreatingNew) && $isCreatingNew)
-                <div class="mt-6 p-4 border-2 border-green-500 rounded-lg bg-green-50">
-                    @include('livewire.charity.partials.rank-setting-form')
                 </div>
-            @else
-                <!-- Simple Add Button -->
-                <div class="mt-4 mb-6">
-                    <button wire:click="showCreateForm" class="w-full py-3 border-2 border-green-500 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+
+                <!-- دکمه های پایینی -->
+                <div class="flex justify-between">
+                    <button wire:click="resetToDefaults" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md">
+                        بازگشت به تنظیمات پیشفرض
+                    </button>
+                    <button wire:click="applyCriteria" class="bg-green-500 text-white px-6 py-3 rounded-md flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
+                        تایید و اعمال تنظیمات جدید
                     </button>
                 </div>
-            @endif
-        </div>
-        
-        <!-- Modal Footer -->
-        <div class="p-6 flex justify-between items-center border-t border-gray-200">
-            <button wire:click="resetToDefault" class="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">
-                بازگشت به تنظیمات پیشفرض
-            </button>
-            <button wire:click="applyAndClose" class="px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-    </svg>
-    تایید و اعمال تنظیمات
-</button>
+            </div>
         </div>
     </div>
-</div>
 </div>

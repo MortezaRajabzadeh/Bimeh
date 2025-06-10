@@ -42,6 +42,45 @@ class FamiliesApproval extends Component
     public $expandedFamily = null;
     public $insuranceExcelFile;
     public $perPage = 15;
+    
+    // متغیرهای مورد نیاز برای فیلترها
+    public $tempFilters = [];
+    public $activeFilters = [];
+    public $showRankModal = false;
+    
+    // متغیرهای مورد نیاز برای فیلتر مودال
+    public $provinces = [];
+    public $cities = [];
+    public $regions = [];
+    public $organizations = [];
+    public $rankSettings;
+
+    // متغیرهای مورد نیاز برای مودال تنظیمات رتبه‌بندی
+    public $editingRankSettingId = null;
+    public $isCreatingNew = false;
+    public $editingRankSetting = [
+        'name' => '',
+        'weight' => 5,
+        'description' => '',
+        'requires_document' => true,
+        'color' => '#60A5FA'
+    ];
+    
+    // متغیرهای فرم rank setting
+    public $rankSettingName = '';
+    public $rankSettingDescription = '';
+    public $rankSettingWeight = 5;
+    public $rankSettingColor = '#60A5FA';
+    public $rankSettingNeedsDoc = true;
+    public $rankingSchemes = [];
+    public $availableCriteria = [];
+    public $selectedSchemeId = null;
+    public array $schemeWeights = [];
+    public $newSchemeName = '';
+    public $newSchemeDescription = '';
+    public $appliedSchemeId = null;
+    public $selectedCriteria = [];
+    public $criteriaRequireDocument = [];
 
     // اضافه کردن متغیرهای مرتب‌سازی
     public $sortField = 'created_at';
@@ -54,12 +93,24 @@ class FamiliesApproval extends Component
     
     // متغیرهای جستجو و فیلتر
     public $search = '';
+    public $status = '';
     public $province_id = null;
     public $city_id = null;
     public $district_id = null;
     public $region_id = null;
     public $organization_id = null;
     public $charity_id = null;
+    
+    // Add this line to fix the error
+    public $charity = '';
+    
+    // متغیرهای فیلتر رتبه
+    public $province = '';
+    public $city = '';
+    public $deprivation_rank = '';
+    public $family_rank_range = '';
+    public $specific_criteria = '';
+    public $availableRankSettings = [];
 
     protected $paginationTheme = 'tailwind';
     
@@ -67,6 +118,8 @@ class FamiliesApproval extends Component
     protected $queryString = [
         'page' => ['except' => 1],
         'activeTab' => ['except' => 'pending'],
+        'family_rank_range' => ['except' => ''],
+        'specific_criteria' => ['except' => ''],
     ];
 
     // ایجاد لیستنر برای ذخیره سهم‌بندی
@@ -92,6 +145,15 @@ class FamiliesApproval extends Component
         
         // پاکسازی کش هنگام لود اولیه صفحه
         $this->clearFamiliesCache();
+        
+        // بارگذاری داده‌های مورد نیاز برای فیلترها
+        $this->provinces = \App\Models\Province::orderBy('name')->get();
+        $this->cities = \App\Models\City::orderBy('name')->get();
+        $this->regions = \App\Models\Region::all();
+        $this->organizations = \App\Models\Organization::where('type', 'charity')->orderBy('name')->get();
+        
+        // بارگذاری کامل تنظیمات رتبه‌بندی
+        $this->loadRankSettings();
         
         Log::info('🔄 FamiliesApproval mounted - Cache cleared for fresh data');
     }
@@ -737,6 +799,75 @@ class FamiliesApproval extends Component
                 $query->orderBy($this->sortField, $this->sortDirection);
             }
             
+            // اعمال فیلترهای پیشرفته
+            if (!empty($this->search)) {
+                $query->where(function ($q) {
+                    $q->where('family_code', 'like', '%' . $this->search . '%')
+                      ->orWhere('address', 'like', '%' . $this->search . '%')
+                      ->orWhere('additional_info', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('members', function ($memberQuery) {
+                          $memberQuery->where('first_name', 'like', '%' . $this->search . '%')
+                                     ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                                     ->orWhere('national_code', 'like', '%' . $this->search . '%');
+                      });
+                });
+            }
+            
+            // اعمال فیلتر status
+            if (!empty($this->status)) {
+                if ($this->status === 'insured') {
+                    $query->where(function($q) {
+                        $q->where('is_insured', true)
+                          ->orWhere('status', 'insured');
+                    });
+                } elseif ($this->status === 'uninsured') {
+                    $query->where('is_insured', false)
+                          ->where('status', '!=', 'insured');
+                } else {
+                    $query->where('status', $this->status);
+                }
+            }
+            
+            // اعمال فیلتر استان
+            if (!empty($this->province_id)) {
+                $query->where('province_id', $this->province_id);
+            }
+            
+            // اعمال فیلتر شهر
+            if (!empty($this->city_id)) {
+                $query->where('city_id', $this->city_id);
+            }
+            
+            // اعمال فیلتر منطقه
+            if (!empty($this->district_id)) {
+                $query->where('district_id', $this->district_id);
+            }
+            
+            // اعمال فیلتر خیریه
+            if (!empty($this->charity_id)) {
+                $query->where('charity_id', $this->charity_id);
+            }
+            
+            // اعمال فیلتر رتبه خانواده
+            if (!empty($this->family_rank_range)) {
+                $rangeParts = explode('-', $this->family_rank_range);
+                if (count($rangeParts) == 2) {
+                    $minRank = (int)$rangeParts[0];
+                    $maxRank = (int)$rangeParts[1];
+                    $query->whereBetween('family_rank', [$minRank, $maxRank]);
+                }
+            }
+            
+            // اعمال فیلتر معیارهای خاص
+            if (!empty($this->specific_criteria)) {
+                $criteria = explode(',', $this->specific_criteria);
+                $query->where(function($q) use ($criteria) {
+                    foreach ($criteria as $criterion) {
+                        $q->orWhere('rank_criteria', 'LIKE', "%{$criterion}%");
+                    }
+                });
+            }
+            
             return $query->paginate($this->perPage);
         });
     }
@@ -936,8 +1067,14 @@ class FamiliesApproval extends Component
         // Apply search filter
         if ($this->search) {
             $query->where(function ($q) {
-                $q->whereHas('head', fn($sq) => $sq->where('full_name', 'like', '%' . $this->search . '%'))
-                  ->orWhere('family_code', 'like', '%' . $this->search . '%');
+                $q->where('family_code', 'like', '%' . $this->search . '%')
+                  ->orWhere('address', 'like', '%' . $this->search . '%')
+                  ->orWhere('additional_info', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('members', function ($memberQuery) {
+                      $memberQuery->where('first_name', 'like', '%' . $this->search . '%')
+                                 ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                                 ->orWhere('national_code', 'like', '%' . $this->search . '%');
+                  });
             });
         }
 
@@ -975,7 +1112,7 @@ class FamiliesApproval extends Component
 
         if ($families->isEmpty()) {
             session()->flash('error', 'هیچ داده‌ای برای دانلود با فیلترهای فعلی وجود ندارد.');
-            return null;
+            return;
         }
 
         $headings = [
@@ -1516,6 +1653,26 @@ class FamiliesApproval extends Component
                 if ($targetWizardStep) {
                     // استفاده از setAttribute به جای دسترسی مستقیم
                     $family->setAttribute('wizard_status', $targetWizardStep->value);
+                    
+                    // به‌روزرسانی وضعیت قدیمی
+                    switch ($targetWizardStep->value) {
+                        case InsuranceWizardStep::REVIEWING->value:
+                            $family->setAttribute('status', 'reviewing');
+                            break;
+                        case InsuranceWizardStep::SHARE_ALLOCATION->value:
+                        case InsuranceWizardStep::APPROVED->value:
+                            $family->setAttribute('status', 'approved');
+                            break;
+                        case InsuranceWizardStep::EXCEL_UPLOAD->value:
+                        case InsuranceWizardStep::INSURED->value:
+                            $family->setAttribute('status', 'insured');
+                            $family->setAttribute('is_insured', true);
+                            break;
+                        case InsuranceWizardStep::RENEWAL->value:
+                            $family->setAttribute('status', 'renewal');
+                            break;
+                    }
+                    
                     $family->save();
                     
                     // ثبت لاگ تغییر وضعیت
@@ -1523,7 +1680,7 @@ class FamiliesApproval extends Component
                         $family,
                         $currentWizardStep,
                         $targetWizardStep,
-                        "تغییر وضعیت از {$currentWizardStep->label()} به {$targetWizardStep->label()} توسط کاربر",
+                        "تغییر وضعیت به {$targetWizardStep->label()} توسط کاربر",
                         ['batch_id' => $batchId]
                     );
                     
@@ -1544,10 +1701,8 @@ class FamiliesApproval extends Component
             $this->resetPage();
             $this->dispatch('reset-checkboxes');
             
-            // بررسی نیاز به سهم‌بندی
-            if (isset($requireShares) && $requireShares) {
-                $this->dispatch('openShareAllocationModal', $familyIds);
-            }
+            // به‌روزرسانی UI
+            // $this->dispatch('wizardUpdated', $result);
             
             return [
                 'success' => true,
@@ -1566,184 +1721,6 @@ class FamiliesApproval extends Component
                 'message' => 'خطا در به‌روزرسانی وضعیت خانواده‌ها: ' . $e->getMessage()
             ];
         }
-    }
-
-    /**
-     * افزودن متد برای کپی کردن متن (شماره موبایل/شبا)
-     */
-    public function copyText($text)
-    {
-        $this->dispatch('showToast', ['type' => 'success', 'message' => 'متن با موفقیت کپی شد: ' . $text]);
-    }
-
-    /**
-     * به‌روزرسانی لیست خانواده‌ها
-     */
-    public function refreshFamiliesList()
-    {
-            $this->clearFamiliesCache();
-        // فراخوانی رندر مجدد
-        $this->render();
-    }
-
-    /**
-     * بستن مودال سهم‌بندی
-     */
-    public function onCloseShareModal()
-    {
-        Log::info('🔄 onCloseShareModal method called');
-        $this->dispatch('closeShareModal');
-        
-        // به‌روزرسانی کش برای به‌روزرسانی لیست‌ها
-        $this->clearFamiliesCache();
-        
-        // رفرش صفحه
-        $this->resetPage();
-    }
-
-    /**
-     * تغییر وضعیت خانواده به بیمه شده و ثبت در دیتابیس
-     * 
-     * @param \App\Models\Family $family
-     * @param string $familyCode
-     * @return bool
-     */
-    private function updateFamilyStatus($family, $familyCode)
-    {
-        try {
-            // فقط اگر وضعیت approved باشد، آن را تغییر دهیم
-            if ($family->status === 'approved') {
-                $oldStatus = $family->status;
-                $family->status = 'insured';
-                $result = $family->save();
-                
-                if ($result) {
-                    Log::info("✅ تغییر وضعیت خانواده {$familyCode} از {$oldStatus} به insured با موفقیت انجام شد");
-                    return true;
-                } else {
-                    Log::error("❌ خطا در تغییر وضعیت خانواده {$familyCode} از {$oldStatus} به insured");
-                    return false;
-                }
-            } elseif ($family->status === 'insured') {
-                // در صورتی که قبلاً بیمه شده باشد، نیازی به تغییر نیست
-                Log::info("ℹ️ خانواده {$familyCode} قبلاً بیمه شده است");
-                return true;
-            } else {
-                Log::warning("⚠️ خانواده {$familyCode} در وضعیت {$family->status} است و نمی‌تواند به بیمه شده تغییر کند");
-                return false;
-            }
-        } catch (\Exception $e) {
-            Log::error("❌ خطای استثنا در تغییر وضعیت خانواده {$familyCode}: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // متد فراخوانی شده بعد از ذخیره سهم‌بندی
-    public function onSharesAllocated()
-    {
-        Log::info('🚀 onSharesAllocated - متد فراخوانی شد با ' . count($this->selected) . ' خانواده انتخاب شده', [
-            'selected_family_ids' => $this->selected
-        ]);
-        
-        // بررسی وضعیت فعلی خانواده‌ها و انتقال به مرحله approved
-        $families = Family::whereIn('id', $this->selected)->get();
-        Log::info('👪 onSharesAllocated - تعداد خانواده‌های یافت شده: ' . $families->count());
-        
-        DB::beginTransaction();
-        try {
-            $batchId = 'share_allocation_' . time() . '_' . uniqid();
-            $count = 0;
-            
-            foreach ($families as $family) {
-                Log::info('🔄 onSharesAllocated - پردازش خانواده', [
-                    'family_id' => $family->id,
-                    'family_code' => $family->family_code ?? 'نامشخص',
-                    'current_status' => $family->wizard_status
-                ]);
-                
-                // تنظیم وضعیت wizard به APPROVED
-                $currentStep = $family->wizard_status;
-                if (is_string($currentStep)) {
-                    $currentStep = InsuranceWizardStep::from($currentStep);
-                }
-                
-                Log::info('🔄 onSharesAllocated - تغییر وضعیت خانواده به APPROVED', [
-                    'family_id' => $family->id,
-                    'from_status' => $currentStep ? $currentStep->value : 'نامشخص'
-                ]);
-                
-                // تغییر وضعیت به APPROVED
-                $family->setAttribute('wizard_status', InsuranceWizardStep::APPROVED->value);
-                $family->setAttribute('status', 'approved');
-                $family->save();
-                
-                Log::info('✅ onSharesAllocated - وضعیت خانواده با موفقیت به‌روزرسانی شد', [
-                    'family_id' => $family->id,
-                    'new_status' => $family->wizard_status,
-                    'new_db_status' => $family->status
-                ]);
-                    
-                // به‌روزرسانی وضعیت در جدول family_insurances
-                $insurances = FamilyInsurance::where('family_id', $family->id)
-                    ->where(function($query) {
-                        $query->whereNull('end_date')
-                            ->orWhere('end_date', '>=', now());
-                    })
-                    ->get();
-                
-                Log::info('🔍 onSharesAllocated - تعداد بیمه‌های فعال خانواده: ' . $insurances->count());
-                    
-                foreach ($insurances as $insurance) {
-                    $insurance->status = 'pending';  // وضعیت در انتظار آپلود اکسل
-                    $insurance->save();
-                    
-                    Log::info("✅ onSharesAllocated - وضعیت بیمه شماره {$insurance->id} برای خانواده {$family->id} به pending تغییر یافت");
-                }
-                    
-                // ثبت لاگ تغییر وضعیت
-                try {
-                    FamilyStatusLog::create([
-                        'family_id' => $family->id,
-                        'user_id' => Auth::id(),
-                        'from_status' => $currentStep->value,
-                        'to_status' => InsuranceWizardStep::APPROVED->value,
-                        'comments' => "تغییر وضعیت به تایید شده پس از تخصیص سهم",
-                        'batch_id' => $batchId
-                    ]);
-                    
-                    Log::info("✅ onSharesAllocated - لاگ تغییر وضعیت برای خانواده {$family->id} ثبت شد");
-                } catch (\Exception $e) {
-                    Log::warning("⚠️ onSharesAllocated - خطا در ثبت لاگ تغییر وضعیت: " . $e->getMessage());
-                }
-                    
-                $count++;
-            }
-            
-            DB::commit();
-            Log::info("✅ onSharesAllocated - {$count} خانواده به وضعیت 'تایید شده' منتقل شدند");
-            
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('❌ onSharesAllocated - خطا در تغییر وضعیت خانواده‌ها پس از تخصیص سهم: ' . $e->getMessage(), [
-                'exception' => $e->getTraceAsString()
-            ]);
-        }
-            
-        // پاک کردن کش برای به‌روزرسانی لیست‌ها
-        $this->clearFamiliesCache();
-        
-        
-        // ریست کردن انتخاب‌ها
-        $this->selected = [];
-        $this->selectAll = false;
-        $this->dispatch('reset-checkboxes');
-        
-        // نمایش پیام موفقیت
-        session()->flash('message', 'سهم‌بندی با موفقیت انجام شد و خانواده‌ها به مرحله دانلود اکسل منتقل شدند');
-        
-        // انتقال اتوماتیک به تب approved
-        Log::info('🔄 onSharesAllocated - انتقال به تب approved');
-        $this->setTab('approved');
     }
 
     /**
@@ -1869,7 +1846,7 @@ class FamiliesApproval extends Component
             
             DB::commit();
             
-            // پاکسازی متغیرها
+            // پاک کردن متغیرها
             $this->selected = [];
             $this->selectAll = false;
             $this->renewalNote = '';
@@ -1924,6 +1901,697 @@ class FamiliesApproval extends Component
         
         // پاکسازی کش
         $this->clearFamiliesCache();
+    }
+
+    /**
+     * اعمال فیلترهای انتخاب شده در مودال
+     */
+    public function applyFilters()
+    {
+        try {
+            // Debug: بررسی محتوای tempFilters
+            logger('Applying filters - tempFilters:', $this->tempFilters);
+            
+            // اگر هیچ فیلتری وجود ندارد
+            if (empty($this->tempFilters)) {
+                $this->dispatch('notify', [
+                    'message' => 'هیچ فیلتری برای اعمال وجود ندارد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+            
+            // ابتدا فیلترهای قبلی را پاک می‌کنیم (بدون پاک کردن search)
+            $this->province_id = null;
+            $this->city_id = null;
+            $this->district_id = null;
+            $this->region_id = null;
+            $this->organization_id = null;
+            $this->charity_id = null;
+            
+            $appliedCount = 0;
+            $appliedFilters = [];
+            
+            // اعمال فیلترهای جدید
+            foreach ($this->tempFilters as $filter) {
+                if (empty($filter['value'])) {
+                    logger('Skipping empty filter:', $filter);
+                    continue;
+                }
+                
+                logger('Applying filter:', $filter);
+                
+                switch ($filter['type']) {
+                    case 'status':
+                        // وضعیت بیمه یا وضعیت عمومی خانواده
+                        $this->status = $filter['value']; // اضافه کردن اختصاص مقدار به status
+                        $appliedCount++;
+                        $appliedFilters[] = 'وضعیت: ' . $filter['value'];
+                        logger('Applied status filter:', ['value' => $filter['value']]);
+                        break;
+                    case 'province':
+                        $this->province_id = $filter['value'];
+                        $appliedCount++;
+                        $provinceName = \App\Models\Province::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'استان: ' . $provinceName;
+                        logger('Applied province filter:', ['value' => $filter['value']]);
+                        break;
+                    case 'city':
+                        $this->city_id = $filter['value'];
+                        $appliedCount++;
+                        $cityName = \App\Models\City::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'شهر: ' . $cityName;
+                        logger('Applied city filter:', ['value' => $filter['value']]);
+                        break;
+                    case 'district':
+                        $this->district_id = $filter['value'];
+                        $appliedCount++;
+                        $districtName = \App\Models\District::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'منطقه: ' . $districtName;
+                        logger('Applied district filter:', ['value' => $filter['value']]);
+                        break;
+                    case 'charity':
+                        $this->charity_id = $filter['value'];
+                        $appliedCount++;
+                        $charityName = \App\Models\Organization::find($filter['value'])->name ?? $filter['value'];
+                        $appliedFilters[] = 'موسسه: ' . $charityName;
+                        logger('Applied charity filter:', ['value' => $filter['value']]);
+                        break;
+                }
+            }
+            
+            $this->activeFilters = $this->tempFilters;
+            $this->resetPage();
+            
+            // Debug: نمایش وضعیت فعلی فیلترها
+            logger('Applied filters result:', [
+                'province_id' => $this->province_id,
+                'city_id' => $this->city_id,
+                'district_id' => $this->district_id,
+                'charity_id' => $this->charity_id,
+                'appliedCount' => $appliedCount
+            ]);
+            
+            // پیام با جزئیات فیلترهای اعمال شده
+            if ($appliedCount > 0) {
+                $filtersList = implode('، ', $appliedFilters);
+                $message = "فیلترها با موفقیت اعمال شدند: {$filtersList}";
+            } else {
+                $message = 'هیچ فیلتر معتبری برای اعمال یافت نشد';
+            }
+            
+            $this->dispatch('notify', [
+                'message' => $message,
+                'type' => $appliedCount > 0 ? 'success' : 'error'
+            ]);
+            
+            // پاک کردن کش برای بارگذاری مجدد داده‌ها با فیلترهای جدید
+            $this->clearFamiliesCache();
+            
+        } catch (\Exception $e) {
+            logger('Error applying filters:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            $this->dispatch('notify', [
+                'message' => 'خطا در اعمال فیلترها: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * پاک کردن تمام فیلترها
+     */
+    public function clearAllFilters()
+    {
+        $this->search = '';
+        $this->status = ''; // اضافه کردن پاک کردن status
+        $this->province_id = null;
+        $this->city_id = null;
+        $this->district_id = null;
+        $this->region_id = null;
+        $this->organization_id = null;
+        $this->charity_id = null;
+        $this->tempFilters = [];
+        $this->activeFilters = [];
+        
+        // پاک کردن فیلترهای رتبه
+        $this->province = '';
+        $this->city = '';
+        $this->deprivation_rank = '';
+        $this->family_rank_range = '';
+        $this->specific_criteria = '';
+        $this->charity = '';
+        $this->region = '';
+        
+        $this->resetPage();
+        $this->clearFamiliesCache();
+        
+        $this->dispatch('notify', [
+            'message' => 'تمام فیلترها پاک شدند',
+            'type' => 'info'
+        ]);
+    }
+    
+    /**
+     * باز کردن مودال رتبه‌بندی
+     */
+    public function openRankModal()
+    {
+        $this->loadRankSettings();
+        $this->showRankModal = true;
+    }
+    
+    /**
+     * بارگذاری تنظیمات رتبه‌بندی
+     */
+    public function loadRankSettings()
+    {
+        $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
+        $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
+        $this->availableCriteria = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
+        
+        // Update available rank settings for display
+        $this->availableRankSettings = $this->rankSettings;
+        
+        // نمایش پیام مناسب برای باز شدن تنظیمات
+        $this->dispatch('notify', [
+            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . $this->rankSettings->count() . ' معیار',
+            'type' => 'info'
+        ]);
+    }
+    
+    /**
+     * فرم افزودن معیار جدید را نمایش می‌دهد.
+     */
+    public function showCreateForm()
+    {
+        $this->reset('editingRankSettingId');
+        $this->isCreatingNew = true;
+        $this->editingRankSetting = [
+            'name' => '',
+            'weight' => 5,
+            'description' => '',
+            'requires_document' => true,
+            'color' => '#'.substr(str_shuffle('ABCDEF0123456789'), 0, 6)
+        ];
+    }
+    
+    /**
+     * یک معیار را برای ویرایش انتخاب می‌کند.
+     * @param int $id
+     */
+    public function edit($id)
+    {
+        $this->isCreatingNew = false;
+        $this->editingRankSettingId = $id;
+        $setting = \App\Models\RankSetting::find($id);
+        if ($setting) {
+            $this->editingRankSetting = $setting->toArray();
+        }
+    }
+    
+    /**
+     * تغییرات را ذخیره می‌کند (هم برای افزودن جدید و هم ویرایش).
+     */
+    public function save()
+    {
+        $this->validate([
+            'editingRankSetting.name' => 'required|string|max:255',
+            'editingRankSetting.weight' => 'required|integer|min:0|max:10',
+            'editingRankSetting.description' => 'nullable|string',
+            'editingRankSetting.requires_document' => 'boolean',
+            'editingRankSetting.color' => 'nullable|string',
+        ]);
+        
+        try {
+            // محاسبه sort_order برای رکورد جدید
+            if (!$this->editingRankSettingId) {
+                $maxOrder = \App\Models\RankSetting::max('sort_order') ?? 0;
+                $this->editingRankSetting['sort_order'] = $maxOrder + 10;
+                $this->editingRankSetting['is_active'] = true;
+                $this->editingRankSetting['slug'] = \Illuminate\Support\Str::slug($this->editingRankSetting['name']);
+            }
+            
+            // ذخیره
+            $setting = \App\Models\RankSetting::updateOrCreate(
+                ['id' => $this->editingRankSettingId],
+                $this->editingRankSetting
+            );
+            
+            // بازنشانی فرم
+            $this->resetForm();
+            
+            // بارگذاری مجدد تنظیمات
+            $this->loadRankSettings();
+            
+            $this->dispatch('notify', [
+                'message' => 'معیار با موفقیت ذخیره شد',
+                'type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * حذف یک معیار رتبه‌بندی
+     * @param int $id
+     */
+    public function delete($id)
+    {
+        try {
+            $setting = \App\Models\RankSetting::find($id);
+            if ($setting) {
+                // بررسی استفاده شدن معیار
+                $usageCount = \App\Models\FamilyCriterion::where('rank_setting_id', $id)->count();
+                if ($usageCount > 0) {
+                    $this->dispatch('notify', [
+                        'message' => "این معیار در {$usageCount} خانواده استفاده شده و قابل حذف نیست. به جای حذف می‌توانید آن را غیرفعال کنید.",
+                        'type' => 'error'
+                    ]);
+                    return;
+                }
+                
+                $setting->delete();
+                $this->loadRankSettings();
+                $this->dispatch('notify', [
+                    'message' => 'معیار با موفقیت حذف شد',
+                    'type' => 'success'
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * انصراف از ویرایش/افزودن و بازنشانی فرم
+     */
+    public function cancel()
+    {
+        $this->resetForm();
+        $this->dispatch('notify', [
+            'message' => 'عملیات لغو شد',
+            'type' => 'info'
+        ]);
+    }
+    
+    /**
+     * بازنشانی فرم ویرایش/افزودن
+     */
+    private function resetForm()
+    {
+        $this->editingRankSettingId = null;
+        $this->isCreatingNew = false;
+        $this->editingRankSetting = [
+            'name' => '',
+            'weight' => 5,
+            'description' => '',
+            'requires_document' => true,
+            'color' => '#60A5FA'
+        ];
+    }
+    
+    /**
+     * بازگشت به تنظیمات پیشفرض
+     */
+    public function resetToDefault()
+    {
+        // پاک کردن معیارهای انتخاب شده
+        $this->selectedCriteria = [];
+        $this->criteriaRequireDocument = [];
+        
+        // مقداردهی مجدد با مقادیر پیشفرض
+        foreach ($this->availableCriteria as $criterion) {
+            $this->selectedCriteria[$criterion->id] = false;
+            $this->criteriaRequireDocument[$criterion->id] = true;
+        }
+        
+        $this->dispatch('notify', ['message' => 'تنظیمات به حالت پیشفرض بازگشت.', 'type' => 'info']);
+    }
+    
+    /**
+FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویرایش شده)
+     */
+    public function saveRankSetting()
+    {
+        // ثبت لاگ برای اشکال‌زدایی قبل از شروع فرآیند
+        Log::info('درخواست ذخیره معیار رتبه', [
+            'data' => [
+                'name' => $this->rankSettingName,
+                'description' => $this->rankSettingDescription,
+                'weight' => $this->rankSettingWeight,
+                'requires_document' => $this->rankSettingNeedsDoc,
+                'color' => $this->rankSettingColor,
+                'is_editing' => !empty($this->editingRankSettingId),
+                'editing_id' => $this->editingRankSettingId
+            ]
+        ]);
+
+        // ابتدا اعتبارسنجی مقادیر ورودی
+        if (empty($this->rankSettingName)) {
+            $this->dispatch('notify', [
+                'message' => 'نام معیار الزامی است',
+                'type' => 'error'
+            ]);
+            return;
+        }
+        
+        try {
+            // تعیین آیا در حال ایجاد معیار جدید هستیم یا ویرایش معیار موجود
+            if (empty($this->editingRankSettingId)) {
+                // ایجاد معیار جدید با استفاده از مدل
+                $setting = new \App\Models\RankSetting();
+                $setting->fill([
+                    'name' => $this->rankSettingName,
+                    'weight' => (int)$this->rankSettingWeight,
+                    'description' => $this->rankSettingDescription,
+                    'requires_document' => (bool)$this->rankSettingNeedsDoc,
+                    'color' => $this->rankSettingColor,
+                    'sort_order' => \App\Models\RankSetting::max('sort_order') + 10,
+                    'is_active' => true,
+                    'slug' => \Illuminate\Support\Str::slug($this->rankSettingName) ?: 'rank-' . \Illuminate\Support\Str::random(6),
+                    'created_by' => \Illuminate\Support\Facades\Auth::id()
+                ]);
+
+                // Save with error handling
+                try {
+                    $setting->save();
+                } catch (\Exception $e) {
+                    throw new \Exception('Failed to save rank setting: ' . $e->getMessage());
+                }
+                
+                Log::info('معیار جدید ایجاد شد', [
+                    'id' => $setting->id,
+                    'name' => $setting->name
+                ]);
+                
+                $this->dispatch('notify', [
+                    'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
+                    'type' => 'success'
+                ]);
+            } else {
+                // ویرایش معیار موجود
+                $setting = \App\Models\RankSetting::find($this->editingRankSettingId);
+                if ($setting) {
+                    $setting->name = $this->rankSettingName;
+                    $setting->weight = $this->rankSettingWeight;
+                    $setting->description = $this->rankSettingDescription;
+                    $setting->requires_document = (bool)$this->rankSettingNeedsDoc;
+                    $setting->color = $this->rankSettingColor;
+                    $setting->save();
+                    
+                    Log::info('معیار ویرایش شد', [
+                        'id' => $setting->id,
+                        'name' => $setting->name
+                    ]);
+                    
+                    $this->dispatch('notify', [
+                        'message' => 'معیار با موفقیت به‌روزرسانی شد: ' . $this->rankSettingName,
+                        'type' => 'success'
+                    ]);
+                }
+            }
+            
+            // بارگذاری مجدد تنظیمات و ریست فرم
+            $this->availableRankSettings = \App\Models\RankSetting::active()->ordered()->get();
+            $this->resetRankSettingForm();
+            
+            // ریست کردن فرم بعد از ذخیره موفق
+            $this->rankSettingName = '';
+            $this->rankSettingDescription = '';
+            $this->rankSettingWeight = 5;
+            $this->rankSettingColor = '#60A5FA';
+            $this->rankSettingNeedsDoc = true;
+            $this->editingRankSettingId = null;
+        } catch (\Exception $e) {
+            // ثبت خطا در لاگ
+            Log::error('خطا در ذخیره معیار', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+    
+    /**
+     * ریست کردن فرم معیار
+     */
+    private function resetRankSettingForm()
+    {
+        $this->rankSettingName = '';
+        $this->rankSettingDescription = '';
+        $this->rankSettingWeight = 5;
+        $this->rankSettingColor = '#60A5FA';
+        $this->rankSettingNeedsDoc = true;
+        $this->editingRankSettingId = null;
+    }
+    
+    /**
+     * بازگشت به تنظیمات پیشفرض
+     */
+    public function resetToDefaults()
+    {
+        // پاک کردن فیلترهای رتبه
+        $this->family_rank_range = null;
+        $this->specific_criteria = null;
+        $this->selectedCriteria = [];
+        
+        // بازنشانی صفحه‌بندی و به‌روزرسانی لیست
+        $this->resetPage();
+        $this->showRankModal = false;
+        
+        // پاک کردن کش برای اطمینان از به‌روزرسانی داده‌ها
+        if (Auth::check()) {
+            cache()->forget('families_query_' . Auth::id());
+        }
+        
+        $this->dispatch('notify', [
+            'message' => 'تنظیمات رتبه با موفقیت به حالت پیشفرض بازگردانده شد',
+            'type' => 'success'
+        ]);
+    }
+    
+    /** 
+     * وزن‌های یک الگوی رتبه‌بندی ذخیره‌شده را بارگیری می‌کند. 
+     */ 
+    public function loadScheme($schemeId) 
+    { 
+        if (empty($schemeId)) { 
+            $this->reset(['selectedSchemeId', 'schemeWeights', 'newSchemeName', 'newSchemeDescription']); 
+            return; 
+        } 
+    
+        $this->selectedSchemeId = $schemeId; 
+        $scheme = \App\Models\RankingScheme::with('criteria')->find($schemeId); 
+        
+        if ($scheme) { 
+            $this->newSchemeName = $scheme->name; 
+            $this->newSchemeDescription = $scheme->description; 
+            $this->schemeWeights = $scheme->criteria->pluck('pivot.weight', 'id')->toArray(); 
+        } 
+    } 
+    
+    /** 
+     * یک الگوی رتبه‌بندی جدید را ذخیره یا یک الگوی موجود را به‌روزرسانی می‌کند. 
+     */ 
+    public function saveScheme() 
+    { 
+        $this->validate([ 
+            'newSchemeName' => 'required|string|max:255', 
+            'newSchemeDescription' => 'nullable|string', 
+            'schemeWeights' => 'required|array', 
+            'schemeWeights.*' => 'nullable|integer|min:0' 
+        ]); 
+    
+        $scheme = \App\Models\RankingScheme::updateOrCreate( 
+            ['id' => $this->selectedSchemeId], 
+            [ 
+                'name' => $this->newSchemeName, 
+                'description' => $this->newSchemeDescription, 
+                'user_id' => \Illuminate\Support\Facades\Auth::id() 
+            ] 
+        ); 
+        
+        $weightsToSync = []; 
+        foreach ($this->schemeWeights as $criterionId => $weight) { 
+            if (!is_null($weight) && $weight > 0) { 
+                $weightsToSync[$criterionId] = ['weight' => $weight]; 
+            } 
+        } 
+        
+        $scheme->criteria()->sync($weightsToSync); 
+        
+        $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get(); 
+        $this->selectedSchemeId = $scheme->id; 
+    
+        $this->dispatch('notify', ['message' => 'الگو با موفقیت ذخیره شد.', 'type' => 'success']); 
+    } 
+    
+    /** 
+     * الگوی انتخاب‌شده را برای فیلتر کردن و مرتب‌سازی اعمال می‌کند. 
+     */ 
+    public function applyRankingScheme() 
+    { 
+        if (!$this->selectedSchemeId) { 
+             $this->dispatch('notify', ['message' => 'لطفا ابتدا یک الگو را انتخاب یا ذخیره کنید.', 'type' => 'error']); 
+             return; 
+        } 
+        $this->appliedSchemeId = $this->selectedSchemeId; 
+        $this->sortBy('calculated_score'); 
+        $this->resetPage(); 
+        $this->showRankModal = false; 
+        
+        // دریافت نام الگوی انتخاب شده برای نمایش در پیام
+        $schemeName = \App\Models\RankingScheme::find($this->selectedSchemeId)->name ?? '';
+        $this->dispatch('notify', [
+            'message' => "الگوی رتبه‌بندی «{$schemeName}» با موفقیت اعمال شد.",
+            'type' => 'success'
+        ]); 
+    } 
+    
+    /** 
+     * رتبه‌بندی اعمال‌شده را پاک می‌کند. 
+     */ 
+    public function clearRanking() 
+    { 
+        $this->appliedSchemeId = null; 
+        $this->sortBy('created_at'); 
+        $this->resetPage(); 
+        $this->showRankModal = false; 
+        $this->dispatch('notify', ['message' => 'فیلتر رتبه‌بندی حذف شد.', 'type' => 'info']); 
+    }
+    
+    /**
+     * اعمال تغییرات و بستن مودال
+     */
+    public function applyAndClose() 
+    { 
+        try {
+            // اطمینان از ذخیره همه تغییرات
+            $this->loadRankSettings();
+            
+            // بروزرسانی لیست معیارهای در دسترس
+            $this->availableCriteria = \App\Models\RankSetting::active()->ordered()->get();
+            
+            // اعمال تغییرات به خانواده‌ها
+            if ($this->appliedSchemeId) {
+                // اگر یک طرح رتبه‌بندی انتخاب شده باشد، دوباره آن را اعمال می‌کنیم
+                $this->applyRankingScheme();
+
+                $this->sortBy('calculated_score');
+            }
+            
+            // بستن مودال و نمایش پیام
+            $this->showRankModal = false;
+            $this->dispatch('notify', [
+                'message' => 'تغییرات با موفقیت اعمال شد.',
+                'type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            // خطا در اعمال تغییرات
+            $this->dispatch('notify', [
+                'message' => 'خطا در اعمال تغییرات: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * بستن مودال تنظیمات رتبه
+     */
+    public function closeRankModal()
+    {
+        $this->showRankModal = false;
+    }
+
+    /**
+     * اعمال معیارهای انتخاب شده
+     */
+    public function applyCriteria()
+    {
+        if (!empty($this->selectedCriteria)) {
+            $this->specific_criteria = implode(',', $this->selectedCriteria);
+        } else {
+            $this->specific_criteria = null;
+        }
+        
+        $this->resetPage();
+        $this->closeRankModal();
+        
+        // Clear cache to ensure fresh data
+        if (Auth::check()) {
+            cache()->forget('families_query_' . Auth::id());
+        }
+        
+        $this->dispatch('notify', [
+            'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
+            'type' => 'success'
+        ]);
+    }
+
+    /**
+     * ویرایش تنظیمات رتبه
+     */
+    public function editRankSetting($id)
+    {
+        $setting = \App\Models\RankSetting::find($id);
+        if ($setting) {
+            // پر کردن فرم با مقادیر معیار موجود
+            $this->rankSettingName = $setting->name;
+            $this->rankSettingDescription = $setting->description;
+            $this->rankSettingWeight = $setting->weight;
+            $this->rankSettingColor = $setting->color ?? '#60A5FA';
+            $this->rankSettingNeedsDoc = $setting->requires_document ? 1 : 0;
+            $this->editingRankSettingId = $id;
+            $this->isCreatingNew = false;
+            
+            $this->dispatch('notify', [
+                'message' => 'در حال ویرایش معیار: ' . $setting->name,
+                'type' => 'info'
+            ]);
+        }
+    }
+
+    /**
+     * حذف معیار
+     */
+    public function deleteRankSetting($id)
+    {
+        try {
+            $setting = \App\Models\RankSetting::find($id);
+            if ($setting) {
+                $name = $setting->name;
+                $setting->delete();
+                
+                $this->dispatch('notify', [
+                    'message' => "معیار «{$name}» با موفقیت حذف شد",
+                    'type' => 'warning'
+                ]);
+                
+                // بارگذاری مجدد لیست
+                $this->availableRankSettings = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
+            }
+        } catch (\Exception $e) {
+            Log::error('خطا در حذف معیار', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 
     public function render()
@@ -2247,15 +2915,13 @@ class FamiliesApproval extends Component
     public function getFilters()
     {
         return [
-            'activeTab' => $this->activeTab, // اضافه کردن تب فعال به فیلترها
-            'search' => $this->search ?? null,
-            'province_id' => $this->province_id ?? null,
-            'city_id' => $this->city_id ?? null,
-            'district_id' => $this->district_id ?? null,
-            'region_id' => $this->region_id ?? null,
-            'organization_id' => $this->organization_id ?? null,
-            'charity_id' => $this->charity_id ?? null,
-            // 'selected' را حذف کردیم چون در body به صورت جداگانه ارسال می‌شود
+            'search' => $this->search,
+            'province_id' => $this->province_id,
+            'city_id' => $this->city_id,
+            'district_id' => $this->district_id,
+            'region_id' => $this->region_id,
+            'organization_id' => $this->organization_id,
+            'charity_id' => $this->charity_id,
         ];
     }
     
@@ -2265,5 +2931,121 @@ class FamiliesApproval extends Component
     public function getCurrentViewCount()
     {
         return $this->getFamiliesProperty()->total();
+    }
+
+    /**
+     * بررسی وجود فیلترهای فعال
+     */
+    public function hasActiveFilters()
+    {
+        return !empty($this->search) ||
+               !empty($this->province_id) || 
+               !empty($this->city_id) || 
+               !empty($this->district_id) || 
+               !empty($this->region_id) || 
+               !empty($this->organization_id) || 
+               !empty($this->charity_id) ||
+               !empty($this->activeFilters) ||
+               !empty($this->status) || 
+               !empty($this->province) || 
+               !empty($this->city) || 
+               !empty($this->deprivation_rank) || 
+               !empty($this->family_rank_range) || 
+               !empty($this->specific_criteria) || 
+               !empty($this->charity) || 
+               !empty($this->region);
+    }
+    
+    /**
+     * شمارش فیلترهای فعال
+     */
+    public function getActiveFiltersCount()
+    {
+        $count = 0;
+        if (!empty($this->search)) $count++;
+        if (!empty($this->province_id)) $count++;
+        if (!empty($this->city_id)) $count++;
+        if (!empty($this->district_id)) $count++;
+        if (!empty($this->region_id)) $count++;
+        if (!empty($this->organization_id)) $count++;
+        if (!empty($this->charity_id)) $count++;
+        if (!empty($this->activeFilters)) $count += count($this->activeFilters);
+        if (!empty($this->status)) $count++;
+        if (!empty($this->province)) $count++;
+        if (!empty($this->city)) $count++;
+        if (!empty($this->deprivation_rank)) $count++;
+        if (!empty($this->family_rank_range)) $count++;
+        if (!empty($this->specific_criteria)) $count++;
+        if (!empty($this->charity)) $count++;
+        if (!empty($this->region)) $count++;
+        return $count;
+    }
+
+    /**
+     * تست فیلترهای انتخاب شده بدون اعمال آنها
+     */
+    public function testFilters()
+    {
+        try {
+            // بررسی وجود فیلتر موقت
+            if (empty($this->tempFilters)) {
+                $this->dispatch('notify', [
+                    'message' => 'هیچ فیلتری برای تست وجود ندارد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+            
+            // شمارش تعداد رکوردهای یافت شده با فیلترهای موقت
+            $query = Family::query();
+            
+            // اعمال فیلترهای موقت به صورت موقت
+            foreach ($this->tempFilters as $filter) {
+                if (empty($filter['value'])) continue;
+                
+                switch ($filter['type']) {
+                    case 'status':
+                        if ($filter['value'] === 'insured') {
+                            $query->where(function($q) {
+                                $q->where('is_insured', true)
+                                  ->orWhere('status', 'insured');
+                            });
+                        } elseif ($filter['value'] === 'uninsured') {
+                            $query->where('is_insured', false)
+                                  ->where('status', '!=', 'insured');
+                        } else {
+                            $query->where('status', $filter['value']);
+                        }
+                        break;
+                    case 'province':
+                        $query->where('province_id', $filter['value']);
+                        break;
+                    case 'city':
+                        $query->where('city_id', $filter['value']);
+                        break;
+                    case 'district':
+                        $query->where('district_id', $filter['value']);
+                        break;
+                    case 'charity':
+                        $query->where('charity_id', $filter['value']);
+                        break;
+                }
+            }
+            
+            // شمارش نتایج
+            $count = $query->count();
+            
+            // ارسال نتیجه به کاربر
+            $this->dispatch('notify', [
+                'message' => "نتیجه تست: {$count} خانواده با فیلترهای انتخابی یافت شد.",
+                'type' => 'info'
+            ]);
+            
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در تست فیلترها: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 }
