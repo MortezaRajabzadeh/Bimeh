@@ -24,7 +24,7 @@ class RankSetting extends Model
         'is_active',
         'sort_order',
         'requires_document', // فیلد جدید
-        // 'color',            // فیلد جدید
+        // 'color',            // فیلد جدید - این خط کامنت شده است و نیازی به تغییر ندارد
     ];
 
     /**
@@ -45,6 +45,16 @@ class RankSetting extends Model
     public function familyCriteria()
     {
         return $this->hasMany(FamilyCriterion::class);
+    }
+    
+    /**
+     * The families that belong to the rank setting.
+     */
+    public function families()
+    {
+        return $this->belongsToMany(Family::class, 'family_criteria', 'rank_setting_id', 'family_id')
+                    ->withPivot(['has_criteria', 'notes'])
+                    ->withTimestamps();
     }
 
     /**

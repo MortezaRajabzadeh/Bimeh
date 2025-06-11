@@ -224,7 +224,14 @@ class FamilySearch extends Component
         // جستجو در خانواده‌ها
         $query = Family::query()
             ->select('families.*')
-            ->with(['city', 'province', 'organization', 'members', 'region'])
+            ->with([
+                'city',
+                'province',
+                'organization',
+                'members',
+                'region',
+                'rankSettings'
+            ])
             ->withCount('members');
         
         // ایجاد کوئری برای جستجو در اعضای خانواده
@@ -308,10 +315,8 @@ class FamilySearch extends Component
         // فیلتر بر اساس معیارهای خاص
         if ($this->specific_criteria) {
             $criteria = explode(',', $this->specific_criteria);
-            $query->where(function($q) use ($criteria) {
-                foreach ($criteria as $criterion) {
-                    $q->orWhere('rank_criteria', 'LIKE', "%{$criterion}%");
-                }
+            $query->whereHas('rankSettings', function($q) use ($criteria) {
+                $q->whereIn('key', $criteria);
             });
         }
 
@@ -352,7 +357,18 @@ class FamilySearch extends Component
             $query->leftJoin('organizations', 'families.organization_id', '=', 'organizations.id')
                   ->orderBy('organizations.name', $this->sortDirection);
         } else {
-            $query->orderBy($this->sortField, $this->sortDirection);
+            // اعمال مرتب‌سازی بر اساس معیارهای رتبه‌بندی
+            if ($this->sortField === 'calculated_score') {
+                $query->orderByRaw('(
+                    SELECT SUM(rs.weight * fs.value) as score 
+                    FROM rank_settings as rs 
+                    JOIN family_rank_settings as fs ON rs.id = fs.rank_setting_id 
+                    WHERE fs.family_id = families.id 
+                    GROUP BY fs.family_id
+                ) ' . $this->sortDirection);
+            } else {
+                $query->orderBy($this->sortField, $this->sortDirection);
+            }
         }
         
         return $query->paginate($this->perPage);

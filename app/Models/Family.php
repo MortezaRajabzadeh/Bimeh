@@ -11,10 +11,21 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Support\Facades\Dispatch;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class Family extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, LogsActivity, InteractsWithMedia;
+
+    /**
+     * The criteria that belong to the family.
+     */
+    public function criteria()
+    {
+        return $this->belongsToMany(RankSetting::class, 'family_criteria', 'family_id', 'rank_setting_id')
+                    ->withPivot(['has_criteria', 'notes'])
+                    ->withTimestamps();
+    }
 
     /**
      * فیلدهای قابل پر شدن
@@ -42,6 +53,7 @@ class Family extends Model implements HasMedia
         'verified_at',
         'is_insured',
         'acceptance_criteria',
+        'rank_criteria',
         'calculated_rank',
         'rank_calculated_at',
         'wizard_status',
@@ -79,7 +91,7 @@ class Family extends Model implements HasMedia
             // اگر acceptance_criteria دارد یا اعضایش معیار دارند
             if (($family->acceptance_criteria && is_array($family->acceptance_criteria) && count($family->acceptance_criteria) > 0) ||
                 $family->familyCriteria()->where('has_criteria', true)->exists()) {
-                
+
                 // محاسبه رتبه در background تا مانع performance نشود
                 dispatch(function() use ($family) {
                     $family->calculateRank();
@@ -236,7 +248,7 @@ class Family extends Model implements HasMedia
     {
         // ابتدا تمام اعضا را غیر سرپرست کن
         $this->members()->update(['is_head' => false]);
-        
+
         // عضو جدید را سرپرست کن
         $member = $this->members()->find($memberId);
         if ($member) {
@@ -244,7 +256,7 @@ class Family extends Model implements HasMedia
             $this->update(['head_id' => $memberId]);
             return true;
         }
-        
+
         return false;
     }
 
@@ -311,7 +323,7 @@ class Family extends Model implements HasMedia
     {
         return $this->finalInsurances()->count();
     }
-    
+
     /**
      * تعداد اعضای بیمه‌دار این خانواده
      */
@@ -321,18 +333,18 @@ class Family extends Model implements HasMedia
         if ($this->isInsured()) {
             return $this->members()->count();
         }
-        
+
         return 0;
     }
-    
+
     /**
      * آیا این خانواده بیمه دارد؟
      */
     public function isInsured()
     {
         // بررسی رابطه insurances یا فیلد is_insured
-        return $this->insurances()->exists() || 
-               $this->is_insured == true || 
+        return $this->insurances()->exists() ||
+               $this->is_insured == true ||
                $this->is_insured == 1;
     }
 
@@ -351,7 +363,7 @@ class Family extends Model implements HasMedia
     {
         // فقط از بیمه‌های نهایی شده استفاده می‌کنیم
         $types = $this->finalInsurances()->pluck('insurance_type')->unique();
-        
+
         // اگر داده‌ای پیدا نشد، از insuranceShares با فیلتر استفاده کن
         if ($types->isEmpty()) {
             // از طریق رابطه insurance_shares به insurance_type دسترسی پیدا کن
@@ -362,7 +374,7 @@ class Family extends Model implements HasMedia
                 ->pluck('family_insurances.insurance_type')
                 ->unique();
         }
-        
+
         return $types;
     }
 
@@ -373,26 +385,26 @@ class Family extends Model implements HasMedia
     {
         // فقط از بیمه‌های نهایی شده استفاده می‌کنیم
         $insuranceIds = $this->finalInsurances()->pluck('id')->toArray();
-        
+
         if (empty($insuranceIds)) {
             return collect([]);
         }
-        
+
         // استفاده از payer_type و payer_name از جدول insurance_shares
         $shares = \App\Models\InsuranceShare::whereIn('family_insurance_id', $insuranceIds)
             ->with(['payerType', 'payerOrganization', 'payerUser'])
             ->get();
-        
+
         if ($shares->isEmpty()) {
             // اگر سهامی وجود نداشت، از insurance_payer استفاده کن (فقط از نهایی شده‌ها)
             return $this->finalInsurances()->pluck('insurance_payer')->unique();
         }
-        
+
         // نمایش نام پرداخت‌کننده‌ها با استفاده از اکسسور getPayerNameAttribute
         $payerNames = $shares->map(function($share) {
             return $share->payer_name;
         })->filter()->unique()->values();
-        
+
         return $payerNames;
     }
 
@@ -416,31 +428,115 @@ class Family extends Model implements HasMedia
     }
 
     /**
+     * دریافت معیارهای رتبه‌بندی خانواده به صورت رشته متنی
+     */
+    public function getRankCriteriaAttribute()
+    {
+        if ($this->attributes['rank_criteria']) {
+            return $this->attributes['rank_criteria'];
+        }
+
+        $criteria = $this->familyCriteria()
+            ->where('has_criteria', true)
+            ->with('rankSetting')
+            ->get()
+            ->map(function ($criterion) {
+                return $criterion->rankSetting->name;
+            })
+            ->unique()
+            ->values()
+            ->implode(', ');
+
+        $this->rank_criteria = $criteria;
+        $this->save();
+
+        return $criteria;
+    }
+
+    /**
+     * بروزرسانی معیارهای رتبه‌بندی خانواده
+     */
+    public function updateRankCriteria()
+    {
+        $criteria = $this->familyCriteria()
+            ->where('has_criteria', true)
+            ->with('rankSetting')
+            ->get()
+            ->map(function ($criterion) {
+                return $criterion->rankSetting->name;
+            })
+            ->unique()
+            ->values()
+            ->implode(', ');
+
+        $this->rank_criteria = $criteria;
+        $this->save();
+    }
+
+    /**
+     * محاسبه امتیاز وزنی بر اساس معیارهای فعال
+     *
+     * @return float
+     */
+    public function calculateWeightedScore(): float
+    {
+        return $this->criteria()
+            ->where('has_criteria', true)
+            ->join('rank_settings', 'family_criteria.rank_setting_id', '=', 'rank_settings.id')
+            ->sum('rank_settings.weight');
+    }
+
+    /**
+     * محاسبه مجدد رتبه‌بندی برای تمام خانواده‌ها
+     *
+     * @return void
+     */
+    public static function recalculateAllRanks()
+    {
+        Log::info('شروع محاسبه مجدد رتبه‌بندی برای تمام خانواده‌ها');
+
+        $startTime = microtime(true);
+        $count = 0;
+
+        static::chunk(200, function ($families) use (&$count) {
+            foreach ($families as $family) {
+                $family->calculateRank();
+                $count++;
+            }
+        });
+
+        $executionTime = round(microtime(true) - $startTime, 2);
+        Log::info("محاسبه مجدد رتبه‌بندی برای {$count} خانواده با موفقیت انجام شد. زمان اجرا: {$executionTime} ثانیه");
+
+        return $count;
+    }
+
+    /**
      * محاسبه رتبه محرومیت خانواده بر اساس معیارهای تعریف شده
      */
     public function calculateRank()
     {
         // تنظیمات رتبه‌بندی فعال را دریافت کن
         $rankSettings = RankSetting::where('is_active', true)->get();
-        
+
         $totalScore = 0;
         $maxPossibleScore = 0;
-        
+
         // امتیاز براساس معیارهای تعریف شده در acceptance_criteria
         if ($this->acceptance_criteria && is_array($this->acceptance_criteria)) {
             foreach ($rankSettings as $setting) {
                 $key = $setting->key;
                 $weight = $setting->weight;
-                
+
                 // اگر معیار در acceptance_criteria وجود دارد
                 if (isset($this->acceptance_criteria[$key]) && $this->acceptance_criteria[$key]) {
                     $totalScore += $weight;
                 }
-                
+
                 $maxPossibleScore += $weight;
             }
         }
-        
+
         // امتیاز براساس معیارهای ثبت شده در جدول family_criteria
         $this->familyCriteria()
             ->where('has_criteria', true)
@@ -451,17 +547,17 @@ class Family extends Model implements HasMedia
                     $totalScore += $criteria->rankSetting->weight;
                 }
             });
-        
+
         // محاسبه رتبه نهایی (بین 0 تا 100)
-        $normalizedRank = $maxPossibleScore > 0 
-            ? min(100, round(($totalScore / $maxPossibleScore) * 100)) 
+        $normalizedRank = $maxPossibleScore > 0
+            ? min(100, round(($totalScore / $maxPossibleScore) * 100))
             : 0;
-        
+
         // ذخیره رتبه محاسبه شده
         $this->calculated_rank = $normalizedRank;
         $this->rank_calculated_at = now();
         $this->save();
-        
+
         return $normalizedRank;
     }
 
@@ -473,7 +569,7 @@ class Family extends Model implements HasMedia
         if ($recalculate || $this->calculated_rank === null || $this->rank_calculated_at === null) {
             return $this->calculateRank();
         }
-        
+
         return $this->calculated_rank;
     }
 
@@ -495,6 +591,15 @@ class Family extends Model implements HasMedia
      */
     public function addCriteria($rankSettingId, $notes = null)
     {
+        // لاگ دقیقا زمان ثبت در جدول family_criteria
+        \Illuminate\Support\Facades\Log::info('ثبت معیار در جدول family_criteria', [
+            'family_id' => $this->id,
+            'rank_setting_id' => $rankSettingId,
+            'notes' => $notes,
+            'datetime' => now()->format('Y-m-d H:i:s'),
+            'call_trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)
+        ]);
+
         return $this->familyCriteria()->updateOrCreate(
             ['rank_setting_id' => $rankSettingId],
             [
@@ -504,9 +609,6 @@ class Family extends Model implements HasMedia
         );
     }
 
-    /**
-     * حذف معیار از خانواده
-     */
     public function removeCriteria($rankSettingId)
     {
         return $this->familyCriteria()
@@ -522,11 +624,11 @@ class Family extends Model implements HasMedia
         if ($minRank !== null) {
             $query->where('calculated_rank', '>=', $minRank);
         }
-        
+
         if ($maxRank !== null) {
             $query->where('calculated_rank', '<=', $maxRank);
         }
-        
+
         return $query;
     }
 
@@ -560,13 +662,13 @@ class Family extends Model implements HasMedia
     public function testRankCalculation()
     {
         $startTime = microtime(true);
-        
+
         // محاسبه رتبه
         $rank = $this->calculateRank();
-        
+
         $endTime = microtime(true);
         $executionTime = ($endTime - $startTime) * 1000; // به میلی‌ثانیه
-        
+
         return [
             'rank' => $rank,
             'execution_time_ms' => round($executionTime, 2)
@@ -575,7 +677,7 @@ class Family extends Model implements HasMedia
 
     /**
      * دریافت درصد تکمیل اطلاعات هویتی اعضای خانواده
-     * 
+     *
      * @return array
      */
     public function getIdentityValidationStatus(): array
@@ -583,10 +685,10 @@ class Family extends Model implements HasMedia
         $requiredFields = config('ui.family_validation_icons.identity.required_fields', [
             'first_name', 'last_name', 'national_code'
         ]);
-        
+
         $members = $this->members;
         $totalMembers = $members->count();
-        
+
         if ($totalMembers === 0) {
             return [
                 'status' => 'none',
@@ -595,32 +697,32 @@ class Family extends Model implements HasMedia
                 'details' => []
             ];
         }
-        
+
         $completeMembers = 0;
         $memberDetails = [];
-        
+
         foreach ($members as $member) {
             $completedFields = 0;
             $memberFieldStatus = [];
-            
+
             foreach ($requiredFields as $field) {
                 $fieldValue = $member->{$field};
                 $isComplete = !empty($fieldValue) && !is_null($fieldValue);
-                
+
                 if ($isComplete) {
                     $completedFields++;
                 }
-                
+
                 $memberFieldStatus[$field] = $isComplete;
             }
-            
+
             $memberCompletionRate = ($completedFields / count($requiredFields)) * 100;
-            
+
             // در نظر گرفتن اعضای با تکمیل‌شدگی بالای 80% به عنوان عضو کامل
             if ($memberCompletionRate >= 80) {
                 $completeMembers++;
             }
-            
+
             $memberDetails[] = [
                 'member_id' => $member->id,
                 'name' => $member->first_name . ' ' . $member->last_name,
@@ -629,9 +731,9 @@ class Family extends Model implements HasMedia
                 'is_head' => $member->is_head
             ];
         }
-        
+
         $overallPercentage = ($completeMembers / $totalMembers) * 100;
-        
+
         // تعیین وضعیت بر اساس درصد تکمیل
         $thresholds = config('ui.validation_thresholds');
         if ($overallPercentage >= $thresholds['complete_min']) {
@@ -639,13 +741,13 @@ class Family extends Model implements HasMedia
             $message = 'اطلاعات همه اعضا کامل است';
         } elseif ($overallPercentage >= $thresholds['partial_min']) {
             $status = 'partial';
-            $message = sprintf('اطلاعات %d از %d عضو کامل است (%d%%)', 
+            $message = sprintf('اطلاعات %d از %d عضو کامل است (%d%%)',
                 $completeMembers, $totalMembers, round($overallPercentage));
         } else {
             $status = 'none';
             $message = 'اطلاعات اکثر اعضا ناقص است';
         }
-        
+
         return [
             'status' => $status,
             'percentage' => round($overallPercentage),
@@ -658,7 +760,7 @@ class Family extends Model implements HasMedia
 
     /**
      * بررسی وضعیت محرومیت منطقه‌ای خانواده
-     * 
+     *
      * @return array
      */
     public function getLocationValidationStatus(): array
@@ -667,7 +769,7 @@ class Family extends Model implements HasMedia
         $province = null;
         $isDeprived = null;
         $path = [];
-        
+
         // مسیر اول: مستقیماً از خانواده
         if ($this->province_id && $this->province) {
             $province = $this->province;
@@ -688,7 +790,7 @@ class Family extends Model implements HasMedia
             $province = $this->organization->district->province;
             $path[] = 'خانواده → خیریه → منطقه → استان';
         }
-        
+
         if (!$province) {
             return [
                 'status' => 'unknown',
@@ -698,22 +800,22 @@ class Family extends Model implements HasMedia
                 'path' => $path
             ];
         }
-        
+
         // بررسی وضعیت محرومیت
         $isDeprived = $province->is_deprived ?? false;
         $deprivationRank = $province->deprivation_rank ?? null;
-        
+
         if ($isDeprived) {
             $status = 'none'; // قرمز - منطقه محروم
-            $message = sprintf('منطقه محروم: %s (رتبه محرومیت: %s)', 
-                $province->name, 
+            $message = sprintf('منطقه محروم: %s (رتبه محرومیت: %s)',
+                $province->name,
                 $deprivationRank ? $deprivationRank : 'نامشخص'
             );
         } else {
             $status = 'complete'; // سبز - منطقه غیرمحروم
             $message = sprintf('منطقه غیرمحروم: %s', $province->name);
         }
-        
+
         return [
             'status' => $status,
             'message' => $message,
@@ -726,26 +828,26 @@ class Family extends Model implements HasMedia
 
     /**
      * بررسی وضعیت آپلود مدارک مورد نیاز
-     * 
+     *
      * @return array
      */
     public function getDocumentsValidationStatus(): array
     {
         $documentTypes = config('ui.family_validation_icons.documents.document_types', [
             'special_disease' => 'مدرک بیماری خاص',
-            'disability' => 'مدرک معلولیت', 
+            'disability' => 'مدرک معلولیت',
             'chronic_disease' => 'مدرک بیماری مزمن'
         ]);
-        
+
         $members = $this->members;
         $membersRequiringDocs = collect();
         $membersWithCompleteDocs = 0;
         $memberDetails = [];
-        
+
         foreach ($members as $member) {
             $requiredDocTypes = [];
             $memberDocStatus = [];
-            
+
             // بررسی اینکه عضو نیاز به چه مدارکی دارد
             if ($member->has_chronic_disease) {
                 $requiredDocTypes[] = 'chronic_disease';
@@ -757,39 +859,39 @@ class Family extends Model implements HasMedia
             if ($member->has_chronic_disease) { // یا has_special_disease اگر فیلد جداگانه‌ای دارید
                 $requiredDocTypes[] = 'special_disease';
             }
-            
+
             if (empty($requiredDocTypes)) {
                 continue; // این عضو نیاز به مدرک ندارد
             }
-            
+
             $membersRequiringDocs->push($member);
-            
+
             // بررسی مدارک آپلود شده (از media library استفاده می‌کنیم)
             $uploadedDocs = 0;
-            
+
             foreach ($requiredDocTypes as $docType) {
                 // بررسی وجود مدرک در media collection
-                $hasDocument = $member->hasMedia($docType) || 
+                $hasDocument = $member->hasMedia($docType) ||
                               $this->hasMedia("member_{$member->id}_{$docType}");
-                
+
                 if ($hasDocument) {
                     $uploadedDocs++;
                 }
-                
+
                 $memberDocStatus[$docType] = [
                     'required' => true,
                     'uploaded' => $hasDocument,
                     'label' => $documentTypes[$docType] ?? $docType
                 ];
             }
-            
-            $memberCompletionRate = count($requiredDocTypes) > 0 ? 
+
+            $memberCompletionRate = count($requiredDocTypes) > 0 ?
                 ($uploadedDocs / count($requiredDocTypes)) * 100 : 100;
-            
+
             if ($memberCompletionRate === 100) {
                 $membersWithCompleteDocs++;
             }
-            
+
             $memberDetails[] = [
                 'member_id' => $member->id,
                 'name' => $member->first_name . ' ' . $member->last_name,
@@ -800,9 +902,9 @@ class Family extends Model implements HasMedia
                 'is_head' => $member->is_head
             ];
         }
-        
+
         $totalRequiringDocs = $membersRequiringDocs->count();
-        
+
         if ($totalRequiringDocs === 0) {
             return [
                 'status' => 'complete',
@@ -813,9 +915,9 @@ class Family extends Model implements HasMedia
                 'details' => []
             ];
         }
-        
+
         $overallPercentage = ($membersWithCompleteDocs / $totalRequiringDocs) * 100;
-        
+
         // تعیین وضعیت بر اساس درصد تکمیل
         $thresholds = config('ui.validation_thresholds');
         if ($overallPercentage >= $thresholds['complete_min']) {
@@ -823,13 +925,13 @@ class Family extends Model implements HasMedia
             $message = 'مدارک تمام اعضای نیازمند کامل است';
         } elseif ($overallPercentage >= $thresholds['partial_min']) {
             $status = 'partial';
-            $message = sprintf('مدارک %d از %d عضو نیازمند کامل است (%d%%)', 
+            $message = sprintf('مدارک %d از %d عضو نیازمند کامل است (%d%%)',
                 $membersWithCompleteDocs, $totalRequiringDocs, round($overallPercentage));
         } else {
             $status = 'none';
             $message = 'مدارک اکثر اعضای نیازمند ناقص یا موجود نیست';
         }
-        
+
         return [
             'status' => $status,
             'percentage' => round($overallPercentage),
@@ -842,7 +944,7 @@ class Family extends Model implements HasMedia
 
     /**
      * دریافت تمام وضعیت‌های اعتبارسنجی خانواده
-     * 
+     *
      * @return array
      */
     public function getAllValidationStatuses(): array
@@ -866,7 +968,7 @@ class Family extends Model implements HasMedia
                 ->sum('premium_amount') ?? 0;
         });
     }
-    
+
     /**
      * محاسبه مجموع حق بیمه پرداخت شده
      */
@@ -907,14 +1009,14 @@ class Family extends Model implements HasMedia
         if (empty($value)) {
             return null;
         }
-        
+
         try {
             return \App\InsuranceWizardStep::from($value);
         } catch (\ValueError $e) {
             return null;
         }
     }
-    
+
     /**
      * بررسی اینکه آیا مرحله wizard تکمیل شده است
      *
@@ -926,11 +1028,11 @@ class Family extends Model implements HasMedia
         if (!$this->last_step_at) {
             return false;
         }
-        
+
         $lastStepAt = is_array($this->last_step_at) ? $this->last_step_at : json_decode($this->last_step_at, true);
         return isset($lastStepAt[$step->value]);
     }
-    
+
     /**
      * تکمیل یک مرحله از wizard
      *
@@ -945,21 +1047,21 @@ class Family extends Model implements HasMedia
         if (is_string($lastStepAt)) {
             $lastStepAt = json_decode($lastStepAt, true) ?? [];
         }
-        
+
         $lastStepAt[$step->value] = now()->toDateTimeString();
         $this->last_step_at = $lastStepAt;
-        
+
         // اگر wizard_status تنظیم نشده باشد، آن را تنظیم می‌کنیم
         if (!$this->wizard_status) {
             $this->wizard_status = $step->value;
         }
-        
+
         $this->save();
-        
+
         // ثبت لاگ تکمیل مرحله
-        $fromStatus = $this->wizard_status && $this->wizard_status !== $step->value ? 
+        $fromStatus = $this->wizard_status && $this->wizard_status !== $step->value ?
             \App\InsuranceWizardStep::from($this->wizard_status) : null;
-            
+
         FamilyStatusLog::logTransition(
             $this,
             $fromStatus ?? $step, // اگر وضعیت قبلی وجود نداشت، وضعیت فعلی را استفاده می‌کنیم
@@ -968,7 +1070,7 @@ class Family extends Model implements HasMedia
             $extraData
         );
     }
-    
+
     /**
      * انتقال به مرحله بعدی wizard
      *
@@ -985,20 +1087,20 @@ class Family extends Model implements HasMedia
             $this->save();
             return $initialStep;
         }
-        
+
         $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
         $nextStep = $currentStep->nextStep();
-        
+
         if ($nextStep) {
             // تکمیل مرحله فعلی اگر هنوز تکمیل نشده باشد
             if (!$this->isStepCompleted($currentStep)) {
                 $this->completeStep($currentStep, "مرحله {$currentStep->label()} تکمیل شد", $extraData);
             }
-            
+
             // تنظیم مرحله بعدی
             $this->wizard_status = $nextStep->value;
             $this->save();
-            
+
             // ثبت لاگ انتقال به مرحله بعدی
             FamilyStatusLog::logTransition(
                 $this,
@@ -1007,13 +1109,13 @@ class Family extends Model implements HasMedia
                 $comment ?? "انتقال به مرحله {$nextStep->label()}",
                 $extraData
             );
-            
+
             return $nextStep;
         }
-        
+
         return null;
     }
-    
+
     /**
      * انتقال به مرحله قبلی wizard
      *
@@ -1026,15 +1128,15 @@ class Family extends Model implements HasMedia
         if (!$this->wizard_status) {
             return null;
         }
-        
+
         $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
         $prevStep = $currentStep->previousStep();
-        
+
         if ($prevStep) {
             // تنظیم مرحله قبلی
             $this->wizard_status = $prevStep->value;
             $this->save();
-            
+
             // ثبت لاگ برگشت به مرحله قبلی
             FamilyStatusLog::logTransition(
                 $this,
@@ -1043,22 +1145,22 @@ class Family extends Model implements HasMedia
                 $comment ?? "بازگشت به مرحله {$prevStep->label()}",
                 $extraData
             );
-            
+
             return $prevStep;
         }
-        
+
         return null;
     }
-    
+
     /**
      * همگام‌سازی وضعیت قدیمی با wizard جدید
-     * 
+     *
      * @return \App\InsuranceWizardStep
      */
     public function syncWizardStatus()
     {
         $oldStatus = $this->status;
-        
+
         // تبدیل وضعیت قدیمی به wizard جدید
         $wizardStatus = match($oldStatus) {
             'pending' => \App\InsuranceWizardStep::PENDING,
@@ -1068,19 +1170,19 @@ class Family extends Model implements HasMedia
             'renewal' => \App\InsuranceWizardStep::RENEWAL,
             default => \App\InsuranceWizardStep::PENDING
         };
-        
+
         // بررسی وضعیت بیمه شدن
         if ($oldStatus === 'approved' && $this->is_insured) {
             $wizardStatus = \App\InsuranceWizardStep::INSURED;
         }
-        
+
         // ذخیره وضعیت wizard
         $this->wizard_status = $wizardStatus->value;
         $this->save();
-        
+
         return $wizardStatus;
     }
-    
+
     /**
      * دریافت لاگ‌های تغییر وضعیت wizard برای این خانواده
      *

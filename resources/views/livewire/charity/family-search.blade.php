@@ -1320,179 +1320,407 @@
         });
     });
     </script>
-    
-    <!-- مودال تنظیمات رتبه -->
-    <div x-show="showRankModal" 
-         @keydown.escape.window="showRankModal = false"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform scale-90"
-         x-transition:enter-end="opacity-100 transform scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform scale-100"
-         x-transition:leave-end="opacity-0 transform scale-90"
-         x-cloak
-         class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <script>
+        // باز کردن مودال
+        function openUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                // ریست کردن محتوای مودال
+                resetModalContent();
+            }
+        }
         
-        <div @click.away="showRankModal = false"
-             class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-lg">
+        // بستن مودال
+        function closeUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                // ریست کردن محتوای مودال
+                resetModalContent();
+            }
+        }
+        
+        // بستن مودال با کلیک روی پس‌زمینه
+        function closeUploadModalOnBackdrop(event) {
+            if (event.target === event.currentTarget) {
+                closeUploadModal();
+            }
+        }
+        
+        // ریست کردن محتوای مودال
+        function resetModalContent() {
+            const fileInput = document.getElementById('excelFile');
+            const dropZoneText = document.getElementById('dropZoneText');
+            const dropZone = document.getElementById('dropZone');
             
-            <div class="flex items-center justify-between p-4 border-b">
-                <h3 class="text-xl font-bold text-gray-800">تنظیمات رتبه</h3>
-                <button @click="showRankModal = false" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            if (dropZoneText) {
+                dropZoneText.textContent = 'فایل آماده شده را در اینجا قرار دهید';
+            }
+            if (dropZone) {
+                dropZone.classList.remove('border-green-400', 'bg-green-50');
+            }
+        }
+        
+        // دانلود فایل نمونه
+        function downloadTemplate() {
+            // تست Ajax برای نمایش خطای دقیق
+            fetch('{{ route("charity.import.template.families") }}', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // اگر موفقیت‌آمیز بود، دانلود فایل
+                    window.open('{{ route("charity.import.template.families") }}', '_blank');
+                } else {
+                    // نمایش خطا
+                    response.text().then(text => {
+                        console.error('خطا:', response.status, text);
+                        if (response.status === 401) {
+                            alert('ابتدا وارد سیستم شوید.');
+                        } else if (response.status === 403) {
+                            alert('شما مجوز دانلود فایل نمونه را ندارید.');
+                        } else {
+                            alert('خطا در دانلود فایل: ' + response.status);
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('خطا در درخواست:', error);
+                alert('خطا در ارتباط با سرور.');
+            });
+        }
+        
+        // آپلود فایل
+        function uploadFile() {
+            const fileInput = document.getElementById('excelFile');
+            const hiddenInput = document.getElementById('hiddenFileInput');
+            const uploadButton = document.querySelector('button[onclick="uploadFile()"]');
             
-            <div class="p-6">
-                <p class="mb-6 text-center text-gray-700">
-                    لطفا برای <span class="font-bold">معیار پذیرش</span> لیست شده وزن انتخاب کنید تا پس از تایید در رتبه بندی ها اعمال شود
-                </p>
+            if (!fileInput || fileInput.files.length === 0) {
+                alert('لطفا ابتدا فایل را انتخاب کنید.');
+                return;
+            }
+            
+            if (!hiddenInput) {
+                alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
+                return;
+            }
+            
+            try {
+                // نمایش loading state
+                if (uploadButton) {
+                    uploadButton.disabled = true;
+                    uploadButton.innerHTML = `
+                        <svg class="animate-spin w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        در حال آپلود...
+                    `;
+                }
+                
+                // کپی فایل انتخاب شده به فرم مخفی
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(fileInput.files[0]);
+                hiddenInput.files = dataTransfer.files;
+                
+                // ارسال فرم
+                const form = document.getElementById('uploadForm');
+                if (form) {
+                    form.submit();
+                } else {
+                    alert('خطا در سیستم. لطفا صفحه را بازخوانی کنید.');
+                    // بازگشت به حالت عادی
+                    if (uploadButton) {
+                        uploadButton.disabled = false;
+                        uploadButton.innerHTML = `
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            آپلود فایل
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('خطا در آپلود فایل. لطفا مجدد تلاش کنید.');
+                
+                // بازگشت به حالت عادی
+                if (uploadButton) {
+                    uploadButton.disabled = false;
+                    uploadButton.innerHTML = `
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        آپلود فایل
+                    `;
+                }
+            }
+        }
+        
+        // Event listeners برای drag & drop
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('excelFile');
+            const dropZoneText = document.getElementById('dropZoneText');
+            
+            if (!dropZone || !fileInput) {
+                return;
+            }
+            
+            // کلیک برای انتخاب فایل
+            dropZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // تغییر فایل انتخاب شده
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    if (dropZoneText) {
+                        dropZoneText.textContent = fileName;
+                    }
+                    dropZone.classList.add('border-green-400', 'bg-green-50');
+                }
+            });
+            
+            // Drag & Drop events
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('border-green-400', 'bg-green-50');
+            });
+            
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('border-green-400', 'bg-green-50');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('border-green-400', 'bg-green-50');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const fileName = files[0].name;
+                    fileInput.files = files;
+                    if (dropZoneText) {
+                        dropZoneText.textContent = fileName;
+                    }
+                    this.classList.add('border-green-400', 'bg-green-50');
+                }
+            });
+            
+            // بستن مودال با کلید ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('uploadModal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeUploadModal();
+                    }
+                }
+            });
+        });
+    </script>
 
-                <!-- جدول معیارهای پذیرش -->
-                <div class="overflow-x-auto mb-6">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="border-b-2 border-gray-200">
-                                <th class="py-3 px-4 text-right">شرح</th>
-                                <th class="py-3 px-4 text-center">نیاز به مدرک؟</th>
-                                <th class="py-3 px-4 text-center">وزن (10-0)</th>
-                                <th class="py-3 px-4 text-right">معیار پذیرش</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if(!empty($availableRankSettings))
-                                @foreach($availableRankSettings as $criterion)
-                                    <tr class="hover:bg-gray-50" wire:key="rank-setting-{{ $criterion->id }}">
-                                        <td class="px-6 py-3 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $criterion->description }}</div>
-                                        </td>
-                                        <td class="px-6 py-3 whitespace-nowrap text-center">
-                                            @if($criterion->requires_document)
-                                                <span class="text-green-500">✓</span>
-                                            @else
-                                                <span class="text-red-500">✗</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-3 whitespace-nowrap text-center">
-                                            <span class="font-medium">{{ $criterion->weight }}</span>
-                                        </td>
-                                        <td class="px-6 py-3 whitespace-nowrap">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center">
-                                                    <input type="checkbox" wire:model="selectedCriteria" value="{{ $criterion->id }}" 
-                                                           class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 ml-2">
-                                                    <div class="px-6 py-2 rounded-md {{ $criterion->bg_color ?? $criterion->color ?? 'bg-green-100' }} text-center w-48">
-                                                        {{ $criterion->name }}
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center">
-                                                    <button class="text-orange-500" wire:click="editRankSetting({{ $criterion->id }})">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button class="text-red-500 ml-2" wire:click="deleteRankSetting({{ $criterion->id }})" onclick="return confirm('آیا از حذف این معیار اطمینان دارید؟')">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                </div>
+    <div x-show="showRankModal" 
+     @keydown.escape.window="showRankModal = false"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 transform scale-90"
+     x-transition:enter-end="opacity-100 transform scale-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100 transform scale-100"
+     x-transition:leave-end="opacity-0 transform scale-90"
+     x-cloak
+     class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black bg-opacity-50">
+    
+        <div @click.away="showRankModal = false"
+         class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-lg">
+        
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <h3 class="text-2xl font-bold text-gray-800">تنظیمات رتبه</h3>
+            <button @click="showRankModal = false" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-6">
+            <p class="mb-6 text-center text-gray-700">
+                لطفا برای <span class="font-bold">معیار پذیرش</span> لیست شده وزن انتخاب کنید تا پس از تایید در رتبه بندی ها اعمال شود
+            </p>
+
+            <!-- جدول معیارهای پذیرش -->
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-700 border-b">
+                            <th class="px-3 py-3 text-center">انتخاب</th>
+                            <th class="px-3 py-3 text-right">معیار پذیرش</th>
+                            <th class="px-3 py-3 text-center">وزن (0-10)</th>
+                            <th class="px-3 py-3 text-center">شرح</th>
+                            <th class="px-3 py-3 text-center">نیاز به مدرک؟</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if(!empty($availableRankSettings))
+                            @foreach($availableRankSettings as $criterion)
+                                <tr class="hover:bg-gray-50 border-b border-gray-200" wire:key="rank-setting-{{ $criterion->id }}">
+                                    <td class="px-3 py-3 text-center">
+                                        <input type="checkbox" wire:model.live="selectedCriteria.{{ $criterion->id }}" class="form-checkbox h-5 w-5 text-green-500">
+                                    </td>
+                                    <td class="px-3 py-3 flex justify-between items-center">
+                                        <div class="flex space-x-2 rtl:space-x-reverse">
+                                            <button wire:click="editRankSetting({{ $criterion->id }})" class="text-orange-500 hover:text-orange-700 ml-2">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                                </svg>
+                                            </button>
+                                            <button wire:click="deleteRankSetting({{ $criterion->id }})" class="text-red-500 hover:text-red-700">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="px-4 py-2 rounded-md text-center w-full" style="background-color: {{ $criterion->color ?? '#e5f7eb' }}">
+                                            {{ $criterion->name }}
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">{{ $criterion->weight }}</td>
+                                    <td class="px-3 py-3 text-center">
+                                        <div class="relative group">
+                                            <button type="button" class="text-gray-500 hover:text-gray-700">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </button>
+                                            <div class="fixed z-20 hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs">
+                                                <p class="text-sm text-gray-700">{{ $criterion->description }}</p>
                                             </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            @else
-                                <tr>
-                                    <td colspan="4" class="py-4 text-center text-gray-500">
-                                        معیار رتبه‌بندی تعریف نشده است
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">
+                                        @if($criterion->requires_document)
+                                            <span class="text-green-500">✓</span>
+                                        @else
+                                            <span class="text-red-500">✗</span>
+                                        @endif
                                     </td>
                                 </tr>
-                            @endif
-                        </tbody>
-                    </table>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-gray-500">
+                                    معیار رتبه‌بندی تعریف نشده است
+                                </td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- باکس اضافه کردن معیار جدید -->
+            <div x-data="{ showNewCriterionForm: false }" x-init="$watch('$wire.editingRankSettingId', value => { if(value) showNewCriterionForm = true; })" class="mb-6">
+                <!-- دکمه اضافه کردن معیار جدید -->
+                <div x-show="!showNewCriterionForm" @click="showNewCriterionForm = true" class="border border-green-500 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-green-50 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center mb-2">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <span class="text-green-600 font-medium">افزودن معیار جدید</span>
                 </div>
 
-                <!-- فرم اضافه کردن معیار جدید -->
-                <div class="border border-green-500 rounded-lg p-4 mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <!-- فرم افزودن/ویرایش معیار -->
+                <div x-show="showNewCriterionForm" class="border border-green-500 rounded-lg p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900" x-text="$wire.editingRankSettingId ? 'ویرایش معیار' : 'افزودن معیار جدید'"></h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <div class="relative">
-                                <select wire:model="rankSettingNeedsDoc" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
-                                    <option value="1">نیاز به مدرک دارد</option>
-                                    <option value="0">نیاز به مدرک ندارد</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
+                            <label class="block text-gray-700 mb-2">اسم معیار پذیرش</label>
+                            <input type="text" wire:model="rankSettingName" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                         </div>
                         <div>
+                            <label class="block text-gray-700 mb-2">وزن معیار پذیرش</label>
                             <div class="relative">
-                                <select wire:model="rankSettingWeight" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
+                                <select wire:model="rankSettingWeight" 
+                                        class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 rtl text-right appearance-none">
                                     @for($i = 0; $i <= 10; $i++)
                                         <option value="{{ $i }}">{{ $i }}</option>
                                     @endfor
                                 </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </div>
                             </div>
                         </div>
                         <div>
+                            <label class="block text-gray-700 mb-2">نیاز به مدرک؟</label>
                             <div class="relative">
-                                <select wire:model="rankSettingColor" class="w-full border border-gray-300 rounded-md p-2 pr-10 appearance-none">
-                                    <option value="bg-green-100">سبز</option>
-                                    <option value="bg-blue-100">آبی</option>
-                                    <option value="bg-red-100">قرمز</option>
-                                    <option value="bg-yellow-100">زرد</option>
-                                    <option value="bg-purple-100">بنفش</option>
-                                    <option value="bg-pink-100">صورتی</option>
+                                <select wire:model="rankSettingNeedsDoc" 
+                                        class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 rtl text-right appearance-none">
+                                    <option value="1">بله</option>
+                                    <option value="0">خیر</option>
                                 </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <input type="text" placeholder="اسم معیار پذیرش" class="w-full border border-gray-300 rounded-md p-2 mb-4" 
-                           wire:model="rankSettingName">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">شرح معیار پذیرش در اینجا ذکر میشود و مدارک و نحوه پذیرش در اینجا تعیین میشود</label>
+                        <textarea wire:model="rankSettingDescription" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                    </div>
                     
-                    <textarea placeholder="شرح معیار پذیرش در اینجا ذکر میشود و مدارک و نحوه پذیرش در اینجا تعیین میشود" 
-                              class="w-full border border-gray-300 rounded-md p-3 h-24 mb-4 resize-none"
-                              wire:model="rankSettingDescription"></textarea>
-                    
-                    <div class="flex justify-center">
-                        <button type="button" wire:click="saveRankSetting" class="bg-green-500 hover:bg-green-600 transition-colors text-white rounded-md py-3 px-6 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex justify-center space-x-4 rtl:space-x-reverse">
+                        <button @click="showNewCriterionForm = false; $wire.resetRankSettingForm();" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md">
+                            انصراف
+                        </button>
+                        <button wire:click="saveRankSetting" @click="showNewCriterionForm = false" class="bg-green-500 text-white px-6 py-2 rounded-md flex items-center justify-center">
+                            <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
-                            ذخیره معیار جدید
+                            ذخیره
                         </button>
                     </div>
                 </div>
+            </div>
 
-                <!-- دکمه های پایینی -->
-                <div class="flex justify-between">
-                    <button wire:click="resetToDefaults" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md">
-                        بازگشت به تنظیمات پیشفرض
-                    </button>
-                    <button wire:click="applyCriteria" class="bg-green-500 text-white px-6 py-3 rounded-md flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        تایید و اعمال تنظیمات جدید
-                    </button>
-                </div>
+            <!-- دکمه های پایینی -->
+            <div class="flex justify-between">
+                <button wire:click="resetToDefaults" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-md">
+                    بازگشت به تنظیمات پیشفرض
+                </button>
+                <button wire:click="applyCriteria" class="bg-green-500 text-white px-6 py-3 rounded-md flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    تایید و اعمال تنظیمات جدید
+                </button>
             </div>
         </div>
+     </div>
     </div>
 </div>

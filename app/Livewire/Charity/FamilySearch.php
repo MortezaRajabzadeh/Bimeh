@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class FamilySearch extends Component
 {
@@ -124,7 +125,7 @@ class FamilySearch extends Component
         $this->organizations = Organization::where('type', 'charity')->orderBy('name')->get();
         
         // بارگذاری معیارهای رتبه‌بندی در ابتدای لود صفحه
-        $this->availableRankSettings = RankSetting::active()->ordered()->get();
+        $this->loadRankSettings();
         
         // مقداردهی اولیه متغیرهای رتبه‌بندی
         $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
@@ -133,6 +134,9 @@ class FamilySearch extends Component
         // مقداردهی اولیه فیلترهای مودالی - حتماً آرایه خالی
         $this->tempFilters = [];
         $this->activeFilters = [];
+        
+        // مقداردهی اولیه فرم معیار جدید
+        $this->resetRankSettingForm();
         
         // تست ارسال نوتیفیکیشن
         $this->dispatch('notify', [
@@ -288,6 +292,11 @@ class FamilySearch extends Component
                 // خانواده‌هایی که is_insured = false و status != 'insured'
                 $query->where('is_insured', false)
                       ->where('status', '!=', 'insured');
+            } elseif ($this->status === 'special_disease') {
+                // فیلتر خانواده‌های دارای اعضای با بیماری خاص
+                $query->whereHas('members', function($q) {
+                    $q->whereJsonContains('problem_type', 'special_disease');
+                });
             } else {
                 // سایر وضعیت‌ها: pending, reviewing, approved, renewal, rejected, deleted
                 $query->where('status', $this->status);
@@ -971,136 +980,63 @@ class FamilySearch extends Component
      */
     public function editRankSetting($id)
     {
-        $setting = RankSetting::find($id);
-        if ($setting) {
-            // پر کردن فرم با مقادیر معیار موجود
-            $this->rankSettingName = $setting->name;
-            $this->rankSettingDescription = $setting->description;
-            $this->rankSettingWeight = $setting->weight;
-            $this->rankSettingColor = $setting->sort_order ?? 'bg-green-100';
-            $this->rankSettingNeedsDoc = $setting->requires_document ? 1 : 0;
-            $this->editingRankSettingId = $id;
-            $this->isCreatingNew = false;
-            
-            $this->dispatch('notify', [
-                'message' => 'در حال ویرایش معیار: ' . $setting->name,
-                'type' => 'info'
-            ]);
-        }
-    }
-    
-    /**
-     * ذخیره تنظیمات رتبه (جدید یا ویرایش شده)
-     */
-    public function saveRankSetting()
-    {
-        // ثبت لاگ برای اشکال‌زدایی قبل از شروع فرآیند
-        Log::info('درخواست ذخیره معیار رتبه', [
-            'data' => [
-                'name' => $this->rankSettingName,
-                'description' => $this->rankSettingDescription,
-                'weight' => $this->rankSettingWeight,
-                'requires_document' => $this->rankSettingNeedsDoc,
-                'color' => $this->rankSettingColor,
-                'is_editing' => !empty($this->editingRankSettingId),
-                'editing_id' => $this->editingRankSettingId
-            ]
-        ]);
-
-        // ابتدا اعتبارسنجی مقادیر ورودی
-        if (empty($this->rankSettingName)) {
-            $this->dispatch('notify', [
-                'message' => 'نام معیار الزامی است',
-                'type' => 'error'
-            ]);
-            return;
-        }
-        
         try {
-            // تعیین آیا در حال ایجاد معیار جدید هستیم یا ویرایش معیار موجود
-            if (empty($this->editingRankSettingId)) {
-                // ایجاد معیار جدید با استفاده از مدل
-$setting = new RankSetting();
-$setting->fill([
-    'name' => $this->rankSettingName,
-    'weight' => (int)$this->rankSettingWeight,
-    'description' => $this->rankSettingDescription,
-    'requires_document' => (bool)$this->rankSettingNeedsDoc,
-    'color' => $this->rankSettingColor, // Fixed: color field instead of sort_order
-    'sort_order' => RankSetting::max('sort_order') + 10,
-    'is_active' => true,
-    'slug' => Str::slug($this->rankSettingName) ?: 'rank-' . Str::random(6),
-    'created_by' => \Illuminate\Support\Facades\Auth::id() // Track who created it using facade
-]);
-
-// Save with error handling
-try {
-    $setting->save();
-} catch (\Exception $e) {
-    throw new \Exception('Failed to save rank setting: ' . $e->getMessage());
-}
+            $setting = RankSetting::find($id);
+            if ($setting) {
+                // پر کردن فرم با مقادیر معیار موجود - با پشتیبانی از هر دو نام فیلد
+                $this->rankSettingName = $setting->name;
+                $this->rankSettingDescription = $setting->description;
+                $this->rankSettingWeight = $setting->weight;
                 
-                Log::info('معیار جدید ایجاد شد', [
+                // پشتیبانی از هر دو نام فیلد رنگ
+                if (isset($setting->bg_color)) {
+                    $this->rankSettingColor = $setting->bg_color;
+                } elseif (isset($setting->color)) {
+                    $this->rankSettingColor = $setting->color;
+                } else {
+                    $this->rankSettingColor = 'bg-green-100';
+                }
+                
+                // پشتیبانی از هر دو نام فیلد نیاز به مدرک
+                if (isset($setting->requires_document)) {
+                    $this->rankSettingNeedsDoc = $setting->requires_document ? 1 : 0;
+                } elseif (isset($setting->needs_doc)) {
+                    $this->rankSettingNeedsDoc = $setting->needs_doc ? 1 : 0;
+                } else {
+                    $this->rankSettingNeedsDoc = 1;
+                }
+                
+                $this->editingRankSettingId = $id;
+                $this->isEditingMode = true; // مشخص می‌کند که در حال ویرایش هستیم نه افزودن
+                
+                // ثبت در لاگ
+                Log::info('ویرایش معیار شروع شد', [
                     'id' => $setting->id,
                     'name' => $setting->name
                 ]);
                 
                 $this->dispatch('notify', [
-                    'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
-                    'type' => 'success'
+                    'message' => 'در حال ویرایش معیار: ' . $setting->name,
+                    'type' => 'info'
                 ]);
-            } else {
-                // ویرایش معیار موجود
-                $setting = RankSetting::find($this->editingRankSettingId);
-                if ($setting) {
-                    $setting->name = $this->rankSettingName;
-                    $setting->weight = $this->rankSettingWeight;
-                    $setting->description = $this->rankSettingDescription;
-                    $setting->requires_document = (bool)$this->rankSettingNeedsDoc;
-                    $setting->sort_order = $this->rankSettingColor;
-                    $setting->save();
-                    
-                    Log::info('معیار ویرایش شد', [
-                        'id' => $setting->id,
-                        'name' => $setting->name
-                    ]);
-                    
-                    $this->dispatch('notify', [
-                        'message' => 'معیار با موفقیت به‌روزرسانی شد: ' . $this->rankSettingName,
-                        'type' => 'success'
-                    ]);
-                }
             }
-            
-            // بارگذاری مجدد تنظیمات و ریست فرم
-            $this->availableRankSettings = RankSetting::active()->ordered()->get();
-            $this->resetRankSettingForm();
-            
-            // ریست کردن فرم بعد از ذخیره موفق
-            $this->rankSettingName = '';
-            $this->rankSettingDescription = '';
-            $this->rankSettingWeight = 5;
-            $this->rankSettingColor = 'bg-green-100';
-            $this->rankSettingNeedsDoc = 1;
-            $this->editingRankSettingId = null;
         } catch (\Exception $e) {
-            // ثبت خطا در لاگ
-            Log::error('خطا در ذخیره معیار', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('خطا در بارگذاری اطلاعات معیار', [
+                'id' => $id,
+                'error' => $e->getMessage()
             ]);
             
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'message' => 'خطا در بارگذاری اطلاعات معیار: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
     
     /**
-     * ریست کردن فرم معیار
+     * ریست کردن فرم معیار - متد عمومی
      */
-    private function resetRankSettingForm()
+    public function resetRankSettingForm()
     {
         $this->rankSettingName = '';
         $this->rankSettingDescription = '';
@@ -1108,6 +1044,15 @@ try {
         $this->rankSettingColor = 'bg-green-100';
         $this->rankSettingNeedsDoc = 1;
         $this->editingRankSettingId = null;
+        $this->isEditingMode = false; // مشخص می‌کند که در حال افزودن هستیم نه ویرایش
+        
+        // اطلاع‌رسانی به کاربر در صورتی که این متد مستقیماً از UI فراخوانی شده باشد
+        if (request()->hasHeader('x-livewire')) {
+            $this->dispatch('notify', [
+                'message' => 'فرم معیار بازنشانی شد',
+                'type' => 'info'
+            ]);
+        }
     }
     
     /**
@@ -1152,7 +1097,7 @@ try {
                 ]);
                 
                 // بارگذاری مجدد لیست
-                $this->availableRankSettings = RankSetting::active()->ordered()->get();
+        $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
             }
         } catch (\Exception $e) {
             Log::error('خطا در حذف معیار', [
@@ -1160,10 +1105,23 @@ try {
                 'error' => $e->getMessage()
             ]);
             
-            $this->dispatch('notify', [
+        $this->dispatch('notify', [ 
                 'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
                 'type' => 'error'
-            ]);
+        ]); 
         }
+    }
+
+    /**
+     * اضافه کردن فیلتر بیماری خاص
+     */
+    public function filterBySpecialDisease()
+    {
+        $this->status = 'special_disease';
+        $this->resetPage();
+        $this->dispatch('notify', [
+            'message' => 'فیلتر بیماری خاص اعمال شد',
+            'type' => 'success'
+        ]);
     }
 }
