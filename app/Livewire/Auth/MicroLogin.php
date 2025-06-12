@@ -67,7 +67,6 @@ class MicroLogin extends Component
             $this->addError('password', $e->getMessage());
         } catch (\Exception $e) {
             $this->addError('password', 'خطا در ورود به سیستم. لطفاً دوباره تلاش کنید.');
-            logger()->error('Login Error', ['error' => $e->getMessage()]);
         }
     }
     

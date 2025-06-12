@@ -67,7 +67,6 @@ class FinancialReportExport implements FromCollection, WithHeadings, WithMapping
         }
 
         // 3. پرداخت‌های ایمپورت اکسل
-        $importLogs = InsuranceImportLog::get();
         foreach ($importLogs as $log) {
             $allCodes = array_merge(
                 is_array($log->created_family_codes) ? $log->created_family_codes : [],

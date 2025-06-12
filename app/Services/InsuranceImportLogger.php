@@ -16,7 +16,6 @@ class InsuranceImportLogger
      */
     public static function createLog($fileName, $totalRows = 0)
     {
-        return InsuranceImportLog::create([
             'file_name' => $fileName,
             'user_id' => Auth::id(),
             'total_rows' => $totalRows,

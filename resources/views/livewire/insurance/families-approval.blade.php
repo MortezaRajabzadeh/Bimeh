@@ -1267,20 +1267,30 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                         <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
                                                                             @if($member->organization)
                                                                                 @if($member->organization->logo_path)
-                                                                                    <img src="{{ $member->organization->logoUrl }}"
-                                                                                         alt="{{ $member->organization->name }}"
-                                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
-                                                                                         title="{{ $member->organization->name }}">
+                                                                                    <img 
+                                                                                        src="{{ $member->organization->logoUrl }}"
+                                                                                        srcset="{{ $member->organization->logoUrl }} 1x, {{ $member->organization->logoUrl }} 2x"
+                                                                                        alt="{{ $member->organization->name }}"
+                                                                                        class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                                        title="{{ $member->organization->name }}"
+                                                                                        loading="lazy"
+                                                                                        width="80"
+                                                                                        height="32">
                                                                                 @else
                                                                                     <span class="charity-name text-sm">{{ $member->organization->name }}</span>
                                                                                 @endif
                                                                             @elseif($family->charity)
                                                                                 @if($family->charity->logo_path)
-                                                                                    <img src="{{ $family->charity->logoUrl }}"
-                                                                                         alt="{{ $family->charity->name }}"
-ی                                                                                         class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
-                                                                                         title="{{ $family->charity->name }}">
-ا                                                                                @else
+                                                                                    <img 
+                                                                                        src="{{ $family->charity->logoUrl }}"
+                                                                                        srcset="{{ $family->charity->logoUrl }} 1x, {{ $family->charity->logoUrl }} 2x"
+                                                                                        alt="{{ $family->charity->name }}"
+                                                                                        class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                                        title="{{ $family->charity->name }}"
+                                                                                        loading="lazy"
+                                                                                        width="80"
+                                                                                        height="32">
+                                                                                @else
                                                                                     <span class="charity-name text-sm">{{ $family->charity->name }}</span>
                                                                                 @endif
                                                                             @else
@@ -1698,9 +1708,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                     class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
                                                     style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
                                                 <option value="">انتخاب استان...</option>
-                                                @foreach($provinces as $province)
-                                                    <option value="{{ $province->id }}">{{ $province->name }}</option>
-                                                @endforeach
+                                                @if(isset($provinces))
+                                                    @foreach($provinces as $province)
+                                                        <option value="{{ $province->id }}">{{ $province->name }}</option>
+                                                    @endforeach
+                                                @endif
                                             </select>
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1714,9 +1726,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                     class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
                                                     style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
                                                 <option value="">انتخاب شهر...</option>
-                                                @foreach($cities as $city)
-                                                    <option value="{{ $city->id }}">{{ $city->name }}</option>
-                                                @endforeach
+                                                @if(isset($cities))
+                                                    @foreach($cities as $city)
+                                                        <option value="{{ $city->id }}">{{ $city->name }}</option>
+                                                    @endforeach
+                                                @endif
                                             </select>
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1762,9 +1776,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                     class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
                                                     style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
                                                 <option value="">انتخاب خیریه...</option>
-                                                @foreach($organizations as $organization)
-                                                    <option value="{{ $organization->id }}">{{ $organization->name }}</option>
-                                                @endforeach
+                                                @if(isset($organizations))
+                                                    @foreach($organizations as $organization)
+                                                        <option value="{{ $organization->id }}">{{ $organization->name }}</option>
+                                                    @endforeach
+                                                @endif
                                             </select>
                                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

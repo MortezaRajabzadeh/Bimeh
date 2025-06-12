@@ -71,7 +71,6 @@ class InsuranceFamilyController extends Controller
             $currentStatus = $validated['current_status'] ?? null;
 
             // لاگ کردن درخواست برای دیباگ
-            Log::info('درخواست تغییر وضعیت خانواده‌ها:', [
                 'family_ids' => $familyIds,
                 'status' => $newStatus,
                 'current_status' => $currentStatus,
@@ -97,7 +96,6 @@ class InsuranceFamilyController extends Controller
                 $requireShares = false;
                 if ($newStatus === 'approved' && $currentStatus === 'reviewing') {
                     $requireShares = true;
-                    Log::info('نیاز به سهم‌بندی برای خانواده‌ها', ['family_ids' => $familyIds, 'count' => $count]);
                 }
                 
                 return response()->json([
@@ -109,7 +107,6 @@ class InsuranceFamilyController extends Controller
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
-                Log::error('خطا در تغییر وضعیت خانواده‌ها: ' . $e->getMessage());
                 
                 return response()->json([
                     'success' => false,
@@ -117,7 +114,6 @@ class InsuranceFamilyController extends Controller
                 ], 500);
             }
         } catch (\Exception $e) {
-            Log::error('خطای اعتبارسنجی یا سرور: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,

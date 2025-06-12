@@ -97,7 +97,6 @@ class FamilyFundingAllocation extends Model
      */
     public function importLog()
     {
-        return $this->belongsTo(InsuranceImportLog::class, 'import_log_id');
     }
 
     /**

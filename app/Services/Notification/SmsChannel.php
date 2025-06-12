@@ -12,7 +12,6 @@ class SmsChannel
             (new \Pamenary\LaravelSms\Sms)->sendSMS($mobile, $message);
             return true;
         } catch (\Throwable $e) {
-            Log::error("خطا در ارسال پیامک: " . $e->getMessage());
             return false;
         }
     }

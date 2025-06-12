@@ -66,7 +66,6 @@ class ProcessFamiliesImport implements ShouldQueue
         $this->updateStatus('processing', 0);
         
         try {
-            Log::info("شروع پردازش فایل اکسل", [
                 'user_id' => $this->user->id,
                 'file' => $this->originalFileName,
                 'job_id' => $this->jobId
@@ -103,7 +102,6 @@ class ProcessFamiliesImport implements ShouldQueue
             // حذف فایل موقت
             Storage::disk('public')->delete($this->filePath);
             
-            Log::info("پردازش فایل اکسل کامل شد", [
                 'user_id' => $this->user->id,
                 'job_id' => $this->jobId,
                 'results' => $results
@@ -115,7 +113,6 @@ class ProcessFamiliesImport implements ShouldQueue
             // ارسال اعلان خطا
             $this->sendErrorNotification($e->getMessage());
             
-            Log::error("خطا در پردازش فایل اکسل", [
                 'user_id' => $this->user->id,
                 'job_id' => $this->jobId,
                 'error' => $e->getMessage(),
@@ -140,7 +137,6 @@ class ProcessFamiliesImport implements ShouldQueue
         
         $this->sendErrorNotification($exception->getMessage());
         
-        Log::error("Job پردازش فایل اکسل شکست خورد", [
             'user_id' => $this->user->id,
             'job_id' => $this->jobId,
             'error' => $exception->getMessage()
@@ -189,7 +185,6 @@ class ProcessFamiliesImport implements ShouldQueue
             // }
 
         } catch (\Exception $e) {
-            Log::warning("خطا در ارسال اعلان موفقیت", [
                 'error' => $e->getMessage(),
                 'user_id' => $this->user->id
             ]);
@@ -212,7 +207,6 @@ class ProcessFamiliesImport implements ShouldQueue
             // }
 
         } catch (\Exception $e) {
-            Log::warning("خطا در ارسال اعلان خطا", [
                 'error' => $e->getMessage(),
                 'user_id' => $this->user->id
             ]);

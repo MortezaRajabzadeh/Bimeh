@@ -35,7 +35,6 @@ class FamilyStatusController extends Controller
             $currentStatus = $request->input('current_status');
             
             // لاگ کردن درخواست برای دیباگ
-            Log::info('درخواست تغییر وضعیت خانواده‌ها:', [
                 'family_ids' => $familyIds,
                 'status' => $status,
                 'current_status' => $currentStatus,
@@ -50,7 +49,6 @@ class FamilyStatusController extends Controller
 
             $families = $query->get();
             if ($families->isEmpty()) {
-                Log::warning('هیچ خانواده‌ای برای تغییر وضعیت یافت نشد.', [
                     'family_ids' => $familyIds,
                     'current_status' => $currentStatus
                 ]);
@@ -72,7 +70,6 @@ class FamilyStatusController extends Controller
 
             // اگر از "در انتظار حمایت" به "در انتظار صدور" تغییر کرده، نیاز به سهم‌بندی داریم
             if ($currentStatus === 'reviewing' && $status === 'approved') {
-                Log::info('نیاز به سهم‌بندی برای خانواده‌ها', [
                     'family_ids' => $familyIds,
                     'count' => count($familyIds)
                 ]);
@@ -91,7 +88,6 @@ class FamilyStatusController extends Controller
                 $query->update(['status' => $status]);
             });
             
-            Log::info('وضعیت خانواده‌ها با موفقیت تغییر یافت', [
                 'count' => $families->count(),
                 'status' => $status,
                 'family_ids' => $familyIds
@@ -101,7 +97,6 @@ class FamilyStatusController extends Controller
             return response()->json($response);
 
         } catch (\Exception $e) {
-            Log::error('خطا در تغییر وضعیت خانواده‌ها: ' . $e->getMessage(), [
                 'exception' => $e,
                 'request' => $request->all()
             ]);

@@ -34,7 +34,6 @@ class PaymentController extends Controller
             $paymentResponse = $this->paymentService->initiate($amount, $callbackUrl, $description);
             return $paymentResponse; // هدایت به درگاه پرداخت
         } catch (\Exception $e) {
-            Log::error('خطا در شروع پرداخت: ' . $e->getMessage());
             return back()->with('error', $e->getMessage());
         }
     }
@@ -67,7 +66,6 @@ class PaymentController extends Controller
             return redirect()->route('dashboard')
                 ->with('error', 'پرداخت تایید نشد: ' . ($result['message'] ?? 'خطای نامشخص'));
         } catch (\Exception $e) {
-            Log::error('خطا در تایید پرداخت: ' . $e->getMessage());
             return redirect()->route('dashboard')
                 ->with('error', 'خطا در تایید پرداخت: ' . $e->getMessage());
         }

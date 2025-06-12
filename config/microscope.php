@@ -4,7 +4,7 @@ return [
     /**
      * Will disable microscope if set to false.
      */
-    'is_enabled' => env('MICROSCOPE_ENABLED', true),
+    'is_enabled' => env('MICROSCOPE_ENABLED', false),
 
     /**
      * Avoids auto-fix if is set to true.

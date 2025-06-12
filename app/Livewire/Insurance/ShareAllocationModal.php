@@ -63,7 +63,6 @@ class ShareAllocationModal extends Component
         $this->resetShares();
         
         // لاگ کردن پارامترهای ورودی برای دیباگ
-        Log::info('ShareAllocationModal::openModal called with:', ['params' => $params]);
         
         // تبدیل پارامترها به آرایه familyIds
         if (is_array($params)) {
@@ -83,7 +82,6 @@ class ShareAllocationModal extends Component
         // تبدیل همه آیدی‌ها به عدد صحیح
         $this->familyIds = array_map('intval', array_filter($this->familyIds));
         
-        Log::info('Processed family IDs:', ['familyIds' => $this->familyIds]);
         
         // اگر هیچ خانواده‌ای انتخاب نشده، پیام خطا نمایش دهیم
         if (empty($this->familyIds)) {
@@ -130,7 +128,6 @@ class ShareAllocationModal extends Component
             //         'end_date' => now()->addYear(),
             //     ]);
                 
-            //     Log::info("بیمه پیش‌فرض برای خانواده {$family->id} ایجاد شد.");
             // }
         }
     }
@@ -187,27 +184,25 @@ class ShareAllocationModal extends Component
         $this->resetErrorMessages();
         $this->isProcessing = true;
         
-        Log::info('🚀 ShareAllocationModal::allocateShares - شروع فرایند تخصیص سهام', [
-            'familyIds_count' => count($this->familyIds),
-            'familyIds' => $this->familyIds,
-            'shares' => $this->shares,
-            'totalPercentage' => $this->totalPercentage
-        ]);
-
+        // Log::info('Starting share allocation', [
+        //     'familyIds_count' => count($this->familyIds),
+        //     'familyIds' => $this->familyIds,
+        //     'shares' => $this->shares,
+        //     'totalPercentage' => $this->totalPercentage
+        // ]);
+    
         try {
             $this->validate();
-            Log::info('✅ ShareAllocationModal::allocateShares - اعتبارسنجی فرم با موفقیت انجام شد');
 
             // بررسی مجموع درصدها
             $this->calculateTotalPercentage();
-            Log::info('🔢 ShareAllocationModal::allocateShares - مجموع درصدها: ' . $this->totalPercentage);
             
             if (abs($this->totalPercentage - 100) > 0.01) {
                 $this->errorMessage = 'جمع درصدها باید دقیقاً ۱۰۰٪ باشد.';
                 $this->isProcessing = false;
-                Log::warning('⚠️ ShareAllocationModal::allocateShares - خطا: مجموع درصدها دقیقاً 100% نیست', [
-                    'totalPercentage' => $this->totalPercentage
-                ]);
+                // Log::error('Total percentage validation failed', [
+                //     'totalPercentage' => $this->totalPercentage
+                // ]);
                 return;
             }
 
@@ -215,36 +210,35 @@ class ShareAllocationModal extends Component
             if (empty($this->familyIds)) {
                 $this->errorMessage = 'هیچ خانواده‌ای انتخاب نشده است.';
                 $this->isProcessing = false;
-                Log::warning('⚠️ ShareAllocationModal::allocateShares - خطا: هیچ خانواده‌ای انتخاب نشده است');
                 return;
             }
 
             // دریافت خانواده‌های انتخاب شده
             $families = Family::whereIn('id', $this->familyIds)->get();
-            Log::info('👪 ShareAllocationModal::allocateShares - خانواده‌های یافت شده', [
-                'count' => $families->count(),
-                'ids' => $families->pluck('id')->toArray()
-            ]);
+            // Log::info('Selected families retrieved', [
+            //     'count' => $families->count(),
+            //     'ids' => $families->pluck('id')->toArray()
+            // ]);
             
             // بررسی آیا همه خانواده‌های انتخاب شده یافت شده‌اند
             if ($families->count() != count($this->familyIds)) {
-                Log::warning('⚠️ ShareAllocationModal::allocateShares - تعداد خانواده‌های یافت شده با تعداد آیدی‌های ارسالی مطابقت ندارد', [
-                    'found' => $families->count(),
-                    'expected' => count($this->familyIds),
-                    'missing_ids' => array_diff($this->familyIds, $families->pluck('id')->toArray())
-                ]);
+                // Log::error('Missing families detected', [
+                //     'found' => $families->count(),
+                //     'expected' => count($this->familyIds),
+                //     'missing_ids' => array_diff($this->familyIds, $families->pluck('id')->toArray())
+                // ]);
             }
             
             // بررسی منابع مالی
             foreach ($this->shares as $index => $share) {
                 if (empty($share['funding_source_id'])) {
-                    Log::warning('⚠️ ShareAllocationModal::allocateShares - منبع مالی برای سهم شماره ' . ($index + 1) . ' مشخص نشده است');
+                    // Log::warning('Empty funding source ID', ['index' => $index]);
                 } else {
                     $source = FundingSource::find($share['funding_source_id']);
                     if (!$source) {
-                        Log::warning('⚠️ ShareAllocationModal::allocateShares - منبع مالی با شناسه ' . $share['funding_source_id'] . ' یافت نشد');
+                        // Log::error('Funding source not found', ['id' => $share['funding_source_id']]);
                     } else {
-                        Log::info('✅ ShareAllocationModal::allocateShares - منبع مالی معتبر است: ' . $source->name);
+                        // Log::info('Funding source validated', ['id' => $source->id, 'name' => $source->name]);
                     }
                 }
             }
@@ -255,13 +249,12 @@ class ShareAllocationModal extends Component
 
             // ایجاد سهم‌ها توسط سرویس
             $shareService = new InsuranceShareService();
-            Log::info('🔄 ShareAllocationModal::allocateShares - فراخوانی سرویس تخصیص سهام');
 
             $result = $shareService->allocate($families, $this->shares, $payerType, $fundingSourceId);
-            Log::info('✅ ShareAllocationModal::allocateShares - نتیجه فراخوانی سرویس', [
-                'created_shares_count' => $result['created_shares_count'],
-                'errors' => $result['errors']
-            ]);
+            // Log::info('Share allocation result', [
+            //     'created_shares_count' => $result['created_shares_count'],
+            //     'errors' => $result['errors']
+            // ]);
             
             // بررسی نتیجه
             $createdShares = $result['shares'] ?? [];
@@ -269,37 +262,37 @@ class ShareAllocationModal extends Component
             
             if (!empty($errors)) {
                 $this->errorMessage = 'خطا در تخصیص سهم برای برخی خانواده‌ها: ' . implode(', ', $errors);
-                Log::warning('⚠️ ShareAllocationModal::allocateShares - خطا در تخصیص سهام', [
-                    'errors' => $errors
-                ]);
+                // Log::warning('Errors during share allocation', [
+                //     'errors' => $errors
+                // ]);
             }
             
             // **این شرط اصلاح شده است**
             if ($result['created_shares_count'] > 0) {
                 $this->successMessage = "سهم‌های بیمه با موفقیت ذخیره شدند!";
-                Log::info('✅ ShareAllocationModal::allocateShares - سهام با موفقیت ذخیره شدند', [
-                    'created_shares_count' => $result['created_shares_count']
-                ]);
+                // Log::info('Shares allocated successfully', [
+                //     'created_shares_count' => $result['created_shares_count']
+                // ]);
                 
                 // ارسال رویداد sharesAllocated
-                Log::info('🔄 ShareAllocationModal::allocateShares - ارسال رویداد sharesAllocated');
                 $this->dispatch('sharesAllocated');
                 
                 // بستن مودال
                 $this->showModal = false;
             } else if (empty($this->errorMessage)) {
                 $this->errorMessage = 'هیچ سهمی ایجاد نشد. ممکن است سهم‌ها قبلاً تخصیص داده شده باشند.';
-                Log::warning('⚠️ ShareAllocationModal::allocateShares - هیچ سهمی ایجاد نشد');
             }
         } catch (\Exception $e) {
-            Log::error('❌ ShareAllocationModal::allocateShares - خطا: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            // Log::error('Exception during share allocation', [
+            //     'message' => $e->getMessage(),
+            //     'file' => $e->getFile(),
+            //     'line' => $e->getLine(),
+            //     'trace' => $e->getTraceAsString()
+            // ]);
             $this->errorMessage = 'خطا در تخصیص سهم: ' . $e->getMessage();
         }
 
         $this->isProcessing = false;
-        Log::info('🏁 ShareAllocationModal::allocateShares - پایان فرایند تخصیص سهام');
     }
 
     public function resetShares()

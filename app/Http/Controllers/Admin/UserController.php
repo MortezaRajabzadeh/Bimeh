@@ -59,7 +59,6 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('UserController@store - Request Data:', $request->all());
         Gate::authorize('create user');
 
         $validated = $request->validate([
@@ -116,7 +115,6 @@ class UserController extends Controller
                 ->with('success', 'کاربر با موفقیت ایجاد شد');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('User creation failed', ['error' => $e->getMessage()]);
             return back()->with('error', 'خطا در ایجاد کاربر: ' . $e->getMessage());
         }
     }

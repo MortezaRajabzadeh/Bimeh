@@ -13,13 +13,11 @@ class PaymentService
                 ->purchase(
                     Payment::amount($amount),
                     function ($driver, $transactionId) {
-                        Log::info("تراکنش شروع شد - transaction_id: {$transactionId}");
                     }
                 )
                 ->pay()
                 ->render();
         } catch (\Throwable $e) {
-            Log::error("خطا در پرداخت: " . $e->getMessage());
             throw new \Exception("خطا در پرداخت. لطفاً مجدداً تلاش کنید.");
         }
     }
@@ -32,7 +30,6 @@ class PaymentService
         try {
             $receipt = Payment::amount($amount)->transactionId($authority)->verify();
             
-            Log::info("تراکنش تایید شد", [
                 'reference_id' => (string) $receipt,
                 'transaction_id' => $authority,
                 'amount' => $amount
@@ -44,7 +41,6 @@ class PaymentService
                 'transaction_id' => $authority
             ];
         } catch (\Exception $e) {
-            Log::error("خطا در تایید پرداخت: " . $e->getMessage());
             return [
                 'status' => false,
                 'message' => $e->getMessage()

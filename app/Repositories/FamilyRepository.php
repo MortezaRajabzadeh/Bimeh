@@ -170,4 +170,287 @@ class FamilyRepository extends BaseRepository
             'rejected' => $this->model->rejected()->count(),
         ];
     }
-} 
+
+
+// اضافه کردن متدهای جدید به FamilyRepository
+
+/**
+ * دریافت خانواده‌ها با فیلترهای پیشرفته
+ */
+public function getFilteredFamilies(array $filters = [], string $sortField = 'created_at', string $sortDirection = 'desc', int $perPage = 15): LengthAwarePaginator
+{
+    $query = $this->model->with([
+        'province:id,name',
+        'city:id,name',
+        'charity:id,name',
+        'members:id,family_id,first_name,last_name,national_code,is_head,relationship,problem_type,occupation'
+    ]);
+
+    // Count only final insurances
+    $query->withCount(['insurances as final_insurances_count' => function ($query) {
+        $query->where('status', 'insured');
+    }]);
+
+    // Apply tab filtering
+    if (isset($filters['activeTab'])) {
+        $this->applyTabFilter($query, $filters['activeTab']);
+    }
+
+    // Apply sorting
+    $this->applySorting($query, $sortField, $sortDirection, $filters['appliedSchemeId'] ?? null);
+
+    // Apply advanced filters
+    $this->applyAdvancedFilters($query, $filters);
+
+    return $query->paginate($perPage);
+}
+
+/**
+ * اعمال فیلتر تب‌ها
+ */
+private function applyTabFilter($query, string $activeTab): void
+{
+    switch ($activeTab) {
+        case 'pending':
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::PENDING->value);
+            break;
+        case 'reviewing':
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::REVIEWING->value);
+            break;
+        case 'approved':
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::APPROVED->value);
+            break;
+        case 'excel':
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::EXCEL_UPLOAD->value);
+            break;
+        case 'insured':
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::INSURED->value);
+            break;
+        case 'deleted':
+            $query->where('status', 'deleted');
+            break;
+        default:
+            $query->where('status', '!=', 'deleted')
+                  ->where('wizard_status', \App\Enums\InsuranceWizardStep::PENDING->value);
+            break;
+    }
+}
+
+/**
+ * اعمال مرتب‌سازی هوشمند
+ */
+private function applySorting($query, string $sortField, string $sortDirection, ?int $appliedSchemeId): void
+{
+    if ($sortField === 'calculated_score' && $appliedSchemeId) {
+        // همیشه امتیازات را به صورت نزولی مرتب کنیم تا خانواده‌های با مشکلات بیشتر (امتیاز بالاتر) در اولویت قرار گیرند
+        $this->applyCalculatedScoreSorting($query, 'desc', $appliedSchemeId);
+    } elseif ($sortField === 'insurance_payer') {
+        $this->applyInsurancePayerSorting($query, $sortDirection);
+    } elseif ($sortField === 'insurance_type') {
+        $this->applyInsuranceTypeSorting($query, $sortDirection);
+    } elseif ($sortField === 'family_head') {
+        $this->applyFamilyHeadSorting($query, $sortDirection);
+    } else {
+        $query->orderBy($sortField, $sortDirection);
+    }
+}
+
+/**
+ * مرتب‌سازی بر اساس امتیاز محاسبه شده
+ */
+private function applyCalculatedScoreSorting($query, string $sortDirection, int $schemeId): void
+{
+    $query->select('families.*')
+          ->selectRaw('
+              SUM(
+                  CASE
+                      WHEN rsc.weight IS NOT NULL THEN rsc.weight
+                      ELSE rs.weight
+                  END
+              ) as calculated_score
+          ')
+          ->leftJoin('family_criteria as fc', 'families.id', '=', 'fc.family_id')
+          ->leftJoin('rank_settings as rs', function($join) {
+              $join->on('fc.rank_setting_id', '=', 'rs.id')
+                   ->where('rs.is_active', true);
+          })
+          ->leftJoin('ranking_scheme_criteria as rsc', function ($join) use ($schemeId) {
+              $join->on('rs.id', '=', 'rsc.rank_setting_id')
+                   ->where('rsc.ranking_scheme_id', '=', $schemeId);
+          })
+          ->groupBy('families.id')
+          ->orderBy('calculated_score', $sortDirection);
+}
+
+/**
+ * مرتب‌سازی بر اساس پرداخت‌کننده بیمه
+ */
+private function applyInsurancePayerSorting($query, string $sortDirection): void
+{
+    $query->leftJoin('family_insurances', 'families.id', '=', 'family_insurances.family_id')
+          ->where(function ($q) {
+              $q->where('family_insurances.status', 'insured')
+                ->orWhereNull('family_insurances.id');
+          })
+          ->orderBy('family_insurances.insurance_payer', $sortDirection)
+          ->select('families.*');
+}
+
+/**
+ * مرتب‌سازی بر اساس نوع بیمه
+ */
+private function applyInsuranceTypeSorting($query, string $sortDirection): void
+{
+    $query->leftJoin('family_insurances', 'families.id', '=', 'family_insurances.family_id')
+          ->where(function ($q) {
+              $q->where('family_insurances.status', 'insured')
+                ->orWhereNull('family_insurances.id');
+          })
+          ->orderBy('family_insurances.insurance_type', $sortDirection)
+          ->select('families.*');
+}
+
+/**
+ * مرتب‌سازی بر اساس سرپرست خانواده
+ */
+private function applyFamilyHeadSorting($query, string $sortDirection): void
+{
+    $query->join('family_members as heads', function ($join) {
+              $join->on('families.id', '=', 'heads.family_id')
+                   ->where('heads.is_head', true);
+          })
+          ->orderBy('heads.first_name', $sortDirection)
+          ->orderBy('heads.last_name', $sortDirection)
+          ->select('families.*');
+}
+
+/**
+ * اعمال فیلترهای پیشرفته
+ */
+private function applyAdvancedFilters($query, array $filters): void
+{
+    // جستجو
+    if (!empty($filters['search'])) {
+        $query->where(function ($q) use ($filters) {
+            $q->where('family_code', 'like', '%' . $filters['search'] . '%')
+              ->orWhere('address', 'like', '%' . $filters['search'] . '%')
+              ->orWhere('additional_info', 'like', '%' . $filters['search'] . '%')
+              ->orWhereHas('members', function ($memberQuery) use ($filters) {
+                  $memberQuery->where('first_name', 'like', '%' . $filters['search'] . '%')
+                             ->orWhere('last_name', 'like', '%' . $filters['search'] . '%')
+                             ->orWhere('national_code', 'like', '%' . $filters['search'] . '%');
+              });
+        });
+    }
+
+    // فیلتر وضعیت
+    if (!empty($filters['status'])) {
+        if ($filters['status'] === 'insured') {
+            $query->where(function($q) {
+                $q->where('is_insured', true)
+                  ->orWhere('status', 'insured');
+            });
+        } elseif ($filters['status'] === 'uninsured') {
+            $query->where('is_insured', false)
+                  ->where('status', '!=', 'insured');
+        } else {
+            $query->where('status', $filters['status']);
+        }
+    }
+
+    // فیلتر استان
+    if (!empty($filters['province_id'])) {
+        $query->where('province_id', $filters['province_id']);
+    }
+
+    // فیلتر شهر
+    if (!empty($filters['city_id'])) {
+        $query->where('city_id', $filters['city_id']);
+    }
+
+    // فیلتر منطقه
+    if (!empty($filters['district_id'])) {
+        $query->where('district_id', $filters['district_id']);
+    }
+
+    // فیلتر خیریه
+    if (!empty($filters['charity_id'])) {
+        $query->where('charity_id', $filters['charity_id']);
+    }
+
+    // فیلتر رتبه خانواده
+    if (!empty($filters['family_rank_range'])) {
+        $rangeParts = explode('-', $filters['family_rank_range']);
+        if (count($rangeParts) == 2) {
+            $minRank = (int)$rangeParts[0];
+            $maxRank = (int)$rangeParts[1];
+            $query->whereBetween('family_rank', [$minRank, $maxRank]);
+        }
+    }
+
+    // فیلتر معیارهای خاص
+    if (!empty($filters['specific_criteria'])) {
+        $criteriaIds = array_filter(explode(',', $filters['specific_criteria']));
+        if (!empty($criteriaIds)) {
+            $query->whereHas('criteria', function ($q) use ($criteriaIds) {
+                $q->whereIn('rank_setting_id', $criteriaIds);
+            });
+        }
+    }
+}
+
+/**
+ * شمارش اعضای خانواده‌های انتخاب شده
+ */
+public function getTotalMembersCount(array $familyIds): int
+{
+    return \App\Models\Member::whereIn('family_id', $familyIds)->count();
+}
+
+/**
+ * تست فیلترها
+ */
+public function testFilters(array $tempFilters): int
+{
+    $query = $this->model->query();
+    
+    foreach ($tempFilters as $filter) {
+        if (empty($filter['value'])) continue;
+        
+        switch ($filter['type']) {
+            case 'status':
+                if ($filter['value'] === 'insured') {
+                    $query->where(function($q) {
+                        $q->where('is_insured', true)
+                          ->orWhere('status', 'insured');
+                    });
+                } elseif ($filter['value'] === 'uninsured') {
+                    $query->where('is_insured', false)
+                          ->where('status', '!=', 'insured');
+                } else {
+                    $query->where('status', $filter['value']);
+                }
+                break;
+            case 'province':
+                $query->where('province_id', $filter['value']);
+                break;
+            case 'city':
+                $query->where('city_id', $filter['value']);
+                break;
+            case 'district':
+                $query->where('district_id', $filter['value']);
+                break;
+            case 'charity':
+                $query->where('charity_id', $filter['value']);
+                break;
+        }
+    }
+    
+    return $query->count();
+}
+ }

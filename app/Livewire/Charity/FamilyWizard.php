@@ -94,7 +94,6 @@ class FamilyWizard extends Component
     public function nextStep()
     {
         // $this->validate(); // اعتبارسنجی قبل از رفتن به مرحله بعد
-        Log::debug('FamilyWizard nextStep called', [
             'currentStep' => $this->currentStep,
             'province_id' => $this->province_id,
             'city_id' => $this->city_id,
@@ -342,7 +341,6 @@ class FamilyWizard extends Component
 
     public function submit()
     {
-        Log::info('FamilyWizard submit called', [
             'step' => $this->currentStep,
             'confirm' => $this->confirmSubmission,
             'members_count' => count($this->members),
@@ -351,7 +349,6 @@ class FamilyWizard extends Component
             $this->validate();
         }
         if (!$this->validateCurrentStep()) {
-            Log::warning('FamilyWizard validateCurrentStep failed', [
                 'step' => $this->currentStep,
                 'confirm' => $this->confirmSubmission,
                 'members_count' => count($this->members),
@@ -413,7 +410,6 @@ class FamilyWizard extends Component
                 ]);
             }
 
-            Log::info('FamilyWizard submit success', [
                 'family_id' => $family->id,
             ]);
 
@@ -421,7 +417,6 @@ class FamilyWizard extends Component
 
             return $this->redirectRoute('charity.dashboard', ['highlight' => $family->id]);
         } catch (\Exception $e) {
-            Log::error('FamilyWizard submit error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -517,7 +512,6 @@ class FamilyWizard extends Component
     {
         // ارسال رویداد به جاوا اسکریپت برای اعمال تغییرات
         $this->dispatch('headMemberChanged', $value);
-        Log::info('Head member changed', ['index' => $value]);
     }
 
     public function updateHeadMemberIndex($value)

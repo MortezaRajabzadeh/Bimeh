@@ -23,7 +23,7 @@ class Family extends Model implements HasMedia
     public function criteria()
     {
         return $this->belongsToMany(RankSetting::class, 'family_criteria', 'family_id', 'rank_setting_id')
-                    ->withPivot(['has_criteria', 'notes'])
+                    ->withPivot(['notes'])
                     ->withTimestamps();
     }
 
@@ -52,8 +52,7 @@ class Family extends Model implements HasMedia
         'additional_info',
         'verified_at',
         'is_insured',
-        'acceptance_criteria',
-        'rank_criteria',
+
         'calculated_rank',
         'rank_calculated_at',
         'wizard_status',
@@ -68,7 +67,7 @@ class Family extends Model implements HasMedia
     protected $casts = [
         'poverty_confirmed' => 'boolean',
         'verified_at' => 'datetime',
-        'acceptance_criteria' => 'array',
+
         'is_insured' => 'boolean',
         'rank_calculated_at' => 'datetime',
         'wizard_status' => 'string',
@@ -89,8 +88,7 @@ class Family extends Model implements HasMedia
         // محاسبه رتبه موقع ایجاد خانواده جدید
         static::created(function ($family) {
             // اگر acceptance_criteria دارد یا اعضایش معیار دارند
-            if (($family->acceptance_criteria && is_array($family->acceptance_criteria) && count($family->acceptance_criteria) > 0) ||
-                $family->familyCriteria()->where('has_criteria', true)->exists()) {
+            if ($family->criteria()->exists()) {
 
                 // محاسبه رتبه در background تا مانع performance نشود
                 dispatch(function() use ($family) {
@@ -453,25 +451,7 @@ class Family extends Model implements HasMedia
         return $criteria;
     }
 
-    /**
-     * بروزرسانی معیارهای رتبه‌بندی خانواده
-     */
-    public function updateRankCriteria()
-    {
-        $criteria = $this->familyCriteria()
-            ->where('has_criteria', true)
-            ->with('rankSetting')
-            ->get()
-            ->map(function ($criterion) {
-                return $criterion->rankSetting->name;
-            })
-            ->unique()
-            ->values()
-            ->implode(', ');
 
-        $this->rank_criteria = $criteria;
-        $this->save();
-    }
 
     /**
      * محاسبه امتیاز وزنی بر اساس معیارهای فعال
@@ -480,10 +460,9 @@ class Family extends Model implements HasMedia
      */
     public function calculateWeightedScore(): float
     {
-        return $this->criteria()
-            ->where('has_criteria', true)
-            ->join('rank_settings', 'family_criteria.rank_setting_id', '=', 'rank_settings.id')
-            ->sum('rank_settings.weight');
+        return $this->criteria() // This refers to family_criteria relationship which already has join with rank_settings
+                        ->where('rank_settings.is_active', true) // Calculate score only for active rank settings
+                        ->sum('rank_settings.weight');
     }
 
     /**
@@ -493,7 +472,6 @@ class Family extends Model implements HasMedia
      */
     public static function recalculateAllRanks()
     {
-        Log::info('شروع محاسبه مجدد رتبه‌بندی برای تمام خانواده‌ها');
 
         $startTime = microtime(true);
         $count = 0;
@@ -506,7 +484,6 @@ class Family extends Model implements HasMedia
         });
 
         $executionTime = round(microtime(true) - $startTime, 2);
-        Log::info("محاسبه مجدد رتبه‌بندی برای {$count} خانواده با موفقیت انجام شد. زمان اجرا: {$executionTime} ثانیه");
 
         return $count;
     }
@@ -516,60 +493,28 @@ class Family extends Model implements HasMedia
      */
     public function calculateRank()
     {
-        // تنظیمات رتبه‌بندی فعال را دریافت کن
-        $rankSettings = RankSetting::where('is_active', true)->get();
+        $totalScore = $this->criteria() // رابطه با جدول family_criteria
+                            ->where('rank_settings.is_active', true)
+                            ->sum('rank_settings.weight');
 
-        $totalScore = 0;
-        $maxPossibleScore = 0;
+        $maxPossibleScore = RankSetting::where('is_active', true)->sum('weight');
 
-        // امتیاز براساس معیارهای تعریف شده در acceptance_criteria
-        if ($this->acceptance_criteria && is_array($this->acceptance_criteria)) {
-            foreach ($rankSettings as $setting) {
-                $key = $setting->key;
-                $weight = $setting->weight;
-
-                // اگر معیار در acceptance_criteria وجود دارد
-                if (isset($this->acceptance_criteria[$key]) && $this->acceptance_criteria[$key]) {
-                    $totalScore += $weight;
-                }
-
-                $maxPossibleScore += $weight;
-            }
+        if ($maxPossibleScore > 0) {
+            $this->calculated_rank = round(($totalScore / $maxPossibleScore) * 100, 2);
+        } else {
+            $this->calculated_rank = 0;
         }
-
-        // امتیاز براساس معیارهای ثبت شده در جدول family_criteria
-        $this->familyCriteria()
-            ->where('has_criteria', true)
-            ->with('rankSetting')
-            ->get()
-            ->each(function ($criteria) use (&$totalScore) {
-                if ($criteria->rankSetting && $criteria->rankSetting->is_active) {
-                    $totalScore += $criteria->rankSetting->weight;
-                }
-            });
-
-        // محاسبه رتبه نهایی (بین 0 تا 100)
-        $normalizedRank = $maxPossibleScore > 0
-            ? min(100, round(($totalScore / $maxPossibleScore) * 100))
-            : 0;
-
-        // ذخیره رتبه محاسبه شده
-        $this->calculated_rank = $normalizedRank;
         $this->rank_calculated_at = now();
         $this->save();
-
-        return $normalizedRank;
     }
-
     /**
      * دریافت رتبه محرومیت (محاسبه شده یا محاسبه مجدد)
      */
     public function getRank($recalculate = false)
     {
         if ($recalculate || $this->calculated_rank === null || $this->rank_calculated_at === null) {
-            return $this->calculateRank();
+            $this->calculateRank();
         }
-
         return $this->calculated_rank;
     }
 
@@ -592,13 +537,13 @@ class Family extends Model implements HasMedia
     public function addCriteria($rankSettingId, $notes = null)
     {
         // لاگ دقیقا زمان ثبت در جدول family_criteria
-        \Illuminate\Support\Facades\Log::info('ثبت معیار در جدول family_criteria', [
-            'family_id' => $this->id,
-            'rank_setting_id' => $rankSettingId,
-            'notes' => $notes,
-            'datetime' => now()->format('Y-m-d H:i:s'),
-            'call_trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)
-        ]);
+        // Log::info('Adding criteria to family', [
+        //     'family_id' => $this->id,
+        //     'rank_setting_id' => $rankSettingId,
+        //     'notes' => $notes,
+        //     'datetime' => now()->format('Y-m-d H:i:s'),
+        //     'call_trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)
+        // ]);
 
         return $this->familyCriteria()->updateOrCreate(
             ['rank_setting_id' => $rankSettingId],
@@ -1062,13 +1007,13 @@ class Family extends Model implements HasMedia
         $fromStatus = $this->wizard_status && $this->wizard_status !== $step->value ?
             \App\InsuranceWizardStep::from($this->wizard_status) : null;
 
-        FamilyStatusLog::logTransition(
-            $this,
-            $fromStatus ?? $step, // اگر وضعیت قبلی وجود نداشت، وضعیت فعلی را استفاده می‌کنیم
-            $step,
-            $comment ?? "مرحله {$step->label()} تکمیل شد",
-            $extraData
-        );
+        // Log::info('Wizard step completed', [
+        //     'family' => $this,
+        //     'from_status' => $fromStatus ?? $step,
+        //     'to_status' => $step,
+        //     'comment' => $comment ?? "مرحله {$step->label()} تکمیل شد",
+        //     'extra_data' => $extraData
+        // ]);
     }
 
     /**
@@ -1102,13 +1047,13 @@ class Family extends Model implements HasMedia
             $this->save();
 
             // ثبت لاگ انتقال به مرحله بعدی
-            FamilyStatusLog::logTransition(
-                $this,
-                $currentStep,
-                $nextStep,
-                $comment ?? "انتقال به مرحله {$nextStep->label()}",
-                $extraData
-            );
+            // Log::info('Wizard step moved to next', [
+            //     'family' => $this,
+            //     'from_status' => $currentStep,
+            //     'to_status' => $nextStep,
+            //     'comment' => $comment ?? "انتقال به مرحله {$nextStep->label()}",
+            //     'extra_data' => $extraData
+            // ]);
 
             return $nextStep;
         }
@@ -1138,13 +1083,13 @@ class Family extends Model implements HasMedia
             $this->save();
 
             // ثبت لاگ برگشت به مرحله قبلی
-            FamilyStatusLog::logTransition(
-                $this,
-                $currentStep,
-                $prevStep,
-                $comment ?? "بازگشت به مرحله {$prevStep->label()}",
-                $extraData
-            );
+            // Log::info('Wizard step moved to previous', [
+            //     'family' => $this,
+            //     'from_status' => $currentStep,
+            //     'to_status' => $prevStep,
+            //     'comment' => $comment ?? "بازگشت به مرحله {$prevStep->label()}",
+            //     'extra_data' => $extraData
+            // ]);
 
             return $prevStep;
         }
@@ -1183,13 +1128,5 @@ class Family extends Model implements HasMedia
         return $wizardStatus;
     }
 
-    /**
-     * دریافت لاگ‌های تغییر وضعیت wizard برای این خانواده
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function statusLogs()
-    {
-        return $this->hasMany(FamilyStatusLog::class)->orderBy('created_at', 'desc');
-    }
+
 }

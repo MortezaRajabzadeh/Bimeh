@@ -80,9 +80,7 @@ class RoleImpersonationService
                         'user_type' => $roleName
                     ], now()->addHours(24));
                     
-                    Log::info('تنظیم سازمان موقت: ' . $organization->id . ' برای کاربر ' . $user->id . ' با نقش ' . $roleName);
                 } else {
-                    Log::warning('هیچ سازمان فعالی از نوع ' . $roleName . ' یافت نشد.');
                 }
             }
             

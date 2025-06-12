@@ -50,7 +50,6 @@ class AdminActingAs
                 // چون ممکن است کش‌های Auth::user() قبلاً ساخته شده باشند، آن را بازنشانی می‌کنیم
                 Auth::setUser($user);
                 
-                Log::info('AdminActingAs middleware: user_type = ' . $actingAs . ', organization_id = ' . $user->organization_id);
             } else if ($actingAs === 'admin' && Session::has('original_user_type')) {
                 // بازگرداندن user_type اصلی در صورت برگشت به حالت ادمین
                 Session::put('current_user_type', Session::get('original_user_type'));
@@ -59,7 +58,6 @@ class AdminActingAs
                 // بازنشانی کش Auth::user()
                 Auth::setUser($user);
                 
-                Log::info('AdminActingAs middleware: بازگشت به ادمین، user_type = ' . $user->user_type . ', organization_id = ' . $user->organization_id);
             }
             
             // تنظیم متغیرهای view برای UI

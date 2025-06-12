@@ -11,7 +11,6 @@ class SmsService
     public function send(string $mobile, string $message): bool
     {
         try {
-            Log::info('ارسال پیامک:', [
                 'mobile' => $mobile,
                 'message' => $message
             ]);
@@ -26,7 +25,6 @@ class SmsService
             return true;
 
         } catch (\Exception $e) {
-            Log::error('خطا در ارسال پیامک:', [
                 'mobile' => $mobile,
                 'error' => $e->getMessage()
             ]);

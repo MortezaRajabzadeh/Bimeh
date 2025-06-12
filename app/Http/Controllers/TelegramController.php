@@ -30,7 +30,6 @@ class TelegramController extends Controller
         $username = config('telegram.bot_username');
         
         if (empty($token) || empty($username)) {
-            Log::error('تنظیمات ربات تلگرام پیکربندی نشده است.');
             return response()->json(['status' => 'error', 'message' => 'Bot settings not configured.'], 500);
         }
         
@@ -46,7 +45,6 @@ class TelegramController extends Controller
             
             return response()->json(['status' => 'success']);
         } catch (TelegramException $e) {
-            Log::error('خطا در پردازش webhook تلگرام: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -97,7 +95,6 @@ class TelegramController extends Controller
                 ], 500);
             }
         } catch (TelegramException $e) {
-            Log::error('خطا در تنظیم webhook تلگرام: ' . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -155,7 +152,6 @@ class TelegramController extends Controller
                 ]
             ]);
         } catch (TelegramException $e) {
-            Log::error('خطا در دریافت اطلاعات webhook تلگرام: ' . $e->getMessage());
             
             return response()->json([
                 'status' => 'partial',

@@ -187,15 +187,24 @@ class FamilyCriteria extends Component
     public function recalculateAllRanks()
     {
         try {
-            $families = Family::all();
-            $updatedCount = 0;
+            $startTime = microtime(true);
+            $totalUpdated = 0;
+            $batchSize = 100; // تعداد رکورد در هر دسته برای پردازش
+            $maxFamilies = 5000; // حداکثر تعداد خانواده‌ها برای پردازش
             
-            foreach ($families as $family) {
-                $family->calculateRank();
-                $updatedCount++;
-            }
+            // استفاده از chunk به جای all() برای مدیریت بهتر حافظه
+            Family::query()
+                ->orderBy('id')
+                ->limit($maxFamilies)
+                ->chunk($batchSize, function ($families) use (&$totalUpdated) {
+                    foreach ($families as $family) {
+                        $family->calculateRank();
+                        $totalUpdated++;
+                    }
+                });
             
-            session()->flash('success', "رتبه {$updatedCount} خانواده محاسبه شد.");
+            $executionTime = round(microtime(true) - $startTime, 2);
+            session()->flash('success', "رتبه {$totalUpdated} خانواده در {$executionTime} ثانیه محاسبه شد.");
         } catch (\Exception $e) {
             session()->flash('error', 'خطا در محاسبه رتبه‌ها: ' . $e->getMessage());
         }

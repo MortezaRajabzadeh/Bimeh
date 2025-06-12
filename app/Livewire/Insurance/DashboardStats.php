@@ -661,7 +661,6 @@ class DashboardStats extends Component
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Dashboard error: ' . $e->getMessage());
             
             // داده‌های fallback
             return view('livewire.insurance.dashboard-stats', [

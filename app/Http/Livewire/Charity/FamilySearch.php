@@ -135,7 +135,6 @@ class FamilySearch extends Component
             $this->dispatchBrowserEvent('family-toggled', ['familyId' => $familyId, 'isExpanded' => $this->expandedFamily === $familyId]);
         } catch (\Exception $e) {
             // ثبت خطا
-            \Illuminate\Support\Facades\Log::error('خطا در نمایش اعضای خانواده: ' . $e->getMessage());
             // ارسال پیام به کاربر
             session()->flash('error', 'خطا در بارگذاری اعضای خانواده. لطفاً دوباره تلاش کنید.');
         }
@@ -160,11 +159,9 @@ class FamilySearch extends Component
                                               ->get();
             } else {
                 $this->familyMembers = [];
-                \Illuminate\Support\Facades\Log::warning('خانواده با شناسه ' . $familyId . ' یافت نشد.');
             }
         } catch (\Exception $e) {
             $this->familyMembers = [];
-            \Illuminate\Support\Facades\Log::error('خطا در بارگذاری اعضای خانواده: ' . $e->getMessage());
         }
     }
     
@@ -427,7 +424,6 @@ class FamilySearch extends Component
             DB::rollBack();
             
             // ثبت خطا
-            \Illuminate\Support\Facades\Log::error('خطا در تغییر سرپرست خانواده: ' . $e->getMessage());
             
             // نمایش پیام خطا
             $this->dispatch('show-toast', [
@@ -471,7 +467,6 @@ class FamilySearch extends Component
             ]);
         } catch (\Exception $e) {
             // ثبت خطا
-            \Illuminate\Support\Facades\Log::error('خطا در تایید خانواده: ' . $e->getMessage());
             
             // نمایش پیام خطا
             $this->dispatch('show-toast', [

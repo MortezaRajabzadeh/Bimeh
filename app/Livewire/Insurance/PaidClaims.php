@@ -47,8 +47,18 @@ class PaidClaims extends Component
 
     public function mount()
     {
-        $this->families = collect(Family::all());
-        $this->transactions = collect(FundingTransaction::all());
+        // بجای لود کردن همه رکوردها، فقط داده‌های مورد نیاز را لود می‌کنیم
+        // ستون‌های مورد نیاز را انتخاب می‌کنیم و تعداد را محدود می‌کنیم
+        $this->families = Family::select(['id', 'family_code', 'status'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+        
+        $this->transactions = FundingTransaction::select(['id', 'amount', 'description'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+            
         $this->selectedFamily = null;
         $this->selectedTransaction = null;
     }
@@ -107,14 +117,28 @@ class PaidClaims extends Component
 
     public function updatedFamilyId($value)
     {
-        $found = $this->families->firstWhere('id', $value);
-        $this->selectedFamily = is_object($found) ? $found : ($found ? (object)json_decode(json_encode($found), false) : null);
+        if ($value) {
+            // اطمینان از اینکه families به صورت Collection است
+            if (!($this->families instanceof \Illuminate\Support\Collection)) {
+                $this->families = collect($this->families);
+            }
+            $this->selectedFamily = $this->families->firstWhere('id', $value);
+        } else {
+            $this->selectedFamily = null;
+        }
     }
 
     public function updatedFundingTransactionId($value)
     {
-        $found = $this->transactions->firstWhere('id', $value);
-        $this->selectedTransaction = is_object($found) ? $found : ($found ? (object)json_decode(json_encode($found), false) : null);
+        if ($value) {
+            // اطمینان از اینکه transactions به صورت Collection است
+            if (!($this->transactions instanceof \Illuminate\Support\Collection)) {
+                $this->transactions = collect($this->transactions);
+            }
+            $this->selectedTransaction = $this->transactions->firstWhere('id', $value);
+        } else {
+            $this->selectedTransaction = null;
+        }
     }
 
     public function editClaim($id)
@@ -128,10 +152,24 @@ class PaidClaims extends Component
         $this->paid_at = $claim->paid_at;
         $this->description = $claim->description;
         $this->addMode = false;
-        $foundFamily = $this->families->firstWhere('id', $claim->family_id);
-        $this->selectedFamily = is_object($foundFamily) ? $foundFamily : ($foundFamily ? (object)json_decode(json_encode($foundFamily), false) : null);
-        $foundTx = $this->transactions->firstWhere('id', $claim->funding_transaction_id);
-        $this->selectedTransaction = is_object($foundTx) ? $foundTx : ($foundTx ? (object)json_decode(json_encode($foundTx), false) : null);
+        // اطمینان از اینکه داده‌ها به صورت Collection هستند
+        if (!($this->families instanceof \Illuminate\Support\Collection)) {
+            $this->families = collect($this->families);
+        }
+        if (!($this->transactions instanceof \Illuminate\Support\Collection)) {
+            $this->transactions = collect($this->transactions);
+        }
+        
+        // اگر خانواده یا تراکنش در لیست موجود نباشد، آنها را جداگانه واکشی می‌کنیم
+        $this->selectedFamily = $this->families->firstWhere('id', $claim->family_id);
+        if (!$this->selectedFamily && $claim->family_id) {
+            $this->selectedFamily = Family::find($claim->family_id);
+        }
+        
+        $this->selectedTransaction = $this->transactions->firstWhere('id', $claim->funding_transaction_id);
+        if (!$this->selectedTransaction && $claim->funding_transaction_id) {
+            $this->selectedTransaction = FundingTransaction::find($claim->funding_transaction_id);
+        }
     }
 
     public function updateClaim()
@@ -167,11 +205,15 @@ class PaidClaims extends Component
 
     public function render()
     {
+        $claims = InsuranceAllocation::with(['family', 'transaction'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($this->perPage);
+        
+        // اطمینان از اینکه families و transactions به صورت Collection هستند
         return view('livewire.insurance.paid-claims', [
-            'addMode' => $this->addMode,
-            'families' => $this->families,
-            'transactions' => $this->transactions,
-            'claims' => $this->getClaimsProperty(),
+            'claims' => $claims,
+            'families' => $this->families instanceof \Illuminate\Support\Collection ? $this->families : collect($this->families),
+            'transactions' => $this->transactions instanceof \Illuminate\Support\Collection ? $this->transactions : collect($this->transactions),
         ]);
     }
 }

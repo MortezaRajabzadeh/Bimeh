@@ -22,7 +22,6 @@ class InsuranceShareService
      */
     public function allocate(Collection $families, array $shares, string $payerType, ?int $fundingSourceId = null): array
     {
-        Log::info('🚀 شروع تخصیص سهام بیمه', [
             'families_count' => $families->count(),
             'shares' => $shares,
             'payer_type' => $payerType,
@@ -41,7 +40,6 @@ class InsuranceShareService
         DB::transaction(function () use ($families, $shares, &$createdShares, &$errors, $payerType, $fundingSourceId) {
             foreach ($families as $family) {
                 try {
-                    Log::info("📋 پردازش خانواده {$family->family_code} (ID: {$family->id})");
     
                     // ایجاد رکورد بیمه نیمه‌کاره
                     $familyInsurance = FamilyInsurance::create([
@@ -55,7 +53,6 @@ class InsuranceShareService
                         'funding_source_id' => $fundingSourceId,
                     ]);
     
-                    Log::info("✅ رکورد بیمه placeholder برای خانواده {$family->family_code} ایجاد شد (ID: {$familyInsurance->id})");
     
                     // ایجاد رکوردهای سهم
                     foreach ($shares as $shareData) {
@@ -88,16 +85,13 @@ class InsuranceShareService
                             $share = InsuranceShare::create($payerData);
                             $createdShares[] = $share; // رکورد ایجاد شده را به آرایه اضافه می‌کنیم
                             
-                            Log::info("📊 سهم با نام پرداخت‌کننده {$payerData['payer_name']} و درصد {$shareData['percentage']}% برای خانواده {$family->family_code} ایجاد شد");
                         }
                     }
                     
-                    Log::info("✅ تخصیص سهام برای خانواده {$family->family_code} با موفقیت انجام شد");
     
                 } catch (\Exception $e) {
                     $errorMessage = "خطا در تخصیص سهام برای خانواده {$family->family_code}: " . $e->getMessage();
                     $errors[] = $errorMessage;
-                    Log::error("❌ " . $errorMessage, ['exception' => $e]);
                     continue;
                 }
             }
@@ -136,7 +130,6 @@ class InsuranceShareService
      */
     public function completeInsuranceFromExcel(string $filePath): array
     {
-        Log::info('⏳ شروع تکمیل بیمه از فایل اکسل: ' . $filePath);
 
         // Read Excel file
         $imported = Excel::toCollection(null, $filePath);
@@ -164,7 +157,6 @@ class InsuranceShareService
                 $firstFamily = Family::where('family_code', $firstFamilyCode)->first();
                 if ($firstFamily) {
                     // آخرین لاگ مربوط به این خانواده را پیدا کن
-                    $relatedLog = ShareAllocationLog::whereJsonContains('family_ids', $firstFamily->id)
                                                     ->latest()
                                                     ->first();
                     if ($relatedLog) {
@@ -172,7 +164,6 @@ class InsuranceShareService
                             'total_amount' => $totalAmountForThisBatch,
                             'status' => 'completed'
                         ]);
-                        Log::info("✅ لاگ تخصیص سهم {$relatedLog->batch_id} با مبلغ کل {$totalAmountForThisBatch} به‌روزرسانی شد");
                     }
                 }
             }
@@ -192,7 +183,6 @@ class InsuranceShareService
             $amount = ($premiumAmount * $share->percentage) / 100;
             $share->update(['amount' => $amount]);
             
-            Log::info("📊 سهم {$share->share_type} به‌روزرسانی شد: {$share->percentage}% = {$amount} تومان");
         }
     }
 

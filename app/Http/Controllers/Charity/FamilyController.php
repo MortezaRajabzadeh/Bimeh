@@ -270,7 +270,6 @@ class FamilyController extends Controller
                 $fileName
             );
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('خطا در دانلود اکسل: ' . $e->getMessage());
             return back()->with('error', 'خطا در دانلود فایل اکسل: ' . $e->getMessage());
         }
     }

@@ -51,6 +51,16 @@ class ToastNotifications extends Component
     public function toast($message, $type = 'success')
     {
         $id = uniqid();
+        
+        // اگر پیام به شکل آرایه باشد، فرمت آن را اصلاح می‌کنیم
+        if (is_array($message) && isset($message['message'])) {
+            $type = $message['type'] ?? $type;
+            $message = $message['message'];
+        }
+        
+        // اطمینان حاصل می‌کنیم که پیام حتما رشته باشد
+        $message = is_array($message) ? json_encode($message) : (string)$message;
+        
         $this->toasts[] = [
             'id' => $id,
             'message' => $message,

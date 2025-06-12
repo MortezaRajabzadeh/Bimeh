@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Traits\HandlesImageUploads;
 use App\Http\Requests\OrganizationRequest;
 use App\Models\Organization;
 use App\Services\OrganizationService;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class OrganizationController extends Controller
 {
+    use HandlesImageUploads;
     protected OrganizationService $organizationService;
 
     public function __construct(OrganizationService $organizationService)
@@ -70,8 +72,17 @@ class OrganizationController extends Controller
         $organization->address = $validated['address'] ?? null;
         
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('organizations', 'public');
-            $organization->logo_path = $path;
+            // حذف لوگوی قبلی در صورت وجود
+            $this->deleteImageIfExists($organization->logo_path);
+            
+            // آپلود و بهینه‌سازی تصویر جدید
+            $organization->logo_path = $this->uploadAndOptimizeImage(
+                $request->file('logo'),
+                'organizations',
+                300, // عرض
+                300, // ارتفاع
+                80   // کیفیت (0-100)
+            );
         }
         
         $organization->save();
@@ -117,13 +128,17 @@ class OrganizationController extends Controller
         $organization->address = $validated['address'] ?? null;
         
         if ($request->hasFile('logo')) {
-            // Remove old logo if exists
-            if ($organization->logo_path) {
-                Storage::disk('public')->delete($organization->logo_path);
-            }
+            // حذف لوگوی قبلی در صورت وجود
+            $this->deleteImageIfExists($organization->logo_path);
             
-            $path = $request->file('logo')->store('organizations', 'public');
-            $organization->logo_path = $path;
+            // آپلود و بهینه‌سازی تصویر جدید
+            $organization->logo_path = $this->uploadAndOptimizeImage(
+                $request->file('logo'),
+                'organizations',
+                300, // عرض
+                300, // ارتفاع
+                80   // کیفیت (0-100)
+            );
         }
         
         $organization->save();

@@ -65,7 +65,6 @@ class FamilyStatusLog extends Model
      */
     public function excelFile(): BelongsTo
     {
-        return $this->belongsTo(InsuranceImportLog::class, 'excel_file_id');
     }
 
     /**

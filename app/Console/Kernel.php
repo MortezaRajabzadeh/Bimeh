@@ -10,9 +10,10 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
-    protected function schedule(Schedule $schedule): void
+    protected function schedule(Schedule $schedule)
     {
         $schedule->command('app:move-expired-insurances-to-renewal')->daily();
+        $schedule->command('queue:clean-old --days=7')->daily();
     }
 
     /**
@@ -22,4 +23,4 @@ class Kernel extends ConsoleKernel
     {
         $this->load(__DIR__.'/Commands');
     }
-} 
+}

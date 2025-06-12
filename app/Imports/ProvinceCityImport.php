@@ -36,7 +36,6 @@ class ProvinceCityImport implements ToCollection, WithChunkReading
                 }
 
                 if (!$currentProvince || !$currentCity || !$districtName) {
-                    Log::warning("⛔ ردیف ناقص در $index: " . json_encode($row));
                     continue;
                 }
 
@@ -63,13 +62,11 @@ class ProvinceCityImport implements ToCollection, WithChunkReading
                 });
 
             } catch (\Throwable $e) {
-                Log::error("❌ خطا در ردیف $index: " . $e->getMessage(), [
                     'row' => $row->toArray(),
                 ]);
             }
         }
 
-        Log::info('✅ ایمپورت chunk با موفقیت انجام شد');
     }
 
     public function chunkSize(): int

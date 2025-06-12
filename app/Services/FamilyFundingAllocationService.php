@@ -261,7 +261,6 @@ class FamilyFundingAllocationService
             
             if (empty($familyCodes)) {
                 // اگر کدهای خانواده در سشن نباشد، از آخرین لاگ آپلود استفاده می‌کنیم
-                $lastImportLog = \App\Models\InsuranceImportLog::latest()->first();
                 if ($lastImportLog) {
                     $familyCodes = is_array($lastImportLog->family_codes) ? $lastImportLog->family_codes : json_decode($lastImportLog->family_codes, true);
                     
@@ -272,7 +271,6 @@ class FamilyFundingAllocationService
                 }
             } else {
                 // پیدا کردن لاگ آپلود مرتبط با کدهای خانواده در سشن
-                $lastImportLog = \App\Models\InsuranceImportLog::whereJsonContains('family_codes', array_values($familyCodes)[0])
                     ->orWhere(function($query) use ($familyCodes) {
                         foreach($familyCodes as $code) {
                             $query->orWhereRaw("JSON_SEARCH(family_codes, 'one', ?) IS NOT NULL", [$code]);
@@ -282,14 +280,12 @@ class FamilyFundingAllocationService
                     ->first();
             }
             
-            Log::info("تعداد کدهای خانواده برای تخصیص بودجه: " . count($familyCodes));
             
             // یافتن همه خانواده‌های آپلود شده با وضعیت insured
             $families = Family::whereIn('family_code', $familyCodes)
                 ->where('status', 'insured')
                 ->get();
             
-            Log::info("تعداد خانواده‌های بیمه شده از فایل آپلود شده برای تخصیص بودجه: " . $families->count());
             
             if ($families->isEmpty()) {
                 throw new \Exception('هیچ خانواده بیمه شده‌ای از فایل آپلود شده برای تخصیص بودجه یافت نشد.');
@@ -324,11 +320,9 @@ class FamilyFundingAllocationService
             $totalFamilyPremium = \App\Models\FamilyInsurance::whereIn('family_id', $familyIds)
                 ->sum('premium_amount');
                 
-            Log::info("مجموع حق بیمه برای {$families->count()} خانواده: {$totalFamilyPremium}");
             
             // محاسبه مبلغ تخصیص کلی
             $totalAllocationAmount = round(($percentage / 100) * $totalFamilyPremium);
-            Log::info("مبلغ کل تخصیص ({$percentage}%): {$totalAllocationAmount}");
             
             // بررسی موجودی منبع مالی
             $this->validateFundingSourceAvailability($fundingSourceId, $totalAllocationAmount);
@@ -353,17 +347,14 @@ class FamilyFundingAllocationService
                     $familyInsurance = \App\Models\FamilyInsurance::where('family_id', $family->id)->first();
                     
                     if (!$familyInsurance) {
-                        Log::warning("هیچ اطلاعات بیمه‌ای برای خانواده {$family->id} یافت نشد.");
                         continue;
                     }
                     
                     $familyPremium = $familyInsurance->premium_amount;
                     $allocationAmount = round(($percentage / 100) * $familyPremium);
                     
-                    Log::info("مبلغ تخصیص برای خانواده {$family->id}: {$allocationAmount} (حق بیمه: {$familyPremium})");
                     
                     if ($allocationAmount <= 0) {
-                        Log::warning("مبلغ تخصیص برای خانواده {$family->id} صفر یا منفی است.");
                         continue;
                     }
                     
@@ -386,21 +377,17 @@ class FamilyFundingAllocationService
                     $totalAllocated += $allocationAmount;
                     
                 } catch (\Exception $e) {
-                    Log::error("خطا در ایجاد تخصیص برای خانواده {$family->id}: " . $e->getMessage());
                     $errors[] = "خانواده {$family->family_code}: " . $e->getMessage();
                 }
             }
             
             // اطمینان از اینکه مجموع تخصیص‌ها با کل مبلغ مطابقت دارد
             if (abs($totalAllocated - $totalAllocationAmount) > 100) { // تلرانس خطای 100 تومان
-                Log::warning("تفاوت بین مجموع تخصیص‌های انفرادی ({$totalAllocated}) و کل مبلغ تخصیص ({$totalAllocationAmount})");
             }
             
             if (!empty($errors)) {
-                Log::warning("خطاهای تخصیص بودجه: " . implode(", ", $errors));
             }
             
-            Log::info("تعداد تخصیص‌های موفق: " . count($allocations));
             
             return $allocations;
         });
@@ -418,7 +405,6 @@ class FamilyFundingAllocationService
     {
         // فرض می‌کنیم که اگر آخرین فایل آپلود شده است، 
         // برای تمام خانواده‌های آن آپلود با این منبع مالی و درصد تخصیص انجام شده است
-        $lastImportLog = \App\Models\InsuranceImportLog::find($importLogId);
         if (!$lastImportLog) {
             return false;
         }

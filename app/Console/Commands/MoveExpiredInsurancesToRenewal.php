@@ -27,13 +27,15 @@ class MoveExpiredInsurancesToRenewal extends Command
     public function handle()
     {
         // Move families with expired insurance to renewal
-        $families = Family::expiredInsurance()->get();
         $count = 0;
-        foreach ($families as $family) {
-            $family->status = 'renewal';
-            $family->save();
-            $count++;
-        }
+        Family::expiredInsurance()->chunk(100, function ($families) use (&$count) {
+            foreach ($families as $family) {
+                $family->status = 'renewal';
+                $family->save();
+                $count++;
+            }
+        });
+        
         $this->info("{$count} families moved to renewal status.");
         // (For future: handle members with expired insurance)
         return 0;

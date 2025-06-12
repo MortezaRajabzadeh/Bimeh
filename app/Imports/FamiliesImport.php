@@ -169,10 +169,8 @@ class FamiliesImport implements ToCollection
      */
     public function collection(Collection $rows)
     {
-        Log::info('شروع پردازش فایل اکسل', ['total_rows' => count($rows)]);
         
         if ($rows->isEmpty()) {
-            Log::warning('فایل اکسل خالی است');
             return;
         }
 
@@ -196,14 +194,12 @@ class FamiliesImport implements ToCollection
                 // خواندن header اصلی
                 if ($index === $headingRowIndex) {
                     $headers = $row->toArray();
-                    Log::info('Header اصلی خوانده شد', ['headers' => $headers]);
                     continue;
                 }
 
                 // خواندن sub header
                 if ($index === $subHeadingRowIndex) {
                     $subHeaders = $row->toArray();
-                    Log::info('Sub header خوانده شد', ['sub_headers' => $subHeaders]);
                     
                     // ساخت header های نهایی
                     foreach ($headers as $col => $mainTitle) {
@@ -225,7 +221,6 @@ class FamiliesImport implements ToCollection
                         }
                     }
                     
-                    Log::info('Header های نهایی ساخته شدند', ['final_headers' => $finalHeaders]);
                     continue;
                 }
 
@@ -247,7 +242,6 @@ class FamiliesImport implements ToCollection
                     $data[$headerName] = $rowArray[$col] ?? null;
                 }
 
-                Log::info('داده ردیف پردازش شد', [
                     'row_number' => $rowNumber,
                     'data_keys' => array_keys($data),
                     'sample_data' => array_slice($data, 0, 5, true)
@@ -303,7 +297,6 @@ class FamiliesImport implements ToCollection
                 ];
 
             } catch (\Exception $e) {
-                Log::error('خطا در پردازش ردیف', [
                     'row_number' => $rowNumber,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
@@ -315,8 +308,6 @@ class FamiliesImport implements ToCollection
             }
         }
 
-        Log::info('اطلاعات debug شناسه خانواده‌ها', $familyIdMapping);
-        Log::info('آمار نهایی گروه‌بندی', [
             'total_families' => count($groupedFamilies),
             'families_overview' => array_map(fn($members) => count($members), $groupedFamilies)
         ]);
@@ -376,7 +367,6 @@ class FamiliesImport implements ToCollection
         
         // Debug برای بررسی تطبیق کلیدها
         if ($rowNumber <= 5) {
-            Log::debug("تطبیق کلیدها برای ردیف {$rowNumber}", [
                 'original_keys' => array_keys($row),
                 'mapped_keys' => array_keys($normalized),
                 'family_id' => $normalized['family_id'] ?? 'NOT_FOUND',
@@ -403,7 +393,6 @@ class FamiliesImport implements ToCollection
             str_contains($firstName, 'راهنما') ||
             str_contains($firstName, 'مثال')) {
             
-            Log::debug("ردیف {$rowNumber} نادیده گرفته شد", [
                 'reason' => 'ردیف راهنما یا مثال',
                 'family_id' => $familyId,
                 'first_name' => $firstName
@@ -475,7 +464,6 @@ class FamiliesImport implements ToCollection
         $existingFamily = $this->findExistingFamily($members);
         
         if ($existingFamily) {
-            Log::debug("خانواده موجود پیدا شد", [
                 'family_id' => $existingFamily->id,
                 'family_code' => $existingFamily->family_code,
                 'temp_id' => $familyTempId
@@ -514,7 +502,6 @@ class FamiliesImport implements ToCollection
                 'address' => $address,
             ], $this->user);
             
-            Log::debug("خانواده جدید ایجاد شد", [
                 'family_id' => $family->id,
                 'family_code' => $family->family_code,
                 'temp_id' => $familyTempId
@@ -561,7 +548,6 @@ class FamiliesImport implements ToCollection
             // محاسبه رتبه خانواده
             $family->calculateRank();
             
-            Log::debug("معیارهای پذیرش و رتبه خانواده بروزرسانی شد", [
                 'family_id' => $family->id,
                 'criteria' => $acceptanceCriteria,
                 'rank' => $family->calculated_rank
@@ -720,7 +706,6 @@ class FamiliesImport implements ToCollection
                 
                 // اعتبارسنجی محدوده
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
-                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
                     return null;
                 }
                 
@@ -735,7 +720,6 @@ class FamiliesImport implements ToCollection
                 $day = intval($matches[3]);
                 
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
-                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
                     return null;
                 }
                 
@@ -758,7 +742,6 @@ class FamiliesImport implements ToCollection
                 $day = intval($matches[3]);
                 
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
-                    Log::warning('تاریخ نامعتبر - خارج از محدوده', ['date' => $date]);
                     return null;
                 }
                 
@@ -767,7 +750,6 @@ class FamiliesImport implements ToCollection
             }
             
         } catch (\Exception $e) {
-            Log::warning('خطا در پارس تاریخ', ['date' => $date, 'error' => $e->getMessage()]);
         }
         
         return null;
@@ -897,7 +879,6 @@ class FamiliesImport implements ToCollection
             foreach ($extraFields as $field) {
                 if (!empty($rowData[$field]) && trim($rowData[$field]) !== '') {
                     // اگر شناسه خانواده دارد ولی نام ندارد، احتمالاً ردیف خراب است
-                    Log::warning("ردیف {$rowNumber} اطلاعات ناقص دارد", [
                         'has_family_id' => !empty($rowData['family_id']),
                         'has_name' => !empty($rowData['first_name']),
                         'has_last_name' => !empty($rowData['last_name']),
@@ -907,7 +888,6 @@ class FamiliesImport implements ToCollection
                 }
             }
             
-            Log::debug("ردیف {$rowNumber} نادیده گرفته شد", [
                 'reason' => 'ردیف خالی - تمام فیلدهای اصلی خالی'
             ]);
             return true;
@@ -951,7 +931,6 @@ class FamiliesImport implements ToCollection
                 
                 $this->results['success']++;
                 
-                Log::info("خانواده {$familyId} با موفقیت " . ($isNewFamily ? 'ایجاد' : 'آپدیت') . " شد", [
                     'members_count' => count($membersData),
                     'is_new' => $isNewFamily
                 ]);
@@ -959,7 +938,6 @@ class FamiliesImport implements ToCollection
             } catch (\Exception $e) {
                 DB::rollBack();
                 
-                Log::error('خطا در پردازش خانواده', [
                     'family_id' => $familyId,
                     'error' => $e->getMessage()
                 ]);
@@ -969,6 +947,5 @@ class FamiliesImport implements ToCollection
             }
         }
         
-        Log::info('پردازش فایل اکسل تمام شد', $this->results);
     }
 } 

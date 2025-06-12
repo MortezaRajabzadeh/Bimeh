@@ -101,7 +101,6 @@ class FundingManager extends Component
             $this->transactions = FundingTransaction::with('source')->latest()->take(20)->get();
             session()->flash('success', 'بودجه با موفقیت ثبت شد 🎉');
         } catch (\Throwable $e) {
-            Log::error('Add transaction error: '.$e->getMessage());
             session()->flash('error', 'خطایی در ثبت بودجه رخ داد ❌');
         }
     }
@@ -113,7 +112,6 @@ class FundingManager extends Component
             $this->transactions = FundingTransaction::with('source')->latest()->take(20)->get();
             session()->flash('success', 'تراکنش حذف شد.');
         } catch (\Throwable $e) {
-            Log::error('Delete transaction error: '.$e->getMessage());
             session()->flash('error', 'خطا در حذف تراکنش رخ داد.');
         }
     }
@@ -149,7 +147,6 @@ class FundingManager extends Component
             $this->transactions = FundingTransaction::with('source')->latest()->take(20)->get();
             session()->flash('success', 'تراکنش ویرایش شد.');
         } catch (\Throwable $e) {
-            Log::error('Update transaction error: '.$e->getMessage());
             session()->flash('error', 'خطا در ویرایش تراکنش رخ داد.');
         }
     }
@@ -174,7 +171,6 @@ class FundingManager extends Component
             session()->flash('success', 'منبع بودجه جدید اضافه شد.');
             $this->dispatch('inputReset');
         } catch (\Throwable $e) {
-            Log::error('Add source error: '.$e->getMessage());
             session()->flash('error', 'خطا در افزودن منبع بودجه رخ داد.');
         }
     }
@@ -207,7 +203,6 @@ class FundingManager extends Component
             $this->sources = FundingSource::where('is_active', true)->get();
             session()->flash('success', 'منبع بودجه ویرایش شد.');
         } catch (\Throwable $e) {
-            Log::error('Update source error: '.$e->getMessage());
             session()->flash('error', 'خطا در ویرایش منبع بودجه رخ داد.');
         }
     }
@@ -219,7 +214,6 @@ class FundingManager extends Component
             $this->sources = FundingSource::where('is_active', true)->get();
             session()->flash('success', 'منبع بودجه حذف شد.');
         } catch (\Throwable $e) {
-            Log::error('Delete source error: '.$e->getMessage());
             session()->flash('error', 'خطا در حذف منبع بودجه رخ داد.');
         }
     }

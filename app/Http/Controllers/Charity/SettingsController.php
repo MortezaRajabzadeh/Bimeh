@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Charity;
 
 use App\Http\Controllers\Controller;
+use App\Traits\HandlesImageUploads;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,7 @@ use Illuminate\Support\Str;
 
 class SettingsController extends Controller
 {
+    use HandlesImageUploads;
     /**
      * نمایش صفحه تنظیمات خیریه
      *
@@ -56,16 +58,16 @@ class SettingsController extends Controller
         // پردازش آپلود لوگو در صورت وجود
         if ($request->hasFile('logo')) {
             // حذف لوگوی قبلی در صورت وجود
-            if ($organization->logo_path && Storage::disk('public')->exists($organization->logo_path)) {
-                Storage::disk('public')->delete($organization->logo_path);
-            }
-
-            // آپلود لوگوی جدید
-            $logoFile = $request->file('logo');
-            $fileName = 'charity_logo_' . Str::random(10) . '.' . $logoFile->getClientOriginalExtension();
-            $logoPath = $logoFile->storeAs('logos', $fileName, 'public');
+            $this->deleteImageIfExists($organization->logo_path);
             
-            $organization->logo_path = $logoPath;
+            // آپلود و بهینه‌سازی تصویر جدید
+            $organization->logo_path = $this->uploadAndOptimizeImage(
+                $request->file('logo'),
+                'charities/logos',
+                300, // عرض
+                300, // ارتفاع
+                80   // کیفیت (0-100)
+            );
         }
 
         // ذخیره تغییرات

@@ -44,6 +44,8 @@ class FamilySearch extends Component
     public $family_rank_range = '';
     public $specific_criteria = '';
     public $availableRankSettings = [];
+    public $page = 1; // متغیر مورد نیاز برای پیجینیشن لیوایر
+    public $isEditingMode = false; // متغیر برای کنترل حالت ویرایش فرم
     
     // Properties for new Rank Settings Modal
     public $rankSettings = [];
@@ -119,10 +121,18 @@ class FamilySearch extends Component
     
     public function mount()
     {
-        $this->regions = Region::all();
-        $this->provinces = Province::orderBy('name')->get();
-        $this->cities = City::orderBy('name')->get();
-        $this->organizations = Organization::where('type', 'charity')->orderBy('name')->get();
+        $this->regions = cache()->remember('regions_list', 3600, function () {
+            return Region::all();
+        });
+        $this->provinces = cache()->remember('provinces_list', 3600, function () {
+            return Province::orderBy('name')->get();
+        });
+        $this->cities = cache()->remember('cities_list', 3600, function () {
+            return City::orderBy('name')->get();
+        });
+        $this->organizations = cache()->remember('organizations_list', 3600, function () {
+            return Organization::where('type', 'charity')->orderBy('name')->get();
+        });
         
         // بارگذاری معیارهای رتبه‌بندی در ابتدای لود صفحه
         $this->loadRankSettings();
@@ -145,47 +155,96 @@ class FamilySearch extends Component
         ]);
     }
     
+    /**
+     * تولید کلید کش خاص برای قابلیت جستجو
+     * @return string
+     */
+    protected function getCacheKey()
+    {
+        // ساخت هش کلیدی از فیلترهای فعال
+        $filtersHash = md5(json_encode([
+            'search' => $this->search,
+            'status' => $this->status,
+            'region' => $this->region,
+            'charity' => $this->charity,
+            'province' => $this->province,
+            'city' => $this->city,
+            'deprivation_rank' => $this->deprivation_rank,
+            'family_rank_range' => $this->family_rank_range,
+            'specific_criteria' => $this->specific_criteria,
+            'sort' => $this->sortField . '_' . $this->sortDirection,
+            'page' => $this->page,
+            'perPage' => $this->perPage
+        ]));
+
+        // استفاده از شناسه کاربر برای جلوگیری از تداخل کش بین کاربران
+        $userId = Auth::id() ? Auth::id() : 'guest';
+
+        return "family_search_results_{$filtersHash}_user_{$userId}";
+    }
+
+    /**
+     * پاک کردن کش جستجوی خانواده‌ها
+     */
+    public function clearFamiliesCache()
+    {
+        try {
+            // کش فعلی را پاک می‌کنیم
+            cache()->forget($this->getCacheKey());
+            
+        } catch (\Exception $e) {
+        }
+    }
+    
     public function render() 
     { 
-        $query = Family::query() 
-            ->with([ 
-                'province', 
-                'city', 
-                'members' => fn($q) => $q->orderBy('is_head', 'desc'), 
-                'organization', 
-                'familyCriteria.rankSetting' 
-            ]); 
-    
-        $this->applyFiltersToQuery($query); 
-    
-        // Dynamic Ranking Logic 
-        if ($this->appliedSchemeId) { 
-            $schemeCriteria = \App\Models\RankingSchemeCriterion::where('ranking_scheme_id', $this->appliedSchemeId) 
-                ->pluck('weight', 'rank_setting_id'); 
+        $cacheKey = $this->getCacheKey();
+        $duration = now()->addMinutes(15); // کش به مدت 15 دقیقه
+        
+        // کاهش زمان کش در صورت وجود جستجوی فعال
+        if ($this->hasActiveFilters()) {
+            $duration = now()->addMinutes(5); // جستجوهای فیلتر شده فقط 5 دقیقه کش شوند
+        }
+        
+        // استفاده از کش برای نتایج جستجو
+        $families = cache()->remember($cacheKey, $duration, function() {
+            $query = Family::query() 
+                ->with([ 
+                    'province', 
+                    'city', 
+                    'members' => fn($q) => $q->orderBy('is_head', 'desc'), 
+                    'organization', 
+                    'familyCriteria.rankSetting' 
+                ]); 
             
-            if ($schemeCriteria->isNotEmpty()) { 
-                $cases = []; 
-                foreach ($schemeCriteria as $rank_setting_id => $weight) { 
-                    // Assumption: A 'family_criteria' pivot table exists. 
-                    $cases[] = "CASE WHEN EXISTS (SELECT 1 FROM family_criteria fc WHERE fc.family_id = families.id AND fc.rank_setting_id = {$rank_setting_id} AND fc.has_criteria = true) THEN {$weight} ELSE 0 END"; 
-                } 
+            $this->applyFiltersToQuery($query); 
+            
+            // Dynamic Ranking Logic 
+            if ($this->appliedSchemeId) { 
+                $schemeCriteria = \App\Models\RankingSchemeCriterion::where('ranking_scheme_id', $this->appliedSchemeId) 
+                    ->pluck('weight', 'rank_setting_id'); 
                 
-                if (!empty($cases)) { 
-                    $selectRaw = 'families.*, (' . implode(' + ', $cases) . ') as calculated_score'; 
-                    $query->selectRaw($selectRaw); 
+                if ($schemeCriteria->isNotEmpty()) { 
+                    $cases = []; 
+                    foreach ($schemeCriteria as $rank_setting_id => $weight) { 
+                        // Assumption: A 'family_criteria' pivot table exists. 
+                        $cases[] = "CASE WHEN EXISTS (SELECT 1 FROM family_criteria fc WHERE fc.family_id = families.id AND fc.rank_setting_id = {$rank_setting_id} AND fc.has_criteria = true) THEN {$weight} ELSE 0 END"; 
+                    } 
+                
+                    $caseQuery = implode(' + ', $cases); 
+                
+                    $query->selectRaw("families.*, ({$caseQuery}) as calculated_score") 
+                        ->orderBy('calculated_score', 'desc'); 
                 } 
             } 
-        } 
+            
+            if (!$this->appliedSchemeId) { 
+                $query->orderBy($this->sortField, $this->sortDirection); 
+            } 
+            
+            return $query->paginate($this->perPage); 
+        });
     
-        // Sorting Logic 
-        if ($this->sortField === 'calculated_score' && $this->appliedSchemeId) { 
-            $query->orderBy('calculated_score', $this->sortDirection); 
-        } elseif ($this->sortField) { 
-            $query->orderBy($this->sortField, $this->sortDirection); 
-        } 
-    
-        $families = $query->paginate($this->perPage); 
-        
         // نمایش تعداد خانواده‌های فیلتر شده (فقط موقع تغییر فیلترها)
         if ($this->hasActiveFilters() && request()->has(['status', 'province', 'city', 'deprivation_rank', 'family_rank_range', 'specific_criteria', 'charity', 'region'])) {
             $totalCount = $families->total();
@@ -211,11 +270,15 @@ class FamilySearch extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+        // پاک کردن کش هنگام تغییر فیلترها
+        $this->clearFamiliesCache();
     }
     
     public function updatingStatus()
     {
         $this->resetPage();
+        // پاک کردن کش هنگام تغییر فیلترها
+        $this->clearFamiliesCache();
     }
     
     public function updatingRegion()
@@ -398,16 +461,20 @@ class FamilySearch extends Component
 
     /**
      * بررسی وجود فیلترهای فعال
+     * بررسی می‌کند آیا فیلتری فعال است یا خیر
+     * @return bool
      */
-    public function hasActiveFilters()
+    public function hasActiveFilters(): bool
     {
-        return !empty($this->status) || 
+        return !empty($this->search) || 
+               !empty($this->status) || 
                !empty($this->province) || 
                !empty($this->city) || 
+               !empty($this->region) || 
+               !empty($this->charity) ||
                !empty($this->deprivation_rank) || 
                !empty($this->family_rank_range) || 
-               !empty($this->specific_criteria) || 
-               !empty($this->charity);
+               !empty($this->specific_criteria);
     }
 
     /**
@@ -619,7 +686,6 @@ class FamilySearch extends Component
     {
         try {
             // Debug: بررسی محتوای tempFilters
-            logger('Applying filters - tempFilters:', $this->tempFilters);
             
             // اگر هیچ فیلتری وجود نداره
             if (empty($this->tempFilters)) {
@@ -644,11 +710,9 @@ class FamilySearch extends Component
             // اعمال فیلترهای جدید
             foreach ($this->tempFilters as $filter) {
                 if (empty($filter['value'])) {
-                    logger('Skipping empty filter:', $filter);
                     continue;
                 }
                 
-                logger('Applying filter:', $filter);
                 
                 switch ($filter['type']) {
                     case 'status':
@@ -656,42 +720,35 @@ class FamilySearch extends Component
                         $this->status = $filter['value'];
                         $appliedCount++;
                         $appliedFilters[] = 'وضعیت: ' . $filter['value'];
-                        logger('Applied status filter:', ['value' => $filter['value']]);
                         break;
                     case 'province':
                         $this->province = $filter['value'];
                         $appliedCount++;
                         $provinceName = Province::find($filter['value'])->name ?? $filter['value'];
                         $appliedFilters[] = 'استان: ' . $provinceName;
-                        logger('Applied province filter:', ['value' => $filter['value']]);
                         break;
                     case 'city':
                         $this->city = $filter['value'];
                         $appliedCount++;
                         $cityName = City::find($filter['value'])->name ?? $filter['value'];
                         $appliedFilters[] = 'شهر: ' . $cityName;
-                        logger('Applied city filter:', ['value' => $filter['value']]);
                         break;
                     case 'deprivation_rank':
                         $this->deprivation_rank = $filter['value'];
                         $appliedCount++;
                         $appliedFilters[] = 'رتبه محرومیت: ' . $filter['value'];
-                        logger('Applied deprivation_rank filter:', ['value' => $filter['value']]);
                         break;
                     case 'charity':
                         $this->charity = $filter['value'];
                         $appliedCount++;
                         $charityName = Organization::find($filter['value'])->name ?? $filter['value'];
                         $appliedFilters[] = 'موسسه: ' . $charityName;
-                        logger('Applied charity filter:', ['value' => $filter['value']]);
                         break;
                     case 'members_count':
                         // این فیلتر نیاز به منطق خاص دارد - فعلاً skip می‌کنیم
-                        logger('Skipped members_count filter - needs special logic');
                         break;
                     case 'created_at':
                         // این فیلتر نیاز به منطق خاص دارد - فعلاً skip می‌کنیم
-                        logger('Skipped created_at filter - needs date range logic');
                         break;
                 }
             }
@@ -700,7 +757,6 @@ class FamilySearch extends Component
             $this->resetPage();
             
             // Debug: نمایش وضعیت فعلی فیلترها
-            logger('Applied filters result:', [
                 'status' => $this->status,
                 'province' => $this->province,
                 'city' => $this->city,
@@ -723,7 +779,6 @@ class FamilySearch extends Component
             ]);
             
         } catch (\Exception $e) {
-            logger('Error applying filters:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             $this->dispatch('notify', [
                 'message' => 'خطا در اعمال فیلترها: ' . $e->getMessage(),
                 'type' => 'error'
@@ -918,7 +973,6 @@ class FamilySearch extends Component
         $this->availableRankSettings = RankSetting::active()->ordered()->get();
         
         // ثبت در لاگ برای اشکال‌زدایی - با استفاده از متد count() کالکشن
-        Log::info('مودال رتبه باز شد', [
             'loaded_criteria_count' => count($this->availableRankSettings)
         ]);
         
@@ -1010,7 +1064,6 @@ class FamilySearch extends Component
                 $this->isEditingMode = true; // مشخص می‌کند که در حال ویرایش هستیم نه افزودن
                 
                 // ثبت در لاگ
-                Log::info('ویرایش معیار شروع شد', [
                     'id' => $setting->id,
                     'name' => $setting->name
                 ]);
@@ -1021,7 +1074,6 @@ class FamilySearch extends Component
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('خطا در بارگذاری اطلاعات معیار', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
@@ -1100,7 +1152,6 @@ class FamilySearch extends Component
         $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
             }
         } catch (\Exception $e) {
-            Log::error('خطا در حذف معیار', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);

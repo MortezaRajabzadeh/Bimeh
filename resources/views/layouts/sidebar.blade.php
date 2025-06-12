@@ -4,8 +4,22 @@
     <!-- بخش لوگو -->
     <div class="flex items-center justify-center py-3 border-b border-gray-200">
         <div class="logo-container">
-            <img src="{{ asset('images/logo.jpg') }}" alt="لوگو خیریه" class="logo-image collapsed-logo">
-            <img src="{{ asset('images/image.png') }}" alt="لوگو خیریه" class="logo-image expanded-logo">
+            <img 
+                src="{{ asset('images/logo.jpg') }}" 
+                srcset="{{ asset('images/logo.jpg') }} 1x, {{ asset('images/logo@2x.jpg') }} 2x"
+                alt="لوگو خیریه" 
+                class="logo-image collapsed-logo"
+                loading="lazy"
+                width="120"
+                height="40">
+            <img 
+                src="{{ asset('images/image.png') }}" 
+                srcset="{{ asset('images/image.png') }} 1x, {{ asset('images/image@2x.png') }} 2x"
+                alt="لوگو خیریه" 
+                class="logo-image expanded-logo"
+                loading="lazy"
+                width="180"
+                height="60">
         </div>
     </div>
 

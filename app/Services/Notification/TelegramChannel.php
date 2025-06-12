@@ -36,7 +36,6 @@ class TelegramChannel
             
             return $result->isOk();
         } catch (TelegramException $e) {
-            Log::error('خطا در ارسال پیام تلگرام: ' . $e->getMessage());
             return false;
         }
     }
@@ -63,7 +62,6 @@ class TelegramChannel
             
             return $result->isOk();
         } catch (TelegramException $e) {
-            Log::error('خطا در ارسال پیام با دکمه‌های درون خطی: ' . $e->getMessage());
             return false;
         }
     }
@@ -88,7 +86,6 @@ class TelegramChannel
             
             return $result->isOk();
         } catch (TelegramException $e) {
-            Log::error('خطا در ارسال عکس: ' . $e->getMessage());
             return false;
         }
     }
@@ -113,7 +110,6 @@ class TelegramChannel
             
             return $result->isOk();
         } catch (TelegramException $e) {
-            Log::error('خطا در ارسال سند: ' . $e->getMessage());
             return false;
         }
     }
@@ -134,7 +130,6 @@ class TelegramChannel
             
             return null;
         } catch (TelegramException $e) {
-            Log::error('خطا در دریافت اطلاعات ربات: ' . $e->getMessage());
             return null;
         }
     }
