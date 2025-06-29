@@ -143,6 +143,9 @@ class ShareAllocationModal extends Component
     {
         $this->showModal = false;
         $this->resetErrorMessages();
+        
+        // ارسال رویداد برای بستن مودال
+        $this->dispatch('closeShareModal');
     }
 
     public function addShare()

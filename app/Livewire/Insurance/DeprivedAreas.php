@@ -5,6 +5,9 @@ namespace App\Livewire\Insurance;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Province;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Log;
 
 class DeprivedAreas extends Component
 {
@@ -16,85 +19,136 @@ class DeprivedAreas extends Component
     public $expandedProvinces = []; // آرایه برای نگهداری استان‌های باز شده
     
     protected $paginationTheme = 'tailwind';
+    
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'showOnlyDeprived' => ['except' => false],
+        'perPage' => ['except' => 20]
+    ];
 
     public function render()
     {
-        // شروع query با تمام استان‌ها
-        $query = Province::query()->with([
-            'cities' => function($cityQuery) {
-                $cityQuery->with(['districts' => function($districtQuery) {
-                    if ($this->showOnlyDeprived) {
-                        $districtQuery->where('is_deprived', true);
+        // استفاده از کش برای کاهش بارگذاری داده از دیتابیس
+        $cacheKey = "deprived_areas_" . md5($this->search . '_' . $this->showOnlyDeprived . '_' . $this->perPage . '_' . $this->getPage());
+        $cacheTtl = now()->addHours(6); // کش برای 6 ساعت
+        
+        $provinces = Cache::remember($cacheKey, $cacheTtl, function () {
+            // استفاده از select برای انتخاب فیلدهای مورد نیاز به جای همه فیلدها
+            $query = Province::query()
+                ->select(['id', 'name'])
+                ->with([
+                    'cities' => function($q) {
+                        $q->select(['id', 'name', 'province_id'])
+                            ->with(['districts' => function($q) {
+                                $q->select(['id', 'name', 'city_id', 'is_deprived']);
+                                
+                                if ($this->showOnlyDeprived) {
+                                    $q->where('is_deprived', true);
+                                }
+                                $q->orderBy('name');
+                            }])
+                            ->orderBy('name');
                     }
-                    $districtQuery->orderBy('name');
-                }])->orderBy('name');
-            }
-        ]);
-
-        // اعمال جستجوی پیشرفته
-        if (!empty($this->search)) {
-            $searchTerm = trim($this->search);
-            $cleanSearchTerm = $this->cleanSearchTerm($searchTerm);
+                ]);
             
-            $query->where(function($mainQuery) use ($searchTerm, $cleanSearchTerm) {
-                // جستجوی دقیق در نام استان
-                $mainQuery->where('name', 'like', "%{$searchTerm}%")
-                         ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
+            // بهینه‌سازی کوئری جستجو
+            if (!empty($this->search)) {
+                $searchTerm = trim($this->search);
+                $cleanSearchTerm = $this->cleanSearchTerm($searchTerm);
                 
-                // جستجو در شهرستان‌ها
-                $mainQuery->orWhereHas('cities', function($cityQuery) use ($searchTerm, $cleanSearchTerm) {
-                    $cityQuery->where('name', 'like', "%{$searchTerm}%")
-                             ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
+                // استفاده از یک کوئری ساده‌تر و بهینه‌تر
+                $query->where(function($q) use ($searchTerm, $cleanSearchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                      ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
+                    
+                    // جستجوی شهرستان‌ها و دهستان‌ها فقط اگر عبارت جستجو بیشتر از 2 کاراکتر باشد
+                    if (mb_strlen($searchTerm) > 2) {
+                        $q->orWhereHas('cities', function($q) use ($searchTerm, $cleanSearchTerm) {
+                            $q->where('name', 'like', "%{$searchTerm}%")
+                              ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
+                        });
+                        
+                        $q->orWhereHas('cities.districts', function($q) use ($searchTerm, $cleanSearchTerm) {
+                            $q->where('name', 'like', "%{$searchTerm}%")
+                              ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
+                        });
+                    }
                 });
                 
-                // جستجو در دهستان‌ها
-                $mainQuery->orWhereHas('cities.districts', function($districtQuery) use ($searchTerm, $cleanSearchTerm) {
-                    $districtQuery->where('name', 'like', "%{$searchTerm}%")
-                                 ->orWhere('name', 'like', "%{$cleanSearchTerm}%");
-                });
-                
-                // جستجوی جزئی کلمات
-                if (strlen($searchTerm) > 2) {
+                // جستجوی جزئی کلمات (بهینه شده)
+                if (mb_strlen($searchTerm) > 2) {
                     $words = explode(' ', $searchTerm);
                     if (count($words) > 1) {
-                        foreach ($words as $word) {
-                            if (strlen(trim($word)) > 1) {
-                                $word = trim($word);
-                                $mainQuery->orWhere('name', 'like', "%{$word}%")
-                                         ->orWhereHas('cities', function($cityQuery) use ($word) {
-                                             $cityQuery->where('name', 'like', "%{$word}%");
-                                         })
-                                         ->orWhereHas('cities.districts', function($districtQuery) use ($word) {
-                                             $districtQuery->where('name', 'like', "%{$word}%");
-                                         });
+                        $query->orWhere(function($q) use ($words) {
+                            foreach ($words as $word) {
+                                if (mb_strlen(trim($word)) > 2) {
+                                    $word = trim($word);
+                                    $q->orWhere('name', 'like', "%{$word}%");
+                                }
                             }
-                        }
+                        });
                     }
                 }
+            }
+            
+            // فیلتر کردن در سطح SQL به جای PHP
+            $query->whereHas('cities', function($q) {
+                $q->whereHas('districts', function($q) {
+                    if ($this->showOnlyDeprived) {
+                        $q->where('is_deprived', true);
+                    }
+                });
             });
-        }
-
-        // فیلتر کردن استان‌هایی که دهستان دارند
-        $query->whereHas('cities.districts');
+            
+            if (!empty($this->search)) {
+                // اگر جستجو داریم، همه نتایج را برگردان و در PHP مرتب کن
+                $results = $query->orderBy('name')->get();
+                
+                // مرتب‌سازی ساده‌تر در PHP
+                if (mb_strlen($this->search) > 2) {
+                    $searchTerm = mb_strtolower($this->cleanSearchTerm($this->search));
+                    
+                    $results = $results->map(function($province) use ($searchTerm) {
+                        // یک امتیاز ساده برای مرتب‌سازی
+                        $provinceName = mb_strtolower($province->name);
+                        $score = 0;
+                        
+                        if (strpos($provinceName, $searchTerm) !== false) {
+                            $score += 3;
+                        }
+                        
+                        $province->search_score = $score;
+                        return $province;
+                    })->sortByDesc('search_score');
+                }
+                
+                // دستی صفحه‌بندی کن (بهینه‌سازی شده)
+                $page = $this->getPage();
+                $perPage = $this->perPage;
+                $offset = ($page - 1) * $perPage;
+                
+                $items = $results->slice($offset, $perPage);
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $items,
+                    $results->count(),
+                    $perPage,
+                    $page,
+                    ['path' => request()->url(), 'pageName' => 'page']
+                );
+                
+                return $paginator;
+            }
+            
+            return $query->orderBy('name')->paginate($this->perPage);
+        });
         
-        // اگر جستجو داریم، بر اساس مطابقت مرتب کن
         if (!empty($this->search)) {
-            $provinces = $this->getSortedResultsByRelevance($query, $this->search);
-            // اگر جستجو داریم، تمام استان‌ها رو باز کن
+            // فقط در صورت جستجو همه استان‌ها باز شوند
             foreach ($provinces as $province) {
                 $this->expandedProvinces[$province->id] = true;
             }
-        } else {
-            $provinces = $query->orderBy('name')->paginate($this->perPage);
         }
-
-        // فیلتر کردن شهرستان‌هایی که دهستان ندارند (بعد از بارگذاری)
-        foreach ($provinces as $province) {
-            $province->cities = $province->cities->filter(function($city) {
-                return $city->districts->count() > 0;
-            });
-        }
-
+        
         return view('livewire.insurance.deprived-areas', [
             'provinces' => $provinces,
         ]);
@@ -132,77 +186,42 @@ class DeprivedAreas extends Component
     }
 
     /**
-     * مرتب‌سازی نتایج بر اساس میزان مطابقت
+     * پاک‌سازی کش در صورت تغییر فیلترها
      */
-    private function getSortedResultsByRelevance($query, $searchTerm)
+    public function updatedShowOnlyDeprived()
     {
-        $allResults = $query->get();
-        $searchTerm = strtolower($this->cleanSearchTerm($searchTerm));
-        
-        // محاسبه امتیاز مطابقت برای هر استان
-        $scoredResults = $allResults->map(function($province) use ($searchTerm) {
-            $score = 0;
+        $this->resetPage();
+        $this->clearDeprivedAreasCache();
+    }
+    
+    /**
+     * پاک‌سازی کش صفحه
+     */
+    private function clearDeprivedAreasCache()
+    {
+        try {
+            // یافتن و حذف کلیدهای مربوط به کش این صفحه
+            $cachePrefix = 'deprived_areas_';
             
-            // امتیاز مطابقت نام استان (بالاترین اولویت)
-            $provinceName = strtolower($province->name);
-            if ($provinceName === $searchTerm) {
-                $score += 1000; // مطابقت کامل
-            } elseif (strpos($provinceName, $searchTerm) === 0) {
-                $score += 800; // شروع با کلیدواژه
-            } elseif (strpos($provinceName, $searchTerm) !== false) {
-                $score += 600; // شامل کلیدواژه
-            }
-            
-            // امتیاز مطابقت شهرستان‌ها
-            foreach ($province->cities as $city) {
-                $cityName = strtolower($city->name);
-                if ($cityName === $searchTerm) {
-                    $score += 500;
-                } elseif (strpos($cityName, $searchTerm) === 0) {
-                    $score += 400;
-                } elseif (strpos($cityName, $searchTerm) !== false) {
-                    $score += 300;
-                }
-                
-                // امتیاز مطابقت دهستان‌ها
-                foreach ($city->districts as $district) {
-                    $districtName = strtolower($district->name);
-                    if ($districtName === $searchTerm) {
-                        $score += 200;
-                    } elseif (strpos($districtName, $searchTerm) === 0) {
-                        $score += 150;
-                    } elseif (strpos($districtName, $searchTerm) !== false) {
-                        $score += 100;
+            if (config('cache.default') === 'redis') {
+                try {
+                    $redis = Redis::connection();
+                    $keys = $redis->keys(config('cache.prefix') . ':' . $cachePrefix . '*');
+                    
+                    if (!empty($keys)) {
+                        foreach ($keys as $key) {
+                            $redis->del($key);
+                        }
                     }
+                } catch (\Exception $e) {
+                    Log::error('خطا در پاکسازی کش مناطق محروم (Redis): ' . $e->getMessage());
                 }
+            } else {
+                Cache::flush(); // برای درایورهای دیگر، فقط کل کش را پاک می‌کنیم
             }
-            
-            $province->search_score = $score;
-            return $province;
-        });
-        
-        // مرتب‌سازی بر اساس امتیاز (از بالا به پایین)
-        $sortedResults = $scoredResults->sortByDesc('search_score')->values();
-        
-        // تبدیل به paginated result
-        $page = request()->get('page', 1);
-        $perPage = $this->perPage;
-        $offset = ($page - 1) * $perPage;
-        
-        $paginatedItems = $sortedResults->slice($offset, $perPage);
-        
-        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedItems,
-            $sortedResults->count(),
-            $perPage,
-            $page,
-            [
-                'path' => request()->url(),
-                'pageName' => 'page',
-            ]
-        );
-        
-        return $paginated;
+        } catch (\Exception $e) {
+            Log::error('خطا در پاکسازی کش مناطق محروم: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -225,17 +244,20 @@ class DeprivedAreas extends Component
     public function updatingSearch()
     {
         $this->resetPage();
+        $this->clearDeprivedAreasCache();
     }
 
     public function updatingPerPage()
     {
         $this->resetPage();
+        $this->clearDeprivedAreasCache();
     }
 
     public function toggleFilter()
     {
         $this->showOnlyDeprived = !$this->showOnlyDeprived;
         $this->resetPage();
+        $this->clearDeprivedAreasCache();
     }
 
     public function clearSearch()

@@ -64,7 +64,7 @@ class FamilyWizard extends Component
             $this->family_code = $this->generateUniqueFamilyCode();
         }
     }
-    
+
     public function updatedProvinceId($value): void
     {
         if ($this->city_id || $this->district_id) {
@@ -76,7 +76,7 @@ class FamilyWizard extends Component
             ->cursor()
             ->collect();
     }
-    
+
     public function updatedCityId($value): void
     {
         $this->reset(['district_id', 'districts']);
@@ -93,14 +93,14 @@ class FamilyWizard extends Component
 
     public function nextStep()
     {
-        // $this->validate(); // اعتبارسنجی قبل از رفتن به مرحله بعد
-            'currentStep' => $this->currentStep,
-            'province_id' => $this->province_id,
-            'city_id' => $this->city_id,
-            'address' => $this->address,
-            'members' => $this->members,
-            'head_member_index' => $this->head_member_index,
-        ]);
+        // // $this->validate(); // اعتبارسنجی قبل از رفتن به مرحله بعد
+        //     'currentStep' => $this->currentStep,
+        //     'province_id' => $this->province_id,
+        //     'city_id' => $this->city_id,
+        //     'address' => $this->address,
+        //     'members' => $this->members,
+        //     'head_member_index' => $this->head_member_index,
+        // ]);
         try {
             $result = $this->validateCurrentStep();
             if ($result === true && $this->currentStep < $this->totalSteps) {
@@ -162,7 +162,7 @@ class FamilyWizard extends Component
                     if (!preg_match('/^[0-9]{10}$/', $member['national_code'])) {
                         throw new \Exception("کد ملی عضو خانواده شماره " . ($index + 1) . " باید ۱۰ رقم باشد");
                     }
-                    
+
                     // اعتبارسنجی اطلاعات سرپرست
                     if ((int)$index === (int)$this->head_member_index) {
                         if (empty($member['phone'])) {
@@ -206,9 +206,9 @@ class FamilyWizard extends Component
         }
 
         if ($step == 3) {
-            return $this->canProceedToStep(2) && 
-                   !empty($this->members) && 
-                   count($this->members) > 0 && 
+            return $this->canProceedToStep(2) &&
+                   !empty($this->members) &&
+                   count($this->members) > 0 &&
                    isset($this->head_member_index);
         }
 
@@ -341,6 +341,7 @@ class FamilyWizard extends Component
 
     public function submit()
     {
+        Log::debug('FamilyWizard::submit - starting', [
             'step' => $this->currentStep,
             'confirm' => $this->confirmSubmission,
             'members_count' => count($this->members),
@@ -349,6 +350,7 @@ class FamilyWizard extends Component
             $this->validate();
         }
         if (!$this->validateCurrentStep()) {
+            Log::debug('FamilyWizard::submit - validation failed', [
                 'step' => $this->currentStep,
                 'confirm' => $this->confirmSubmission,
                 'members_count' => count($this->members),
@@ -367,7 +369,7 @@ class FamilyWizard extends Component
                 'registered_by' => Auth::id(),
                 'status' => 'pending', // در انتظار تایید بیمه
                 'wizard_status' => 'pending'
-                
+
             ]);
 
             // ذخیره تصویر خانواده (انتقال از tmp به media)
@@ -410,6 +412,7 @@ class FamilyWizard extends Component
                 ]);
             }
 
+            Log::debug('FamilyWizard::submit - family created', [
                 'family_id' => $family->id,
             ]);
 
@@ -417,6 +420,7 @@ class FamilyWizard extends Component
 
             return $this->redirectRoute('charity.dashboard', ['highlight' => $family->id]);
         } catch (\Exception $e) {
+            Log::error('FamilyWizard::submit - exception', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -449,26 +453,26 @@ class FamilyWizard extends Component
     {
         $maxAttempts = 100;
         $attempt = 0;
-        
+
         do {
             $attempt++;
-            
+
             // تولید کد بر اساس تاریخ جاری + ID سازمان + شماره تصادفی
             $year = now()->format('Y');
             $month = str_pad(now()->format('m'), 2, '0', STR_PAD_LEFT);
             $day = str_pad(now()->format('d'), 2, '0', STR_PAD_LEFT);
             $charityId = str_pad(Auth::user()->organization_id ?? 1, 3, '0', STR_PAD_LEFT);
             $randomSuffix = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            
+
             $code = $year . $month . $day . $charityId . $randomSuffix;
-            
+
             // اگر بیش از حد تلاش کردیم، یک کد کاملاً تصادفی 15 رقمی تولید کنیم
             if ($attempt > $maxAttempts) {
                 $code = str_pad(strval(random_int(100000000000000, 999999999999999)), 15, '0', STR_PAD_LEFT);
             }
-            
+
         } while (\App\Models\Family::where('family_code', $code)->exists() && $attempt <= $maxAttempts + 10);
-        
+
         return $code;
     }
 
@@ -518,4 +522,4 @@ class FamilyWizard extends Component
     {
         $this->head_member_index = $value;
     }
-} 
+}

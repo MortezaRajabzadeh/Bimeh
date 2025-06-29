@@ -257,6 +257,7 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
 Route::get('/families/download', [FamilyDownloadController::class, 'download'])
     ->name('families.download-route')
     ->middleware(['auth', 'signed']);
+    
 Route::post('/families/download-excel', [App\Http\Controllers\FamilyController::class, 'downloadExcel'])
 ->name('families.download-excel')
 ->middleware('auth');

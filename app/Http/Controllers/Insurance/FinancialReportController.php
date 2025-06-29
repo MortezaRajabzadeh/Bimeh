@@ -25,19 +25,19 @@ class FinancialReportController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 15);
-        
+
         // محاسبه موجودی کل با کش (مدت زمان کش: 10 دقیقه)
         $totalCredit = Cache::remember('financial_report_total_credit', 600, function () {
             return FundingTransaction::sum('amount');
         });
-        
+
         $totalDebit = Cache::remember('financial_report_total_debit', 600, function () {
-            return InsuranceAllocation::sum('amount') + 
+            return InsuranceAllocation::sum('amount') +
                    InsuranceImportLog::sum('total_insurance_amount') +
                    InsurancePayment::sum('total_amount') +
                    ShareAllocationLog::where('status', 'completed')->sum('total_amount');
         });
-        
+
         $balance = $totalCredit - $totalDebit;
 
         // گرفتن همه تراکنش‌ها با جزئیات بهتر
@@ -49,7 +49,7 @@ class FinancialReportController extends Controller
             $isAllocation = $trx->allocated ?? false;
             $title = $isAllocation ? 'تخصیص بودجه' : __('financial.transaction_types.budget_allocation');
             $type = $isAllocation ? 'debit' : 'credit';
-            
+
             $allTransactions->push([
                 'id' => $trx->id,
                 'title' => $title,
@@ -67,13 +67,13 @@ class FinancialReportController extends Controller
         $familyAllocations = \App\Models\FamilyFundingAllocation::with(['family.members', 'fundingSource', 'transaction'])
             ->where('status', '!=', \App\Models\FamilyFundingAllocation::STATUS_PENDING)
             ->get();
-            
+
         foreach ($familyAllocations as $alloc) {
             // فقط تخصیص‌هایی که به تراکنش مالی متصل نیستند را اضافه می‌کنیم
             // تا از دوبار شمارش جلوگیری شود
             if ($alloc->transaction_id === null) {
                 $membersCount = $alloc->family ? $alloc->family->members->count() : 0;
-                
+
                 $allTransactions->push([
                     'id' => $alloc->id,
                     'title' => 'تخصیص بودجه خانواده',
@@ -101,7 +101,7 @@ class FinancialReportController extends Controller
         $insuranceAllocations = InsuranceAllocation::with(['family.members'])->get();
         foreach ($insuranceAllocations as $alloc) {
             $membersCount = $alloc->family ? $alloc->family->members->count() : 0;
-            
+
             $allTransactions->push([
                 'id' => $alloc->id,
                 'title' => __('financial.transaction_types.premium_payment'),
@@ -131,7 +131,7 @@ class FinancialReportController extends Controller
                 is_array($log->updated_family_codes) ? $log->updated_family_codes : []
             );
             $familyCount = count($allCodes);
-            
+
             // محاسبه تعداد اعضا
             $membersCount = 0;
             if ($familyCount > 0) {
@@ -168,7 +168,7 @@ class FinancialReportController extends Controller
         foreach ($insurancePayments as $payment) {
             $family = $payment->familyInsurance ? $payment->familyInsurance->family : null;
             $membersCount = $payment->insured_persons_count ?? ($family ? $family->members->count() : 0);
-            
+
             $allTransactions->push([
                 'id' => $payment->id,
                 'title' => __('financial.transaction_types.premium_payment'),
@@ -201,7 +201,7 @@ class FinancialReportController extends Controller
         foreach ($insuranceShares as $share) {
             $family = $share->familyInsurance->family;
             $membersCount = $family ? $family->members->count() : 0;
-            
+
             // هر سهم را به عنوان یک تراکنش بدهی جداگانه در نظر می‌گیریم
             $allTransactions->push([
                 'id' => 'share-' . $share->id, // یک شناسه منحصر به فرد
@@ -253,7 +253,7 @@ class FinancialReportController extends Controller
         $currentPage = $request->get('page', 1);
         $offset = ($currentPage - 1) * $perPage;
         $paginatedTransactions = $sortedTransactions->slice($offset, $perPage);
-        
+
         $transactionsPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
             $paginatedTransactions,
             $sortedTransactions->count(),
@@ -285,32 +285,85 @@ class FinancialReportController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $fileName = 'financial_report_' . date('Y-m-d_H-i-s') . '.xlsx';
-        
-        return Excel::download(
-            new FinancialReportExport($request->all()),
-            $fileName
-        );
-    }
+        try {
+            // اعتبارسنجی ورودی‌ها
+            $validated = $request->validate([
+                'from_date' => 'nullable|date',
+                'to_date' => 'nullable|date|after_or_equal:from_date',
+                'type' => 'nullable|in:credit,debit,all',
+                'format' => 'nullable|in:xlsx,csv'
+            ]);
 
+            // بررسی دسترسی کاربر
+            if (!auth()->user()->can('view advanced reports')) {
+                return back()->with('error', 'شما دسترسی لازم برای دانلود گزارش را ندارید.');
+            }
+
+            // بررسی وجود کلاس Export
+            if (!class_exists(\App\Exports\FinancialReportExport::class)) {
+                return back()->with('error', 'کلاس صدور گزارش یافت نشد. لطفاً با مدیر سیستم تماس بگیرید.');
+            }
+
+            // تولید نام فایل با تاریخ شمسی
+            $persianDate = jdate(now())->format('Y-m-d_H-i-s');
+            $format = $validated['format'] ?? 'xlsx';
+            $fileName = "financial_report_{$persianDate}.{$format}";
+
+            // ثبت لاگ شروع عملیات
+
+
+            // تولید گزارش
+            $export = new \App\Exports\FinancialReportExport($validated);
+
+            // انتخاب نوع فایل
+            $excelType = $format === 'csv' ?
+                \Maatwebsite\Excel\Excel::CSV :
+                \Maatwebsite\Excel\Excel::XLSX;
+
+            // دانلود فایل
+            return Excel::download($export, $fileName, $excelType, [
+                'Content-Type' => $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()
+                ->withErrors($e->validator)
+                ->with('error', 'داده‌های ورودی نامعتبر است.');
+
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return back()->with('error', 'شما دسترسی لازم برای این عملیات را ندارید.');
+
+        } catch (\Maatwebsite\Excel\Exceptions\LaravelExcelException $e) {
+
+
+            return back()->with('error', 'خطا در تولید فایل اکسل: ' . $e->getMessage());
+
+        } catch (\Exception $e) {
+            // ثبت خطای عمومی در لاگ
+
+
+            // نمایش پیام خطا به کاربر
+            return back()->with('error', 'خطا در تولید گزارش: ' . $e->getMessage());
+        }
+    }
     /**
      * نمایش جزئیات پرداخت
      */
     public function paymentDetails(Request $request, $paymentId)
     {
         $type = $request->get('type', 'allocation'); // allocation, payment, import, family_funding
-        
+
         switch ($type) {
             case 'allocation':
                 $payment = InsuranceAllocation::with(['family.members'])->findOrFail($paymentId);
                 $families = collect([$payment->family]);
                 break;
-                
+
             case 'payment':
                 $payment = InsurancePayment::with(['familyInsurance.family', 'details.member'])->findOrFail($paymentId);
                 $families = collect([$payment->familyInsurance->family]);
                 break;
-                
+
             case 'import':
                 $importLog = InsuranceImportLog::findOrFail($paymentId);
                 $allCodes = array_merge(
@@ -319,17 +372,17 @@ class FinancialReportController extends Controller
                 );
                 $families = Family::whereIn('family_code', $allCodes)->with('members')->get();
                 break;
-                
+
             case 'family_funding':
                 $allocation = \App\Models\FamilyFundingAllocation::with(['family.members', 'fundingSource'])->findOrFail($paymentId);
                 $families = collect([$allocation->family]);
                 $payment = $allocation;
                 break;
-                
+
             default:
                 abort(404);
         }
-        
+
         return view('insurance.payment-details', compact('families', 'type', 'paymentId', 'payment'));
     }
 
@@ -347,11 +400,11 @@ class FinancialReportController extends Controller
     {
         $share = \App\Models\InsuranceShare::with(['family.members', 'fundingSource', 'creator'])
             ->findOrFail($shareId);
-        
+
         $family = $share->family;
         $shareService = new \App\Services\InsuranceShareService();
         $shareSummary = $shareService->getSummary($family->id);
-        
+
         return view('insurance.share-details', [
             'share' => $share,
             'family' => $family,
@@ -369,7 +422,7 @@ class FinancialReportController extends Controller
         Cache::forget('funding_transactions_with_source');
         Cache::forget('family_allocations_with_relations');
         Cache::forget('insurance_allocations_with_family');
-        
+
         return back()->with('success', 'کش گزارش مالی پاک شد.');
     }
 }

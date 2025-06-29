@@ -17,6 +17,7 @@
         "hekmatinasser/verta": "^8.5",
         "imanghafoori/php-search-replace": "^1.1",
         "intervention/image": "^3.11",
+        "intervention/image-laravel": "^1.5",
         "laravel/framework": "^12.0",
         "laravel/pulse": "^1.4",
         "laravel/sanctum": "^4.0",

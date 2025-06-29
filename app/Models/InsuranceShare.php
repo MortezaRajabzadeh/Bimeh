@@ -61,9 +61,15 @@ class InsuranceShare extends Model
      */
     public function family()
     {
-        return $this->belongsTo(Family::class, 'id')->withDefault();
+        return $this->hasOneThrough(
+            Family::class,
+            FamilyInsurance::class,
+            'id', // کلید در family_insurances
+            'id', // کلید در families
+            'family_insurance_id', // کلید در insurance_shares
+            'family_id' // کلید در family_insurances
+        );
     }
-
     /**
      * رابطه با بیمه خانواده
      */
@@ -88,13 +94,15 @@ class InsuranceShare extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * رابطه با لاگ ایمپورت
+
+
+        /**
+     * ✅ رابطه با لاگ ایمپورت
      */
     public function importLog()
     {
+        return $this->belongsTo(ShareAllocationLog::class, 'import_log_id');
     }
-
     /**
      * محاسبه مبلغ بر اساس درصد و مبلغ کل حق بیمه
      */
@@ -104,6 +112,31 @@ class InsuranceShare extends Model
         return $this->amount;
     }
 
+        /**
+     * ✅ اسکوپ برای سهم‌های پرداخت شده
+     */
+    public function scopePaid($query)
+    {
+        return $query->where('is_paid', true);
+    }
+
+    /**
+     * ✅ اسکوپ برای سهم‌های پرداخت نشده
+     */
+    public function scopeUnpaid($query)
+    {
+        return $query->where('is_paid', false);
+    }
+
+    /**
+     * ✅ اسکوپ برای فیلتر بر اساس خانواده
+     */
+    public function scopeForFamily($query, $familyId)
+    {
+        return $query->whereHas('familyInsurance', function($q) use ($familyId) {
+            $q->where('family_id', $familyId);
+        });
+    }
     /**
      * دریافت مبلغ فرمت شده
      */
@@ -147,15 +180,41 @@ class InsuranceShare extends Model
     /**
      * دریافت نام پرداخت کننده بر اساس نوع
      */
+   /**
+     * ✅ دریافت نام پرداخت کننده بر اساس نوع (اصلاح شده)
+     */
     public function getPayerNameAttribute($value)
     {
-        if ($this->payer_organization_id) {
-            return $this->payerOrganization?->name ?? $value;
-        } elseif ($this->payer_user_id) {
-            return $this->payerUser?->name ?? $value;
+        if ($this->payer_organization_id && $this->payerOrganization) {
+            return $this->payerOrganization->name;
+        } elseif ($this->payer_user_id && $this->payerUser) {
+            return $this->payerUser->name;
         }
-        
-        return $value;
+
+        return $value ?? 'نامشخص';
+    }
+        /**
+     * ✅ محاسبه مجموع سهم‌های یک خانواده
+     */
+    public static function getTotalSharesForFamily($familyId)
+    {
+        return static::forFamily($familyId)->sum('amount');
+    }
+
+    /**
+     * ✅ محاسبه مجموع درصد سهم‌های یک خانواده
+     */
+    public static function getTotalPercentageForFamily($familyId)
+    {
+        return static::forFamily($familyId)->sum('percentage');
+    }
+
+    /**
+     * ✅ بررسی اینکه آیا سهم‌بندی کامل است (100%)
+     */
+    public static function isFullyAllocatedForFamily($familyId)
+    {
+        return static::getTotalPercentageForFamily($familyId) >= 100;
     }
 
     /**

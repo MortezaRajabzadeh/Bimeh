@@ -3,6 +3,7 @@
     showFilterModal: false,
     showRankModal: @entangle('showRankModal'),
     filters: @entangle('tempFilters'),
+    deleteReason: '',
     addFilter() {
         if (!this.filters) {
             this.filters = [];
@@ -562,24 +563,13 @@ total items: {{ $families->count() ?? 0 }}</pre>
                             <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
                     @elseif($activeTab === 'approved')
-                        <button type="button" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50"
-                            wire:click="prepareInsuranceExcelDownload"
-                            :disabled="downloading || {{ count($selected) === 0 ? 'true' : 'false' }}">
-
-                            <!-- آیکون لودینگ Alpine.js -->
-                            <svg x-show="downloading" class="animate-spin h-5 w-5 ml-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-
-                            <!-- آیکون دانلود -->
-                            <svg x-show="!downloading" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 011-1h10a2 2 0 012 2v-1m-4-4l-4 4m0 0L8 8m4-4v12" />
-                            </svg>
-
-                            <span x-text="downloading ? 'در حال دانلود...' : 'دریافت فایل'"></span>
-                            <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
-                        </button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                    wire:click="downloadSampleTemplate">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    دانلود فایل نمونه
+                </button>
                         <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
                             wire:click="showDeleteConfirmation"
                             {{ count($selected) === 0 ? 'disabled' : '' }}>
@@ -743,14 +733,17 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         @endif
 
                         @if($specific_criteria && isset($availableRankSettings))
-                            @php $criteria = $availableRankSettings->find($specific_criteria); @endphp
-                            @if($criteria)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                    معیار: {{ $criteria->name }}
-                                    <button wire:click="$set('specific_criteria', '')" class="mr-1 text-indigo-600 hover:text-indigo-800">×</button>
-                                </span>
-                            @endif
+                        @php
+                            $criteriaIds = explode(',', $specific_criteria);
+                            $selectedCriteriaNames = $availableRankSettings->whereIn('id', $criteriaIds)->pluck('name');
+                        @endphp
+                        @if($selectedCriteriaNames->count() > 0)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                معیارها: {{ $selectedCriteriaNames->implode('، ') }}
+                                <button wire:click="clearCriteriaFilter" class="mr-1 text-indigo-600 hover:text-indigo-800">×</button>
+                            </span>
                         @endif
+                    @endif
 
                         <!-- دکمه پاک کردن همه فیلترها -->
                         <button wire:click="clearAllFilters" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors">
@@ -766,55 +759,56 @@ total items: {{ $families->count() ?? 0 }}</pre>
             {{-- نمایش لیست خانواده‌ها --}}
             <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
                 @if($activeTab === 'excel')
-                    <div class="bg-white p-8 text-center">
-                        <div class="mb-6">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <h3 class="mt-4 text-xl font-bold text-gray-800">ثبت اطلاعات صدور بیمه</h3>
-                            <p class="mt-2 text-gray-600">فایل اطلاعات صدور بیمه را آپلود کنید تا اطلاعات بیمه‌نامه ثبت شود.</p>
-                        </div>
-
-                        <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8 max-w-lg mx-auto">
-                            <div class="flex flex-col items-center">
-                                <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
-                                <label for="excel-upload-input" class="w-full cursor-pointer">
-                                    <div class="bg-green-600 hover:bg-green-700 text-white rounded-xl py-4 text-lg font-bold flex items-center justify-center gap-2 transition duration-200 ease-in-out">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        آپلود فایل اطلاعات صدور
-                                    </div>
-                                </label>
-
-                                @if($insuranceExcelFile)
-                                    <div class="mt-4 text-green-700 text-sm font-bold flex items-center justify-center gap-2 animate-fade-in">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        فایل انتخاب شد: {{ $insuranceExcelFile->getClientOriginalName() }}
-                                    </div>
-                                    <button type="submit" class="mt-4 w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 text-lg font-bold transition duration-200 ease-in-out animate-fade-in">
-                                        تایید و ارسال فایل
-                                    </button>
-                                @endif
-
-                                @error('insuranceExcelFile')
-                                    <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </form>
-
-                        <div class="mt-8 text-gray-600 text-sm">
-                            <p class="font-bold mb-2">راهنمای آپلود فایل:</p>
-                            <ul class="list-disc list-inside text-right">
-                                <li>فایل باید در فرمت اکسل (.xlsx یا .xls) باشد</li>
-                                <li>برای هر خانواده، اطلاعات بیمه را به طور کامل وارد کنید</li>
-                                <li>از تغییر ساختار فایل خودداری کنید</li>
-                            </ul>
-                        </div>
+                {{-- تب در انتظار صدور - آپلود فایل اکسل --}}
+                <div class="bg-white p-8 text-center">
+                    <div class="mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h3 class="mt-4 text-xl font-bold text-gray-800">ثبت اطلاعات صدور بیمه</h3>
+                        <p class="mt-2 text-gray-600">فایل اطلاعات صدور بیمه را آپلود کنید تا اطلاعات بیمه‌نامه ثبت شود.</p>
                     </div>
-                @else
+
+                    <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8 max-w-lg mx-auto">
+                        <div class="flex flex-col items-center">
+                            <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
+                            <label for="excel-upload-input" class="w-full cursor-pointer">
+                                <div class="bg-green-600 hover:bg-green-700 text-white rounded-xl py-4 text-lg font-bold flex items-center justify-center gap-2 transition duration-200 ease-in-out">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    آپلود فایل اطلاعات صدور
+                                </div>
+                            </label>
+
+                            @if($insuranceExcelFile)
+                                <div class="mt-4 text-green-700 text-sm font-bold flex items-center justify-center gap-2 animate-fade-in">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    فایل انتخاب شد: {{ $insuranceExcelFile->getClientOriginalName() }}
+                                </div>
+                                <button type="submit" class="mt-4 w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 text-lg font-bold transition duration-200 ease-in-out animate-fade-in">
+                                    تایید و ارسال فایل
+                                </button>
+                            @endif
+
+                            @error('insuranceExcelFile')
+                                <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </form>
+
+                    <div class="mt-8 text-gray-600 text-sm">
+                        <p class="font-bold mb-2">راهنمای آپلود فایل:</p>
+                        <ul class="list-disc list-inside text-right">
+                            <li>فایل باید در فرمت اکسل (.xlsx یا .xls) باشد</li>
+                            <li>برای هر خانواده، اطلاعات بیمه را به طور کامل وارد کنید</li>
+                            <li>از تغییر ساختار فایل خودداری کنید</li>
+                        </ul>
+                    </div>
+                </div>
+            @else
                 <div class="w-full overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -932,13 +926,9 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                         @if($sf === 'head_name')
                                             <span class="mr-1 text-[0.5rem]">
                                                 @if($sd === 'asc')
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                                    </svg>
+                                                    ▲
                                                 @else
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                    </svg>
+                                                    ▼
                                                 @endif
                                             </span>
                                         @else
@@ -996,7 +986,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 <!-- 11. آیکون‌های اعتبارسنجی -->
                                 <th scope="col" class="px-5 py-3 text-center font-medium">اعتبارسنجی</th>
 
-                                <!-- 11. جزئیات -->
+
                                 <th scope="col" class="px-5 py-3 text-center font-medium">جزئیات</th>
                             </tr>
                         </thead>
@@ -1116,26 +1106,43 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                     </svg>
-                                                    {{ $head->first_name }} {{ $head->last_name }}
+                                                        {{ $head->first_name }} {{ $head->last_name }}
                                                 </span>
-                                            </div>
+                                                    </div>
                                             @if($head->national_code)
                                                 <div class="text-center mt-1">
                                                     <span class="text-xs text-gray-500">کد ملی: {{ $head->national_code }}</span>
-                                                </div>
+                                                    </div>
                                             @endif
                                         @else
                                             <div class="flex items-center justify-center">
                                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
                                                     ⚠️ بدون سرپرست
                                                 </span>
-                                            </div>
+                                                </div>
                                         @endif
                                     </td>
 
                                     <!-- 8. خیریه معرف -->
-                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
-                                        {{ $family->charity->name ?? 'نامشخص' }}
+                                    <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                                        @if($family->charity)
+                                            @if($family->charity->logo_path)
+                                                <div class="flex justify-center">
+                                                    <img
+                                                        src="{{ $family->charity->logo_url }}"
+                                                        alt="{{ $family->charity->name }}"
+                                                        class="h-8 w-8 rounded-full object-cover"
+                                                        title="{{ $family->charity->name }}"
+                                                        loading="lazy"
+                                                        onerror="this.onerror=null; this.src='{{ asset('images/default-organization.png') }}'"
+                                                    >
+                                                </div>
+                                            @else
+                                                <span class="truncate">{{ $family->charity->name }}</span>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-400">نامشخص</span>
+                                        @endif
                                     </td>
 
                                     <!-- 9. تاریخ عضویت -->
@@ -1240,6 +1247,14 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                     <td class="px-3 py-3 text-sm text-gray-800">{{ $member->occupation ?? 'بیکار' }}</td>
                                                                     <td class="px-3 py-3 text-sm text-gray-800">
                                                                         @php
+                                                                            $problemLabels = [
+                                                                                'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-yellow-100 text-yellow-800'],
+                                                                                'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-red-100 text-red-800'],
+                                                                                'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-purple-100 text-purple-800'],
+                                                                                'disability' => ['label' => 'ناتوانی جسمی', 'color' => 'bg-blue-100 text-blue-800'],
+                                                                                'single_parent' => ['label' => 'سرپرست زن', 'color' => 'bg-pink-100 text-pink-800'],
+                                                                            ];
+
                                                                             $memberProblems = [];
                                                                             if (is_array($member->problem_type)) {
                                                                                 foreach ($member->problem_type as $problem) {
@@ -1253,7 +1268,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                         @if(count($memberProblems) > 0)
                                                                             <div class="flex flex-wrap gap-1">
                                                                                 @foreach($memberProblems as $problem)
-                                                                                    <span class="px-2 py-0.5 rounded-md text-xs {{ $problem['color'] }}">
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $problem['color'] }}">
                                                                                         {{ $problem['label'] }}
                                                                                     </span>
                                                                                 @endforeach
@@ -1267,31 +1282,18 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                         <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
                                                                             @if($member->organization)
                                                                                 @if($member->organization->logo_path)
-                                                                                    <img 
-                                                                                        src="{{ $member->organization->logoUrl }}"
-                                                                                        srcset="{{ $member->organization->logoUrl }} 1x, {{ $member->organization->logoUrl }} 2x"
+                                                                                    <img
+                                                                                        src="{{ $member->organization->logo_url }}"
                                                                                         alt="{{ $member->organization->name }}"
-                                                                                        class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
+                                                                                        class="h-8 w-8 rounded-full object-cover"
                                                                                         title="{{ $member->organization->name }}"
+                                                                                        onerror="this.onerror=null; this.src='{{ asset('images/default-organization.png') }}';"
                                                                                         loading="lazy"
-                                                                                        width="80"
-                                                                                        height="32">
+                                                                                        width="32"
+                                                                                        height="32"
+                                                                                    >
                                                                                 @else
-                                                                                    <span class="charity-name text-sm">{{ $member->organization->name }}</span>
-                                                                                @endif
-                                                                            @elseif($family->charity)
-                                                                                @if($family->charity->logo_path)
-                                                                                    <img 
-                                                                                        src="{{ $family->charity->logoUrl }}"
-                                                                                        srcset="{{ $family->charity->logoUrl }} 1x, {{ $family->charity->logoUrl }} 2x"
-                                                                                        alt="{{ $family->charity->name }}"
-                                                                                        class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
-                                                                                        title="{{ $family->charity->name }}"
-                                                                                        loading="lazy"
-                                                                                        width="80"
-                                                                                        height="32">
-                                                                                @else
-                                                                                    <span class="charity-name text-sm">{{ $family->charity->name }}</span>
+                                                                                    {{ $member->organization->name }}
                                                                                 @endif
                                                                             @else
                                                                                 <span class="text-gray-400">-</span>
@@ -1883,7 +1885,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         تست فیلترها
                     </button>
                 </div>
-
+       <!-- تایید فیلتر رتبه -->
                 <button @click="setTimeout(() => { $wire.applyFilters(); showFilterModal = false; }, 100)"
                         class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1891,6 +1893,8 @@ total items: {{ $families->count() ?? 0 }}</pre>
                     </svg>
                     تایید و اعمال فیلترها
                 </button>
+                       <!-- تایید فیلتر رتبه -->
+
             </div>
         </div>
     </div>

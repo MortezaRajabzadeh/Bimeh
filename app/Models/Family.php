@@ -27,6 +27,8 @@ class Family extends Model implements HasMedia
                     ->withTimestamps();
     }
 
+
+
     /**
      * فیلدهای قابل پر شدن
      *
@@ -88,9 +90,26 @@ class Family extends Model implements HasMedia
         // محاسبه رتبه موقع ایجاد خانواده جدید
         static::created(function ($family) {
             // اگر acceptance_criteria دارد یا اعضایش معیار دارند
-            if ($family->criteria()->exists()) {
-
+            if (!empty($family->acceptance_criteria) || $family->criteria()->exists()) {
                 // محاسبه رتبه در background تا مانع performance نشود
+                dispatch(function() use ($family) {
+                    $family->calculateRank();
+                })->afterResponse();
+            }
+        });
+
+        // به‌روزرسانی خودکار رتبه‌بندی هنگام تغییر acceptance_criteria یا معیارها
+        static::updated(function ($family) {
+            if ($family->isDirty('acceptance_criteria') || $family->isDirty('criteria')) {
+                dispatch(function() use ($family) {
+                    $family->calculateRank();
+                })->afterResponse();
+            }
+        });
+        
+        // به‌روزرسانی خودکار رتبه‌بندی هنگام تغییر معیارهای رتبه‌بندی
+        static::saved(function ($family) {
+            if ($family->wasChanged('acceptance_criteria')) {
                 dispatch(function() use ($family) {
                     $family->calculateRank();
                 })->afterResponse();
@@ -489,23 +508,67 @@ class Family extends Model implements HasMedia
     }
 
     /**
-     * محاسبه رتبه محرومیت خانواده بر اساس معیارهای تعریف شده
+     * محاسبه رتبه محرومیت خانواده بر اساس معیارها
+     * 
+     * @return float
      */
     public function calculateRank()
     {
-        $totalScore = $this->criteria() // رابطه با جدول family_criteria
-                            ->where('rank_settings.is_active', true)
-                            ->sum('rank_settings.weight');
-
-        $maxPossibleScore = RankSetting::where('is_active', true)->sum('weight');
-
-        if ($maxPossibleScore > 0) {
-            $this->calculated_rank = round(($totalScore / $maxPossibleScore) * 100, 2);
-        } else {
-            $this->calculated_rank = 0;
-        }
-        $this->rank_calculated_at = now();
-        $this->save();
+        // استفاده از کش برای بهبود عملکرد
+        return Cache::remember('family_rank_' . $this->id, now()->addDay(), function () {
+            $totalScore = 0;
+            
+            // محاسبه امتیاز بر اساس acceptance_criteria
+            if (!empty($this->acceptance_criteria)) {
+                $acceptanceCriteria = is_array($this->acceptance_criteria) 
+                    ? $this->acceptance_criteria 
+                    : json_decode($this->acceptance_criteria, true);
+                
+                if (is_array($acceptanceCriteria)) {
+                    $totalScore += $this->calculateCriteriaScore($acceptanceCriteria);
+                }
+            }
+            
+            // محاسبه امتیاز بر اساس problem_type اعضا
+            $membersProblemScore = $this->members->sum(function($member) {
+                if (empty($member->problem_type)) return 0;
+                
+                $problemTypes = is_array($member->problem_type) 
+                    ? $member->problem_type 
+                    : json_decode($member->problem_type, true);
+                
+                return is_array($problemTypes) ? $this->calculateCriteriaScore($problemTypes) : 0;
+            });
+            
+            $totalScore += $membersProblemScore;
+            
+            // محاسبه رتبه نهایی
+            $maxPossibleScore = RankSetting::where('is_active', true)->sum('weight');
+            
+            $rank = $maxPossibleScore > 0 
+                ? round(($totalScore / $maxPossibleScore) * 100, 2) 
+                : 0;
+                
+            $this->update([
+                'calculated_rank' => $rank,
+                'rank_calculated_at' => now()
+            ]);
+            
+            return $rank;
+        });
+    }
+    
+    /**
+     * محاسبه امتیاز برای لیستی از معیارها
+     * 
+     * @param array $criteria
+     * @return float
+     */
+    protected function calculateCriteriaScore(array $criteria): float
+    {
+        return RankSetting::whereIn('name', $criteria)
+            ->where('is_active', true)
+            ->sum('weight');
     }
     /**
      * دریافت رتبه محرومیت (محاسبه شده یا محاسبه مجدد)

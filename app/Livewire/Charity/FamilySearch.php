@@ -757,6 +757,7 @@ class FamilySearch extends Component
             $this->resetPage();
             
             // Debug: نمایش وضعیت فعلی فیلترها
+            Log::info('Filter status:', [
                 'status' => $this->status,
                 'province' => $this->province,
                 'city' => $this->city,
@@ -973,6 +974,7 @@ class FamilySearch extends Component
         $this->availableRankSettings = RankSetting::active()->ordered()->get();
         
         // ثبت در لاگ برای اشکال‌زدایی - با استفاده از متد count() کالکشن
+        Log::info('Rank settings loaded:', [
             'loaded_criteria_count' => count($this->availableRankSettings)
         ]);
         
@@ -1064,6 +1066,7 @@ class FamilySearch extends Component
                 $this->isEditingMode = true; // مشخص می‌کند که در حال ویرایش هستیم نه افزودن
                 
                 // ثبت در لاگ
+                Log::info('Editing rank setting:', [
                     'id' => $setting->id,
                     'name' => $setting->name
                 ]);
@@ -1074,6 +1077,7 @@ class FamilySearch extends Component
                 ]);
             }
         } catch (\Exception $e) {
+            Log::error('Error loading rank setting:', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
@@ -1152,11 +1156,12 @@ class FamilySearch extends Component
         $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
             }
         } catch (\Exception $e) {
+            Log::error('Error deleting rank setting:', [
                 'id' => $id,
                 'error' => $e->getMessage()
             ]);
             
-        $this->dispatch('notify', [ 
+            $this->dispatch('notify', [ 
                 'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
                 'type' => 'error'
         ]); 

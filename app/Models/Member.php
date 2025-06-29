@@ -15,6 +15,14 @@ class Member extends Model implements HasMedia
     use HasFactory, SoftDeletes, LogsActivity, InteractsWithMedia;
 
     /**
+     * Get the organization that introduced this member.
+     */
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class, 'charity_id');
+    }
+
+    /**
      * فیلدهای قابل پر شدن
      *
      * @var array<int, string>

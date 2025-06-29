@@ -32,6 +32,32 @@ class FamiliesApproval extends Component
 
     protected FamilyRepository $familyRepository;
 
+    protected function getListeners()
+    {
+        return [
+            'sharesAllocated' => 'handleSharesAllocated',
+            // سایر listeners موجود...
+        ];
+    }
+
+    /**
+     * مدیریت رویداد پس از تخصیص موفق سهم‌ها
+     * این متد به صورت خودکار پس از تخصیص سهم‌ها فراخوانی می‌شود و خانواده‌ها را به مرحله بعد منتقل می‌کند
+     */
+    public function handleSharesAllocated()
+    {
+        Log::info('FamiliesApproval::handleSharesAllocated - رویداد تخصیص سهم دریافت شد');
+
+        // انتقال خانواده‌ها به مرحله بعد
+        $this->moveSelectedToNextWizardStep();
+        
+        // هدایت کاربر به تب بعدی (approved)
+        $this->setTab('approved');
+        
+        // نمایش پیام موفقیت
+        session()->flash('message', 'سهم‌های بیمه با موفقیت تخصیص داده شدند و خانواده‌ها به مرحله بعد منتقل شدند.');
+    }
+
     public function boot(FamilyRepository $familyRepository)
     {
         $this->familyRepository = $familyRepository;
@@ -93,7 +119,20 @@ class FamiliesApproval extends Component
 
     // اضافه کردن متغیرهای مرتب‌سازی
     public $sortField = 'created_at';
-    public $sortDirection = 'desc';
+    public $sortDirection = 'asc';
+    public $sortByProblemType = ''; // برای ذخیره نوع مشکل انتخاب شده برای مرتب‌سازی
+
+
+    // لیست انواع مشکلات برای منوی کشویی
+    public $problemTypes = [
+        'addiction' => 'اعتیاد',
+        'unemployment' => 'بیکاری',
+        'disability' => 'معلولیت',
+        'chronic_illness' => 'بیماری مزمن',
+        'single_parent' => 'سرپرست خانوار زن',
+        'elderly' => 'سالمندی',
+        'other' => 'سایر'
+    ];
 
     // متغیرهای تمدید بیمه
     public $renewalPeriod = 12;
@@ -152,25 +191,81 @@ class FamiliesApproval extends Component
         'renewInsurance' => 'renewInsurance',
         'pageRefreshed' => 'handlePageRefresh' // اضافه کردن listener جدید
     ];
-    public function saveFamilyCriteria()
 
+
+    private function getCriteriaMapping(): array
     {
+        return [
+            'addiction' => 'اعتیاد',
+            'unemployment' => 'بیکاری',
+            'special_disease' => 'بیماری خاص',
+            'disability' => 'معلولیت',
+            'single_parent' => 'سرپرست خانوار زن',
+            'elderly' => 'سالمندی',
+            'chronic_illness' => 'بیماری مزمن',
+            'work_disability' => 'ازکارافتادگی',
+            'other' => 'سایر'
+        ];
+    }
 
-    if (!$this->editingFamily) return;
+    /**
+     * دریافت وزن هر معیار
+     */
+/**
+ * دریافت وزن هر معیار (محافظ‌کارانه)
+ */
+private function getCriteriaWeights(): array
+{
+    try {
+        // اول سعی کن از دیتابیس بگیری
+        $rankSettings = \App\Models\RankSetting::where('is_active', true)
+            ->pluck('weight', 'name')
+            ->toArray();
 
-    $this->editingFamily->criteria()->sync($this->familyCriteria);
+        if (!empty($rankSettings)) {
+            return $rankSettings;
+        }
 
-    $this->editingFamily->calculateRank();
+        // fallback به مقادیر ثابت
+        return [
+            'اعتیاد' => 10,
+            'بیماری خاص' => 6,
+            'بیکاری' => 5,
+            'معلولیت' => 8,
+            'سرپرست خانوار زن' => 7,
+            'سالمندی' => 4,
+            'بیماری مزمن' => 6,
+            'ازکارافتادگی' => 9,
+            'سایر' => 2
+        ];
+    } catch (\Exception $e) {
+        Log::error('Error getting criteria weights', ['error' => $e->getMessage()]);
 
-    $this->dispatch('toast', [
-        'message' => 'معیارهای خانواده با موفقیت به‌روزرسانی شد.',
-        'type' => 'success'
-    ]);
+        // fallback امن
+        return [
+            'اعتیاد' => 10,
+            'بیماری خاص' => 6,
+            'بیکاری' => 5,
+        ];
+    }
+}
 
-    $this->closeCriteriaModal();
+    public function saveFamilyCriteria()
+    {
+        if (!$this->editingFamily) return;
 
-    $this->clearFamiliesCache();
+        $this->editingFamily->criteria()->sync($this->familyCriteria);
 
+        $this->editingFamily->calculateRank();
+
+        $this->dispatch('toast', [
+            'message' => 'معیارهای خانواده با موفقیت به‌روزرسانی شد.',
+            'type' => 'success'
+        ]);
+
+        $this->closeCriteriaModal();
+
+        $this->clearFamiliesCache();
     }
     // تعریف ویژگی wizard_status
     protected $wizard_status = null;
@@ -217,6 +312,16 @@ class FamiliesApproval extends Component
         $this->resetPage();
     }
 
+    /**
+     * پاک کردن انتخاب‌ها هنگام تغییر صفحه برای جلوگیری از انتخاب در چندین صفحه
+     */
+    public function updatedPage()
+    {
+        Log::info('🔄 Page changed - clearing selections');
+        $this->selectAll = false;
+        $this->selected = [];
+    }
+
     public function updatedSelectAll($value)
     {
         Log::info('🔍 updatedSelectAll method called with value: ' . ($value ? 'true' : 'false'));
@@ -260,6 +365,37 @@ class FamiliesApproval extends Component
         }
     }
 
+    public function debugCriteria()
+{
+    try {
+        Log::info('=== Debug Criteria ===');
+
+        // چک کردن selectedCriteria
+        Log::info('selectedCriteria', [
+            'value' => $this->selectedCriteria,
+            'type' => gettype($this->selectedCriteria)
+        ]);
+
+        // چک کردن specific_criteria
+        Log::info('specific_criteria', [
+            'value' => $this->specific_criteria,
+            'type' => gettype($this->specific_criteria)
+        ]);
+
+        // چک کردن یک خانواده نمونه
+        $sampleFamily = Family::first();
+        if ($sampleFamily) {
+            Log::info('Sample family acceptance_criteria', [
+                'value' => $sampleFamily->acceptance_criteria,
+                'type' => gettype($sampleFamily->acceptance_criteria),
+                'is_json' => is_string($sampleFamily->acceptance_criteria) ? 'yes' : 'no'
+            ]);
+        }
+
+    } catch (\Exception $e) {
+        Log::error('Debug error: ' . $e->getMessage());
+    }
+}
     public function updatedSelected()
     {
         // $families = $this->getFamiliesProperty();
@@ -459,6 +595,9 @@ class FamiliesApproval extends Component
                     // آپدیت وضعیت خانواده
                     $family->status = 'deleted';
                     $family->save();
+                    
+                    // استفاده از مکانیزم SoftDelete برای ثبت deleted_at
+                    $family->delete();
 
                     Log::info("✅ Family ID: {$familyId} successfully marked as deleted");
                     $deletedCount++;
@@ -469,14 +608,19 @@ class FamiliesApproval extends Component
             }
 
             DB::commit();
-
-        $this->selected = [];
-            $this->showDeleteModal = false; // بستن مودال
-            $this->deleteReason = null; // پاک کردن دلیل حذف
-
-            // پاکسازی کش و به‌روزرسانی لیست
+            
+            // پاک‌سازی انتخاب‌ها و مودال
+            $this->selected = [];
+            $this->showDeleteModal = false;
+            $this->deleteReason = null;
+            
+            // پاک‌سازی کش
             $this->clearFamiliesCache();
-
+            
+            // ریست صفحه‌بندی برای بازگشت به صفحه اول
+            $this->resetPage();
+            
+            // نمایش پیام مناسب بر اساس نتیجه عملیات
             if ($deletedCount > 0 && $failedCount === 0) {
                 session()->flash('message', "{$deletedCount} خانواده با موفقیت حذف شدند");
             } elseif ($deletedCount > 0 && $failedCount > 0) {
@@ -484,15 +628,15 @@ class FamiliesApproval extends Component
             } else {
                 session()->flash('error', "عملیات حذف با خطا مواجه شد");
             }
-
-            // رفرش کامپوننت برای به‌روزرسانی لیست‌ها
-            $this->dispatch('refreshFamiliesList');
-
+            
+            // ریدایرکت به همین صفحه برای رفرش کامل
+            return redirect()->route('insurance.families.approval');
+            
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("❌ Critical error in deleteSelected: " . $e->getMessage());
             session()->flash('error', 'خطا در عملیات حذف: ' . $e->getMessage());
-        }
+        }    
     }
 
     public function returnToPendingSelected()
@@ -625,20 +769,30 @@ class FamiliesApproval extends Component
     public function clearFamiliesCache()
     {
         try {
-            // فقط کش مرتبط با خانواده‌ها را پاک می‌کنیم
-            $pattern = 'families_list_*';
-            $keys = Cache::getStore()->getPrefix() ? substr($pattern, strlen(Cache::getStore()->getPrefix())) : $pattern;
+            // پاک کردن کش فعلی
+            $currentKey = $this->getCacheKey();
+            Cache::forget($currentKey);
 
-            // کش فعلی را پاک می‌کنیم
-            Cache::forget($this->getCacheKey());
+            // پاک کردن کش‌های مرتبط با pattern
+            $pattern = 'families_*_user_' . Auth::id();
 
-            // لاگ کردن عملیات
-            Log::info("🧹 Families cache has been cleared for key: {$this->getCacheKey()}");
+            // اگر از Redis استفاده می‌کنید
+            if (Cache::getStore() instanceof \Illuminate\Cache\RedisStore) {
+                $keys = Cache::getRedis()->keys($pattern);
+                foreach ($keys as $key) {
+                    Cache::forget($key);
+                }
+            }
+
+            Log::info("🧹 Families cache cleared", [
+                'current_key' => $currentKey,
+                'pattern' => $pattern
+            ]);
+
         } catch (\Exception $e) {
             Log::error('❌ Error clearing cache: ' . $e->getMessage());
         }
     }
-
     public function changeTab($tab, $resetSelections = true)
     {
         $this->activeTab = $tab;
@@ -654,16 +808,14 @@ class FamiliesApproval extends Component
      */
     public function setTab($tab, $resetSelections = true)
     {
-        if ($this->tab === $tab) {
-            return;
-        }
+        // حتی اگر تب یکسان باشد، فیلترها و کش را ریست می‌کنیم
+        // تا هنگام کلیک مجدد روی همان تب، داده‌ها مجددا لود شوند
+        Log::info('📑 Setting tab: ' . $tab . ' (previous: ' . $this->tab . ')');
 
         $this->is_loading = true;
-
         $this->cached_tab = $this->tab;
-
         $this->tab = $tab;
-        $this->activeTab = $tab; // به‌روزرسانی activeTab
+        $this->activeTab = $tab;
 
         // همگام‌سازی تب‌های قدیمی با مراحل wizard
         if ($tab === 'pending') {
@@ -673,31 +825,29 @@ class FamiliesApproval extends Component
         } elseif ($tab === 'approved') {
             $this->loadFamiliesByWizardStatus([InsuranceWizardStep::SHARE_ALLOCATION, InsuranceWizardStep::APPROVED, InsuranceWizardStep::EXCEL_UPLOAD]);
         } elseif ($tab === 'excel') {
-            $this->loadFamiliesByWizardStatus(InsuranceWizardStep::EXCEL_UPLOAD);
+            // برای تب excel نیازی به لود کردن خانواده نیست
+            $this->wizard_status = null;
         } elseif ($tab === 'insured') {
             $this->loadFamiliesByWizardStatus(InsuranceWizardStep::INSURED);
         } elseif ($tab === 'renewal') {
             $this->loadFamiliesByWizardStatus(InsuranceWizardStep::RENEWAL);
         } elseif ($tab === 'deleted') {
-            // تب حذف شده ها - بدون نیاز به wizard status
             $this->wizard_status = null;
         }
 
-        // ریست کردن صفحه‌بندی و انتخاب‌ها
         $this->resetPage();
 
-        // فقط اگر پارامتر resetSelections درست باشد، انتخاب‌ها را ریست می‌کنیم
         if ($resetSelections) {
-        $this->selected = [];
-        $this->selectAll = false;
+            $this->selected = [];
+            $this->selectAll = false;
         }
 
-        // به‌روزرسانی کش
-        $this->clearFamiliesCache();
+        // برای تب excel کش پاک کردن لازم نیست
+        if ($tab !== 'excel') {
+            $this->clearFamiliesCache();
+        }
 
         $this->is_loading = false;
-
-        // رفرش صفحه
         $this->dispatch('reset-checkboxes');
     }
 
@@ -876,10 +1026,14 @@ class FamiliesApproval extends Component
             case 'reviewing':
                 $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value)
                     ->where('status', '!=', 'deleted');
+
                 break;
             case 'approved':
-                $query->where('wizard_status', InsuranceWizardStep::APPROVED->value)
-                    ->where('status', '!=', 'deleted');
+                $query->whereIn('wizard_status', [
+                    InsuranceWizardStep::SHARE_ALLOCATION->value,
+                    InsuranceWizardStep::APPROVED->value,
+                    InsuranceWizardStep::EXCEL_UPLOAD->value
+                ])->where('status', '!=', 'deleted');
                 break;
             case 'excel':
                 $query->where('wizard_status', InsuranceWizardStep::EXCEL_UPLOAD->value)
@@ -1016,10 +1170,13 @@ class FamiliesApproval extends Component
                 $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value)
                     ->where('status', '!=', 'deleted');
                 break;
-            case 'approved':
-                $query->where('wizard_status', InsuranceWizardStep::APPROVED->value)
-                    ->where('status', '!=', 'deleted');
-                break;
+                case 'approved':
+                    $query->whereIn('wizard_status', [
+                        InsuranceWizardStep::SHARE_ALLOCATION->value,
+                        InsuranceWizardStep::APPROVED->value,
+                        InsuranceWizardStep::EXCEL_UPLOAD->value
+                    ])->where('status', '!=', 'deleted');
+                    break;
             case 'excel':
                 $query->where('wizard_status', InsuranceWizardStep::EXCEL_UPLOAD->value)
                     ->where('status', '!=', 'deleted');
@@ -1213,6 +1370,9 @@ class FamiliesApproval extends Component
      * دانلود فایل اکسل بیمه و انتقال به مرحله بعد
      */
 
+/**
+     * آپلود فایل اکسل بیمه با مدیریت تکرار
+     */
     public function uploadInsuranceExcel()
     {
         Log::info('⏳ شروع فرآیند آپلود اکسل بیمه');
@@ -1246,34 +1406,21 @@ class FamiliesApproval extends Component
             $insuranceService = new \App\Services\InsuranceShareService();
             $result = $insuranceService->completeInsuranceFromExcel($fullPath);
 
-            // نمایش پیام موفقیت
-            $successMessage = "✅ عملیات ایمپورت با موفقیت انجام شد:\n";
-            $successMessage .= "🆕 رکوردهای جدید: {$result['created']}\n";
-            $successMessage .= "🔄 رکوردهای به‌روزرسانی شده: {$result['updated']}\n";
-            $successMessage .= "❌ خطاها: {$result['skipped']}\n";
-            $successMessage .= "💰 مجموع مبلغ بیمه: " . number_format($result['total_insurance_amount']) . " تومان";
-
-            if (!empty($result['errors'])) {
-                $successMessage .= "\n\n⚠️ جزئیات خطاها:\n" . implode("\n", array_slice($result['errors'], 0, 5));
-                if (count($result['errors']) > 5) {
-                    $successMessage .= "\n... و " . (count($result['errors']) - 5) . " خطای دیگر";
-                }
-                session()->flash('error', "جزئیات خطاها:\n" . implode("\n", array_slice($result['errors'], 0, 5)));
+            // ✅ بررسی تکرار و نمایش پیام مناسب
+            if (isset($result['is_duplicate']) && $result['is_duplicate']) {
+                $this->handleDuplicateUpload($result);
+                return;
             }
 
-            session()->flash('message', $successMessage);
+            // نمایش پیام موفقیت
+            $this->handleSuccessfulUpload($result);
 
             // پاک کردن فایل آپلود شده
             $this->reset('insuranceExcelFile');
 
-            // **FIXED: Proper post-upload workflow**
-            // 1. Switch back to pending tab
+            // بازگشت به تب pending
             $this->setTab('pending');
-
-            // 2. Clear cache to ensure fresh data
             $this->clearFamiliesCache();
-
-            // 3. Dispatch refresh event for UI update
             $this->dispatch('refreshFamiliesList');
 
             Log::info('🔄 Successfully redirected to pending tab after Excel upload');
@@ -1283,6 +1430,148 @@ class FamiliesApproval extends Component
             Log::error('❌ جزئیات خطا: ' . $e->getTraceAsString());
 
             session()->flash('error', 'خطا در پردازش فایل اکسل: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * ✅ مدیریت آپلود تکراری
+     */
+    private function handleDuplicateUpload(array $result): void
+    {
+        Log::warning('⚠️ آپلود تکراری شناسایی شد', [
+            'duplicate_type' => $result['duplicate_type'],
+            'existing_log_id' => $result['existing_log_id'] ?? null
+        ]);
+
+        $duplicateMessages = [
+            'exact_file' => [
+                'title' => '🔄 فایل تکراری',
+                'message' => 'این فایل قبلاً آپلود شده است',
+                'type' => 'warning'
+            ],
+            'similar_content' => [
+                'title' => '📋 محتوای مشابه',
+                'message' => 'محتوای مشابه قبلاً پردازش شده است',
+                'type' => 'warning'
+            ],
+            'high_overlap' => [
+                'title' => '👥 تداخل خانواده‌ها',
+                'message' => 'بیشتر خانواده‌های این فایل قبلاً پردازش شده‌اند',
+                'type' => 'warning'
+            ],
+            'idempotency' => [
+                'title' => '🔒 عملیات تکراری',
+                'message' => 'این عملیات قبلاً انجام شده است',
+                'type' => 'info'
+            ]
+        ];
+
+        $duplicateType = $result['duplicate_type'] ?? 'unknown';
+        $messageConfig = $duplicateMessages[$duplicateType] ?? $duplicateMessages['idempotency'];
+
+        // نمایش پیام تکرار
+        $errorMessage = $messageConfig['title'] . "\n\n";
+        $errorMessage .= $messageConfig['message'] . "\n";
+        if (!empty($result['errors'][0])) {
+            $errorMessage .= "جزئیات: " . $result['errors'][0] . "\n";
+        }
+        $errorMessage .= "\n⚠️ هیچ تغییری در دیتابیس اعمال نشد.";
+
+        if (isset($result['existing_log_id'])) {
+            $errorMessage .= "\n📋 شناسه لاگ قبلی: " . $result['existing_log_id'];
+        }
+
+        session()->flash('error', $errorMessage);
+
+        // ارسال رویداد مخصوص تکرار
+        $this->dispatch('duplicate-upload-detected', [
+            'type' => $duplicateType,
+            'message' => $messageConfig['message'],
+            'existing_log_id' => $result['existing_log_id'] ?? null
+        ]);
+
+        Log::info('✅ پیام تکرار نمایش داده شد', [
+            'duplicate_type' => $duplicateType,
+            'message_type' => $messageConfig['type']
+        ]);
+    }
+
+    /**
+     * ✅ مدیریت آپلود موفق
+     */
+    private function handleSuccessfulUpload(array $result): void
+    {
+        $successMessage = "✅ عملیات ایمپورت با موفقیت انجام شد:\n";
+        $successMessage .= "🆕 رکوردهای جدید: {$result['created']}\n";
+        $successMessage .= "🔄 رکوردهای به‌روزرسانی شده: {$result['updated']}\n";
+        $successMessage .= "❌ خطاها: {$result['skipped']}\n";
+        $successMessage .= "💰 مجموع مبلغ بیمه: " . number_format($result['total_insurance_amount']) . " ریال";
+
+        if (!empty($result['errors'])) {
+            $errorCount = count($result['errors']);
+            $successMessage .= "\n\n⚠️ جزئیات خطاها ({$errorCount} مورد):\n";
+            $successMessage .= implode("\n", array_slice($result['errors'], 0, 5));
+            if ($errorCount > 5) {
+                $successMessage .= "\n... و " . ($errorCount - 5) . " خطای دیگر";
+            }
+
+            // نمایش خطاها در flash message جداگانه
+            session()->flash('warning', "جزئیات خطاها:\n" . implode("\n", array_slice($result['errors'], 0, 10)));
+        }
+
+        session()->flash('message', $successMessage);
+
+        // ارسال رویداد موفقیت
+        $this->dispatch('upload-completed-successfully', [
+            'created' => $result['created'],
+            'updated' => $result['updated'],
+            'skipped' => $result['skipped'],
+            'total_amount' => $result['total_insurance_amount'],
+            'errors_count' => count($result['errors'])
+        ]);
+
+        Log::info('✅ پیام موفقیت نمایش داده شد', [
+            'created' => $result['created'],
+            'updated' => $result['updated'],
+            'total_amount' => $result['total_insurance_amount']
+        ]);
+    }
+
+    /**
+     * ✅ نمایش تاریخچه آپلودهای قبلی (اختیاری)
+     */
+    public function showUploadHistory()
+    {
+        try {
+            $recentUploads = \App\Models\ShareAllocationLog::where('user_id', Auth::id())
+                ->whereJsonContains('shares_data->upload_method', 'excel')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get(['id', 'created_at', 'families_count', 'total_amount', 'status', 'shares_data']);
+
+            $historyData = $recentUploads->map(function($log) {
+                $sharesData = json_decode($log->shares_data, true);
+                return [
+                    'id' => $log->id,
+                    'date' => $log->created_at->format('Y-m-d H:i'),
+                    'families_count' => $log->families_count,
+                    'total_amount' => number_format($log->total_amount),
+                    'status' => $log->status,
+                    'created' => $sharesData['created'] ?? 0,
+                    'updated' => $sharesData['updated'] ?? 0,
+                    'skipped' => $sharesData['skipped'] ?? 0,
+                ];
+            });
+
+            $this->dispatch('show-upload-history', $historyData->toArray());
+
+        } catch (\Exception $e) {
+            Log::error('❌ خطا در نمایش تاریخچه آپلود', ['error' => $e->getMessage()]);
+            $this->dispatch('toast', [
+                'message' => 'خطا در بارگذاری تاریخچه آپلود',
+                'type' => 'error'
+            ]);
         }
     }
 
@@ -1330,13 +1619,9 @@ class FamiliesApproval extends Component
             return null;
         }
 
-        try {
-            if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $dateString)) {
-                return \Morilog\Jalali\Jalalian::fromFormat('Y/m/d', $dateString)->toCarbon();
-            } else {
-                throw new \Exception('Invalid format');
-            }
-        } catch (\Exception $e) {
+        if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $dateString)) {
+            return \Morilog\Jalali\Jalalian::fromFormat('Y/m/d', $dateString)->toCarbon();
+        } else {
             throw new \Exception("ردیف " . ($rowIndex + 1) . ": {$fieldName} نامعتبر برای خانواده {$familyCode}: {$dateString} (فرمت صحیح: 1403/03/01)");
         }
     }
@@ -1769,13 +2054,51 @@ class FamiliesApproval extends Component
      * @param string $field
      * @return void
      */
+    /**
+     * مرتب‌سازی بر اساس فیلد مشخص شده
+     */
     public function sortBy($field)
     {
+        // اعتبارسنجی جهت مرتب‌سازی
+        if (!in_array($this->sortDirection, ['asc', 'desc'])) {
+            $this->sortDirection = 'desc';
+        }
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortField = $field;
-            $this->sortDirection = 'asc';
+            // برای created_at پیش‌فرض asc باشد
+            $this->sortDirection = ($field === 'created_at') ? 'asc' : 'desc';
+        }
+
+        // اطمینان از مقدار معتبر
+        if (!in_array($this->sortDirection, ['asc', 'desc'])) {
+            $this->sortDirection = 'desc';
+        }
+
+        // ریست کردن صفحه بندی
+        $this->resetPage();
+
+        // پاکسازی کش
+        $this->clearFamiliesCache();
+    }
+    /**
+     * مرتب‌سازی بر اساس تعداد اعضای دارای مشکل خاص
+     *
+     * @param string $problemType
+     * @return void
+     */
+    public function sortByProblemType($problemType = null)
+    {
+        if ($problemType) {
+            $this->sortByProblemType = $problemType;
+            $this->sortField = 'problem_type.' . $problemType;
+            $this->sortDirection = 'desc'; // به صورت پیش‌فرض نزولی مرتب می‌شود
+        } else {
+            $this->sortByProblemType = '';
+            $this->sortField = 'created_at';
+            $this->sortDirection = 'desc';
         }
 
         // ریست کردن صفحه بندی
@@ -1923,7 +2246,11 @@ class FamiliesApproval extends Component
         $this->family_rank_range = '';
         $this->specific_criteria = '';
         $this->charity_id = null;
+        $this->specific_criteria = null;
+        $this->selectedCriteria = [];
 
+        $this->tempFilters = [];
+        $this->activeFilters = [];
         $this->resetPage();
         $this->clearFamiliesCache();
 
@@ -2025,6 +2352,9 @@ class FamiliesApproval extends Component
             // بارگذاری مجدد تنظیمات
             $this->loadRankSettings();
 
+            // پاک کردن کش لیست خانواده‌ها
+            $this->clearFamiliesCache();
+
             $this->dispatch('toast', [
                 'message' => 'معیار با موفقیت ذخیره شد',
                 'type' => 'success'
@@ -2058,6 +2388,10 @@ class FamiliesApproval extends Component
 
                 $setting->delete();
                 $this->loadRankSettings();
+
+                // پاک کردن کش لیست خانواده‌ها
+                $this->clearFamiliesCache();
+
                 $this->dispatch('toast', [
                     'message' => 'معیار با موفقیت حذف شد',
                     'type' => 'success'
@@ -2118,7 +2452,6 @@ class FamiliesApproval extends Component
     }
 
     /**
-FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویرایش شده)
      */
     public function saveRankSetting()
     {
@@ -2201,6 +2534,9 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
             $this->availableRankSettings = \App\Models\RankSetting::active()->ordered()->get();
             $this->resetRankSettingForm();
 
+            // پاک کردن کش لیست خانواده‌ها
+            $this->clearFamiliesCache();
+
             // ریست کردن فرم بعد از ذخیره موفق
             $this->rankSettingName = '';
             $this->rankSettingDescription = '';
@@ -2225,7 +2561,7 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
     /**
      * ریست کردن فرم معیار
      */
-    private function resetRankSettingForm()
+    public  function resetRankSettingForm()
     {
         $this->rankSettingName = '';
         $this->rankSettingDescription = '';
@@ -2396,40 +2732,230 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
     /**
      * اعمال معیارهای انتخاب شده
      */
+    // public function applyCriteria()
+    // {
+    //     // 1️⃣ استخراج IDهای انتخاب شده (مثل قبل)
+    //     $criteriaIds = array_keys(array_filter($this->selectedCriteria,
+    //         function($value) { return $value === true; }
+    //     ));
+
+    //     // 2️⃣ ذخیره برای فیلتر (اختیاری)
+    //     $this->specific_criteria = implode(',', $criteriaIds);
+
+    //     // 3️⃣ گرفتن خانواده‌های صفحه فعلی
+    //     $familyIds = $this->getFamiliesProperty()->pluck('id');
+
+    //     // 4️⃣ برای هر خانواده - فقط یک عملیات!
+    //     foreach ($familyIds as $familyId) {
+    //         $family = Family::find($familyId);
+
+    //         // ✅ فقط از رابطه criteria استفاده می‌کنیم
+    //         $family->criteria()->sync($criteriaIds);
+
+    //         // ✅ محاسبه رتبه فقط از یک منبع
+    //         $family->calculateRank();
+    //     }
+
+    //     // 5️⃣ بستن مودال و رفرش
+    //     $this->showRankModal = false;
+    //     $this->clearFamiliesCache();
+
+    //     $this->dispatch('toast', [
+    //         'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
+    //         'type' => 'success'
+    //     ]);
+    // }
+
+
+    // public function applyCriteria()
+    // {
+    //     try {
+    //         Log::info('Starting applyCriteria', [
+    //             'selectedCriteria' => $this->selectedCriteria
+    //         ]);
+
+    //         // استخراج IDهای انتخاب شده
+    //         $criteriaIds = array_keys(array_filter($this->selectedCriteria,
+    //             fn($value) => $value === true
+    //         ));
+
+    //         Log::info('Extracted criteria IDs', [
+    //             'criteriaIds' => $criteriaIds,
+    //             'count' => count($criteriaIds)
+    //         ]);
+
+    //         if (empty($criteriaIds)) {
+    //             throw new \Exception('لطفاً حداقل یک معیار را انتخاب کنید');
+    //         }
+
+    //         // ذخیره برای فیلتر
+    //         $this->specific_criteria = implode(',', $criteriaIds);
+    //         Log::info('Specific criteria set', ['specific_criteria' => $this->specific_criteria]);
+
+    //         // دریافت خانواده‌های صفحه فعلی
+    //         $families = $this->getFamiliesProperty();
+    //         $familyIds = $families->pluck('id');
+
+    //         Log::info('Processing families', [
+    //             'total_families' => $families->total(),
+    //             'current_page_families' => $familyIds->toArray()
+    //         ]);
+
+    //         // استفاده از تراکنش
+    //         DB::transaction(function () use ($familyIds, $criteriaIds) {
+    //             $updatedCount = 0;
+    //             $families = Family::whereIn('id', $familyIds)->get();
+    //             foreach ($families as $family) {
+    //                 $family->criteria()->sync($criteriaIds);
+    //                 $family->calculateRank();
+    //             }
+    //             Log::info('Updated families criteria', [
+    //                 'updated_count' => $updatedCount,
+    //                 'criteria_applied' => $criteriaIds
+    //             ]);
+    //         });
+
+    //         // پاک کردن کش
+    //         $this->clearFamiliesCache();
+    //         Log::info('Cache cleared after applying criteria');
+
+    //         $this->dispatch('toast', [
+    //             'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
+    //             'type' => 'success'
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Error in applyCriteria: ' . $e->getMessage(), [
+    //             'exception' => $e,
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         $this->dispatch('toast', [
+    //             'message' => 'خطا در اعمال معیارها: ' . $e->getMessage(),
+    //             'type' => 'error'
+    //         ]);
+    //     }
+    // }
+
+
+
     public function applyCriteria()
     {
-        // 1️⃣ استخراج IDهای انتخاب شده (مثل قبل)
-        $criteriaIds = array_keys(array_filter($this->selectedCriteria,
-            function($value) { return $value === true; }
-        ));
+        try {
+            Log::info('Starting applyCriteria with JSON criteria filter', [
+                'selectedCriteria' => $this->selectedCriteria
+            ]);
 
-        // 2️⃣ ذخیره برای فیلتر (اختیاری)
-        $this->specific_criteria = implode(',', $criteriaIds);
+            // استخراج نام‌های فارسی معیارهای انتخاب شده از RankSettings
+            $selectedRankSettingIds = array_keys(array_filter($this->selectedCriteria,
+                fn($value) => $value === true
+            ));
 
-        // 3️⃣ گرفتن خانواده‌های صفحه فعلی
-        $familyIds = $this->getFamiliesProperty()->pluck('id');
+            if (empty($selectedRankSettingIds)) {
+                // پاک کردن فیلتر
+                $this->specific_criteria = null;
+                $this->resetPage();
+                $this->clearFamiliesCache();
 
-        // 4️⃣ برای هر خانواده - فقط یک عملیات!
-        foreach ($familyIds as $familyId) {
-            $family = Family::find($familyId);
+                // بستن مودال
+                $this->showRankModal = false;
 
-            // ✅ فقط از رابطه criteria استفاده می‌کنیم
-            $family->criteria()->sync($criteriaIds);
+                $this->dispatch('toast', [
+                    'message' => 'فیلتر معیارها پاک شد',
+                    'type' => 'info'
+                ]);
+                return;
+            }
 
-            // ✅ محاسبه رتبه فقط از یک منبع
-            $family->calculateRank();
+            // دریافت نام‌های فارسی معیارها از RankSettings
+            $selectedCriteriaNames = \App\Models\RankSetting::whereIn('id', $selectedRankSettingIds)
+                ->pluck('name')
+                ->toArray();
+
+            // اطمینان از اینکه آرایه داریم
+            if (empty($selectedCriteriaNames)) {
+                Log::warning('No criteria names found for IDs', ['ids' => $selectedRankSettingIds]);
+                return;
+            }
+
+            Log::info('Selected criteria names (Persian)', [
+                'criteria_names' => $selectedCriteriaNames,
+                'criteria_type' => gettype($selectedCriteriaNames)
+            ]);
+
+            // ذخیره نام‌های فارسی برای فیلتر
+            $this->specific_criteria = implode(',', $selectedCriteriaNames);
+
+            // Reset صفحه و cache
+            $this->resetPage();
+            $this->clearFamiliesCache();
+
+            $criteriaList = implode('، ', $selectedCriteriaNames);
+
+            $this->dispatch('toast', [
+                'message' => "فیلتر معیارها اعمال شد: {$criteriaList}",
+                'type' => 'success'
+            ]);
+
+            // بستن مودال - این خط مهم است!
+            $this->showRankModal = false;
+
+            Log::info('Criteria filter applied successfully', [
+                'specific_criteria' => $this->specific_criteria
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in JSON criteria filter: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+
+            $this->dispatch('toast', [
+                'message' => 'خطا در اعمال فیلتر معیارها: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
         }
-
-        // 5️⃣ بستن مودال و رفرش
-        $this->showRankModal = false;
-        $this->clearFamiliesCache();
-
-        $this->dispatch('toast', [
-            'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
-            'type' => 'success'
-        ]);
     }
 
+    /**
+ * محاسبه امتیاز خانواده بعد از بارگذاری داده‌ها
+ */
+public function calculateDisplayScore($family): int
+{
+    try {
+        $score = 0;
+        $weights = $this->getCriteriaWeights();
+
+        // بررسی acceptance_criteria
+        if (!empty($family->acceptance_criteria)) {
+            $familyCriteria = null;
+
+            if (is_string($family->acceptance_criteria)) {
+                $familyCriteria = json_decode($family->acceptance_criteria, true);
+            } elseif (is_array($family->acceptance_criteria)) {
+                $familyCriteria = $family->acceptance_criteria;
+            }
+
+            if (is_array($familyCriteria)) {
+                foreach ($familyCriteria as $criteria) {
+                    if (is_string($criteria) && isset($weights[$criteria])) {
+                        $score += $weights[$criteria];
+                    }
+                }
+            }
+        }
+
+        return $score;
+    } catch (\Exception $e) {
+        Log::error('Error calculating display score', [
+            'family_id' => $family->id ?? 'unknown',
+            'error' => $e->getMessage()
+        ]);
+        return 0;
+    }
+}
     /**
      * ویرایش تنظیمات رتبه
      */
@@ -2468,6 +2994,9 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
                     'type' => 'warning'
                 ]);
 
+                // پاک کردن کش لیست خانواده‌ها
+                $this->clearFamiliesCache();
+
                 // بارگذاری مجدد لیست
                 $this->availableRankSettings = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
             }
@@ -2491,22 +3020,42 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
      */
     protected function getCacheKey()
     {
-        return sprintf('families_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s',
-            $this->activeTab,
-            $this->search,
-            $this->province_id,
-            $this->city_id,
-            $this->district_id,
-            $this->charity_id,
-            $this->status,
-            $this->sortField,
-            $this->sortDirection,
-            $this->page,
-            $this->perPage,
-            request()->ip(), // برای جلوگیری از تداخل کش بین کاربران
-            auth()->id() ?? 'guest',
-            md5(serialize($this->getFilters()))
-        );
+        // ایجاد یک آرایه از همه پارامترهای فیلتر
+        $filterParams = [
+            'tab' => $this->activeTab,
+            'search' => $this->search,
+            'province_id' => $this->province_id,
+            'city_id' => $this->city_id,
+            'district_id' => $this->district_id,
+            'region_id' => $this->region_id,
+            'charity_id' => $this->charity_id,
+            'status' => $this->status,
+            'sortField' => $this->sortField,
+            'sortDirection' => $this->sortDirection,
+            'page' => $this->page,
+            'perPage' => $this->perPage,
+            'specific_criteria' => $this->specific_criteria,
+            'family_rank_range' => $this->family_rank_range,
+            'deprivation_rank' => $this->deprivation_rank,
+            'selectedCriteria' => $this->selectedCriteria,
+            'activeFilters' => $this->activeFilters,
+            'tempFilters' => $this->tempFilters,
+        ];
+
+        // حذف مقادیر null یا empty
+        $filterParams = array_filter($filterParams, function($value) {
+            return !is_null($value) && $value !== '' && $value !== [];
+        });
+
+        // ساخت کلید یکتا
+        $cacheKey = 'families_' . md5(serialize($filterParams)) . '_user_' . Auth::id();
+
+        Log::debug('Cache key generated', [
+            'key' => $cacheKey,
+            'params' => $filterParams
+        ]);
+
+        return $cacheKey;
     }
 
     /**
@@ -2516,105 +3065,462 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
      */
     public function getFamiliesProperty()
     {
-        $cacheKey = $this->getCacheKey();
-        $cacheDuration = now()->addMinutes(5); // مدت زمان کش: 5 دقیقه
-
-        // اگر در حالت دیباگ هستیم، کش را غیرفعال می‌کنیم
-        if (config('app.debug')) {
-            return $this->buildFamiliesQuery()->paginate($this->perPage);
+        if ($this->activeTab === 'excel') {
+            return new \Illuminate\Pagination\LengthAwarePaginator(
+                collect([]), // مجموعه خالی
+                0, // تعداد کل
+                $this->perPage, // تعداد در صفحه
+                $this->page, // صفحه فعلی
+                ['path' => request()->url()] // URL فعلی
+            );
         }
+        $cacheKey = $this->getCacheKey();
+        $cacheDuration = now()->addMinutes(5);
 
         try {
             return Cache::remember($cacheKey, $cacheDuration, function () {
-                return $this->buildFamiliesQuery()->paginate($this->perPage);
+                $families = $this->buildFamiliesQuery()->paginate($this->perPage);
+
+                // اگر فیلتر معیار فعال باشه، مرتب‌سازی بر اساس امتیاز کامل
+                if (!empty($this->specific_criteria)) {
+                    $familiesArray = $families->items();
+
+                    // محاسبه امتیاز برای هر خانواده
+                    $familiesWithScores = collect($familiesArray)->map(function($family) {
+                        $scoreData = $this->calculateFamilyTotalScore($family);
+                        $family->calculated_total_score = $scoreData['total_score'];
+                        $family->score_details = $scoreData['details'];
+                        return $family;
+                    });
+
+                    // جداسازی خانواده‌ها به دو گروه
+                    $familiesWithCriteria = $familiesWithScores->filter(function($family) {
+                        return $family->calculated_total_score > 0;
+                    });
+
+                    $familiesWithoutCriteria = $familiesWithScores->filter(function($family) {
+                        return $family->calculated_total_score == 0;
+                    });
+
+                    // مرتب‌سازی هر گروه
+                    $sortedFamiliesWithCriteria = $familiesWithCriteria->sortByDesc('calculated_total_score');
+                    $sortedFamiliesWithoutCriteria = $familiesWithoutCriteria->sortBy('created_at'); // قدیمی‌ترین اول
+
+                    // ترکیب: ابتدا خانواده‌های با معیار، سپس بدون معیار
+                    $sortedFamilies = $sortedFamiliesWithCriteria->concat($sortedFamiliesWithoutCriteria)->values();
+
+                    // جایگذاری مجدد در pagination
+                    $families->setCollection($sortedFamilies);
+
+                    Log::info('Families sorted by criteria and score', [
+                        'with_criteria_count' => $familiesWithCriteria->count(),
+                        'without_criteria_count' => $familiesWithoutCriteria->count(),
+                        'top_scores' => $sortedFamiliesWithCriteria->take(3)->pluck('calculated_total_score', 'id')->toArray()
+                    ]);
+                }
+
+                return $families;
             });
         } catch (\Exception $e) {
-            Log::error('خطا در بازیابی داده‌های کش شده خانواده‌ها', [
-                'error' => $e->getMessage(),
-                'cache_key' => $cacheKey
+            Log::error('Error in getFamiliesProperty with scoring', [
+                'error' => $e->getMessage()
             ]);
-
-            // در صورت بروز خطا در کش، داده‌ها را مستقیماً از دیتابیس بازیابی می‌کنیم
             return $this->buildFamiliesQuery()->paginate($this->perPage);
         }
     }
 
     /**
-     * ساخت کوئری پایه برای دریافت خانواده‌ها
+     * ساخت کوئری پایه برای دریافت خانواده‌ها با بهینه‌سازی کارایی
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function buildFamiliesQuery()
-    {
-        return Family::query()
-            ->with([
-                'region',
-                'charity',
-                'members' => function($query) {
-                    // مرتب‌سازی اعضا بر اساس وضعیت سرپرست و سپس رابطه خانوادگی
-                    $query->orderBy('is_head', 'desc') // سرپرست اول
-                          ->orderBy('relationship', 'asc'); // سپس بر اساس رابطه خانوادگی
-                }
-            ])
-            ->when($this->search, function($query) {
-                $search = trim($this->search);
-                $query->where(function($q) use ($search) {
-                    $q->where('family_code', 'like', '%' . $search . '%')
-                      ->orWhereHas('members', function($q) use ($search) {
-                          $q->where('first_name', 'like', '%' . $search . '%')
-                            ->orWhere('last_name', 'like', '%' . $search . '%')
-                            ->orWhere('national_code', 'like', '%' . $search . '%')
-                            ->orWhere('id_number', 'like', '%' . $search . '%');
-                      });
-                });
-            })
-            ->when($this->province_id, function($query) {
-                $query->where('province_id', $this->province_id);
-            })
-            ->when($this->city_id, function($query) {
-                $query->where('city_id', $this->city_id);
-            })
-            ->when($this->district_id, function($query) {
-                $query->where('district_id', $this->district_id);
-            })
-            ->when($this->charity_id, function($query) {
-                $query->where('charity_id', $this->charity_id);
-            })
-            ->when($this->status, function($query) {
-                $query->where('status', $this->status);
-            })
-            ->when($this->activeTab === 'pending', function($query) {
-                $query->where('status', 'pending');
-            })
-            ->when($this->activeTab === 'reviewing', function($query) {
-                $query->where('status', 'reviewing');
-            })
-            ->when($this->activeTab === 'approved', function($query) {
-                $query->where('status', 'approved');
-            })
-            ->when($this->activeTab === 'rejected', function($query) {
-                $query->where('status', 'rejected');
-            })
-            ->when($this->sortField, function($query) {
-                // اگر مرتب‌سازی بر اساس فیلدهای رابطه باشد
-                if (str_contains($this->sortField, '.')) {
-                    $relation = explode('.', $this->sortField)[0];
-                    $field = explode('.', $this->sortField)[1];
-                    $query->orderBy(
-                        \App\Models\Family::select($field)
-                            ->whereColumn('families.id', 'family_id')
-                            ->whereHas($relation)
-                            ->take(1),
-                        $this->sortDirection
-                    );
-                } else {
-                    $query->orderBy($this->sortField, $this->sortDirection);
-                }
-            }, function($query) {
-                $query->latest('created_at');
-            });
+// protected function buildFamiliesQuery()
+// {
+//     $query = Family::query()
+//         ->select(['families.*']);
+
+//     // ... سایر with ها
+
+//     // ✅ اعمال فیلتر معیارها بر اساس JSON field
+//     if (!empty($this->specific_criteria)) {
+//         $selectedCriteriaNames = explode(',', $this->specific_criteria);
+
+//         Log::info('Applying JSON criteria filter', [
+//             'criteria_names' => $selectedCriteriaNames
+//         ]);
+
+//         // محاسبه امتیاز وزنی برای هر خانواده
+//         $weights = $this->getCriteriaWeights();
+
+//         $query->addSelect([
+//             'criteria_score' => function($subQuery) use ($selectedCriteriaNames, $weights) {
+//                 $subQuery->selectRaw('
+//                     CASE
+//                         WHEN acceptance_criteria IS NULL THEN 0
+//                         ELSE (
+//                             ' . implode(' + ', array_map(function($criteria) use ($weights) {
+//                                 $weight = $weights[$criteria] ?? 1;
+//                                 return "CASE WHEN JSON_CONTAINS(acceptance_criteria, JSON_QUOTE('{$criteria}')) THEN {$weight} ELSE 0 END";
+//                             }, $selectedCriteriaNames)) . '
+//                         )
+//                     END
+//                 ')
+//                 ->from('families as f')
+//                 ->whereColumn('f.id', 'families.id');
+//             }
+//         ]);
+
+//         // فیلتر: فقط خانواده‌هایی که حداقل یکی از معیارها رو در acceptance_criteria دارن
+//         $query->where(function($subQuery) use ($selectedCriteriaNames) {
+//             foreach ($selectedCriteriaNames as $criteria) {
+//                 $subQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria]);
+//             }
+//         });
+
+//         // مرتب‌سازی بر اساس امتیاز وزنی (بالاترین امتیاز اول)
+//         $query->orderBy('criteria_score', 'desc');
+//     }
+
+//     // سایر فیلترها...
+
+//     // مرتب‌سازی عادی فقط اگر فیلتر معیار نداشته باشیم
+//     if (empty($this->specific_criteria)) {
+//         if ($this->sortField) {
+//             $query->orderBy("families.{$this->sortField}", $this->sortDirection);
+//         } else {
+//             $query->orderBy('families.created_at', 'desc');
+//         }
+//     }
+
+//     return $query;
+// }
+protected function buildFamiliesQuery()
+{
+    // بررسی تب فعال برای تعیین نحوه مدیریت رکوردهای حذف شده
+    if ($this->activeTab === 'deleted') {
+        // در تب حذف‌شده‌ها، فقط رکوردهایی که دارای deleted_at هستند نمایش داده شوند
+        $query = Family::onlyTrashed()->select(['families.*']);
+    } else {
+        // در سایر تب‌ها، فقط رکوردهای حذف نشده نمایش داده شوند (پیش‌فرض)
+        $query = Family::query()->select(['families.*']);
     }
 
+    // فیلتر بر اساس wizard_status
+    if ($this->wizard_status) {
+        Log::info('Filtering families by wizard_status', [
+            'wizard_status' => is_array($this->wizard_status) ? $this->wizard_status : [$this->wizard_status]
+        ]);
+
+        if (is_array($this->wizard_status)) {
+            $query->whereIn('wizard_status', $this->wizard_status);
+        } else {
+            $query->where('wizard_status', $this->wizard_status);
+        }
+    }
+
+    // Load اعضا برای محاسبه امتیاز
+    $query->with(['members']);
+
+    // اعمال فیلتر معیارها بر اساس JSON field
+    if (!empty($this->specific_criteria)) {
+        $selectedCriteriaNames = explode(',', $this->specific_criteria);
+
+        Log::info('Applying JSON criteria filter with member count', [
+            'criteria_names' => $selectedCriteriaNames
+        ]);
+
+        // فیلتر: خانواده‌هایی که معیار در acceptance_criteria دارن یا اعضاشون مشکل دارن
+        $query->where(function($mainQuery) use ($selectedCriteriaNames) {
+            // شرط 1: معیار در acceptance_criteria خانواده باشه
+            foreach ($selectedCriteriaNames as $criteria) {
+                $mainQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria]);
+            }
+
+            // شرط 2: اعضای خانواده این مشکلات رو داشته باشن
+            $mainQuery->orWhereHas('members', function($memberQuery) use ($selectedCriteriaNames) {
+                $mapping = $this->getCriteriaMapping();
+                $englishProblems = [];
+
+                foreach ($selectedCriteriaNames as $persianCriteria) {
+                    $englishProblem = array_search($persianCriteria, $mapping);
+                    if ($englishProblem) {
+                        $englishProblems[] = $englishProblem;
+                    }
+                }
+
+                if (!empty($englishProblems)) {
+                    foreach ($englishProblems as $problem) {
+                        $memberQuery->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$problem]);
+                    }
+                }
+            });
+        });
+
+        // مرتب‌سازی بر اساس امتیاز محاسبه شده (بعداً در Collection)
+        // برای نمایش قدیمی‌ترین‌ها اول
+        $query->orderBy('families.created_at', 'asc');
+    }
+
+    // سایر فیلترها...
+    // اینجا باید فیلترهای دیگر اضافه شوند
+
+    // مرتب‌سازی نهایی
+    if (empty($this->specific_criteria)) {
+        // اعتبارسنجی sortDirection قبل از استفاده
+        $validDirection = in_array($this->sortDirection, ['asc', 'desc']) ? $this->sortDirection : 'asc';
+
+        if ($this->sortField) {
+            $query->orderBy("families.{$this->sortField}", $validDirection);
+        } else {
+            // پیش‌فرض: قدیمی‌ترین‌ها اول
+            $query->orderBy('families.created_at', 'asc');
+        }
+    }
+
+    return $query;
+}
+
+
+/**
+ * محاسبه امتیاز کامل خانواده با در نظر گیری تعداد اعضای متأثر
+ */
+public function calculateFamilyTotalScore($family): array
+{
+    $baseWeights = $this->getCriteriaWeights();
+    $mapping = $this->getCriteriaMapping();
+    $totalScore = 0;
+    $details = [];
+
+    // 1️⃣ امتیاز از acceptance_criteria خانواده (امتیاز پایه)
+    if (!empty($family->acceptance_criteria)) {
+        $familyCriteria = is_string($family->acceptance_criteria)
+            ? json_decode($family->acceptance_criteria, true)
+            : $family->acceptance_criteria;
+
+        if (is_array($familyCriteria)) {
+            foreach ($familyCriteria as $criteria) {
+                if (isset($baseWeights[$criteria])) {
+                    $baseScore = $baseWeights[$criteria];
+                    $totalScore += $baseScore;
+                    $details[] = [
+                        'type' => 'family_criteria',
+                        'name' => $criteria,
+                        'base_score' => $baseScore,
+                        'multiplier' => 1,
+                        'final_score' => $baseScore
+                    ];
+                }
+            }
+        }
+    }
+
+    // 2️⃣ امتیاز اضافی بر اساس تعداد اعضای متأثر
+    if ($family->members) {
+        $memberProblems = [];
+
+        // شمارش تعداد اعضایی که هر مشکل رو دارن
+        foreach ($family->members as $member) {
+            if (!empty($member->problem_type)) {
+                $memberProblemTypes = is_string($member->problem_type)
+                    ? json_decode($member->problem_type, true)
+                    : $member->problem_type;
+
+                if (is_array($memberProblemTypes)) {
+                    foreach ($memberProblemTypes as $problem) {
+                        $persianName = $mapping[$problem] ?? $problem;
+                        if (!isset($memberProblems[$persianName])) {
+                            $memberProblems[$persianName] = 0;
+                        }
+                        $memberProblems[$persianName]++;
+                    }
+                }
+            }
+        }
+
+        // محاسبه امتیاز بر اساس تعداد اعضای متأثر
+        foreach ($memberProblems as $problemName => $affectedCount) {
+            if (isset($baseWeights[$problemName])) {
+                $baseScore = $baseWeights[$problemName];
+
+                // ضریب تشدید بر اساس تعداد اعضای متأثر
+                $intensityMultiplier = $this->calculateIntensityMultiplier($affectedCount, $family->members->count());
+
+                $additionalScore = $baseScore * $intensityMultiplier;
+                $totalScore += $additionalScore;
+
+                $details[] = [
+                    'type' => 'member_problems',
+                    'name' => $problemName,
+                    'base_score' => $baseScore,
+                    'affected_count' => $affectedCount,
+                    'total_members' => $family->members->count(),
+                    'multiplier' => $intensityMultiplier,
+                    'final_score' => $additionalScore
+                ];
+            }
+        }
+    }
+
+    return [
+        'total_score' => round($totalScore, 1),
+        'details' => $details
+    ];
+}
+
+/**
+ * محاسبه ضریب تشدید بر اساس درصد اعضای متأثر
+ */
+private function calculateIntensityMultiplier(int $affectedCount, int $totalMembers): float
+{
+    if ($totalMembers === 0) return 0;
+
+    $affectedPercentage = ($affectedCount / $totalMembers) * 100;
+
+    // ضریب بر اساس درصد اعضای متأثر
+    if ($affectedPercentage >= 75) {
+        return 2.0;  // بیش از 75% اعضا متأثر → ضریب 2
+    } elseif ($affectedPercentage >= 50) {
+        return 1.5;  // 50-75% اعضا متأثر → ضریب 1.5
+    } elseif ($affectedPercentage >= 25) {
+        return 1.2;  // 25-50% اعضا متأثر → ضریب 1.2
+    } else {
+        return 0.8;  // کمتر از 25% اعضا متأثر → ضریب 0.8
+    }
+}
+/**
+ * محاسبه امتیاز کل یک خانواده بر اساس معیارها و مشکلات اعضا
+ */
+public function calculateFamilyScore($family): int
+{
+    $score = 0;
+    $weights = $this->getCriteriaWeights();
+    $mapping = $this->getCriteriaMapping();
+
+    // امتیاز از acceptance_criteria خانواده
+    if (!empty($family->acceptance_criteria)) {
+        $familyCriteria = is_string($family->acceptance_criteria)
+            ? json_decode($family->acceptance_criteria, true)
+            : $family->acceptance_criteria;
+
+        if (is_array($familyCriteria)) {
+            foreach ($familyCriteria as $criteria) {
+                $score += $weights[$criteria] ?? 1;
+            }
+        }
+    }
+
+    // امتیاز اضافی از problem_type اعضای خانواده
+    if ($family->members) {
+        foreach ($family->members as $member) {
+            if (!empty($member->problem_type)) {
+                $memberProblems = is_string($member->problem_type)
+                    ? json_decode($member->problem_type, true)
+                    : $member->problem_type;
+
+                if (is_array($memberProblems)) {
+                    foreach ($memberProblems as $problem) {
+                        // تبدیل نام انگلیسی به فارسی
+                        $persianName = $mapping[$problem] ?? $problem;
+                        $score += ($weights[$persianName] ?? 1) * 0.5; // نصف وزن برای اعضا
+                    }
+                }
+            }
+        }
+    }
+
+    return (int) $score;
+}
+    /**
+ * دریافت نام معیارها برای نمایش
+ */
+private function getCriteriaNames(array $criteriaIds): array
+{
+    try {
+        // Cache کردن نام معیارها برای بهبود کارایی
+        return Cache::remember("criteria_names_" . implode('_', $criteriaIds), 3600, function() use ($criteriaIds) {
+            return \App\Models\RankSetting::whereIn('id', $criteriaIds)
+                ->pluck('name', 'id')
+                ->toArray();
+        });
+    } catch (\Exception $e) {
+        Log::warning('Could not fetch criteria names', ['error' => $e->getMessage()]);
+        // fallback: استفاده از ID ها
+        return array_map(fn($id) => "معیار #{$id}", $criteriaIds);
+    }
+}
+    /**
+ * اضافه کردن فیلتر معیارها به لیست فیلترهای فعال
+ */
+private function getCriteriaWithWeights(array $criteriaIds): array
+{
+    try {
+        return Cache::remember("criteria_weights_" . implode('_', $criteriaIds), 3600, function() use ($criteriaIds) {
+            return \App\Models\RankSetting::whereIn('id', $criteriaIds)
+                ->select('id', 'name', 'weight')
+                ->orderBy('weight', 'desc')  // مرتب‌سازی بر اساس وزن
+                ->get()
+                ->toArray();
+        });
+    } catch (\Exception $e) {
+        Log::warning('Could not fetch criteria with weights', ['error' => $e->getMessage()]);
+        // fallback
+        return array_map(fn($id) => [
+            'id' => $id,
+            'name' => "معیار #{$id}",
+            'weight' => 1
+        ], $criteriaIds);
+    }
+}
+
+/**
+ * اضافه کردن فیلتر معیارها با جزئیات وزن
+ */
+private function addCriteriaToActiveFilters(array $criteriaInfo, int $totalWeight): void
+{
+    // حذف فیلتر معیارهای قبلی
+    $this->activeFilters = collect($this->activeFilters ?? [])
+        ->filter(fn($filter) => $filter['type'] !== 'criteria')
+        ->values()
+        ->toArray();
+
+    // اضافه کردن فیلتر جدید معیارها با وزن
+    if (!empty($criteriaInfo)) {
+        $label = 'معیارها (مرتب شده بر اساس وزن): ';
+        $details = array_map(function($criteria) {
+            return "{$criteria['name']} ({$criteria['weight']})";
+        }, $criteriaInfo);
+
+        $this->activeFilters[] = [
+            'type' => 'criteria',
+            'value' => implode(',', array_column($criteriaInfo, 'id')),
+            'label' => $label . implode('، ', $details),
+            'total_weight' => $totalWeight
+        ];
+    }
+}
+
+/**
+ * پاک کردن فیلتر معیارها
+ */
+public function clearCriteriaFilter()
+{
+    $this->specific_criteria = null;
+    $this->selectedCriteria = [];
+
+    // حذف از فیلترهای فعال
+    $this->activeFilters = collect($this->activeFilters ?? [])
+        ->filter(fn($filter) => $filter['type'] !== 'criteria')
+        ->values()
+        ->toArray();
+
+    $this->resetPage();
+    $this->clearFamiliesCache();
+
+    $this->dispatch('toast', [
+        'message' => 'فیلتر معیارها پاک شد',
+        'type' => 'info'
+    ]);
+}
     /**
      * دریافت تعداد کل اعضای خانواده‌های انتخاب شده
      *
@@ -3055,10 +3961,10 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
             return \App\Models\Province::orderBy('name')->get();
         });
     }
-    
+
     /**
      * دریافت آمارهای سایدبار با استفاده از کش
-     * 
+     *
      * @return array
      */
     public function getSidebarStatsProperty()
@@ -3067,20 +3973,20 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
         $user = Auth::user();
         $userType = $user ? $user->type : 'guest';
         $charityId = $user && isset($user->charity_id) ? $user->charity_id : null;
-        
+
         // ساخت کلید کش منحصر به فرد بر اساس نوع کاربر و خیریه
         $cacheKey = "sidebar-stats-{$userType}-" . ($charityId ?? 'all');
-        
+
         // کش کردن آمار به مدت ۵ دقیقه
         return Cache::remember($cacheKey, 300, function () use ($charityId, $userType) {
             try {
                 $query = Family::query();
-                
+
                 // اگر کاربر مدیر خیریه است، فقط خانواده‌های مربوط به آن خیریه را ببیند
                 if ($charityId && $userType === 'charity_admin') {
                     $query->where('charity_id', $charityId);
                 }
-                
+
                 // بهینه‌سازی N+1: استفاده از یک کوئری برای محاسبه تمام آمارها
                 $result = $query->selectRaw('
                     COUNT(*) as total,
@@ -3090,7 +3996,7 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
                     SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected_count,
                     SUM(CASE WHEN is_insured = 1 THEN 1 ELSE 0 END) as insured_count
                 ')->first();
-                
+
                 // ساخت آرایه آمار
                 return [
                     'total' => $result->total ?? 0,
@@ -3108,7 +4014,7 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
                     'user_type' => $userType,
                     'charity_id' => $charityId
                 ]);
-                
+
                 return [
                     'total' => 0,
                     'pending' => 0,
@@ -3120,6 +4026,25 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
                 ];
             }
         });
+    }
+
+
+    /**
+     * دریافت لیست انواع مشکلات موجود در سیستم
+     *
+     * @return array
+     */
+    public function getProblemTypesProperty()
+    {
+        return [
+            'addiction' => 'اعتیاد',
+            'unemployment' => 'بیکاری',
+            'disability' => 'معلولیت',
+            'chronic_illness' => 'بیماری مزمن',
+            'single_parent' => 'سرپرست خانوار زن',
+            'elderly' => 'سالمندی',
+            'other' => 'سایر'
+        ];
     }
 
     public function getCitiesProperty()
@@ -3152,5 +4077,78 @@ FamiliesApproval     * ذخیره تنظیمات رتبه (جدید یا ویر�
                                   ->orderBy('name')
                                   ->get(['id', 'name']);
         });
+    }
+
+
+    public function downloadSampleTemplate()
+    {
+        try {
+            // دریافت خانواده‌های انتخاب شده یا همه خانواده‌های صفحه
+            if (!empty($this->selected)) {
+                // اگر خانواده‌ای انتخاب شده، فقط اونها
+                $families = Family::whereIn('id', $this->selected)
+                    ->with(['head'])
+                    ->get();
+                $downloadType = 'selected_families';
+            } else {
+                // اگر هیچ خانواده‌ای انتخاب نشده، همه خانواده‌های صفحه فعلی
+                $families = $this->getFamiliesProperty();
+                $downloadType = 'all_page_families';
+            }
+
+            if ($families->isEmpty()) {
+                session()->flash('error', 'هیچ خانواده‌ای برای تولید فایل نمونه یافت نشد.');
+                return null;
+            }
+
+            // تبدیل به آرایه برای export
+            $familyData = $families->map(function ($family) {
+                return [
+                    'کد خانواده' => $family->family_code ?? '',
+                    'نام سرپرست خانوار' => $family->head?->first_name . ' ' . $family->head?->last_name ?? '',
+                    'کد ملی سرپرست' => $family->head?->national_code ?? '',
+
+                    // فیلدهای خالی برای پر کردن اطلاعات بیمه
+                    'نوع بیمه' => '',
+                    'تاریخ شروع' => '',
+                    'تاریخ پایان' => '',
+                    'مبلغ بیمه (ریال)' => '',
+                    'شماره بیمه‌نامه' => '',
+                    'توضیحات' => ''
+                ];
+            })->toArray();
+
+            $headings = array_keys($familyData[0]);
+
+
+            $collection = collect($familyData);
+        // دانلود فایل
+        $response = Excel::download(
+            new DynamicDataExport($collection, $headings, array_keys($familyData[0])),
+            'قالب_بیمه_خانواده‌ها_' . now()->format('Y-m-d') . '.xlsx'
+        );
+
+        // ✅ بعد از دانلود موفق، انتقال به تب "در انتظار صدور"
+        $this->dispatch('file-downloaded-successfully', [
+            'message' => 'فایل نمونه با موفقیت دانلود شد. لطفاً اطلاعات بیمه را تکمیل کرده و در این صفحه آپلود کنید.',
+            'families_count' => count($familyData)
+        ]);
+
+        // تغییر تب به "در انتظار صدور"
+        $this->setTab('excel');
+
+        // نمایش پیام راهنما
+        session()->flash('message', 'فایل نمونه شامل ' . count($familyData) . ' خانواده دانلود شد. لطفاً اطلاعات بیمه را تکمیل کرده و در این صفحه آپلود کنید.');
+
+        return $response;
+        } catch (\Exception $e) {
+            Log::error('خطا در دانلود قالب بیمه: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => Auth::id()
+            ]);
+
+            session()->flash('error', 'خطا در دانلود قالب: ' . $e->getMessage());
+            return null;
+        }
     }
 }

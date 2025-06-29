@@ -59,9 +59,21 @@ class AppServiceProvider extends ServiceProvider
         
         // View Composer ساده
         View::composer('layouts.sidebar', function ($view) {
-            $statsService = app(SidebarStatsService::class);
-            $stats = $statsService->getStatsForUser();
-            $view->with($stats);
+            try {
+                $statsService = app(SidebarStatsService::class);
+                $stats = $statsService->getStatsForUser();
+                $view->with($stats);
+            } catch (\Exception $e) {
+                // Log the error and provide default values
+                \Log::error('Sidebar stats error: ' . $e->getMessage());
+                $view->with([
+                    'insuredFamilies' => 0,
+                    'insuredMembers' => 0,
+                    'uninsuredFamilies' => 0,
+                    'uninsuredMembers' => 0,
+                    'current_user_type' => auth()->user()->user_type ?? 'guest'
+                ]);
+            }
         });
 
         // ثبت کامپوننت‌های لایوویر

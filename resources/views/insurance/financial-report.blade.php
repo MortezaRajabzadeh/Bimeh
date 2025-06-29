@@ -13,19 +13,55 @@
                         </h2>
                         <p class="text-sm text-gray-600 mt-1">{{ __('financial.descriptions.report_overview') }}</p>
                     </div>
-                    <div>
+                    <div x-data="{
+                        downloading: false,
+                        async downloadReport() {
+                            this.downloading = true;
+
+                            try {
+                                // ایجاد لینک دانلود
+                                const link = document.createElement('a');
+                                link.href = '{{ route("insurance.financial-report.export") }}';
+                                link.download = '';
+
+                                // شروع دانلود
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+
+                            } catch (error) {
+                                console.error('خطا در دانلود:', error);
+                            } finally {
+                                // توقف loading بعد از 3 ثانیه
+                                setTimeout(() => {
+                                    this.downloading = false;
+                                }, 3000);
+                            }
+                        }
+                    }">
                         <!-- دکمه دانلود اکسل -->
-                        <a href="{{ route('insurance.financial-report.export') }}" 
-                           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            {{ __('financial.actions.export_excel') }}
-                        </a>
+                        <button @click="downloadReport()"
+                        :disabled="downloading"
+                        :class="downloading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
+
+                    <!-- آیکون لودینگ -->
+                    <svg x-show="downloading" class="animate-spin h-4 w-4 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+
+                    <!-- آیکون عادی -->
+                    <svg x-show="!downloading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+
+                    <span x-text="downloading ? 'در حال دانلود...' : '{{ __('financial.actions.export_excel') }}'"></span>
+                </button>
                     </div>
                 </div>
             </div>
-    
+
             <!-- کارت خلاصه مالی -->
             <div class="px-6 py-4">
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
@@ -50,7 +86,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- کارت راهنمای تخصیص سهم‌بندی -->
             <div class="px-6 py-4 border-t border-gray-200">
                 <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
@@ -66,7 +102,7 @@
                                 تخصیص سهم‌بندی به معنی تعیین درصد مشارکت هر منبع مالی (مانند سازمان‌ها، خیرین، دولت) در پرداخت حق بیمه خانواده‌هاست.
                             </p>
                             <div class="flex flex-wrap gap-3">
-                                <a href="{{ route('insurance.shares.index') }}" 
+                                <a href="{{ route('insurance.shares.index') }}"
                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -74,7 +110,7 @@
                                     </svg>
                                     مشاهده تمام سهم‌های تخصیص داده شده
                                 </a>
-                                <a href="{{ route('insurance.families.approval') }}?tab=approved" 
+                                <a href="{{ route('insurance.families.approval') }}?tab=approved"
                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -105,7 +141,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -128,7 +164,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($transactionsPaginated as $idx => $t)
                                 <tbody x-data="{ open: false }" class="divide-y divide-gray-200">
-                                    <tr class="hover:bg-gray-50 transition-colors duration-200 
+                                    <tr class="hover:bg-gray-50 transition-colors duration-200
                                         {{ $t['type'] === 'credit' ? 'border-r-4 border-green-400' : 'border-r-4 border-red-400' }}">
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
@@ -166,9 +202,9 @@
                                     </tr>
 
                                     @if(in_array($t['title'], [__('financial.transaction_types.premium_payment'), __('financial.transaction_types.premium_import')]))
-                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
-                                            x-transition:enter-start="opacity-0 transform scale-95" 
-                                            x-transition:enter-end="opacity-100 transform scale-100" 
+                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200"
+                                            x-transition:enter-start="opacity-0 transform scale-95"
+                                            x-transition:enter-end="opacity-100 transform scale-100"
                                             x-cloak class="bg-blue-50">
                                             <td colspan="4" class="px-6 py-4">
                                                 <div class="bg-white rounded-lg p-4 border border-blue-200">
@@ -197,8 +233,8 @@
                                                                             $allCodes = array_merge($t['created_family_codes'] ?? [], $t['updated_family_codes'] ?? []);
                                                                         @endphp
                                                                         @if(count($allCodes) > 0)
-                                                                            <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}" 
-                                                                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200" 
+                                                                            <a href="{{ route('insurance.families.list', ['codes' => implode(',', $allCodes)]) }}"
+                                                                               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                                                                                target="_blank">
                                                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -208,7 +244,7 @@
                                                                             </a>
                                                                         @endif
                                                                     @elseif($t['payment_id'])
-                                                                        <a href="{{ route('insurance.financial-report.payment-details', $t['payment_id']) }}?type={{ $t['title'] === __('financial.transaction_types.premium_payment') ? 'allocation' : 'payment' }}" 
+                                                                        <a href="{{ route('insurance.financial-report.payment-details', $t['payment_id']) }}?type={{ $t['title'] === __('financial.transaction_types.premium_payment') ? 'allocation' : 'payment' }}"
                                                                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                                                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -227,9 +263,9 @@
                                             </td>
                                         </tr>
                                     @elseif($t['is_allocation'] ?? false)
-                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200" 
-                                            x-transition:enter-start="opacity-0 transform scale-95" 
-                                            x-transition:enter-end="opacity-100 transform scale-100" 
+                                        <tr x-show="open" x-transition:enter="transition ease-out duration-200"
+                                            x-transition:enter-start="opacity-0 transform scale-95"
+                                            x-transition:enter-end="opacity-100 transform scale-100"
                                             x-cloak class="bg-blue-50">
                                             <td colspan="4" class="px-6 py-4">
                                                 <div class="bg-white rounded-lg p-4 border border-blue-200">
@@ -252,7 +288,7 @@
                                                             </div>
                                                             @endif
                                                             <div class="mt-3 pt-3 border-t border-gray-200">
-                                                                <a href="{{ route('insurance.allocations.index') }}" 
+                                                                <a href="{{ route('insurance.allocations.index') }}"
                                                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -284,7 +320,7 @@
                     </table>
                 </div>
             </div>
-            
+
             <!-- Pagination تراکنش‌ها -->
             @if($transactionsPaginated->hasPages())
                 <div class="px-6 py-4 border-t border-gray-200">
@@ -325,7 +361,7 @@
                                     ‹
                                 </span>
                             @endif
-                            
+
                             <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300 mx-1">
                                 @php
                                     $start = max($transactionsPaginated->currentPage() - 2, 1);
@@ -334,14 +370,14 @@
                                         $start = max(1, $end - 4);
                                     }
                                 @endphp
-                                
+
                                 @if($start > 1)
                                     <a href="{{ $transactionsPaginated->url(1) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">1</a>
                                     @if($start > 2)
                                         <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
                                     @endif
                                 @endif
-                                
+
                                 @for($i = $start; $i <= $end; $i++)
                                     @if($transactionsPaginated->currentPage() == $i)
                                         <span class="bg-green-100 text-green-800 font-medium h-full px-3 inline-flex items-center justify-center text-sm">
@@ -353,7 +389,7 @@
                                         </a>
                                     @endif
                                 @endfor
-                                
+
                                 @if($end < $transactionsPaginated->lastPage())
                                     @if($end < $transactionsPaginated->lastPage() - 1)
                                         <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
@@ -361,7 +397,7 @@
                                     <a href="{{ $transactionsPaginated->url($transactionsPaginated->lastPage()) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">{{ $transactionsPaginated->lastPage() }}</a>
                                 @endif
                             </div>
-                            
+
                             @if($transactionsPaginated->hasMorePages())
                                 <a href="{{ $transactionsPaginated->nextPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
                                     ›
@@ -403,7 +439,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -490,7 +526,7 @@
                     </table>
                 </div>
             </div>
-            
+
             <!-- Pagination ایمپورت لاگ‌ها -->
             @if($logs->hasPages())
                 <div class="px-6 py-4 border-t border-gray-200">
@@ -506,7 +542,7 @@
                                     ‹
                                 </span>
                             @endif
-                            
+
                             <div class="flex h-9 border border-gray-300 rounded-md overflow-hidden shadow-sm divide-x divide-gray-300 mx-1">
                                 @php
                                     $start = max($logs->currentPage() - 2, 1);
@@ -515,14 +551,14 @@
                                         $start = max(1, $end - 4);
                                     }
                                 @endphp
-                                
+
                                 @if($start > 1)
                                     <a href="{{ $logs->url(1) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">1</a>
                                     @if($start > 2)
                                         <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
                                     @endif
                                 @endif
-                                
+
                                 @for($i = $start; $i <= $end; $i++)
                                     @if($logs->currentPage() == $i)
                                         <span class="bg-green-100 text-green-800 font-medium h-full px-3 inline-flex items-center justify-center text-sm">
@@ -534,7 +570,7 @@
                                         </a>
                                     @endif
                                 @endfor
-                                
+
                                 @if($end < $logs->lastPage())
                                     @if($end < $logs->lastPage() - 1)
                                         <span class="bg-white text-gray-600 h-full px-2 inline-flex items-center justify-center text-sm">...</span>
@@ -542,7 +578,7 @@
                                     <a href="{{ $logs->url($logs->lastPage()) }}" class="bg-white text-gray-600 hover:bg-green-50 hover:text-green-700 h-full px-3 inline-flex items-center justify-center text-sm transition-colors duration-200">{{ $logs->lastPage() }}</a>
                                 @endif
                             </div>
-                            
+
                             @if($logs->hasMorePages())
                                 <a href="{{ $logs->nextPageUrl() }}" class="text-green-600 hover:bg-green-50 cursor-pointer bg-white rounded-md h-9 w-9 flex items-center justify-center border border-gray-300 shadow-sm text-lg font-bold">
                                     ›

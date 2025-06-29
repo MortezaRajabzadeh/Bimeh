@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Laravel\Facades\Image;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -74,6 +76,14 @@ class Organization extends Model
     }
 
     /**
+     * رابطه با اعضای معرفی شده توسط این سازمان
+     */
+    public function members()
+    {
+        return $this->hasMany(Member::class, 'charity_id');
+    }
+
+    /**
      * فیلتر سازمان‌های بیمه
      */
     public function scopeInsurance($query)
@@ -100,12 +110,71 @@ class Organization extends Model
     /**
      * Get the logo URL attribute.
      */
+    /**
+     * Get the full URL to the organization's logo.
+     *
+     * @return string
+     */
     public function getLogoUrlAttribute()
     {
-        if ($this->logo_path) {
-            return asset('storage/' . $this->logo_path);
-        }
-        
-        return asset('images/default-organization.png');
+        return $this->attributes['logo_path'] ? Storage::url($this->attributes['logo_path']) : null;
     }
-} 
+    
+    /**
+     * Get the logo path with storage disk
+     * 
+     * @return string|null
+     */
+    public function getLogoPathAttribute()
+    {
+        return $this->attributes['logo_path'] ? Storage::url($this->attributes['logo_path']) : null;
+    }
+
+    /**
+     * آپلود و بهینه‌سازی لوگوی سازمان
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @return string|null
+     */
+    public function uploadLogo($file)
+    {
+        if (!$file) {
+            return null;
+        }
+
+        // حذف لوگوی قبلی اگر وجود دارد
+        if ($this->logo_path && Storage::exists($this->logo_path)) {
+            Storage::delete($this->logo_path);
+        }
+
+        $filename = 'org-' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = 'organizations/logos/' . $filename;
+
+        // ایجاد دایرکتوری اگر وجود نداشته باشد
+        if (!Storage::exists('organizations/logos')) {
+            Storage::makeDirectory('organizations/logos');
+        }
+
+        // بهینه‌سازی و ذخیره تصویر
+        $image = Image::read($file)
+            ->cover(200, 200) // تغییر سایز به 200x200 پیکسل
+            ->toWebp(75); // تبدیل به فرمت webp با کیفیت 75%
+
+
+        Storage::put($path, $image);
+
+        return $path;
+    }
+
+    /**
+     * حذف لوگوی سازمان
+     */
+    public function deleteLogo()
+    {
+        if ($this->logo_path && Storage::exists($this->logo_path)) {
+            Storage::delete($this->logo_path);
+            $this->logo_path = null;
+            $this->save();
+        }
+    }
+}

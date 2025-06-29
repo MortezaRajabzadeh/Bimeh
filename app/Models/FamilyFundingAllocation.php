@@ -46,7 +46,7 @@ class FamilyFundingAllocation extends Model
 
     // وضعیت‌های مختلف تخصیص
     const STATUS_PENDING = 'pending';
-    const STATUS_APPROVED = 'approved'; 
+    const STATUS_APPROVED = 'approved';
     const STATUS_PAID = 'paid';
 
     /**
@@ -67,7 +67,10 @@ class FamilyFundingAllocation extends Model
     {
         return $this->belongsTo(Family::class);
     }
-
+    public function importLog()
+    {
+        return $this->belongsTo(ShareAllocationLog::class, 'import_log_id');
+    }
     /**
      * رابطه با منبع مالی
      */
@@ -95,9 +98,6 @@ class FamilyFundingAllocation extends Model
     /**
      * رابطه با لاگ آپلود فایل اکسل
      */
-    public function importLog()
-    {
-    }
 
     /**
      * رابطه با تراکنش مالی
@@ -123,12 +123,12 @@ class FamilyFundingAllocation extends Model
     {
         $this->status = self::STATUS_APPROVED;
         $this->approved_at = now();
-        
+
         // استفاده از Auth facade برای احراز هویت
         $this->approved_by = $userId ?? (Auth::id() ?: null);
-        
+
         $this->save();
-        
+
         return $this;
     }
 
@@ -139,7 +139,7 @@ class FamilyFundingAllocation extends Model
     {
         $this->status = self::STATUS_PAID;
         $this->save();
-        
+
         return $this;
     }
 
@@ -190,11 +190,11 @@ class FamilyFundingAllocation extends Model
     public static function isValidTotalPercentage($familyId, $excludeId = null)
     {
         $query = static::where('family_id', $familyId);
-        
+
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
-        
+
         return $query->sum('percentage') <= 100;
     }
 
@@ -220,7 +220,7 @@ class FamilyFundingAllocation extends Model
         if (!$this->amount) {
             return '۰';
         }
-        
+
         return self::formatNumber($this->amount) . ' تومان';
     }
 
@@ -232,10 +232,10 @@ class FamilyFundingAllocation extends Model
         if (!$this->percentage) {
             return '۰٪';
         }
-        
+
         return $this->percentage . '٪';
     }
-    
+
     /**
      * تبدیل اعداد به فرمت فارسی با جداکننده فارسی
      */
@@ -244,16 +244,16 @@ class FamilyFundingAllocation extends Model
         if (!$number) {
             return '۰';
         }
-        
+
         // فرمت‌بندی با جداکننده فارسی
         $formatted = number_format($number, 0, '.', '٬');
-        
+
         return $formatted;
     }
 
     /**
      * محاسبه مجموع بودجه تخصیص یافته برای یک خانواده
-     * 
+     *
      * @param int $familyId شناسه خانواده
      * @return float مجموع بودجه تخصیص یافته
      */
@@ -266,7 +266,7 @@ class FamilyFundingAllocation extends Model
 
     /**
      * بررسی وضعیت کلی تخصیص بودجه خانواده
-     * 
+     *
      * @param int $familyId شناسه خانواده
      * @return array وضعیت تخصیص بودجه
      */
@@ -279,7 +279,7 @@ class FamilyFundingAllocation extends Model
         $paidAllocations = static::where('family_id', $familyId)
             ->where('status', self::STATUS_PAID)
             ->count();
-        
+
         $totalAmount = static::getTotalAllocatedAmountForFamily($familyId);
         $totalPercentage = static::getTotalPercentageForFamily($familyId);
 
