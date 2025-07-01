@@ -104,6 +104,13 @@ class InsuranceShareService
                         $sharesData[] = $shareRecord;
                     }
                 }
+                $currentStep = $family->wizard_status ?? InsuranceWizardStep::REVIEWING;
+                $nextStep = InsuranceWizardStep::APPROVED; // مرحله بعد از تخصیص سهم
+
+                $family->update([
+                    'wizard_status' => $nextStep->value,
+                    'status' => $nextStep->legacyStatus(), // وضعیت قدیمی برای سازگاری
+                ]);
             }
 
             if (!empty($sharesData)) {

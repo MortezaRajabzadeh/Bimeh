@@ -3,7 +3,6 @@
     showFilterModal: false,
     showRankModal: @entangle('showRankModal'),
     filters: @entangle('tempFilters'),
-    deleteReason: '',
     addFilter() {
         if (!this.filters) {
             this.filters = [];
@@ -440,22 +439,38 @@ total items: {{ $families->count() ?? 0 }}</pre>
                     <div class="w-8"></div>
                 </div>
 
-                <!-- Insured Tab (Right side) -->
-                <div class="flex flex-col items-center relative z-10">
-                    <button
-                        wire:click="changeTab('deleted')"
-                        class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
-                            {{ $activeTab === 'insured' ? 'bg-emerald-500 shadow-lg shadow-emerald-100 ring-4 ring-emerald-100' : 'bg-gray-100' }}">
-                        <span class="text-{{ $activeTab === 'insured' ? 'white' : 'gray-600' }}">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </span>
-                    </button>
-                    <span class="mt-3 text-sm font-medium {{ $activeTab === 'deleted' ? 'text-red-600' : 'text-gray-500' }}">
-                    حذف شده ها
-                    </span>
-                </div>
+<!-- Deleted Tab (Right side) -->
+<div class="flex flex-col items-center relative z-10">
+    <button
+        wire:click="changeTab('deleted')"
+        class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
+
+        {{-- منطق جدید برای رنگ قرمز در حالت فعال --}}
+        @if ($activeTab === 'deleted')
+            bg-red-600 shadow-lg shadow-red-100 ring-4 ring-red-100
+        @else
+            bg-gray-100
+        @endif
+        ">
+
+        <span
+            {{-- رنگ آیکون هم بر اساس وضعیت تغییر می‌کند --}}
+            class="
+            @if ($activeTab === 'deleted')
+                text-white
+            @else
+                text-gray-600
+            @endif
+            ">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </span>
+    </button>
+    <span class="mt-3 text-sm font-medium {{ $activeTab === 'deleted' ? 'text-red-600 font-bold' : 'text-gray-500' }}">
+        حذف شده ها
+    </span>
+</div>
             </div>
         </div>
 
@@ -521,10 +536,13 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             تایید و انتقال به مرحله بعد
+
                             <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
                         <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
                             wire:click="showDeleteConfirmation"
+                            wire:loading.attr="disabled"
+                            wire:target="showDeleteConfirmation"
                             {{ count($selected) === 0 ? 'disabled' : '' }}>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -998,7 +1016,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                         <div class="flex items-center">
                                             <input type="checkbox" id="family-{{ $family->id }}"
                                                 value="{{ $family->id }}"
-                                                wire:model="selected"
+                                                wire:model.live="selected"
                                                 wire:key="checkbox-{{ $family->id }}"
                                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                         </div>

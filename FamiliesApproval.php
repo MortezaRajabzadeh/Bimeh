@@ -32,6 +32,32 @@ class FamiliesApproval extends Component
 
     protected FamilyRepository $familyRepository;
 
+    protected function getListeners()
+    {
+        return [
+            'sharesAllocated' => 'handleSharesAllocated',
+            // سایر listeners موجود...
+        ];
+    }
+
+    /**
+     * مدیریت رویداد پس از تخصیص موفق سهم‌ها
+     * این متد به صورت خودکار پس از تخصیص سهم‌ها فراخوانی می‌شود و خانواده‌ها را به مرحله بعد منتقل می‌کند
+     */
+    public function handleSharesAllocated()
+    {
+        Log::info('FamiliesApproval::handleSharesAllocated - رویداد تخصیص سهم دریافت شد');
+
+        // انتقال خانواده‌ها به مرحله بعد
+        $this->moveSelectedToNextWizardStep();
+        
+        // هدایت کاربر به تب بعدی (approved)
+        $this->setTab('approved');
+        
+        // نمایش پیام موفقیت
+        session()->flash('message', 'سهم‌های بیمه با موفقیت تخصیص داده شدند و خانواده‌ها به مرحله بعد منتقل شدند.');
+    }
+
     public function boot(FamilyRepository $familyRepository)
     {
         $this->familyRepository = $familyRepository;
@@ -91,7 +117,7 @@ class FamiliesApproval extends Component
     public $selectedCriteria = [];
     public $criteriaRequireDocument = [];
 
-    public $searchTerm = '';
+    // اضافه کردن متغیرهای مرتب‌سازی
     public $sortField = 'created_at';
     public $sortDirection = 'asc';
     public $sortByProblemType = ''; // برای ذخیره نوع مشکل انتخاب شده برای مرتب‌سازی
@@ -154,135 +180,18 @@ class FamiliesApproval extends Component
     ];
 
     // ایجاد لیستنر برای ذخیره سهم‌بندی
-    protected function getListeners()
-    {
-        return [
-            'sharesAllocated' => 'handleSharesAllocated',
-            'reset-checkboxes' => 'onResetCheckboxes',
-            'switchToReviewingTab' => 'switchToReviewingTab',
-            'updateFamiliesStatus' => 'handleUpdateFamiliesStatus',
-            'refreshFamiliesList' => 'refreshFamiliesList',
-            'closeShareModal' => 'onCloseShareModal',
-            'selectForRenewal' => 'selectForRenewal',
-            'renewInsurance' => 'renewInsurance',
-            'pageRefreshed' => 'handlePageRefresh' // اضافه کردن listener جدید
-        ];
-    }
+    protected $listeners = [
+        'sharesAllocated' => 'onSharesAllocated',
+        'reset-checkboxes' => 'onResetCheckboxes',
+        'switchToReviewingTab' => 'switchToReviewingTab',
+        'updateFamiliesStatus' => 'handleUpdateFamiliesStatus',
+        'refreshFamiliesList' => 'refreshFamiliesList',
+        'closeShareModal' => 'onCloseShareModal',
+        'selectForRenewal' => 'selectForRenewal',
+        'renewInsurance' => 'renewInsurance',
+        'pageRefreshed' => 'handlePageRefresh' // اضافه کردن listener جدید
+    ];
 
-
-    /**
-     * مدیریت رویداد پس از تخصیص موفق سهم‌ها
-     * این متد به صورت خودکار پس از تخصیص سهم‌ها فراخوانی می‌شود و خانواده‌ها را به مرحله بعد منتقل می‌کند
-     *
-     * @param array $data اطلاعات ارسالی از رویداد شامل 'family_ids'
-     */
-    public function handleSharesAllocated(array $data = [])
-    {
-        // 1. لاگ دریافت رویداد
-        Log::info('FamiliesApproval::handleSharesAllocated - رویداد تخصیص سهم دریافت شد', [
-            'selected_count' => count($this->selected),
-            'selected_ids' => $this->selected,
-            'active_tab' => $this->activeTab,
-            'data' => $data,
-            'time' => now()->format('Y-m-d H:i:s.u'),
-        ]);
-
-        // 2. دریافت ID خانواده‌ها از رویداد اگر ارسال شده باشد
-        $familyIds = $data['family_ids'] ?? [];
-
-        // 3. اگر ID خانواده‌ها از طریق رویداد ارسال شده باشد، آنها را به selected اضافه می‌کنیم
-        if (!empty($familyIds)) {
-            $this->selected = $familyIds;
-            Log::info('FamiliesApproval::handleSharesAllocated - IDهای خانواده از رویداد دریافت شدند', [
-                'family_ids' => $familyIds
-            ]);
-        }
-
-        // 4. اگر هیچ خانواده‌ای انتخاب نشده باشد، پیام خطا نمایش می‌دهیم
-        if (empty($this->selected)) {
-            Log::warning('handleSharesAllocated called with no selected families.');
-            session()->flash('error', 'هیچ خانواده‌ای برای انتقال انتخاب نشده است.');
-            return;
-        }
-
-        // 5. انتقال خانواده‌ها به مرحله بعد
-        $this->moveSelectedToNextWizardStep();
-
-        // 6. هدایت کاربر به تب بعدی (approved)
-        $this->setTab('approved');
-
-        // 7. نمایش پیام موفقیت
-        session()->flash('message', 'سهم‌های بیمه با موفقیت تخصیص داده شدند و خانواده‌ها به مرحله بعد منتقل شدند.');
-
-        // 8. رویدادی برای ریست کردن چک‌باکس‌ها در view
-        $this->dispatch('reset-checkboxes');
-    }
-
-    /**
-     * اصلاح وضعیت خانواده‌های گیر کرده در مرحله تخصیص سهمیه
-     * این متد به صورت دستی فراخوانی می‌شود تا خانواده‌هایی که در وضعیت share_allocation مانده‌اند را به approved منتقل کند
-     */
-    public function fixShareAllocationFamilies()
-    {
-        try {
-            // یافتن خانواده‌هایی که در وضعیت share_allocation گیر کرده‌اند
-            $stuckFamilies = Family::where('wizard_status', InsuranceWizardStep::SHARE_ALLOCATION->value)->get();
-
-            $count = 0;
-            $batchId = 'fix_stuck_families_' . time();
-
-            Log::info('FamiliesApproval::fixShareAllocationFamilies - شروع اصلاح وضعیت خانواده‌های گیر کرده', [
-                'total_stuck' => $stuckFamilies->count(),
-                'time' => now()->format('Y-m-d H:i:s.u'),
-            ]);
-
-            DB::beginTransaction();
-
-            foreach ($stuckFamilies as $family) {
-                // تغییر وضعیت به approved
-                $currentStep = InsuranceWizardStep::SHARE_ALLOCATION;
-                $nextStep = InsuranceWizardStep::APPROVED;
-
-                // استفاده از setAttribute به جای دسترسی مستقیم برای رفع خطای لینت
-                $family->setAttribute('wizard_status', $nextStep->value);
-                $family->setAttribute('status', 'approved');
-                $family->save();
-
-                // ثبت لاگ
-                FamilyStatusLog::create([
-                    'family_id' => $family->id,
-                    'user_id' => Auth::id(),
-                    'from_status' => $currentStep->value,
-                    'to_status' => $nextStep->value,
-                    'comments' => 'اصلاح دستی وضعیت پس از تخصیص سهمیه',
-                    'batch_id' => $batchId,
-                ]);
-
-                $count++;
-            }
-
-            DB::commit();
-
-            $this->clearFamiliesCache();
-            $this->setTab('approved');
-
-            Log::info('FamiliesApproval::fixShareAllocationFamilies - پایان اصلاح وضعیت خانواده‌های گیر کرده', [
-                'success_count' => $count,
-                'time' => now()->format('Y-m-d H:i:s.u'),
-            ]);
-
-            session()->flash('message', "وضعیت {$count} خانواده با موفقیت از 'تخصیص سهمیه' به 'در انتظار حمایت' اصلاح شد.");
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('FamiliesApproval::fixShareAllocationFamilies - خطا در اصلاح وضعیت خانواده‌ها', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'time' => now()->format('Y-m-d H:i:s.u'),
-            ]);
-
-            session()->flash('error', 'خطا در اصلاح وضعیت خانواده‌ها: ' . $e->getMessage());
-        }
-    }
 
     private function getCriteriaMapping(): array
     {
@@ -305,82 +214,6 @@ class FamiliesApproval extends Component
 /**
  * دریافت وزن هر معیار (محافظ‌کارانه)
  */
-    /**
-     * این متد پس از تخصیص موفقیت‌آمیز سهمیه توسط مودال فراخوانی می‌شود.
-     * وظیفه آن انتقال خانواده‌های تخصیص‌داده‌شده به مرحله بعدی است.
-     *
-     * @param array $data اطلاعات ارسالی از رویداد شامل 'family_ids'
-     */
-    public function onSharesAllocated(array $data)
-    {
-        // 1. دریافت ID خانواده‌ها از رویداد
-        $familyIds = $data['family_ids'] ?? [];
-
-        if (empty($familyIds)) {
-            Log::warning('onSharesAllocated called with no family_ids.');
-            session()->flash('error', 'هیچ خانواده‌ای برای انتقال یافت نشد.');
-            return;
-        }
-
-        Log::info('onSharesAllocated: Processing family IDs for status update.', ['family_ids' => $familyIds]);
-
-        DB::beginTransaction();
-        try {
-            $batchId = 'batch_shares_allocated_' . time();
-            $count = 0;
-
-            // ما فقط خانواده‌هایی را آپدیت می‌کنیم که در مرحله تخصیص سهم بوده‌اند
-            $familiesToUpdate = Family::whereIn('id', $familyIds)
-                                      ->whereIn('wizard_status', [
-                                          InsuranceWizardStep::REVIEWING->value,
-                                          InsuranceWizardStep::SHARE_ALLOCATION->value
-                                      ])
-                                      ->get();
-
-            foreach ($familiesToUpdate as $family) {
-                $currentStepValue = $family->wizard_status?->value ?? 'unknown';
-                $nextStep = InsuranceWizardStep::APPROVED; // مرحله بعد از تخصیص سهم
-
-                // به‌روزرسانی وضعیت wizard
-                $family->wizard_status = $nextStep->value;
-                // به‌روزرسانی وضعیت قدیمی (legacy status) برای سازگاری
-                $family->status = 'approved';
-                $family->save();
-
-                // ثبت لاگ دقیق
-                FamilyStatusLog::create([
-                    'family_id' => $family->id,
-                    'user_id' => Auth::id(),
-                    'from_status' => $currentStepValue,
-                    'to_status' => $nextStep->value,
-                    'comments' => 'انتقال خودکار پس از تخصیص سهمیه',
-                    'batch_id' => $batchId,
-                ]);
-
-                $count++;
-            }
-
-            DB::commit();
-
-            // 3. پاکسازی و اطلاع‌رسانی به کاربر
-            $this->selected = [];
-            $this->selectAll = false;
-            $this->clearFamiliesCache(); // بروزرسانی لیست
-
-            session()->flash('message', "{$count} خانواده با موفقیت به مرحله 'در انتظار حمایت' منتقل شدند.");
-
-            // انتقال خودکار به تب بعدی برای مشاهده نتیجه
-            $this->changeTab('approved');
-
-            // رویدادی برای ریست کردن چک‌باکس‌ها در view
-            $this->dispatch('reset-checkboxes');
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error in onSharesAllocated: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            session()->flash('error', 'خطا در انتقال خانواده‌ها پس از تخصیص سهمیه.');
-        }
-    }
 private function getCriteriaWeights(): array
 {
     try {
@@ -479,6 +312,16 @@ private function getCriteriaWeights(): array
         $this->resetPage();
     }
 
+    /**
+     * پاک کردن انتخاب‌ها هنگام تغییر صفحه برای جلوگیری از انتخاب در چندین صفحه
+     */
+    public function updatedPage()
+    {
+        Log::info('🔄 Page changed - clearing selections');
+        $this->selectAll = false;
+        $this->selected = [];
+    }
+
     public function updatedSelectAll($value)
     {
         Log::info('🔍 updatedSelectAll method called with value: ' . ($value ? 'true' : 'false'));
@@ -558,7 +401,7 @@ private function getCriteriaWeights(): array
         // $families = $this->getFamiliesProperty();
         // $oldSelectAll = $this->selectAll;
         // $this->selectAll = count($this->selected) > 0 && count($this->selected) === $families->count();
-        // $this->skipRender();
+        $this->skipRender();
 
     }
 
@@ -711,77 +554,89 @@ private function getCriteriaWeights(): array
      */
     public function deleteSelected()
     {
-        // 1. اعتبارسنجی ساده
-        $this->validate([
-            'deleteReason' => 'required|string|min:3',
-            'selected' => 'required|array|min:1'
-        ], [
-            'deleteReason.required' => 'لطفاً دلیل حذف را انتخاب کنید.',
-            'selected.required' => 'هیچ خانواده‌ای برای حذف انتخاب نشده است.'
-        ]);
+        Log::info('🗑️ deleteSelected method called. Reason: ' . $this->deleteReason);
 
-        $familyIds = $this->selected;
+        // اعتبارسنجی انتخاب دلیل حذف
+        if (empty($this->deleteReason)) {
+            session()->flash('error', 'لطفاً دلیل حذف را انتخاب کنید');
+            return;
+        }
 
-        DB::beginTransaction();
+        if (empty($this->selected)) {
+            session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید');
+            return;
+        }
+
         try {
-            $batchId = 'delete_' . time();
-            $families = Family::whereIn('id', $familyIds)->get();
+            DB::beginTransaction();
 
-            if ($families->isEmpty()) {
-                $this->dispatch('toast', message: 'خانواده‌های انتخاب شده یافت نشدند.', type: 'error');
-                DB::rollBack();
-                return;
+            $deletedCount = 0;
+            $failedCount = 0;
+
+            foreach ($this->selected as $familyId) {
+                Log::info("🔄 Processing family ID: {$familyId} for deletion");
+
+                try {
+                    $family = Family::with('members')->findOrFail($familyId);
+
+                    // ایجاد لاگ برای تغییر وضعیت - با فیلدهای متناسب با جدول
+                    FamilyStatusLog::create([
+                        'family_id' => $family->id,
+                        'user_id' => Auth::id(),
+                        'from_status' => $family->status,
+                        'to_status' => 'deleted', // استفاده از to_status به جای new_status
+                        'comments' => $this->deleteReason, // استفاده از comments به جای reason
+                        'extra_data' => json_encode([
+                            'deleted_at' => now()->toDateTimeString(),
+                            'deleted_by' => Auth::user()->name ?? 'سیستم',
+                        ]),
+                    ]);
+
+                    // آپدیت وضعیت خانواده
+                    $family->status = 'deleted';
+                    $family->save();
+                    
+                    // استفاده از مکانیزم SoftDelete برای ثبت deleted_at
+                    $family->delete();
+
+                    Log::info("✅ Family ID: {$familyId} successfully marked as deleted");
+                    $deletedCount++;
+                } catch (\Exception $e) {
+                    Log::error("❌ Error deleting family ID: {$familyId}: " . $e->getMessage());
+                    $failedCount++;
+                }
             }
-
-            // 2. ایجاد لاگ‌ها به صورت گروهی (بهینه‌تر)
-            $logs = [];
-            foreach ($families as $family) {
-                $logs[] = [
-                    'family_id' => $family->id,
-                    'user_id' => Auth::id(),
-                    'from_status' => $family->wizard_status?->value ?? $family->status,
-                    'to_status' => 'deleted',
-                    'comments' => $this->deleteReason,
-                    'batch_id' => $batchId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-            if (!empty($logs)) {
-                FamilyStatusLog::insert($logs);
-            }
-
-            // 3. آپدیت گروهی وضعیت خانواده‌ها
-            Family::whereIn('id', $familyIds)->update([
-                'status' => 'deleted',
-                'wizard_status' => null, // وضعیت ویزارد را پاک می‌کنیم
-            ]);
-
-            // 4. اجرای Soft Delete به صورت گروهی
-            Family::destroy($familyIds);
 
             DB::commit();
-
-            // 5. بازخورد به کاربر و پاکسازی UI
-            $this->dispatch('toast', message: count($familyIds) . ' خانواده با موفقیت به لیست حذف‌شده‌ها منتقل شدند.');
-            $this->closeDeleteModal();
+            
+            // پاک‌سازی انتخاب‌ها و مودال
             $this->selected = [];
-            $this->selectAll = false;
-            $this->clearFamiliesCache(); // برای رفرش شدن لیست
-
-            // اگر در تب حذف شده‌ها نیستیم، به آنجا منتقل شویم
-            if ($this->activeTab !== 'deleted') {
-                $this->changeTab('deleted');
+            $this->showDeleteModal = false;
+            $this->deleteReason = null;
+            
+            // پاک‌سازی کش
+            $this->clearFamiliesCache();
+            
+            // ریست صفحه‌بندی برای بازگشت به صفحه اول
+            $this->resetPage();
+            
+            // نمایش پیام مناسب بر اساس نتیجه عملیات
+            if ($deletedCount > 0 && $failedCount === 0) {
+                session()->flash('message', "{$deletedCount} خانواده با موفقیت حذف شدند");
+            } elseif ($deletedCount > 0 && $failedCount > 0) {
+                session()->flash('message', "{$deletedCount} خانواده با موفقیت حذف شدند و {$failedCount} خانواده با خطا مواجه شدند");
+            } else {
+                session()->flash('error', "عملیات حذف با خطا مواجه شد");
             }
-
+            
+            // ریدایرکت به همین صفحه برای رفرش کامل
+            return redirect()->route('insurance.families.approval');
+            
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error during soft-deleting families: ' . $e->getMessage(), [
-                'family_ids' => $familyIds,
-                'reason' => $this->deleteReason,
-            ]);
-            $this->dispatch('toast', message: 'خطا در عملیات حذف خانواده‌ها.', type: 'error');
-        }
+            Log::error("❌ Critical error in deleteSelected: " . $e->getMessage());
+            session()->flash('error', 'خطا در عملیات حذف: ' . $e->getMessage());
+        }    
     }
 
     public function returnToPendingSelected()
@@ -953,9 +808,9 @@ private function getCriteriaWeights(): array
      */
     public function setTab($tab, $resetSelections = true)
     {
-        if ($this->tab === $tab) {
-            return;
-        }
+        // حتی اگر تب یکسان باشد، فیلترها و کش را ریست می‌کنیم
+        // تا هنگام کلیک مجدد روی همان تب، داده‌ها مجددا لود شوند
+        Log::info('📑 Setting tab: ' . $tab . ' (previous: ' . $this->tab . ')');
 
         $this->is_loading = true;
         $this->cached_tab = $this->tab;
@@ -1171,6 +1026,7 @@ private function getCriteriaWeights(): array
             case 'reviewing':
                 $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value)
                     ->where('status', '!=', 'deleted');
+
                 break;
             case 'approved':
                 $query->whereIn('wizard_status', [
@@ -1763,13 +1619,9 @@ private function getCriteriaWeights(): array
             return null;
         }
 
-        try {
-            if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $dateString)) {
-                return \Morilog\Jalali\Jalalian::fromFormat('Y/m/d', $dateString)->toCarbon();
-            } else {
-                throw new \Exception('Invalid format');
-            }
-        } catch (\Exception $e) {
+        if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $dateString)) {
+            return \Morilog\Jalali\Jalalian::fromFormat('Y/m/d', $dateString)->toCarbon();
+        } else {
             throw new \Exception("ردیف " . ($rowIndex + 1) . ": {$fieldName} نامعتبر برای خانواده {$familyCode}: {$dateString} (فرمت صحیح: 1403/03/01)");
         }
     }
@@ -3344,44 +3196,26 @@ public function calculateDisplayScore($family): int
 // }
 protected function buildFamiliesQuery()
 {
-    $query = Family::query()
-        ->select(['families.*']);
+    // بررسی تب فعال برای تعیین نحوه مدیریت رکوردهای حذف شده
+    if ($this->activeTab === 'deleted') {
+        // در تب حذف‌شده‌ها، فقط رکوردهایی که دارای deleted_at هستند نمایش داده شوند
+        $query = Family::onlyTrashed()->select(['families.*']);
+    } else {
+        // در سایر تب‌ها، فقط رکوردهای حذف نشده نمایش داده شوند (پیش‌فرض)
+        $query = Family::query()->select(['families.*']);
+    }
 
-    // افزودن فیلتر wizard_status بر اساس تب انتخاب شده
-    try {
-        if ($this->tab === 'pending') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::PENDING->value);
-        } elseif ($this->tab === 'reviewing') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::REVIEWING->value);
-        } elseif ($this->tab === 'approved') {
-            $query->where(function($q) {
-                // $q->where('wizard_status', 'share_allocation')
-                $q->Where('wizard_status', 'approved')
-                ->orWhere('wizard_status', 'excel_upload');
-            })->where('status', '!=', 'deleted');
-            // $query->where('wizard_status', \App\Enums\InsuranceWizardStep::APPROVED->value);
-        } elseif ($this->tab === 'rejected') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::REJECTED->value);
-        } elseif ($this->tab === 'renewal') {
-
-            // خانواده‌هایی که بیمه منقضی شده دارند (نیاز به تمدید)
-            $query->whereHas('finalInsurances', function ($q) {
-                $q->where('end_date', '<', now());
-            })
-            ->whereIn('wizard_status', [
-                InsuranceWizardStep::INSURED->value,
-                InsuranceWizardStep::RENEWAL->value
-            ]);
-        } elseif ($this->tab === 'deleted') {
-            // فقط خانواده‌های حذف‌شده (deleted_at not null)
-            $query->onlyTrashed();
-        }
-    } catch (\Exception $e) {
-        Log::error('Error filtering families by wizard_status', [
-            'tab' => $this->tab,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+    // فیلتر بر اساس wizard_status
+    if ($this->wizard_status) {
+        Log::info('Filtering families by wizard_status', [
+            'wizard_status' => is_array($this->wizard_status) ? $this->wizard_status : [$this->wizard_status]
         ]);
+
+        if (is_array($this->wizard_status)) {
+            $query->whereIn('wizard_status', $this->wizard_status);
+        } else {
+            $query->where('wizard_status', $this->wizard_status);
+        }
     }
 
     // Load اعضا برای محاسبه امتیاز
@@ -3391,6 +3225,9 @@ protected function buildFamiliesQuery()
     if (!empty($this->specific_criteria)) {
         $selectedCriteriaNames = explode(',', $this->specific_criteria);
 
+        Log::info('Applying JSON criteria filter with member count', [
+            'criteria_names' => $selectedCriteriaNames
+        ]);
 
         // فیلتر: خانواده‌هایی که معیار در acceptance_criteria دارن یا اعضاشون مشکل دارن
         $query->where(function($mainQuery) use ($selectedCriteriaNames) {

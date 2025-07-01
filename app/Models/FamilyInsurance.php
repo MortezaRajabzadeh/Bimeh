@@ -20,8 +20,6 @@ class FamilyInsurance extends Model
         'end_date',
         'family_code',
         'status',
-        'payer_type',
-        'funding_source_id',
     ];
 
     protected $casts = [

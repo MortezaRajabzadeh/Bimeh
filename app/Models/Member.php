@@ -84,7 +84,7 @@ class Member extends Model implements HasMedia
         $this->addMediaCollection('special_disease_documents')
             ->singleFile()
             ->useDisk('public');
-            
+
         $this->addMediaCollection('disability_documents')
             ->singleFile()
             ->useDisk('public');
@@ -139,7 +139,7 @@ class Member extends Model implements HasMedia
             'divorced' => 'مطلقه',
             'widowed' => 'بیوه'
         ];
-        
+
         return $status[$this->marital_status] ?? $this->marital_status;
     }
 
@@ -152,37 +152,37 @@ class Member extends Model implements HasMedia
             'male' => 'مرد',
             'female' => 'زن'
         ];
-        
+
         return $genders[$this->gender] ?? $this->gender;
     }
 
     /**
      * ترجمه نسبت به فارسی
      */
-    public function getRelationshipFaAttribute()
-    {
-        $relationships = [
-            'head' => 'والدین',
-            'spouse' => 'همسر',
-            'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
-            'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
-            'father' => 'پدر',
-            'mother' => 'مادر',
-            'brother' => 'برادر',
-            'sister' => 'خواهر',
-            'grandfather' => 'پدربزرگ',
-            'grandmother' => 'مادربزرگ',
-            'uncle' => 'عمو/دایی',
-            'aunt' => 'عمه/خاله',
-            'nephew' => 'برادرزاده/خواهرزاده',
-            'niece' => 'برادرزاده/خواهرزاده',
-            'cousin' => 'پسرعمو/دخترعمو/پسردایی/دختردایی',
-            'son_in_law' => 'داماد',
-            'daughter_in_law' => 'عروس',
-            'other' => 'سایر',
-        ];
-        return $relationships[$this->relationship] ?? 'سایر';
-    }
+    // public function getRelationshipFaAttribute()
+    // {
+    //     $relationships = [
+    //         'head' => 'سرپرست',
+    //         'spouse' => 'همسر',
+    //         'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
+    //         'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
+    //         'father' => 'پدر',
+    //         'mother' => 'مادر',
+    //         'brother' => 'برادر',
+    //         'sister' => 'خواهر',
+    //         'grandfather' => 'پدربزرگ',
+    //         'grandmother' => 'مادربزرگ',
+    //         'uncle' => 'عمو/دایی',
+    //         'aunt' => 'عمه/خاله',
+    //         'nephew' => 'برادرزاده/خواهرزاده',
+    //         'niece' => 'برادرزاده/خواهرزاده',
+    //         'cousin' => 'پسرعمو/دخترعمو/پسردایی/دختردایی',
+    //         'son_in_law' => 'داماد',
+    //         'daughter_in_law' => 'عروس',
+    //         'other' => 'سایر',
+    //     ];
+    //     return $relationships[$this->relationship] ?? 'سایر';
+    // }
 
     /**
      * فیلتر افراد سرپرست خانوار
@@ -264,4 +264,4 @@ class Member extends Model implements HasMedia
     {
         return $this->incomplete_data_details ?? [];
     }
-} 
+}
