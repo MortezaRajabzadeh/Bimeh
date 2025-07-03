@@ -528,7 +528,9 @@ class InsuranceShareService
             }
 
             $batchId = 'excel_upload_' . time() . '_' . uniqid();
-
+            $fileName = isset($results['file_name']) ? $results['file_name'] : 'excel_upload_' . date('Y-m-d_H-i-s') . '.xlsx';
+        
+            // گام ۱: ایجاد لاگ در جدول ShareAllocationLog برای حفظ سازگاری با کد قبلی
             $logData = [
                 'user_id' => Auth::id(),
                 'batch_id' => $batchId,
@@ -555,8 +557,26 @@ class InsuranceShareService
 
             $newLog = ShareAllocationLog::create($logData);
 
-            Log::info('✅ لاگ تخصیص سهم ایجاد شد', [
-                'log_id' => $newLog->id,
+            // گام ۲: ایجاد لاگ در جدول InsuranceImportLog با استفاده از سرویس InsuranceImportLogger
+            $importLog = InsuranceImportLogger::createLog($fileName, $results['processed'] ?? 0);
+        
+            // به‌روزرسانی لاگ با اطلاعات کامل
+            InsuranceImportLogger::completeLog($importLog, [
+                'status' => 'completed',
+                'message' => 'آپلود اکسل با موفقیت انجام شد',
+                'created_count' => $results['created'] ?? 0,
+                'updated_count' => $results['updated'] ?? 0,
+                'skipped_count' => $results['skipped'] ?? 0,
+                'error_count' => count($results['errors'] ?? []),
+                'total_insurance_amount' => $results['total_insurance_amount'] ?? 0,
+                'family_codes' => $results['family_codes'] ?? [], // کدهای خانواده‌های پردازش شده
+                'created_family_codes' => $results['created_family_codes'] ?? [], // کدهای خانواده‌های جدید ایجاد شده
+                'updated_family_codes' => $results['updated_family_codes'] ?? [], // کدهای خانواده‌های به‌روزرسانی شده
+            ]);
+
+            Log::info('✅ لاگ تخصیص سهم و ایمپورت با موفقیت ایجاد شد', [
+                'share_log_id' => $newLog->id,
+                'import_log_id' => $importLog->id,
                 'batch_id' => $batchId,
                 'families_count' => count($familyIds),
                 'total_amount' => $results['total_insurance_amount'],
@@ -566,7 +586,7 @@ class InsuranceShareService
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ خطا در ایجاد لاگ تخصیص سهم', [
+            Log::error('❌ خطا در ایجاد لاگ تخصیص سهم یا ایمپورت', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'results' => $results
@@ -574,18 +594,28 @@ class InsuranceShareService
 
             // در صورت خطا در لاگ، حداقل یک لاگ ساده ایجاد کنیم
             try {
+                // ایجاد لاگ fallback در ShareAllocationLog
                 ShareAllocationLog::create([
                     'user_id' => Auth::id(),
                     'batch_id' => 'fallback_' . time(),
                     'description' => 'لاگ fallback برای آپلود اکسل',
-                    'families_count' => $results['processed'],
+                    'families_count' => $results['processed'] ?? 0,
                     'family_ids' => json_encode([]),
                     'shares_data' => json_encode(['error' => 'Failed to create detailed log']),
-                    'total_amount' => $results['total_insurance_amount'],
+                    'total_amount' => $results['total_insurance_amount'] ?? 0,
                     'status' => 'completed_with_errors'
                 ]);
+            
+                // تلاش برای ایجاد لاگ fallback در InsuranceImportLog نیز
+                $fileName = isset($results['file_name']) ? $results['file_name'] : 'fallback_excel_' . date('Y-m-d_H-i-s') . '.xlsx';
+                $fallbackLog = InsuranceImportLogger::createLog($fileName, $results['processed'] ?? 0);
+                InsuranceImportLogger::updateLog($fallbackLog, [
+                    'status' => 'completed_with_errors',
+                    'message' => 'ثبت با خطا مواجه شد: ' . $e->getMessage(),
+                    'total_insurance_amount' => $results['total_insurance_amount'] ?? 0,
+                ]);
 
-                Log::info('✅ لاگ fallback ایجاد شد');
+                Log::info('✅ لاگ‌های fallback با موفقیت ایجاد شدند');
             } catch (\Exception $fallbackError) {
                 Log::error('❌ حتی لاگ fallback نیز ناموفق بود', ['error' => $fallbackError->getMessage()]);
             }

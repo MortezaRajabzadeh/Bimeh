@@ -106,7 +106,7 @@ class Family extends Model implements HasMedia
                 })->afterResponse();
             }
         });
-        
+
         // به‌روزرسانی خودکار رتبه‌بندی هنگام تغییر معیارهای رتبه‌بندی
         static::saved(function ($family) {
             if ($family->wasChanged('acceptance_criteria')) {
@@ -509,7 +509,7 @@ class Family extends Model implements HasMedia
 
     /**
      * محاسبه رتبه محرومیت خانواده بر اساس معیارها
-     * 
+     *
      * @return float
      */
     public function calculateRank()
@@ -517,50 +517,50 @@ class Family extends Model implements HasMedia
         // استفاده از کش برای بهبود عملکرد
         return Cache::remember('family_rank_' . $this->id, now()->addDay(), function () {
             $totalScore = 0;
-            
+
             // محاسبه امتیاز بر اساس acceptance_criteria
             if (!empty($this->acceptance_criteria)) {
-                $acceptanceCriteria = is_array($this->acceptance_criteria) 
-                    ? $this->acceptance_criteria 
+                $acceptanceCriteria = is_array($this->acceptance_criteria)
+                    ? $this->acceptance_criteria
                     : json_decode($this->acceptance_criteria, true);
-                
+
                 if (is_array($acceptanceCriteria)) {
                     $totalScore += $this->calculateCriteriaScore($acceptanceCriteria);
                 }
             }
-            
+
             // محاسبه امتیاز بر اساس problem_type اعضا
             $membersProblemScore = $this->members->sum(function($member) {
                 if (empty($member->problem_type)) return 0;
-                
-                $problemTypes = is_array($member->problem_type) 
-                    ? $member->problem_type 
+
+                $problemTypes = is_array($member->problem_type)
+                    ? $member->problem_type
                     : json_decode($member->problem_type, true);
-                
+
                 return is_array($problemTypes) ? $this->calculateCriteriaScore($problemTypes) : 0;
             });
-            
+
             $totalScore += $membersProblemScore;
-            
+
             // محاسبه رتبه نهایی
             $maxPossibleScore = RankSetting::where('is_active', true)->sum('weight');
-            
-            $rank = $maxPossibleScore > 0 
-                ? round(($totalScore / $maxPossibleScore) * 100, 2) 
+
+            $rank = $maxPossibleScore > 0
+                ? round(($totalScore / $maxPossibleScore) * 100, 2)
                 : 0;
-                
+
             $this->update([
                 'calculated_rank' => $rank,
                 'rank_calculated_at' => now()
             ]);
-            
+
             return $rank;
         });
     }
-    
+
     /**
      * محاسبه امتیاز برای لیستی از معیارها
-     * 
+     *
      * @param array $criteria
      * @return float
      */
@@ -706,61 +706,93 @@ class Family extends Model implements HasMedia
             ];
         }
 
-        $completeMembers = 0;
+        $totalCompletionPercentage = 0;
         $memberDetails = [];
+        $completeMembersCount = 0;
 
         foreach ($members as $member) {
             $completedFields = 0;
             $memberFieldStatus = [];
 
             foreach ($requiredFields as $field) {
-                $fieldValue = $member->{$field};
-                $isComplete = !empty($fieldValue) && !is_null($fieldValue);
-
+                $isComplete = !empty($member->{$field});
                 if ($isComplete) {
                     $completedFields++;
                 }
-
                 $memberFieldStatus[$field] = $isComplete;
             }
 
-            $memberCompletionRate = ($completedFields / count($requiredFields)) * 100;
+            // محاسبه درصد تکمیل برای هر عضو
+            $memberCompletionRate = (count($requiredFields) > 0)
+                ? ($completedFields / count($requiredFields)) * 100
+                : 100;
 
-            // در نظر گرفتن اعضای با تکمیل‌شدگی بالای 80% به عنوان عضو کامل
-            if ($memberCompletionRate >= 80) {
-                $completeMembers++;
+            // اضافه کردن درصد تکمیل این عضو به مجموع کل
+            $totalCompletionPercentage += $memberCompletionRate;
+
+            // شمارش اعضایی که 100% کامل هستند
+            if ($memberCompletionRate == 100) {
+                $completeMembersCount++;
             }
 
             $memberDetails[] = [
                 'member_id' => $member->id,
                 'name' => $member->first_name . ' ' . $member->last_name,
-                'completion_rate' => $memberCompletionRate,
+                'completion_rate' => round($memberCompletionRate),
                 'field_status' => $memberFieldStatus,
                 'is_head' => $member->is_head
             ];
         }
 
-        $overallPercentage = ($completeMembers / $totalMembers) * 100;
+        // محاسبه میانگین درصد تکمیل کل خانواده
+        $overallPercentage = ($totalMembers > 0)
+            ? ($totalCompletionPercentage / $totalMembers)
+            : 0;
 
-        // تعیین وضعیت بر اساس درصد تکمیل
-        $thresholds = config('ui.validation_thresholds');
-        if ($overallPercentage >= $thresholds['complete_min']) {
+        // تعیین وضعیت بر اساس درصد کلی
+        $thresholds = config('ui.validation_thresholds', [
+            'complete_min' => 95,
+            'partial_min' => 50
+        ]);
+
+        // منطق اصلی تعیین وضعیت
+        if ($completeMembersCount == $totalMembers) {
+            // اگر تمام اعضا کامل هستند، وضعیت کامل است و درصد 100
             $status = 'complete';
-            $message = 'اطلاعات همه اعضا کامل است';
+            $overallPercentage = 100;
+            $message = sprintf('اطلاعات %d عضو کامل است.', $completeMembersCount);
+        } elseif ($overallPercentage >= $thresholds['complete_min']) {
+            // اگر درصد تکمیل بالای آستانه کامل است
+            $status = 'complete';
+            $message = sprintf('اطلاعات هویتی تقریباً کامل است (%d%% کامل).', round($overallPercentage));
         } elseif ($overallPercentage >= $thresholds['partial_min']) {
+            // اگر درصد تکمیل بالای آستانه جزئی است
             $status = 'partial';
-            $message = sprintf('اطلاعات %d از %d عضو کامل است (%d%%)',
-                $completeMembers, $totalMembers, round($overallPercentage));
+            $message = sprintf('اطلاعات هویتی ناقص است (%d%% کامل).', round($overallPercentage));
         } else {
+            // اگر درصد تکمیل پایین است
             $status = 'none';
-            $message = 'اطلاعات اکثر اعضا ناقص است';
+            $overallPercentage = 0; // تضمین همخوانی
+            $message = 'اطلاعات هویتی نیاز به بررسی دارد.';
+        }
+
+        // اضافه کردن لاگ برای دیباگ در محیط توسعه
+        if (config('app.debug')) {
+            \Illuminate\Support\Facades\Log::debug('ValidationStatus', [
+                'family_id' => $this->id,
+                'total_members' => $totalMembers,
+                'complete_members' => $completeMembersCount,
+                'raw_percentage' => $overallPercentage,
+                'adjusted_percentage' => round($overallPercentage),
+                'status' => $status
+            ]);
         }
 
         return [
             'status' => $status,
             'percentage' => round($overallPercentage),
             'message' => $message,
-            'complete_members' => $completeMembers,
+            'complete_members' => $completeMembersCount,
             'total_members' => $totalMembers,
             'details' => $memberDetails
         ];

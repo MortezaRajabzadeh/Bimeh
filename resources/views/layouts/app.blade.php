@@ -78,12 +78,12 @@
             @media (min-width: 1024px) {
                 #main-wrapper {
                     margin-right: 16rem; /* برابر عرض سایدبار */
-                    transition: all 0.3s ease-in-out;
+                    transition: none; /* حذف انتقال در حالت عادی */
                 }
                 
                 #main-wrapper.sidebar-collapsed {
                     margin-right: 4rem; /* برابر عرض سایدبار جمع شده */
-                    transition: all 0.3s ease-in-out;
+                    transition: all 0.3s ease-in-out; /* فقط انتقال در حالت جمع شده */
                 }
             }
         </style>
@@ -121,13 +121,17 @@
                 const sidebarToggle = document.getElementById('sidebar-toggle');
                 const sidebarOverlay = document.getElementById('sidebar-overlay');
                 
-                // گوش دادن به رویداد تغییر وضعیت منو
-                document.addEventListener('sidebar-toggle', function(event) {
+                // رویداد سفارشی برای باز/بسته کردن سایدبار
+                document.addEventListener('sidebarToggle', function(event) {
                     if (event.detail && mainWrapper) {
                         if (event.detail.collapsed) {
                             mainWrapper.classList.add('sidebar-collapsed');
                             mainWrapper.classList.remove('sidebar-expanded');
+                            // فقط در حالت بسته شدن، انتقال فعال می‌شود
+                            mainWrapper.style.transition = 'margin-right 0.3s ease-in-out';
                         } else {
+                            // برای باز شدن، انتقال را حذف می‌کنیم تا بدون انیمیشن باشد
+                            mainWrapper.style.transition = 'none';
                             mainWrapper.classList.remove('sidebar-collapsed');
                             mainWrapper.classList.add('sidebar-expanded');
                         }
@@ -182,8 +186,11 @@
                     if (storedState === 'collapsed') {
                         mainWrapper.classList.add('sidebar-collapsed');
                         mainWrapper.classList.remove('sidebar-expanded');
+                        // تنظیم انتقال برای حالت بسته
+                        mainWrapper.style.transition = 'margin-right 0.3s ease-in-out';
                     } else {
                         // حالت پیش‌فرض: منو باز است
+                        mainWrapper.style.transition = 'none'; // بدون انیمیشن برای حالت باز
                         mainWrapper.classList.remove('sidebar-collapsed');
                         mainWrapper.classList.add('sidebar-expanded');
                     }

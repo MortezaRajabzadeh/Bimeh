@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\InsuranceImportLog;
+use App\Models\Insurance;
+use App\Models\Family;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class InsuranceImportLogger
 {
@@ -131,5 +134,64 @@ class InsuranceImportLogger
             'status' => 'completed',
             'message' => 'ایمپورت با موفقیت انجام شد.',
         ], $summary));
+    }
+    
+    /**
+     * ایجاد لاگ ایمپورت بیمه برای خانواده
+     *
+     * @param array $data داده‌های مورد نیاز برای ثبت لاگ
+     * @return \App\Models\InsuranceImportLog|null
+     */
+    public function createInsuranceImportLog(array $data): ?InsuranceImportLog
+    {
+        try {
+            if (!isset($data['family_id'])) {
+                Log::error('Family ID is required for insurance import log', $data);
+                return null;
+            }
+            
+            $family = Family::find($data['family_id']);
+            if (!$family) {
+                Log::error('Family not found for insurance import log', $data);
+                return null;
+            }
+            
+            // ساخت آرایه‌های کدهای خانواده برای ثبت در لاگ
+            $familyCodes = [$family->family_code];
+            
+            // ثبت لاگ جدید
+            $log = InsuranceImportLog::create([
+                'file_name' => $data['file_name'] ?? 'آپلود اکسل خانواده',
+                'user_id' => $data['imported_by'] ?? Auth::id(),
+                'status' => 'completed',
+                'message' => $data['description'] ?? 'ثبت بیمه از طریق آپلود اکسل خانواده',
+                'created_count' => 1,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'error_count' => 0,
+                'total_insurance_amount' => $data['amount'] ?? 0,
+                'family_codes' => json_encode($familyCodes),
+                'created_family_codes' => json_encode($familyCodes),
+                'updated_family_codes' => json_encode([]),
+                'errors' => json_encode([]),
+                'source' => $data['source'] ?? 'excel_import',
+                'members_count' => $data['members_count'] ?? 0,
+            ]);
+            
+            Log::info('Insurance import log created successfully', [
+                'log_id' => $log->id,
+                'family_id' => $family->id,
+                'family_code' => $family->family_code
+            ]);
+            
+            return $log;
+        } catch (\Exception $e) {
+            Log::error('Error creating insurance import log', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
+            return null;
+        }
     }
 }

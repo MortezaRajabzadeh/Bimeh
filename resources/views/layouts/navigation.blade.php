@@ -45,7 +45,7 @@ use App\Models\InsurancePayment;
                             <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         
-                        <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                        <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                             <!-- گزینه خیریه -->
                             <form method="POST" action="{{ route('admin.switch-role.store') }}"> @csrf <input type="hidden" name="role" value="charity"> <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('charity') ? 'bg-blue-50' : '' }}"><span>سازمان خیریه</span>@if(auth()->user()->isActiveAs('charity'))<svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>@endif</button></form>
                             <!-- گزینه بیمه -->
@@ -74,7 +74,7 @@ use App\Models\InsurancePayment;
                             </svg>
                         </button>
                         
-                        <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                        <div x-show="open" @click.away="open = false" class="absolute -left-24 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                             <!-- نمایش اطلاعات کاربر -->
                             <div class="px-4 py-3 text-sm text-gray-700">
                                 <div class="font-medium">{{ auth()->user()->name }}</div>

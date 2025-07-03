@@ -3214,12 +3214,17 @@ public function calculateDisplayScore($family): int
     public function getFamiliesProperty()
     {
         if ($this->activeTab === 'excel') {
+            // برای این تب، تمام خانواده‌های واجد شرایط را بدون صفحه‌بندی دریافت می‌کنیم
+            $familiesCollection = $this->buildFamiliesQuery()->get();
+
+            // برای حفظ سازگاری با view، نتایج را در یک Paginator قرار می‌دهیم که فقط یک صفحه دارد.
+            // این کار باعث می‌شود متدهایی مثل total() همچنان کار کنند ولی hasPages() مقدار false برگرداند.
             return new \Illuminate\Pagination\LengthAwarePaginator(
-                collect([]), // مجموعه خالی
-                0, // تعداد کل
-                $this->perPage, // تعداد در صفحه
-                $this->page, // صفحه فعلی
-                ['path' => request()->url()] // URL فعلی
+                $familiesCollection,
+                $familiesCollection->count(),
+                max(1, $familiesCollection->count()), // تعداد در هر صفحه برابر با کل نتایج
+                1,
+                ['path' => request()->url()]
             );
         }
         $cacheKey = $this->getCacheKey();

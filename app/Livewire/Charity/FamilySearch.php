@@ -148,6 +148,12 @@ class FamilySearch extends Component
         // مقداردهی اولیه فرم معیار جدید
         $this->resetRankSettingForm();
         
+        // اگر session موفقیت آپلود وجود دارد، کش را پاک کن
+        if (session('success') && session('results')) {
+            $this->clearFamiliesCache();
+            cache()->forget('families_query_' . Auth::id());
+        }
+        
         // تست ارسال نوتیفیکیشن
         $this->dispatch('notify', [
             'message' => 'صفحه جستجوی خانواده‌ها با موفقیت بارگذاری شد',
@@ -1153,7 +1159,7 @@ class FamilySearch extends Component
                 ]);
                 
                 // بارگذاری مجدد لیست
-        $this->availableRankSettings = RankSetting::active()->ordered()->get(); 
+        $this->availableRankSettings = RankSetting::active()->ordereclearCacheAndRefreshd()->get(); 
             }
         } catch (\Exception $e) {
             Log::error('Error deleting rank setting:', [

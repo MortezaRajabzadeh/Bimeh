@@ -50,10 +50,10 @@ class FamiliesApproval extends Component
 
         // انتقال خانواده‌ها به مرحله بعد
         $this->moveSelectedToNextWizardStep();
-        
+
         // هدایت کاربر به تب بعدی (approved)
         $this->setTab('approved');
-        
+
         // نمایش پیام موفقیت
         session()->flash('message', 'سهم‌های بیمه با موفقیت تخصیص داده شدند و خانواده‌ها به مرحله بعد منتقل شدند.');
     }
@@ -595,7 +595,7 @@ private function getCriteriaWeights(): array
                     // آپدیت وضعیت خانواده
                     $family->status = 'deleted';
                     $family->save();
-                    
+
                     // استفاده از مکانیزم SoftDelete برای ثبت deleted_at
                     $family->delete();
 
@@ -608,18 +608,18 @@ private function getCriteriaWeights(): array
             }
 
             DB::commit();
-            
+
             // پاک‌سازی انتخاب‌ها و مودال
             $this->selected = [];
             $this->showDeleteModal = false;
             $this->deleteReason = null;
-            
+
             // پاک‌سازی کش
             $this->clearFamiliesCache();
-            
+
             // ریست صفحه‌بندی برای بازگشت به صفحه اول
             $this->resetPage();
-            
+
             // نمایش پیام مناسب بر اساس نتیجه عملیات
             if ($deletedCount > 0 && $failedCount === 0) {
                 session()->flash('message', "{$deletedCount} خانواده با موفقیت حذف شدند");
@@ -628,15 +628,15 @@ private function getCriteriaWeights(): array
             } else {
                 session()->flash('error', "عملیات حذف با خطا مواجه شد");
             }
-            
+
             // ریدایرکت به همین صفحه برای رفرش کامل
             return redirect()->route('insurance.families.approval');
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("❌ Critical error in deleteSelected: " . $e->getMessage());
             session()->flash('error', 'خطا در عملیات حذف: ' . $e->getMessage());
-        }    
+        }
     }
 
     public function returnToPendingSelected()

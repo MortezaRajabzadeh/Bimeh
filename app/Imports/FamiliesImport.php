@@ -134,7 +134,7 @@ class FamiliesImport implements ToCollection
     {
         // تنظیم formatter سرتیتر به حالت none تا فرمت دقیق حفظ شود
         HeadingRowFormatter::default('none');
-        
+
         $this->user = $user;
         $this->districtId = $districtId;
         $this->results = [
@@ -169,7 +169,7 @@ class FamiliesImport implements ToCollection
      */
     public function collection(Collection $rows)
     {
-        
+
         if ($rows->isEmpty()) {
             return;
         }
@@ -189,7 +189,7 @@ class FamiliesImport implements ToCollection
 
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 1;
-            
+
             try {
                 // خواندن header اصلی
                 if ($index === $headingRowIndex) {
@@ -200,7 +200,7 @@ class FamiliesImport implements ToCollection
                 // خواندن sub header
                 if ($index === $subHeadingRowIndex) {
                     $subHeaders = $row->toArray();
-                    
+
                     // ساخت header های نهایی
                     foreach ($headers as $col => $mainTitle) {
                         $mainTitle = trim($mainTitle ?? '');
@@ -220,7 +220,7 @@ class FamiliesImport implements ToCollection
                             $finalHeaders[$col] = "ستون_" . ($col + 1);
                         }
                     }
-                    
+
                     continue;
                 }
 
@@ -237,7 +237,7 @@ class FamiliesImport implements ToCollection
                 // ترکیب داده‌ها با header های نهایی
                 $rowArray = $row->toArray();
                 $data = [];
-                
+
                 foreach ($finalHeaders as $col => $headerName) {
                     $data[$headerName] = $rowArray[$col] ?? null;
                 }
@@ -250,19 +250,19 @@ class FamiliesImport implements ToCollection
 
                 // تطبیق کلیدها
                 $rowData = $this->normalizeRowKeys($data, $rowNumber);
-                
+
                 // تشخیص خودکار ردیف‌های خالی
                 if ($this->isRowEmpty($rowData, $rowNumber)) {
                     continue;
                 }
-                
+
                 if ($this->shouldSkipRow($rowData, $rowNumber)) {
                     continue;
                 }
-                
+
                 // اعتبارسنجی داده‌های ردیف (فقط فیلدهای ضروری)
                 $validation = $this->validateRowData($rowData, $rowNumber);
-                
+
                 // اگر خطای اجباری داشت، این ردیف رو skip کن
                 if (!$validation['valid']) {
                     foreach ($validation['errors'] as $error) {
@@ -271,10 +271,10 @@ class FamiliesImport implements ToCollection
                     $this->results['failed']++;
                     continue;
                 }
-                
+
                 // مدیریت شناسه خانواده (برای گروه‌بندی اعضا)
                 $familyId = trim($rowData['family_id'] ?? '');
-                
+
                 if (!empty($familyId)) {
                     $lastFamilyId = $familyId;
                     $familyIdMapping[$rowNumber] = $familyId;
@@ -286,12 +286,12 @@ class FamiliesImport implements ToCollection
                     $this->results['failed']++;
                     continue;
                 }
-                
+
                 // اضافه کردن عضو به خانواده
                 if (!isset($groupedFamilies[$familyId])) {
                     $groupedFamilies[$familyId] = [];
                 }
-                
+
                 $groupedFamilies[$familyId][] = [
                     'data' => $rowData,
                     'row_number' => $rowNumber
@@ -303,7 +303,7 @@ class FamiliesImport implements ToCollection
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
-                
+
                 $this->addError("ردیف {$rowNumber}: خطای غیرمنتظره - {$e->getMessage()}");
                 $this->results['failed']++;
                 continue;
@@ -326,7 +326,7 @@ class FamiliesImport implements ToCollection
     protected function normalizeRowKeys(array $row, int $rowNumber): array
     {
         $normalized = [];
-        
+
         // نقشه تطبیق کلیدها (فارسی به انگلیسی)
         $keyMapping = [
             'شناسه خانواده' => 'family_id',
@@ -349,17 +349,17 @@ class FamiliesImport implements ToCollection
             'ازکارافتادگی' => 'disability',
             'توضیحات بیشتر کمک‌کننده' => 'additional_details',
         ];
-        
+
         // تطبیق کلیدها
         foreach ($row as $key => $value) {
             $key = trim($key);
-            
+
             // جستجوی تطبیق دقیق
             if (isset($keyMapping[$key])) {
                 $normalized[$keyMapping[$key]] = trim(strval($value ?? ''));
                 continue;
             }
-            
+
             // جستجوی تطبیق فازی
             foreach ($keyMapping as $persianKey => $englishKey) {
                 if (str_contains($key, $persianKey) || str_contains($persianKey, $key)) {
@@ -368,7 +368,7 @@ class FamiliesImport implements ToCollection
                 }
             }
         }
-        
+
         // Debug برای بررسی تطبیق کلیدها
         if ($rowNumber <= 5) {
             Log::info('Key mapping debug', [
@@ -378,7 +378,7 @@ class FamiliesImport implements ToCollection
                 'first_name' => $normalized['first_name'] ?? 'NOT_FOUND'
             ]);
         }
-        
+
         return $normalized;
     }
 
@@ -389,15 +389,15 @@ class FamiliesImport implements ToCollection
     {
         $familyId = $rowData['family_id'] ?? '';
         $firstName = $rowData['first_name'] ?? '';
-        
+
         // فقط ردیف‌های راهنما یا مثال را skip کن
-        if ($familyId === 'راهنما' || 
+        if ($familyId === 'راهنما' ||
             str_contains($familyId, 'راهنما') ||
             str_contains($familyId, 'مثال') ||
             $firstName === 'راهنما' ||
             str_contains($firstName, 'راهنما') ||
             str_contains($firstName, 'مثال')) {
-            
+
             // Fix: Add the missing Log::info() call
             Log::info('Skipping guide/example row', [
                 'reason' => 'ردیف راهنما یا مثال',
@@ -406,7 +406,7 @@ class FamiliesImport implements ToCollection
             ]);
             return true;
         }
-        
+
         return false;
     }
 
@@ -416,24 +416,24 @@ class FamiliesImport implements ToCollection
     protected function validateRowData(array $rowData, int $rowNumber): array
     {
         $errors = [];
-        
+
         // فقط فیلدهای اجباری - بقیه هیچ پیامی نمی‌دهند
         if (empty($rowData['first_name'])) {
             $errors[] = "❌ ردیف {$rowNumber}: نام الزامی است";
         }
-        
+
         if (empty($rowData['last_name'])) {
             $errors[] = "❌ ردیف {$rowNumber}: نام خانوادگی الزامی است";
         }
-        
+
         if (empty($rowData['national_code'])) {
             $errors[] = "❌ ردیف {$rowNumber}: کد ملی الزامی است";
         }
-        
-        // تمام فیلدهای دیگر (استان، شهر، تاریخ تولد، نوع عضو، کد ملی تکراری، وغیره) 
+
+        // تمام فیلدهای دیگر (استان، شهر، تاریخ تولد، نوع عضو، کد ملی تکراری، وغیره)
         // بدون هیچ پیام warning یا error ای پذیرفته می‌شوند
         // کد ملی تکراری مشکل نیست چون از updateOrCreate استفاده می‌کنیم
-        
+
         return [
             'valid' => empty($errors),
             'errors' => $errors,
@@ -451,7 +451,7 @@ class FamiliesImport implements ToCollection
         $provinceName = trim($firstMember['province_name'] ?? '');
         $cityName = trim($firstMember['city_name'] ?? '');
         $familyTempId = $familyData['temp_id'];
-        
+
         // بررسی وجود سرپرست در خانواده
         $hasHead = false;
         foreach ($members as $memberData) {
@@ -461,15 +461,15 @@ class FamiliesImport implements ToCollection
                 break;
             }
         }
-        
+
         if (!$hasHead) {
             throw new \Exception("❌ خانواده شناسه {$familyTempId}: هیچ سرپرستی مشخص نشده است. هر خانواده باید حداقل یک سرپرست داشته باشد");
         }
-        
+
         // ابتدا چک می‌کنیم آیا اعضای این خانواده از قبل وجود دارند
         // اگر بیش از نیمی از اعضا وجود داشته باشند، خانواده موجودشان را استفاده می‌کنیم
         $existingFamily = $this->findExistingFamily($members);
-        
+
         if ($existingFamily) {
             Log::info('Using existing family', [
                 'family_id' => $existingFamily->id,
@@ -482,14 +482,14 @@ class FamiliesImport implements ToCollection
             $province = null;
             $city = null;
             $address = "نامشخص";
-            
+
             if (!empty($provinceName)) {
                 $province = Province::where('name', 'LIKE', "%{$provinceName}%")->first();
                 if ($province && !empty($cityName)) {
                     $city = City::where('province_id', $province->id)
                                ->where('name', 'LIKE', "%{$cityName}%")
                                ->first();
-            
+
                     if ($city) {
                         $address = "شهر {$cityName}، استان {$provinceName}";
                     } else {
@@ -499,7 +499,7 @@ class FamiliesImport implements ToCollection
                     $address = "استان {$provinceName}";
                 }
             }
-            
+
             // ایجاد خانواده جدید
             $familyService = app(FamilyService::class);
             $family = $familyService->registerFamily([
@@ -515,12 +515,12 @@ class FamiliesImport implements ToCollection
                 'temp_id' => $familyTempId
             ]);
         }
-        
+
         // اضافه کردن اعضا
         foreach ($members as $memberData) {
             $this->addMemberToFamily($family, $memberData);
         }
-        
+
         // بروزرسانی معیارهای پذیرش و محاسبه رتبه خانواده
         $this->updateAcceptanceCriteriaAndRank($family);
     }
@@ -532,10 +532,10 @@ class FamiliesImport implements ToCollection
     {
         // دریافت همه اعضای خانواده با problem_type آن‌ها
         $members = $family->members()->get();
-        
+
         // جمع‌آوری معیارهای پذیرش از مشکلات اعضا
         $acceptanceCriteria = [];
-        
+
         foreach ($members as $member) {
             if (is_array($member->problem_type) && !empty($member->problem_type)) {
                 foreach ($member->problem_type as $problem) {
@@ -547,12 +547,12 @@ class FamiliesImport implements ToCollection
                 }
             }
         }
-        
+
         // بروزرسانی فیلد acceptance_criteria خانواده
         if (!empty($acceptanceCriteria)) {
             $family->acceptance_criteria = $acceptanceCriteria;
             $family->save();
-            
+
             // محاسبه رتبه خانواده
             $family->calculateRank();
             Log::info('Using existing family', [
@@ -562,7 +562,7 @@ class FamiliesImport implements ToCollection
             ]);
         }
     }
-    
+
     /**
      * تبدیل نوع مشکل به معیار پذیرش متناظر
      */
@@ -574,7 +574,7 @@ class FamiliesImport implements ToCollection
             'work_disability' => 'ازکارافتادگی',
             'unemployment' => 'بیکاری',
         ];
-        
+
         return $mapping[$problem] ?? '';
     }
 
@@ -590,29 +590,29 @@ class FamiliesImport implements ToCollection
                 $nationalCodes[] = $memberData['national_code'];
             }
         }
-        
+
         if (empty($nationalCodes)) {
             return null;
         }
-        
+
         // جستجو برای اعضای موجود
         $existingMembers = Member::whereIn('national_code', $nationalCodes)->get();
-        
+
         if ($existingMembers->isEmpty()) {
             return null;
         }
-        
+
         // اگر بیش از نیمی از اعضا در یک خانواده هستند، آن خانواده را برمی‌گردانیم
         $familyCounts = $existingMembers->groupBy('family_id');
         $totalMembers = count($members);
-        
+
         foreach ($familyCounts as $familyId => $familyMembers) {
             $existingCount = $familyMembers->count();
             if ($existingCount >= ceil($totalMembers / 2)) {
                 return Family::find($familyId);
             }
         }
-        
+
         return null;
     }
 
@@ -624,10 +624,10 @@ class FamiliesImport implements ToCollection
         // تبدیل مقادیر
         $isHead = $this->mapBooleanValue($memberData['is_head'] ?? 'خیر');
         $relationship = $this->mapRelationshipValue($memberData['relationship_fa']);
-        
+
         // تشخیص جنسیت
         $gender = in_array($relationship, ['mother']) || $memberData['relationship_fa'] === 'مادر' ? 'female' : 'male';
-        
+
         // تبدیل مقادیر مشکلات
         $problemTypes = [];
         if ($this->mapBooleanValue($memberData['addiction'] ?? 'خیر')) {
@@ -642,7 +642,7 @@ class FamiliesImport implements ToCollection
         if ($this->mapBooleanValue($memberData['disability'] ?? 'خیر')) {
             $problemTypes[] = 'work_disability';
         }
-        
+
         $memberUpdateData = [
             'family_id' => $family->id,
             'charity_id' => $this->getValidCharityId(),
@@ -657,7 +657,7 @@ class FamiliesImport implements ToCollection
             'problem_type' => $problemTypes,
             'special_conditions' => $memberData['additional_details'] ?? '',
         ];
-        
+
         // استفاده از updateOrCreate برای جلوگیری از تکراری یا آپدیت کردن
         $member = Member::updateOrCreate(
             [
@@ -665,7 +665,7 @@ class FamiliesImport implements ToCollection
             ],
             $memberUpdateData
         );
-        
+
         // چک کردن ایا عضو جدید ایجاد شده یا آپدیت شده
         if ($member->wasRecentlyCreated) {
             $this->results['members_added']++;
@@ -700,41 +700,41 @@ class FamiliesImport implements ToCollection
         if (empty($date)) {
             return null;
         }
-        
+
         try {
             // حذف space اضافی
             $date = trim($date);
-            
+
             // فرمت‌های مختلف تاریخ
             // 1. فرمت استاندارد: 1370/1/1
             if (preg_match('/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
                 $year = intval($matches[1]);
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
-                
+
                 // اعتبارسنجی محدوده
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
                     return null;
                 }
-                
+
                 $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
-            
+
             // 2. فرمت با slash اضافی: 1356//04/21
             if (preg_match('/^(\d{4})\/+(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
                 $year = intval($matches[1]);
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
-                
+
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
                     return null;
                 }
-                
+
                 $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
-            
+
             // 3. فقط سال: 1360
             if (preg_match('/^(\d{4})$/', $date, $matches)) {
                 $year = intval($matches[1]);
@@ -742,24 +742,24 @@ class FamiliesImport implements ToCollection
                 $jalalian = new \Morilog\Jalali\Jalalian($year, 1, 1);
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
-            
+
             // 4. فرمت با صفر اضافی در ماه: 1314/080/1
             if (preg_match('/^(\d{4})\/0?(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
                 $year = intval($matches[1]);
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
-                
+
                 if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
                     return null;
                 }
-                
+
                 $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
-            
+
         } catch (\Exception $e) {
         }
-        
+
         return null;
     }
 
@@ -771,7 +771,7 @@ class FamiliesImport implements ToCollection
         do {
             $code = mt_rand(100000000, 999999999);
         } while (Family::where('family_code', $code)->exists());
-        
+
         return (string) $code;
     }
 
@@ -786,11 +786,11 @@ class FamiliesImport implements ToCollection
                 return $this->user->organization_id;
             }
         }
-        
+
         $firstCharity = \App\Models\Organization::where('type', 'charity')
                                                 ->where('is_active', true)
                                                 ->first();
-        
+
         return $firstCharity?->id;
     }
 
@@ -801,7 +801,7 @@ class FamiliesImport implements ToCollection
     {
         $this->results['errors'][] = $error;
         $this->results['total_errors']++;
-        
+
         // محدود کردن نمایش خطاها
         if (count($this->results['errors']) > 20) {
             $this->results['errors'] = array_slice($this->results['errors'], 0, 20);
@@ -827,14 +827,14 @@ class FamiliesImport implements ToCollection
     protected function generateErrorSummary(): void
     {
         $summary = [];
-        
+
         foreach ($this->results['error_types'] as $type => $count) {
             $typeLabel = $this->getErrorTypeLabel($type);
             $summary[] = "{$typeLabel}: {$count} مورد";
         }
-        
+
         $this->results['error_summary'] = $summary;
-        
+
         // اگر خطاهای زیادی هست، پیام اضافی اضافه کن
         if ($this->results['total_errors'] > $this->results['max_display_errors']) {
             $hiddenCount = $this->results['total_errors'] - $this->results['max_display_errors'];
@@ -860,7 +860,7 @@ class FamiliesImport implements ToCollection
             'province_city' => '📍 خطاهای استان/شهر',
             'general' => '🚫 خطاهای عمومی'
         ];
-        
+
         return $labels[$type] ?? "🔍 {$type}";
     }
 
@@ -871,7 +871,7 @@ class FamiliesImport implements ToCollection
     {
         // فیلدهای اصلی که باید چک شوند
         $mainFields = ['first_name', 'last_name', 'national_code'];
-        
+
         $hasData = false;
         foreach ($mainFields as $field) {
             if (!empty($rowData[$field]) && trim($rowData[$field]) !== '') {
@@ -879,7 +879,7 @@ class FamiliesImport implements ToCollection
                 break;
             }
         }
-        
+
         // اگر فیلدهای اصلی خالی بودند، بررسی کنیم که آیا سایر فیلدها هم خالی هستند
         if (!$hasData) {
             // بررسی اضافی - اگر شناسه خانواده یا شغل هم داشته باشد، ردیف خالی نیست
@@ -901,7 +901,7 @@ class FamiliesImport implements ToCollection
             ]);
             return true;
         }
-        
+
         return false;
     }
 
@@ -914,47 +914,47 @@ class FamiliesImport implements ToCollection
         foreach ($groupedFamilies as $familyId => $familyMembers) {
             try {
                 DB::beginTransaction();
-                
+
                 // استخراج داده‌های اعضا
                 $membersData = array_map(fn($member) => $member['data'], $familyMembers);
-                
+
                 // چک کردن آیا خانواده جدید است یا آپدیت می‌شود
                 $existingFamily = $this->findExistingFamily($membersData);
                 $isNewFamily = !$existingFamily;
-                
+
                 // ایجاد ساختار سازگار با متد قدیمی
                 $familyData = [
                     'members' => $membersData,
                     'temp_id' => $familyId
                 ];
-                
+
                 $this->processFamilyGroup($familyData);
-                
+
                 DB::commit();
-                
+
                 if ($isNewFamily) {
                     $this->results['families_created']++;
                 } else {
                     $this->results['families_updated']++;
                 }
-                
+
                 $this->results['success']++;
                 Log::info('Using existing family', [
                     'members_count' => count($membersData),
                     'is_new' => $isNewFamily
                 ]);
-                
+
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::info('Using existing family', [
                     'family_id' => $familyId,
                     'error' => $e->getMessage()
                 ]);
-                
+
                 $this->addError("❌ خانواده شناسه {$familyId}: " . $e->getMessage());
                 $this->results['failed']++;
             }
         }
-        
+
     }
 }
