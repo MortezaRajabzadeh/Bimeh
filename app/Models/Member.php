@@ -264,4 +264,16 @@ class Member extends Model implements HasMedia
     {
         return $this->incomplete_data_details ?? [];
     }
+
+    // در Observer یا متدهای مربوطه
+    protected static function booted()
+    {
+        static::saved(function ($member) {
+            $member->family->checkAndApplySingleParentCriteria();
+        });
+        
+        static::deleted(function ($member) {
+            $member->family->checkAndApplySingleParentCriteria();
+        });
+    }
 }

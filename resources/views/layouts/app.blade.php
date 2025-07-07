@@ -95,7 +95,7 @@
         <!-- Sidebar overlay for mobile - hidden by default -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
         
-        <div class="flex flex-col min-h-screen" id="main-wrapper">
+        <div class="flex flex-col min-h-screen sidebar-loading" id="main-wrapper">
             @include('layouts.sidebar')
             <div class="flex-1">
                 @include('layouts.navigation')

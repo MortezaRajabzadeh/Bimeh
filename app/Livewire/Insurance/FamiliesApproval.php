@@ -1519,24 +1519,21 @@ private function getCriteriaWeights(): array
      */
     public function uploadInsuranceExcel()
     {
-        Log::info('⏳ شروع فرآیند آپلود اکسل بیمه');
+
 
         // اعتبارسنجی فایل
         $this->validate([
             'insuranceExcelFile' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
-        Log::info('✅ اعتبارسنجی فایل موفق: ' . ($this->insuranceExcelFile ? $this->insuranceExcelFile->getClientOriginalName() : 'نامشخص'));
 
         try {
             // ذخیره فایل
             $filename = time() . '_' . $this->insuranceExcelFile->getClientOriginalName();
-            Log::info('🔄 ذخیره فایل اکسل با نام: ' . $filename);
 
             $path = $this->insuranceExcelFile->storeAs('excel_imports', $filename, 'public');
             $fullPath = storage_path('app/public/' . $path);
 
-            Log::info('📂 مسیر کامل فایل: ' . $fullPath);
 
             // بررسی وجود فایل
             if (!file_exists($fullPath)) {
@@ -1895,9 +1892,15 @@ private function getCriteriaWeights(): array
             // به‌روزرسانی وضعیت wizard خانواده
             $family->setAttribute('wizard_status', InsuranceWizardStep::INSURED->value);
             $family->setAttribute('status', 'insured');
+            $family->setAttribute('is_insured', true);
             $family->save();
 
-            Log::info("رکورد بیمه جدید با شناسه {$id} برای خانواده {$familyId} با وضعیت 'insured' ایجاد شد");
+            // پاک کردن کش برای نمایش فوری تغییرات
+        $this->clearFamiliesCache();
+        
+        // اضافه کردن این خط برای به‌روزرسانی فوری UI
+        $this->dispatch('refreshFamiliesList');
+
 
             return $id;
         } catch (\Exception $e) {
@@ -2009,6 +2012,9 @@ private function getCriteriaWeights(): array
 
             // به‌روزرسانی کش
             $this->clearFamiliesCache();
+
+            // اضافه کردن این خط برای به‌روزرسانی فوری UI
+            $this->dispatch('refreshFamiliesList');
 
             // ریست کردن انتخاب‌ها و رفرش صفحه
             $this->selected = [];
@@ -2603,102 +2609,59 @@ private function getCriteriaWeights(): array
      */
     public function saveRankSetting()
     {
-        // ثبت لاگ برای اشکال‌زدایی قبل از شروع فرآیند
-        Log::info('درخواست ذخیره معیار رتبه', [
-            'data' => [
-                'name' => $this->rankSettingName,
-                'description' => $this->rankSettingDescription,
-                'weight' => $this->rankSettingWeight,
-                'requires_document' => $this->rankSettingNeedsDoc,
-                'is_editing' => !empty($this->editingRankSettingId),
-                'editing_id' => $this->editingRankSettingId
-            ]
-        ]);
-
-        // ابتدا اعتبارسنجی مقادیر ورودی
-        if (empty($this->rankSettingName)) {
-            $this->dispatch('toast', [
-                'message' => 'نام معیار الزامی است',
-                'type' => 'error'
-            ]);
-            return;
-        }
-
         try {
-            // تعیین آیا در حال ایجاد معیار جدید هستیم یا ویرایش معیار موجود
-            if (empty($this->editingRankSettingId)) {
-                // ایجاد معیار جدید با استفاده از مدل
-                $setting = new \App\Models\RankSetting();
-                $setting->fill([
+            // اعتبارسنجی
+            if ($this->editingRankSettingId) {
+                // در حالت ویرایش فقط وزن قابل تغییر است
+                $this->validate([
+                    'rankSettingWeight' => 'required|integer|min:0|max:10',
+                ]);
+            } else {
+                // در حالت افزودن معیار جدید همه فیلدها الزامی هستند
+                $this->validate([
+                    'rankSettingName' => 'required|string|max:255',
+                    'rankSettingWeight' => 'required|integer|min:0|max:10',
+                    'rankSettingDescription' => 'nullable|string',
+                    'rankSettingNeedsDoc' => 'required|boolean',
+                ]);
+            }
+
+            if ($this->editingRankSettingId) {
+                // ویرایش معیار موجود - فقط وزن
+                $setting = \App\Models\RankSetting::find($this->editingRankSettingId);
+                if ($setting) {
+                    $setting->weight = $this->rankSettingWeight;
+                    $setting->save();
+
+                    $this->dispatch('toast', [
+                        'message' => 'وزن معیار با موفقیت به‌روزرسانی شد: ' . $setting->name,
+                        'type' => 'success'
+                    ]);
+                }
+            } else {
+                // ایجاد معیار جدید
+                \App\Models\RankSetting::create([
                     'name' => $this->rankSettingName,
-                    'weight' => (int)$this->rankSettingWeight,
+                    'weight' => $this->rankSettingWeight,
                     'description' => $this->rankSettingDescription,
                     'requires_document' => (bool)$this->rankSettingNeedsDoc,
-                    'sort_order' => \App\Models\RankSetting::max('sort_order') + 10,
-                    'is_active' => true,
                     'slug' => \Illuminate\Support\Str::slug($this->rankSettingName) ?: 'rank-' . \Illuminate\Support\Str::random(6),
-                    'created_by' => \Illuminate\Support\Facades\Auth::id()
-                ]);
-
-                // Save with error handling
-                try {
-                    $setting->save();
-                } catch (\Exception $e) {
-                    throw new \Exception('Failed to save rank setting: ' . $e->getMessage());
-                }
-
-                Log::info('معیار جدید ایجاد شد', [
-                    'id' => $setting->id,
-                    'name' => $setting->name
+                    'is_active' => true,
+                    'sort_order' => \App\Models\RankSetting::max('sort_order') + 1,
                 ]);
 
                 $this->dispatch('toast', [
                     'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
                     'type' => 'success'
                 ]);
-            } else {
-                // ویرایش معیار موجود
-                $setting = \App\Models\RankSetting::find($this->editingRankSettingId);
-                if ($setting) {
-                    $setting->name = $this->rankSettingName;
-                    $setting->weight = $this->rankSettingWeight;
-                    $setting->description = $this->rankSettingDescription;
-                    $setting->requires_document = (bool)$this->rankSettingNeedsDoc;
-                    $setting->save();
-
-                    Log::info('معیار ویرایش شد', [
-                        'id' => $setting->id,
-                        'name' => $setting->name
-                    ]);
-
-                    $this->dispatch('toast', [
-                        'message' => 'معیار با موفقیت به‌روزرسانی شد: ' . $this->rankSettingName,
-                        'type' => 'success'
-                    ]);
-                }
             }
 
-            // بارگذاری مجدد تنظیمات و ریست فرم
-            $this->availableRankSettings = \App\Models\RankSetting::active()->ordered()->get();
+            // بارگذاری مجدد تنظیمات
+            $this->loadRankSettings();
+            $this->clearFamiliesCache();
             $this->resetRankSettingForm();
 
-            // پاک کردن کش لیست خانواده‌ها
-            $this->clearFamiliesCache();
-
-            // ریست کردن فرم بعد از ذخیره موفق
-            $this->rankSettingName = '';
-            $this->rankSettingDescription = '';
-            $this->rankSettingWeight = 5;
-            $this->rankSettingColor = '#60A5FA';
-            $this->rankSettingNeedsDoc = true;
-            $this->editingRankSettingId = null;
         } catch (\Exception $e) {
-            // ثبت خطا در لاگ
-            Log::error('خطا در ذخیره معیار', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             $this->dispatch('toast', [
                 'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
                 'type' => 'error'
@@ -3122,41 +3085,6 @@ public function calculateDisplayScore($family): int
             $this->dispatch('toast', [
                 'message' => 'در حال ویرایش معیار: ' . $setting->name,
                 'type' => 'info'
-            ]);
-        }
-    }
-
-    /**
-     * حذف معیار
-     */
-    public function deleteRankSetting($id)
-    {
-        try {
-            $setting = \App\Models\RankSetting::find($id);
-            if ($setting) {
-                $name = $setting->name;
-                $setting->delete();
-
-                $this->dispatch('toast', [
-                    'message' => "معیار «{$name}» با موفقیت حذف شد",
-                    'type' => 'warning'
-                ]);
-
-                // پاک کردن کش لیست خانواده‌ها
-                $this->clearFamiliesCache();
-
-                // بارگذاری مجدد لیست
-                $this->availableRankSettings = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
-            }
-        } catch (\Exception $e) {
-            Log::error('خطا در حذف معیار', [
-                'id' => $id,
-                'error' => $e->getMessage()
-            ]);
-
-            $this->dispatch('toast', [
-                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
-                'type' => 'error'
             ]);
         }
     }
@@ -3714,40 +3642,24 @@ public function clearCriteriaFilter()
 
     public function moveToPreviousStep()
     {
-        Log::info('🔙 moveToPreviousStep method called', [
-            'selected_ids' => $this->selected,
-            'active_tab' => $this->activeTab ?? 'not_set',
-            'user_id' => Auth::id(),
-            'timestamp' => now()->toDateTimeString(),
-        ]);
+
 
         if (empty($this->selected)) {
             $errorMsg = 'هیچ خانواده‌ای برای بازگشت به مرحله قبل انتخاب نشده است. لطفاً ابتدا خانواده‌های مورد نظر را انتخاب کنید.';
-            Log::warning('❌ moveToPreviousStep: No families selected.', ['active_tab' => $this->activeTab ?? 'not_set', 'user_id' => Auth::id()]);
             $this->dispatch('show-persistent-error', message: $errorMsg);
             return;
         }
 
         try {
-            Log::info('🔍 moveToPreviousStep: Fetching families from database.', [
-                'selected_count' => count($this->selected),
-                'selected_ids' => $this->selected
-            ]);
+
 
             $families = Family::whereIn('id', $this->selected)->get();
 
-            Log::info('📋 moveToPreviousStep: Families fetched from database.', [
-                'fetched_count' => $families->count(),
-                'first_few_ids' => $families->take(5)->pluck('id')->toArray()
-            ]);
+
 
             if ($families->isEmpty()) {
                 $errorMsg = 'خانواده‌های انتخاب شده یافت نشدند یا مشکلی در دریافت آن‌ها وجود دارد.';
-                Log::warning('❌ moveToPreviousStep: Selected families not found or query failed.', [
-                    'selected_ids' => $this->selected,
-                    'active_tab' => $this->activeTab ?? 'not_set',
-                    'user_id' => Auth::id()
-                ]);
+
                 $this->dispatch('show-persistent-error', message: $errorMsg);
                 return;
             }
@@ -3758,21 +3670,13 @@ public function clearCriteriaFilter()
             $errors = [];
             $successMessages = [];
 
-            Log::info('🔄 moveToPreviousStep: Starting database transaction.');
             DB::beginTransaction();
 
             try {
-                Log::info('🔄 moveToPreviousStep: Processing families.', [
-                    'batch_id' => $batchId,
-                    'total_families' => $families->count()
-                ]);
+
 
                 foreach ($families as $family) {
-                    Log::info('👨‍👩‍👧‍👦 moveToPreviousStep: Processing family.', [
-                        'family_id' => $family->id,
-                        'family_code' => $family->family_code ?? 'unknown',
-                        'current_status_value' => $family->wizard_status
-                    ]);
+
 
                     $currentStepValue = $family->wizard_status;
                     $currentStepEnum = null;
@@ -3780,36 +3684,23 @@ public function clearCriteriaFilter()
                     if (is_string($currentStepValue) && !empty($currentStepValue)) {
                         try {
                             $currentStepEnum = InsuranceWizardStep::from($currentStepValue);
-                            Log::debug('✅ moveToPreviousStep: Current step enum created from string.', [
-                                'family_id' => $family->id,
-                                'current_step_value' => $currentStepValue,
-                                'current_step_enum' => $currentStepEnum->value
-                            ]);
+
                         } catch (\ValueError $e) {
-                            Log::error("❌ moveToPreviousStep: Invalid wizard_status string value '{$currentStepValue}' for family ID {$family->id}. Error: " . $e->getMessage());
                             $errors[] = "خانواده {$family->family_code}: وضعیت فعلی ('{$currentStepValue}') نامعتبر است.";
                             $cantMoveCount++;
                             continue;
                         }
                     } elseif ($currentStepValue instanceof InsuranceWizardStep) {
                         $currentStepEnum = $currentStepValue;
-                        Log::debug('✅ moveToPreviousStep: Current step is already an enum instance.', [
-                            'family_id' => $family->id,
-                            'current_step_enum' => $currentStepEnum->value
-                        ]);
+
                     } else {
-                        Log::error("❌ moveToPreviousStep: Unknown or empty wizard_status for family ID {$family->id}.", ['value_type' => gettype($currentStepValue), 'value' => print_r($currentStepValue, true)]);
                         $errors[] = "خانواده {$family->family_code}: وضعیت فعلی تعریف نشده یا خالی است.";
                         $cantMoveCount++;
                         continue;
                     }
 
                     $previousStepEnum = $currentStepEnum->previousStep();
-                    Log::debug('🔄 moveToPreviousStep: Previous step determined.', [
-                        'family_id' => $family->id,
-                        'current_step_for_previous_logic' => $currentStepEnum->value, // Log the exact value used for previousStep()
-                        'previous_step_result' => $previousStepEnum ? $previousStepEnum->value : 'null'
-                    ]);
+
 
                     if ($previousStepEnum) {
                         try {
@@ -3839,12 +3730,7 @@ public function clearCriteriaFilter()
 
                             $family->save();
 
-                            Log::info('✅ moveToPreviousStep: Family status updated in DB.', [
-                                'family_id' => $family->id,
-                                'from_status' => $currentStepEnum->value,
-                                'to_status' => $previousStepEnum->value,
-                                'legacy_status' => $family->status
-                            ]);
+
 
                             FamilyStatusLog::create([
                                 'family_id' => $family->id,
@@ -3855,97 +3741,66 @@ public function clearCriteriaFilter()
                                 'batch_id' => $batchId,
                             ]);
 
-                            Log::info('📝 moveToPreviousStep: Family status log created.', [
-                                'family_id' => $family->id,
-                                'batch_id' => $batchId
-                            ]);
 
                             $movedCount++;
                         } catch (\Exception $e) {
-                            Log::error('❌ moveToPreviousStep: Error updating family status in DB.', [
-                                'family_id' => $family->id,
-                                'error' => $e->getMessage(),
-                                'trace_snippet' => substr($e->getTraceAsString(), 0, 500)
-                            ]);
+
                             $errors[] = "خطا در به‌روزرسانی وضعیت خانواده {$family->family_code}: " . $e->getMessage();
                             $cantMoveCount++;
                         }
                     } else {
-                        Log::warning('⚠️ moveToPreviousStep: Cannot move family back - already at first step or no previous step defined.', [
-                            'family_id' => $family->id,
-                            'current_step' => $currentStepEnum->value,
-                            'current_step_label' => $currentStepEnum->label()
-                        ]);
+
                         $errors[] = "خانواده {$family->family_code} در اولین مرحله ({$currentStepEnum->label()}) قرار دارد یا مرحله قبلی برای آن تعریف نشده است.";
                         $cantMoveCount++;
                     }
                 }
 
-                Log::info('📊 moveToPreviousStep: Finished processing families.', [
-                    'moved_count' => $movedCount,
-                    'failed_count' => $cantMoveCount,
-                    'errors_count' => count($errors)
-                ]);
+
 
                 if ($movedCount > 0) {
                     $successMessages[] = "{$movedCount} خانواده با موفقیت به مرحله قبل منتقل شدند.";
-                    Log::info('✅ moveToPreviousStep: ' . $successMessages[0]);
                 }
 
-                Log::info('✅ moveToPreviousStep: Committing transaction.');
                 DB::commit();
 
                 // UI Updates after successful commit
                 if (method_exists($this, 'clearFamiliesCache')) {
-                    Log::info('🧹 moveToPreviousStep: Clearing families cache.');
                     $this->clearFamiliesCache();
+                    
+                    // اضافه کردن این خط برای به‌روزرسانی فوری UI
+                    $this->dispatch('refreshFamiliesList');
                 }
 
                 // Refresh the current tab's data
-                Log::info('🔄 moveToPreviousStep: Refreshing current tab data.', ['active_tab' => $this->activeTab]);
                 $this->setTab($this->activeTab, false); // false to not reset selections here, as we do it next
 
                 // Reset selections
                 $this->selected = [];
                 $this->selectAll = false;
-                Log::info('🔄 moveToPreviousStep: Dispatching reset-checkboxes event.');
                 $this->dispatch('reset-checkboxes');
 
                 // Display messages
                 if (!empty($successMessages) && empty($errors)) {
                     session()->flash('message', implode(' ', $successMessages));
-                    Log::info('✅ moveToPreviousStep: Success message flashed: ' . implode(' ', $successMessages));
                 } elseif (!empty($errors)) {
                     $finalMessage = implode(' ', array_merge($successMessages, $errors));
                     // Use persistent error for combined messages if any error occurred
                     $this->dispatch('show-persistent-error', message: $finalMessage);
-                    Log::warning('⚠️ moveToPreviousStep: Persistent error/warning message dispatched: ' . $finalMessage);
                 }
 
             } catch (\Exception $e) {
-                Log::error('❌ moveToPreviousStep: Error within transaction, rolling back.', [
-                    'error' => $e->getMessage(),
-                    'trace_snippet' => substr($e->getTraceAsString(), 0, 500)
-                ]);
+
                 DB::rollback();
                 $errorMsg = 'خطا در سیستم هنگام انتقال خانواده‌ها به مرحله قبل: ' . $e->getMessage();
                 $this->dispatch('show-persistent-error', message: $errorMsg);
-                Log::error('❌ moveToPreviousStep: Transaction failed and rolled back.', [
-                    'original_error' => $e->getMessage(),
-                    'selected_ids' => $this->selected
-                ]);
+
             }
         } catch (\Exception $e) {
             $errorMsg = 'خطای سیستمی: ' . $e->getMessage();
             $this->dispatch('show-persistent-error', message: $errorMsg);
-            Log::error('❌ moveToPreviousStep: Fatal error outside transaction.', [
-                'error' => $e->getMessage(),
-                'trace_snippet' => substr($e->getTraceAsString(), 0, 500),
-                'selected_ids' => $this->selected
-            ]);
+
         }
 
-        Log::info('🏁 moveToPreviousStep: Method execution completed.');
     }
 
     public function openDeleteModal()
@@ -3977,7 +3832,6 @@ public function clearCriteriaFilter()
      */
     public function showDeleteSingleConfirmation($familyId)
     {
-        Log::info('📢 showDeleteSingleConfirmation method called for family ID: ' . $familyId);
 
         // تنظیم آرایه selected با یک آیدی خانواده
         $this->selected = [(string)$familyId];
@@ -3985,7 +3839,6 @@ public function clearCriteriaFilter()
         // استفاده از متد باز کردن مودال
         $this->openDeleteModal();
 
-        Log::info('✅ Delete modal should be shown now for family ID: ' . $familyId);
     }
 
     /**
@@ -3998,25 +3851,21 @@ public function clearCriteriaFilter()
      */
     public function showDeleteConfirmation()
     {
-        Log::info('📢 showDeleteConfirmation method called for ' . count($this->selected) . ' selected families');
 
         // بررسی انتخاب حداقل یک خانواده
         if (empty($this->selected)) {
             session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید');
-            Log::warning('⚠️ No families selected for deletion');
             return;
         }
 
         // استفاده از متد باز کردن مودال
         $this->openDeleteModal();
 
-        Log::info('✅ Delete modal opened for ' . count($this->selected) . ' selected families');
     }
 
     public function handlePageRefresh()
     {
         $this->clearFamiliesCache();
-        Log::info('🔄 Page refreshed - Cache cleared');
     }
 
     /**

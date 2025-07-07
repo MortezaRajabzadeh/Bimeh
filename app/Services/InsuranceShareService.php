@@ -23,12 +23,6 @@ class InsuranceShareService
      */
     public function allocate(Collection $families, array $shares, string $payerType, ?int $fundingSourceId = null): array
     {
-        Log::info('🎯 Starting insurance share allocation', [
-            'families_count' => $families->count(),
-            'shares' => $shares,
-            'payer_type' => $payerType,
-            'funding_source_id' => $fundingSourceId
-        ]);
 
         // اعتبارسنجی درصدهای سهام
         $totalPercentage = collect($shares)->sum('percentage');
@@ -43,6 +37,7 @@ class InsuranceShareService
             // ✅ Batch Insert برای family insurances
             $familyInsurancesData = [];
             foreach ($families as $family) {
+                // در متد allocate، هنگام ایجاد FamilyInsurance
                 $familyInsurancesData[] = [
                     'family_id' => $family->id,
                     'insurance_type' => 'تکمیلی',
@@ -55,6 +50,11 @@ class InsuranceShareService
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+                
+                // و بعد از ایجاد FamilyInsurance، خانواده را آپدیت کنید:
+                Family::whereIn('id', $families->pluck('id'))->update([
+                    'insurance_id' => Auth::user()->organization_id // ✅ ست کردن organization_id
+                ]);
             }
 
             // Batch insert family insurances
@@ -84,17 +84,23 @@ class InsuranceShareService
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
-
+                        
+                        // تنظیم اطلاعات پرداخت‌کننده
                         if ($fundingSourceId) {
                             $fundingSource = $this->getCachedFundingSource($fundingSourceId);
                             if ($fundingSource) {
                                 $shareRecord['payer_name'] = $fundingSource->name;
-                                if ($fundingSource->type === 'organization') {
-                                    $shareRecord['payer_organization_id'] = $fundingSource->source_id;
-                                } elseif ($fundingSource->type === 'user') {
-                                    $shareRecord['payer_user_id'] = $fundingSource->source_id;
+                                
+                                // همیشه سازمان فعلی را به عنوان پرداخت‌کننده تنظیم کن
+                                // چون کاربر از طریق سازمان خود منابع را مدیریت می‌کند
+                                $shareRecord['payer_organization_id'] = Auth::user()->organization_id;
+                                
+                                // اگر نوع منبع "person" است، کاربر فعلی را نیز ثبت کن
+                                if ($fundingSource->type === 'person') {
+                                    $shareRecord['payer_user_id'] = Auth::user()->id;
                                 }
-
+                                
+                                // تنظیم payer_type_id اگر در shares موجود باشد
                                 if (isset($shareData['payer_type_id'])) {
                                     $shareRecord['payer_type_id'] = $shareData['payer_type_id'];
                                 }
@@ -164,7 +170,6 @@ class InsuranceShareService
      */
     public function completeInsuranceFromExcel(string $filePath): array
     {
-        Log::info('🏥 شروع پردازش فایل اکسل بیمه', ['file_path' => $filePath]);
 
         try {
             // خواندن فایل اکسل
@@ -224,6 +229,9 @@ class InsuranceShareService
         $validData = [
             'family_codes' => [],
             'premium_amounts' => [],
+            'insurance_types' => [],
+            'start_dates' => [],
+            'end_dates' => [],
             'errors' => []
         ];
 
@@ -231,7 +239,7 @@ class InsuranceShareService
             $row = $rows[$i];
 
             try {
-                // بررسی کد خانوار
+                // بررسی کد خانوار (ستون 0)
                 if (!isset($row[0]) || empty(trim($row[0]))) {
                     $validData['errors'][] = "ردیف {$i}: کد خانوار خالی است";
                     continue;
@@ -239,7 +247,30 @@ class InsuranceShareService
 
                 $familyCode = trim($row[0]);
 
-                // بررسی مبلغ بیمه
+                // نوع بیمه (ستون 3) - بهبود یافته
+                $insuranceType = 'تکمیلی'; // مقدار پیش‌فرض
+                if (isset($row[3]) && !empty(trim($row[3]))) {
+                    $rawType = trim($row[3]);
+                    
+                    // تمیز کردن و تشخیص نوع بیمه
+                    if (stripos($rawType, 'تامین') !== false || stripos($rawType, 'اجتماعی') !== false) {
+                        $insuranceType = 'تامین اجتماعی';
+                    } elseif (stripos($rawType, 'تکمیلی') !== false) {
+                        $insuranceType = 'تکمیلی';
+                    } else {
+                        // ثبت مقدار دقیق از فایل
+                        $insuranceType = $rawType;
+                    }
+                }
+
+                // اضافه کردن لاگ برای دیباگ
+                Log::debug("نوع بیمه تشخیص داده شده", [
+                    'family_code' => $familyCode,
+                    'raw_value' => $row[3] ?? 'خالی',
+                    'detected_type' => $insuranceType
+                ]);
+
+                // مبلغ بیمه (ستون 6)
                 if (!isset($row[6]) || empty(trim($row[6]))) {
                     $validData['errors'][] = "ردیف {$i} - خانوار {$familyCode}: مبلغ بیمه خالی است";
                     continue;
@@ -254,12 +285,23 @@ class InsuranceShareService
                     continue;
                 }
 
+                // تاریخ شروع (ستون 4) - بدون تبدیل
+                $startDate = isset($row[4]) ? trim($row[4]) : null;
+                // تاریخ پایان (ستون 5) - بدون تبدیل
+                $endDate = isset($row[5]) ? trim($row[5]) : null;
+
                 $validData['family_codes'][] = $familyCode;
                 $validData['premium_amounts'][$familyCode] = $premiumAmount;
+                $validData['insurance_types'][$familyCode] = $insuranceType;
+                $validData['start_dates'][$familyCode] = $startDate;
+                $validData['end_dates'][$familyCode] = $endDate;
 
                 Log::debug("✅ داده معتبر استخراج شد", [
                     'family_code' => $familyCode,
-                    'premium_amount' => $premiumAmount
+                    'insurance_type' => $insuranceType,
+                    'premium_amount' => $premiumAmount,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate
                 ]);
 
             } catch (\Exception $e) {
@@ -343,8 +385,12 @@ class InsuranceShareService
 
         DB::transaction(function () use ($validData, $families, $insurances, &$results, &$familyUpdates, &$insuranceUpdates, &$shareUpdates, &$newInsurances) {
 
+            // در متد processBatchData
             foreach ($validData['family_codes'] as $familyCode) {
                 $premiumAmount = $validData['premium_amounts'][$familyCode];
+                $insuranceType = $validData['insurance_types'][$familyCode];
+                $startDate = $validData['start_dates'][$familyCode];
+                $endDate = $validData['end_dates'][$familyCode];
                 $family = $families->get($familyCode);
 
                 if (!$family) {
@@ -360,8 +406,11 @@ class InsuranceShareService
                     // به‌روزرسانی بیمه موجود
                     $insuranceUpdates[] = [
                         'id' => $insurance->id,
+                        'insurance_type' => $insuranceType,
                         'premium_amount' => $premiumAmount,
-                        'status' => 'active',
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'status' => 'insured',
                         'updated_at' => now()
                     ];
 
@@ -375,41 +424,31 @@ class InsuranceShareService
                     }
 
                     $results['updated']++;
-
-                    Log::debug("📝 آماده‌سازی به‌روزرسانی بیمه", [
-                        'insurance_id' => $insurance->id,
-                        'family_code' => $familyCode,
-                        'premium_amount' => $premiumAmount
-                    ]);
                 } else {
-                    // ایجاد بیمه جدید
+                    // ایجاد بیمه جدید - فقط یک بار!
                     $newInsurances[] = [
                         'family_id' => $family->id,
-                        'insurance_type' => 'تکمیلی',
+                        'insurance_type' => $insuranceType,
                         'premium_amount' => $premiumAmount,
-                        'start_date' => now(),
-                        'end_date' => now()->addYear(),
-                        'status' => 'active',
+                        'start_date' => $startDate ?: now()->format('Y-m-d'),
+                        'end_date' => $endDate ?: now()->addYear()->format('Y-m-d'),
+                        'status' => 'insured',
                         'payer_type' => 'mixed',
+                        'funding_source_id' => null, // Default to null since $fundingSourceId is not defined
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
 
                     $results['created']++;
-
-                    Log::debug("🆕 آماده‌سازی ایجاد بیمه جدید", [
-                        'family_id' => $family->id,
-                        'family_code' => $familyCode,
-                        'premium_amount' => $premiumAmount
-                    ]);
                 }
 
                 // آماده‌سازی به‌روزرسانی خانواده
                 $familyUpdates[] = [
                     'id' => $family->id,
+                    'insurance_id' => Auth::user()->organization_id, // ✅ اضافه شد
                     'wizard_status' => InsuranceWizardStep::INSURED->value,
-                    'status' => 'insured',
-                    'is_insured' => true,
+                    'status' => InsuranceWizardStep::INSURED->legacyStatus(), // Set status to insured legacy status
+                    'is_insured' => true, // Set to true since we're processing insurance data
                     'updated_at' => now()
                 ];
 
@@ -440,13 +479,7 @@ class InsuranceShareService
             }
         });
 
-        Log::info('✅ پردازش Batch تکمیل شد', [
-            'processed' => $results['processed'],
-            'created' => $results['created'],
-            'updated' => $results['updated'],
-            'skipped' => $results['skipped'],
-            'total_amount' => $results['total_insurance_amount']
-        ]);
+
 
         return $results;
     }
@@ -468,6 +501,7 @@ class InsuranceShareService
             $firstUpdate = $group->first();
 
             Family::whereIn('id', $ids)->update([
+                    'insurance_id' => $firstUpdate['insurance_id'] ?? null, // ✅ اضافه شد
                 'wizard_status' => $firstUpdate['wizard_status'],
                 'status' => $firstUpdate['status'],
                 'is_insured' => $firstUpdate['is_insured'],

@@ -89,13 +89,13 @@
             </button>
             
             <!-- دکمه تنظیمات رتبه -->
-            <button wire:click="openRankModal"
+            <!-- <button wire:click="openRankModal"
                     class="inline-flex items-center px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
                 تنظیمات رتبه
-            </button>
+            </button> -->
     
         </div>
         
@@ -409,25 +409,10 @@
                                 </button>
                             </th>
                             <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
-                                <button wire:click="sortBy('consumption_coefficient')" class="flex items-center justify-end w-full">
+                                <div class="flex items-center justify-end w-full">
                                     درصد مشارکت
-                                    @if($sf === 'consumption_coefficient')
-                                        <span class="mr-1 text-[0.5rem]">
-                                            @if($sd === 'asc')
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                                </svg>
-                                            @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @endif
-                                    </span>
-                                @else
-                                    <span class="mr-1 text-[0.5rem]">▼</span>
-                                @endif
-                            </button>
-                        </th>
+                                </div>
+                            </th>
                         @endif
                         <th scope="col" class="px-5 py-3 text-right border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('created_at')" class="flex items-center justify-end w-full">

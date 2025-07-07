@@ -54,6 +54,8 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
         return view('admin.dashboard');
     })->name('dashboard');
     
+    Route::post('/impersonate-user', [\App\Http\Controllers\Admin\UserImpersonationController::class, 'store'])->name('impersonate-user.store');
+    Route::post('/stop-impersonating-user', [\App\Http\Controllers\Admin\UserImpersonationController::class, 'stop'])->name('stop-impersonating-user');
     // تعویض نقش ادمین (جدید)
     Route::post('/switch-role', [\App\Http\Controllers\Admin\SwitchRoleController::class, 'store'])->name('switch-role.store');
     

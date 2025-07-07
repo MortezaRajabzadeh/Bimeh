@@ -271,6 +271,10 @@ class Family extends Model implements HasMedia
         if ($member) {
             $member->update(['is_head' => true]);
             $this->update(['head_id' => $memberId]);
+            
+            // بررسی و اعمال معیار سرپرست خانوار زن
+            $this->checkAndApplySingleParentCriteria();
+            
             return true;
         }
 
@@ -1221,6 +1225,54 @@ class Family extends Model implements HasMedia
         $this->save();
 
         return $wizardStatus;
+    }
+
+    /**
+     * بررسی و اعمال معیار سرپرست خانوار زن
+     */
+    public function checkAndApplySingleParentCriteria()
+    {
+        // پیدا کردن سرپرست خانواده
+        $head = $this->members()->where('is_head', true)->first();
+        
+        if ($head) {
+            // بررسی اینکه آیا سرپرست زن است
+            $isFemaleHead = ($head->relationship_fa === 'مادر' || $head->gender === 'female');
+            
+            // بررسی اینکه آیا فقط یک سرپرست وجود دارد
+            $parentsCount = $this->members()
+                ->whereIn('relationship_fa', ['پدر', 'مادر'])
+                ->count();
+            
+            $isSingleParent = ($parentsCount === 1);
+            
+            // اگر سرپرست زن و تک‌سرپرست باشد
+            if ($isFemaleHead && $isSingleParent) {
+                $acceptanceCriteria = $this->acceptance_criteria ?? [];
+                
+                if (!in_array('سرپرست خانوار زن', $acceptanceCriteria)) {
+                    $acceptanceCriteria[] = 'سرپرست خانوار زن';
+                    $this->acceptance_criteria = $acceptanceCriteria;
+                    $this->save();
+                    
+                    // محاسبه مجدد رتبه
+                    $this->calculateRank();
+                }
+            } else {
+                // حذف معیار اگر شرایط برقرار نباشد
+                $acceptanceCriteria = $this->acceptance_criteria ?? [];
+                $key = array_search('سرپرست خانوار زن', $acceptanceCriteria);
+                
+                if ($key !== false) {
+                    unset($acceptanceCriteria[$key]);
+                    $this->acceptance_criteria = array_values($acceptanceCriteria);
+                    $this->save();
+                    
+                    // محاسبه مجدد رتبه
+                    $this->calculateRank();
+                }
+            }
+        }
     }
 
 

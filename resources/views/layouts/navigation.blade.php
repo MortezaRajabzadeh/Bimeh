@@ -25,33 +25,102 @@ use App\Models\InsurancePayment;
 
                 @if(auth()->check())
                     @if(auth()->user()->hasRole('admin'))
-                    <!-- دکمه تغییر نقش برای ادمین -->
-                    <div x-data="{ open: false }" class="relative ml-4">
-                        <button @click="open = !open" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition focus:outline-none">
-                            @php
-                                $activeRole = auth()->user()->getActiveRole();
-                                $roleName = match($activeRole) {
-                                    'charity' => 'سازمان خیریه',
-                                    'insurance' => 'بیمه',
-                                    default => 'ادمین'
-                                };
-                            @endphp
-                            <span>{{ $roleName }}</span>
+                    <!-- دو دراپ‌داون برای ادمین -->
+                    <div class="flex items-center gap-2">
+                        <!-- دراپ‌داون انتخاب نوع شرکت -->
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition focus:outline-none">
+                                @php
+                                    $activeRole = auth()->user()->getActiveRole();
+                                    $roleName = match($activeRole) {
+                                        'charity' => 'سازمان خیریه',
+                                        'insurance' => 'بیمه',
+                                        default => 'ادمین'
+                                    };
+                                @endphp
+                                <span>{{ $roleName }}</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
                             
-                            @if(auth()->user()->isImpersonating())
-                            <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                            @endif
+                            <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                                <!-- گزینه‌های نقش -->
+                                <form method="POST" action="{{ route('admin.switch-role.store') }}"> 
+                                    @csrf 
+                                    <input type="hidden" name="role" value="charity"> 
+                                    <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('charity') ? 'bg-blue-50' : '' }}">
+                                        <span>سازمان خیریه</span>
+                                        @if(auth()->user()->isActiveAs('charity'))
+                                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        @endif
+                                    </button>
+                                </form>
+                                <!-- سایر گزینه‌ها... -->
+                            </div>
+                        </div>
+                
+                        <!-- دراپ‌داون انتخاب کاربر -->
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100 transition focus:outline-none">
+                                @php
+                                    $currentUser = session('impersonated_user_id') ? 
+                                        \App\Models\User::find(session('impersonated_user_id')) : 
+                                        auth()->user();
+                                @endphp
+                                <span>{{ $currentUser->name }}</span>
+                                @if(session('impersonated_user_id'))
+                                <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                @endif
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
                             
-                            <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        
-                        <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                            <!-- گزینه خیریه -->
-                            <form method="POST" action="{{ route('admin.switch-role.store') }}"> @csrf <input type="hidden" name="role" value="charity"> <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('charity') ? 'bg-blue-50' : '' }}"><span>سازمان خیریه</span>@if(auth()->user()->isActiveAs('charity'))<svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>@endif</button></form>
-                            <!-- گزینه بیمه -->
-                            <form method="POST" action="{{ route('admin.switch-role.store') }}"> @csrf <input type="hidden" name="role" value="insurance"> <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('insurance') ? 'bg-blue-50' : '' }}"><span>بیمه</span>@if(auth()->user()->isActiveAs('insurance'))<svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>@endif</button></form>
-                            <!-- گزینه ادمین -->
-                            <form method="POST" action="{{ route('admin.switch-role.store') }}"> @csrf <input type="hidden" name="role" value="admin"> <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t border-gray-200 {{ auth()->user()->isActiveAs('admin') ? 'bg-blue-50' : '' }}"><span>ادمین</span>@if(auth()->user()->isActiveAs('admin'))<svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>@endif</button></form>
+                            <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                                @php
+                                    $activeRole = auth()->user()->getActiveRole();
+                                    // نمایش همه کاربران بجای فیلتر بر اساس نقش فعلی
+                                    $users = \App\Models\User::whereHas('roles', function($q) {
+                                        $q->whereIn('name', ['admin', 'charity', 'insurance']);
+                                    })->with('organization')->get();
+                                @endphp
+                                
+                                @foreach($users as $user)
+                                <form method="POST" action="{{ route('admin.impersonate-user.store') }}">
+                                    @csrf
+                                    <input type="hidden" name="user_id" value="{{ $user->id }}">
+                                    <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ session('impersonated_user_id') == $user->id ? 'bg-blue-50' : '' }}">
+                                        <div>
+                                            <div class="font-medium">{{ $user->name }}</div>
+                                            @if($user->organization)
+                                            <div class="text-xs text-gray-500">{{ $user->organization->name }}</div>
+                                            @endif
+                                        </div>
+                                        @if(session('impersonated_user_id') == $user->id)
+                                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        @endif
+                                    </button>
+                                </form>
+                                @endforeach
+                                
+                                @if(session('impersonated_user_id'))
+                                <div class="border-t border-gray-200">
+                                    <form method="POST" action="{{ route('admin.stop-impersonating-user') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            بازگشت به حساب اصلی
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @else

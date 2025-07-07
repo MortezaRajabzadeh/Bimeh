@@ -523,6 +523,9 @@ class FamiliesImport implements ToCollection
 
         // بروزرسانی معیارهای پذیرش و محاسبه رتبه خانواده
         $this->updateAcceptanceCriteriaAndRank($family);
+        
+        // بررسی و اعمال معیار سرپرست مجرد
+        $family->checkAndApplySingleParentCriteria();
     }
 
     /**

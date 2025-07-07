@@ -164,18 +164,6 @@ class User extends Authenticatable
     }
     
     /**
-     * بررسی آیا کاربر در حال impersonation است
-     * 
-     * @return bool
-     */
-    public function isImpersonating(): bool
-    {
-        return $this->hasRole('admin') && 
-               Session::has('is_impersonating') && 
-               Session::get('is_impersonating') === true;
-    }
-    
-    /**
      * بررسی آیا کاربر در حال حاضر با نقش خاصی فعال است
      * 
      * @param string $role نقش مورد نظر ('admin', 'charity', 'insurance')
@@ -185,7 +173,39 @@ class User extends Authenticatable
     {
         return $this->getActiveRole() === $role;
     }
+    
+    /**
+     * بررسی آیا در حال حاضر کاربر دیگری impersonate شده است
+     */
+    public function isImpersonatingUser(): bool
+    {
+        return Session::has('impersonated_user_id') && 
+               Session::has('original_admin_id') &&
+               Session::get('original_admin_id') === $this->id;
+    }
+    
+    /**
+     * دریافت کاربر impersonate شده
+     */
+    public function getImpersonatedUser(): ?User
+    {
+        if ($this->isImpersonatingUser()) {
+            return User::find(Session::get('impersonated_user_id'));
+        }
+        return null;
+    }
 
+    /**
+     * دریافت کاربر فعلی (اصلی یا impersonate شده)
+     */
+    public function getCurrentActiveUser(): User
+    {
+        if ($this->isImpersonatingUser()) {
+            return $this->getImpersonatedUser();
+        }
+        return $this;
+    }
+    
     // اضافه کردن متد accessors برای دریافت organization_id موقت یا اصلی
     public function getOrganizationIdAttribute($value)
     {

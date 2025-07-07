@@ -1972,11 +1972,6 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                                 </svg>
                                             </button>
-                                            <button wire:click="deleteRankSetting({{ $criterion->id }})" class="text-red-500 hover:text-red-700">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
                                         </div>
                                         <div class="px-4 py-2 rounded-md text-center w-full" style="background-color: {{ $criterion->color ?? '#e5f7eb' }}">
                                             {{ $criterion->name }}
@@ -2030,29 +2025,21 @@ total items: {{ $families->count() ?? 0 }}</pre>
                 <!-- فرم افزودن/ویرایش معیار -->
                 <div x-show="showNewCriterionForm" class="border border-green-500 rounded-lg p-5 mb-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium text-gray-900" x-text="$wire.editingRankSettingId ? 'ویرایش معیار' : 'افزودن معیار جدید'"></h3>
+                        <h3 class="text-lg font-medium text-gray-900" x-text="$wire.editingRankSettingId ? 'ویرایش وزن معیار' : 'افزودن معیار جدید'"></h3>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    
+                    <!-- نمایش نام معیار به صورت فقط خواندنی در حالت ویرایش -->
+                    <div x-show="$wire.editingRankSettingId" class="mb-4">
+                        <label class="block text-gray-700 mb-2">نام معیار</label>
+                        <div class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-100 text-gray-600" x-text="$wire.rankSettingName"></div>
+                    </div>
+                    
+                    <!-- فقط در حالت افزودن معیار جدید نمایش داده شود -->
+                    <div x-show="!$wire.editingRankSettingId" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label class="block text-gray-700 mb-2">اسم معیار پذیرش</label>
                             <input type="text" wire:model="rankSettingName"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                        </div>
-                        <div>
-                            <label class="block text-gray-700 mb-2">وزن معیار پذیرش</label>
-                            <div class="relative">
-                                <select wire:model="rankSettingWeight"
-                                        class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 rtl text-right appearance-none">
-                                    @for($i = 0; $i <= 10; $i++)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
-                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                        <path d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2">نیاز به مدرک؟</label>
@@ -2070,8 +2057,27 @@ total items: {{ $families->count() ?? 0 }}</pre>
                             </div>
                         </div>
                     </div>
-
+                    
+                    <!-- فیلد وزن که همیشه نمایش داده می‌شود -->
                     <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">وزن معیار پذیرش</label>
+                        <div class="relative w-32">
+                            <select wire:model="rankSettingWeight"
+                                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 rtl text-right appearance-none">
+                                @for($i = 0; $i <= 10; $i++)
+                                    <option value="{{ $i }}">{{ $i }}</option>
+                                @endfor
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فیلد توضیحات فقط در حالت افزودن معیار جدید -->
+                    <div x-show="!$wire.editingRankSettingId" class="mb-4">
                         <label class="block text-gray-700 mb-2">شرح معیار پذیرش در اینجا ذکر میشود و مدارک و نحوه پذیرش در اینجا تعیین میشود</label>
                         <textarea wire:model="rankSettingDescription" rows="3"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>

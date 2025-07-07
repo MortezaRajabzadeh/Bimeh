@@ -12,14 +12,9 @@ class FamilyInsurance extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'family_id', 
-        'insurance_type', 
-        'insurance_payer',
-        'premium_amount',
-        'start_date', 
-        'end_date',
-        'family_code',
-        'status',
+        'family_id', 'insurance_type', 'insurance_payer', 'premium_amount', 
+        'start_date', 'end_date', 'family_code', 'status',
+        'payer_type', 'funding_source_id' // ✅ اضافه کنید
     ];
 
     protected $casts = [
@@ -110,4 +105,4 @@ class FamilyInsurance extends Model
     {
         return $this->start_date <= now() && (!$this->end_date || $this->end_date >= now());
     }
-} 
+}

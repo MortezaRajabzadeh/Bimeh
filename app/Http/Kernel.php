@@ -29,7 +29,7 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'web' => [
             \App\Http\Middleware\SetLocale::class,
-            \App\HttpEncryptCookies::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
@@ -64,13 +64,13 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        
+
         // Custom middleware
         'user.type' => \App\Http\Middleware\CheckUserType::class,
         'user.active' => \App\Http\Middleware\CheckActiveUser::class,
         'user.status' => \App\Http\Middleware\CheckUserStatus::class,
         'admin.acting' => \App\Http\Middleware\AdminActingAs::class,
-        
+
         // Spatie Permission middleware
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
