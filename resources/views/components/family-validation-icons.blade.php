@@ -9,9 +9,27 @@
     $iconConfig = config('ui.family_validation_icons');
     $colorConfig = config('ui.status_colors');
 
+    // تعریف رنگ‌ها بر اساس وضعیت
+    $identityColors = $colorConfig[$identityStatus['status']] ?? $colorConfig['unknown'] ?? [
+        'bg_class' => 'bg-gray-100',
+        'border_class' => 'border-gray-300',
+        'icon_class' => 'text-gray-500',
+        'text_class' => 'text-gray-700'
+    ];
+
+    $locationColors = $colorConfig[$locationStatus['status']] ?? $colorConfig['unknown'] ?? [
+        'bg_class' => 'bg-gray-100',
+        'border_class' => 'border-gray-300',
+        'icon_class' => 'text-gray-500',
+        'text_class' => 'text-gray-700'
+    ];
+
     // اندازه آیکون
     $sizeClasses = ['sm' => 'w-5 h-5', 'md' => 'w-6 h-6', 'lg' => 'w-8 h-8'];
     $iconSize = $sizeClasses[$size] ?? $sizeClasses['md'];
+
+    // تعریف $totalMembers
+    $totalMembers = $family->members->count();
 
     // ===================================================================
     // منطق جدید برای اعتبارسنجی مدارک (اینجا متمرکز شده)
@@ -39,29 +57,27 @@
         });
     }
 
-    $docPercentage = $membersNeedingDocument > 0 ? round(($membersWithDocument / $membersNeedingDocument) * 100) : 100;
+    $incompleteMembers = $membersNeedingDocument - $membersWithDocument;
+    $completeMembers = $totalMembers - $incompleteMembers;
+    $documentCompletionPercentage = $totalMembers > 0 ? round(($completeMembers / $totalMembers) * 100) : 100;
 
     if ($membersNeedingDocument === 0) {
-        $docStatus = 'not_needed';
-        $docMessage = "نیازی به مدرک بیماری خاص نیست";
-        $docColors = $colorConfig['complete'];
-    } elseif ($docPercentage == 100) {
-        $docStatus = 'complete';
-        $docMessage = "مدارک بیماری خاص کامل است";
-        $docColors = $colorConfig['complete'];
-    } elseif ($docPercentage > 0) {
-        $docStatus = 'partial';
-        $docMessage = "{$membersWithDocument} از {$membersNeedingDocument} مدرک آپلود شده";
-        $docColors = $colorConfig['partial'];
+        $documentStatus = 'none';
+        $documentMessage = "هیچ عضوی بیماری خاص ندارد";
+        $documentColors = ['bg_class' => 'bg-gray-100', 'border_class' => 'border-gray-300', 'icon_class' => 'text-gray-500', 'text_class' => 'text-gray-700'];
+    } elseif ($documentCompletionPercentage == 100) {
+        $documentStatus = 'complete';
+        $documentMessage = "همه مدارک بیماری خاص تکمیل شده است";
+        $documentColors = $colorConfig['complete'] ?? ['bg_class' => 'bg-green-100', 'border_class' => 'border-green-300', 'icon_class' => 'text-green-600', 'text_class' => 'text-green-800'];
+    } elseif ($documentCompletionPercentage > 0) {
+        $documentStatus = 'warning';
+        $documentMessage = "{$membersWithDocument} از {$membersNeedingDocument} مدرک آپلود شده است";
+        $documentColors = $colorConfig['warning'] ?? ['bg_class' => 'bg-orange-100', 'border_class' => 'border-orange-300', 'icon_class' => 'text-orange-600', 'text_class' => 'text-orange-800'];
     } else {
-        $docStatus = 'none';
-        $docMessage = "{$membersNeedingDocument} عضو نیاز به مدرک دارند";
-        $docColors = $colorConfig['none'];
+        $documentStatus = 'incomplete';
+        $documentMessage = "{$membersNeedingDocument} عضو نیاز به مدرک بیماری خاص دارند";
+        $documentColors = $colorConfig['incomplete'] ?? ['bg_class' => 'bg-red-100', 'border_class' => 'border-red-300', 'icon_class' => 'text-red-600', 'text_class' => 'text-red-800'];
     }
-
-    // رنگ‌ها برای وضعیت‌های دیگر
-    $identityColors = $colorConfig[$identityStatus['status']] ?? $colorConfig['unknown'];
-    $locationColors = $colorConfig[$locationStatus['status']] ?? $colorConfig['unknown'];
 @endphp
 
 <div class="flex flex-col items-center justify-center gap-1 family-validation-icons-stacked">
@@ -286,11 +302,18 @@
                     </svg>
 
                     {{-- نمایش آیکون تکمیل --}}
-                    <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </span>
+                    // در بخش span برای نمایش درصد
+                    @if($documentCompletionPercentage > 0 && $documentCompletionPercentage < 100)
+                        <span class="absolute -bottom-1 -right-1 bg-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center border text-[10px] {{ $documentColors['text_class'] }}">
+                            {{ $documentCompletionPercentage }}%
+                        </span>
+                    @elseif($documentCompletionPercentage === 100)
+                        <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </span>
+                    @endif
                 </div>
 
                 {{-- Tooltip --}}

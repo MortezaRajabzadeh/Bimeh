@@ -610,11 +610,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         </button>
                     @elseif($activeTab === 'excel')
                         <button type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 disabled:opacity-50"
-                            x-on:click="showExcelUploadModal = true">
+                            wire:click="openExcelUploadModal">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 011-1h10a2 2 0 012 2v-1m-4-4l-4 4m0 0L8 8m4-4v12" />
                             </svg>
-                            ثبت اطلاعات صدور
+                            آپلود فایل اطلاعات صدور
                         </button>
                         <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
                             wire:click="showDeleteConfirmation"
@@ -776,54 +776,15 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
             {{-- نمایش لیست خانواده‌ها --}}
             <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
-                @if($activeTab === 'excel')
-                {{-- تب در انتظار صدور - آپلود فایل اکسل --}}
+                @if($activeTab === 'excel' && $families->isEmpty())
+                {{-- تب در انتظار صدور - زمانی که خانواده‌ای وجود ندارد --}}
                 <div class="bg-white p-8 text-center">
                     <div class="mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <h3 class="mt-4 text-xl font-bold text-gray-800">ثبت اطلاعات صدور بیمه</h3>
-                        <p class="mt-2 text-gray-600">فایل اطلاعات صدور بیمه را آپلود کنید تا اطلاعات بیمه‌نامه ثبت شود.</p>
-                    </div>
-
-                    <form wire:submit.prevent="uploadInsuranceExcel" class="mt-8 max-w-lg mx-auto">
-                        <div class="flex flex-col items-center">
-                            <input type="file" wire:model="insuranceExcelFile" accept=".xlsx,.xls" class="hidden" id="excel-upload-input">
-                            <label for="excel-upload-input" class="w-full cursor-pointer">
-                                <div class="bg-green-600 hover:bg-green-700 text-white rounded-xl py-4 text-lg font-bold flex items-center justify-center gap-2 transition duration-200 ease-in-out">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                    آپلود فایل اطلاعات صدور
-                                </div>
-                            </label>
-
-                            @if($insuranceExcelFile)
-                                <div class="mt-4 text-green-700 text-sm font-bold flex items-center justify-center gap-2 animate-fade-in">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    فایل انتخاب شد: {{ $insuranceExcelFile->getClientOriginalName() }}
-                                </div>
-                                <button type="submit" class="mt-4 w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 text-lg font-bold transition duration-200 ease-in-out animate-fade-in">
-                                    تایید و ارسال فایل
-                                </button>
-                            @endif
-
-                            @error('insuranceExcelFile')
-                                <div class="text-red-500 mt-2 text-sm">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </form>
-
-                    <div class="mt-8 text-gray-600 text-sm">
-                        <p class="font-bold mb-2">راهنمای آپلود فایل:</p>
-                        <ul class="list-disc list-inside text-right">
-                            <li>فایل باید در فرمت اکسل (.xlsx یا .xls) باشد</li>
-                            <li>برای هر خانواده، اطلاعات بیمه را به طور کامل وارد کنید</li>
-                            <li>از تغییر ساختار فایل خودداری کنید</li>
-                        </ul>
+                        <h3 class="mt-4 text-xl font-bold text-gray-800">همه خانواده‌ها بیمه شده‌اند</h3>
+                        <p class="mt-2 text-gray-600">تمام خانواده‌های واجد شرایط بیمه شده‌اند و خانواده‌ای برای صدور باقی نمانده است.</p>
                     </div>
                 </div>
             @else
@@ -2111,6 +2072,73 @@ total items: {{ $families->count() ?? 0 }}</pre>
             </div>
         </div>
      </div>
+    </div>
+
+    <!-- مودال آپلود فایل اکسل -->
+    <div x-show="$wire.showExcelUploadModal"
+         @keydown.escape.window="$wire.closeExcelUploadModal()"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+
+        <div @click.away="$wire.closeExcelUploadModal()"
+             class="w-full max-w-lg bg-white rounded-lg shadow-xl">
+
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800">آپلود فایل اطلاعات صدور</h3>
+                <button wire:click="closeExcelUploadModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <form wire:submit.prevent="uploadInsuranceExcel">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            انتخاب فایل اکسل
+                        </label>
+                        <input type="file" 
+                               wire:model="insuranceExcelFile" 
+                               accept=".xlsx,.xls" 
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        @error('insuranceExcelFile')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                        <h4 class="text-sm font-medium text-blue-800 mb-2">راهنمای آپلود:</h4>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• فایل باید در فرمت اکسل (.xlsx یا .xls) باشد</li>
+                            <li>• اطلاعات بیمه‌نامه را به طور کامل وارد کنید</li>
+                            <li>• خانواده‌هایی که در فایل هستند از لیست حذف می‌شوند</li>
+                        </ul>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 rtl:space-x-reverse">
+                        <button type="button" 
+                                wire:click="closeExcelUploadModal"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            انصراف
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                wire:loading.attr="disabled"
+                                wire:target="uploadInsuranceExcel">
+                            <span wire:loading.remove wire:target="uploadInsuranceExcel">آپلود فایل</span>
+                            <span wire:loading wire:target="uploadInsuranceExcel">در حال آپلود...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 </div>

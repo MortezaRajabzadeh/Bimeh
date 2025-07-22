@@ -216,13 +216,15 @@
                 </div>
             @endif
 
+            <!-- کامپوننت آمار و نمودارهای داشبورد -->
+            <div class="mb-8">
+                <livewire:charity.dashboard-stats />
+            </div>
+
             <!-- فاصله و خط جداکننده بین دو بخش -->
             <div class="my-10 border-t border-gray-200"></div>
        
-            <!-- جدول خانواده‌ها با Livewire -->
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <livewire:charity.family-search />
-            </div>
+
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

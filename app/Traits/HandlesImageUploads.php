@@ -29,9 +29,9 @@ trait HandlesImageUploads
         // مسیر کامل ذخیره‌سازی
         $path = $directory . '/' . $filename;
 
-        // ایجاد مسیر در صورت عدم وجود
-        if (!Storage::exists($directory)) {
-            Storage::makeDirectory($directory, 0755, true);
+        // ایجاد مسیر در صورت عدم وجود در disk عمومی
+        if (!Storage::disk('public')->exists($directory)) {
+            Storage::disk('public')->makeDirectory($directory, 0755, true);
         }
 
         // پردازش تصویر
@@ -43,8 +43,8 @@ trait HandlesImageUploads
             })
             ->toWebp($quality);
 
-        // ذخیره تصویر
-        Storage::put($path, $image);
+        // ذخیره تصویر در disk عمومی
+        Storage::disk('public')->put($path, $image);
 
         return $path;
     }
@@ -57,8 +57,8 @@ trait HandlesImageUploads
      */
     protected function deleteImageIfExists($path)
     {
-        if ($path && Storage::exists($path)) {
-            Storage::delete($path);
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
         }
     }
 }

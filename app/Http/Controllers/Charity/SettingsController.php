@@ -40,39 +40,46 @@ class SettingsController extends Controller
             'description' => 'nullable|string|max:2000',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
         ]);
-
+    
         // دریافت سازمان کاربر جاری
         $organization = Auth::user()->organization;
         
         if (!$organization) {
             return redirect()->back()->with('error', 'خیریه شما یافت نشد.');
         }
-
+    
         // به‌روزرسانی اطلاعات سازمان
         $organization->name = $validatedData['charity_name'];
         $organization->email = $validatedData['email'];
         $organization->phone = $validatedData['phone'];
         $organization->address = $validatedData['address'];
         $organization->description = $validatedData['description'];
-
+    
         // پردازش آپلود لوگو در صورت وجود
         if ($request->hasFile('logo')) {
             // حذف لوگوی قبلی در صورت وجود
-            $this->deleteImageIfExists($organization->logo_path);
+            if ($organization->logo_path) {
+                $this->deleteImageIfExists($organization->logo_path);
+            }
             
-            // آپلود و بهینه‌سازی تصویر جدید
+            // آپلود و بهینه‌سازی تصویر جدید با مسیر یکسان
             $organization->logo_path = $this->uploadAndOptimizeImage(
                 $request->file('logo'),
-                'charities/logos',
+                'organizations/logos',
                 300, // عرض
                 300, // ارتفاع
                 80   // کیفیت (0-100)
             );
+            
+            // به‌روزرسانی timestamp برای cache busting
+            $organization->touch();
         }
-
+    
         // ذخیره تغییرات
         $organization->save();
-
-        return redirect()->route('charity.settings')->with('success', 'تنظیمات خیریه با موفقیت به‌روزرسانی شد.');
+    
+        return redirect()->route('charity.settings')
+            ->with('success', 'تنظیمات خیریه با موفقیت به‌روزرسانی شد.')
+            ->with('logo_updated', true); // اضافه کردن flag برای refresh
     }
-} 
+}

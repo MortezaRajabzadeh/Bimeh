@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FamilySearch extends Component
 {
@@ -40,6 +41,15 @@ class FamilySearch extends Component
     public $perPage = 15;
     public $province = '';
     public $city = '';
+    
+    // اضافه کردن property های مورد نیاز برای فیلترهای جغرافیایی
+    public $province_id = null;
+    public $city_id = null;
+    public $district_id = null;
+    public $region_id = null;
+    public $organization_id = null;
+    public $charity_id = null;
+    
     public $deprivation_rank = '';
     public $family_rank_range = '';
     public $specific_criteria = '';
@@ -1185,5 +1195,70 @@ class FamilySearch extends Component
             'message' => 'فیلتر بیماری خاص اعمال شد',
             'type' => 'success'
         ]);
+    }
+
+    /**
+     * دانلود فایل اکسل برای خانواده‌های موجود در صفحه
+     */
+    public function downloadPageExcel()
+    {
+        $query = Family::query()->with([
+            'province', 'city', 'district', 'region', 'members', 'head', 'charity', 'organization'
+        ]);
+
+        // اعمال فیلترهای موجود
+        if ($this->search) {
+            $query->where(function($q) {
+                $q->where('family_code', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('head', function($headQuery) {
+                      $headQuery->where('full_name', 'like', '%' . $this->search . '%')
+                               ->orWhere('national_code', 'like', '%' . $this->search . '%');
+                  });
+            });
+        }
+
+        if ($this->province_id) {
+            $query->where('province_id', $this->province_id);
+        }
+
+        if ($this->city_id) {
+            $query->where('city_id', $this->city_id);
+        }
+
+        if ($this->district_id) {
+            $query->where('district_id', $this->district_id);
+        }
+
+        if ($this->region_id) {
+            $query->where('region_id', $this->region_id);
+        }
+
+        if ($this->organization_id) {
+            $query->where('organization_id', $this->organization_id);
+        }
+
+        if ($this->charity_id) {
+            $query->where('charity_id', $this->charity_id);
+        }
+
+        // اعمال مرتب‌سازی
+        if ($this->sortField && $this->sortDirection) {
+            $query->orderBy($this->sortField, $this->sortDirection);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        // محدود کردن به خانواده‌های صفحه فعلی
+        $offset = ($this->page - 1) * $this->perPage;
+        $families = $query->skip($offset)->take($this->perPage)->get();
+
+        if ($families->isEmpty()) {
+            session()->flash('error', 'هیچ خانواده‌ای برای دانلود یافت نشد.');
+            return;
+        }
+
+        $filename = 'families-page-' . $this->page . '-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+        
+        return Excel::download(new \App\Exports\FamiliesExport($families->toArray()), $filename);
     }
 }

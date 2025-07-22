@@ -1,9 +1,9 @@
 <div
     x-data="{
-        collapsed: JSON.parse(localStorage.getItem('sidebarCollapsed')) || false,
+        collapsed: localStorage.getItem('sidebarState') === 'collapsed',
         toggle() {
             this.collapsed = !this.collapsed;
-            localStorage.setItem('sidebarCollapsed', this.collapsed);
+            localStorage.setItem('sidebarState', this.collapsed ? 'collapsed' : 'expanded');
             
             // ارسال رویداد به Alpine.js
             const event = new CustomEvent('sidebar-toggle', { 

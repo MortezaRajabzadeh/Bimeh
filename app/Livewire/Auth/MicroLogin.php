@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\Attributes\Layout;
 
 class MicroLogin extends Component
 {
@@ -103,4 +104,4 @@ class MicroLogin extends Component
     {
         return view('livewire.auth.micro-login');
     }
-} 
+}

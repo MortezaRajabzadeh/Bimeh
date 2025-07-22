@@ -597,7 +597,7 @@
                                         @if($family->organization->logo_path)
                                             <div class="relative group">
                                                 
-                                                <img src="{{ $family->organization->logoUrl }}" 
+                                                <img src="{{ $family->organization->logo_url }}?v={{ $family->organization->updated_at->timestamp }}" 
                                                      alt="{{ $family->organization->name }}" 
                                                      class="w-6 h-6 rounded-full object-cover transition-opacity duration-200 group-hover:opacity-75"
                                                      title="{{ $family->organization->name }}">
@@ -772,7 +772,7 @@
                                             <td class="px-3 py-3 text-sm text-gray-800 charity-cell">
                                                 @if($member->organization)
                                                     @if($member->organization->logo_path)
-                                                        <img src="{{ $member->organization->logoUrl }}" 
+                                                        <img src="{{ $member->organization->logo_url }}?v={{ $member->organization->updated_at->timestamp }}" 
                                                              alt="{{ $member->organization->name }}" 
                                                              class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
                                                              title="{{ $member->organization->name }}">
@@ -781,7 +781,7 @@
                                                     @endif
                                                 @elseif($family->organization)
                                                     @if($family->organization->logo_path)
-                                                        <img src="{{ $family->organization->logoUrl }}" 
+                                                        <img src="{{ $family->organization->logo_url }}?v={{ $family->organization->updated_at->timestamp }}" 
                                                              alt="{{ $family->organization->name }}" 
                                                              class="charity-logo h-8 max-w-[80px] object-contain mx-auto"
                                                              title="{{ $family->organization->name }}">
@@ -1305,8 +1305,8 @@
             if (modal) {
                 modal.classList.remove('hidden');
                 document.body.classList.add('overflow-hidden');
-                // ریست کردن محتوای مودال
-                resetModalContent();
+                // حذف این خط تا فایل انتخاب شده پاک نشود
+                // resetModalContent();
             }
         }
         
@@ -1316,7 +1316,7 @@
             if (modal) {
                 modal.classList.add('hidden');
                 document.body.classList.remove('overflow-hidden');
-                // ریست کردن محتوای مودال
+                // ریست کردن محتوای مودال فقط هنگام بستن
                 resetModalContent();
             }
         }

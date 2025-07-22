@@ -54,7 +54,7 @@ class Family extends Model implements HasMedia
         'additional_info',
         'verified_at',
         'is_insured',
-
+        'acceptance_criteria',
         'calculated_rank',
         'rank_calculated_at',
         'wizard_status',
@@ -74,6 +74,7 @@ class Family extends Model implements HasMedia
         'rank_calculated_at' => 'datetime',
         'wizard_status' => 'string',
         'last_step_at' => 'array',
+        'acceptance_criteria' => 'array',
     ];
 
     /**
@@ -693,114 +694,98 @@ class Family extends Model implements HasMedia
      * @return array
      */
     public function getIdentityValidationStatus(): array
-    {
-        $requiredFields = config('ui.family_validation_icons.identity.required_fields', [
-            'first_name', 'last_name', 'national_code'
-        ]);
+{
+    $baseRequiredFields = config('ui.family_validation_icons.identity.required_fields', [
+        'first_name', 'last_name', 'national_code'
+    ]);
 
-        $members = $this->members;
-        $totalMembers = $members->count();
+    $members = $this->members;
+    $totalMembers = $members->count();
 
-        if ($totalMembers === 0) {
-            return [
-                'status' => 'none',
-                'percentage' => 0,
-                'message' => 'هیچ عضوی ثبت نشده است',
-                'details' => []
-            ];
-        }
-
-        $totalCompletionPercentage = 0;
-        $memberDetails = [];
-        $completeMembersCount = 0;
-
-        foreach ($members as $member) {
-            $completedFields = 0;
-            $memberFieldStatus = [];
-
-            foreach ($requiredFields as $field) {
-                $isComplete = !empty($member->{$field});
-                if ($isComplete) {
-                    $completedFields++;
-                }
-                $memberFieldStatus[$field] = $isComplete;
-            }
-
-            // محاسبه درصد تکمیل برای هر عضو
-            $memberCompletionRate = (count($requiredFields) > 0)
-                ? ($completedFields / count($requiredFields)) * 100
-                : 100;
-
-            // اضافه کردن درصد تکمیل این عضو به مجموع کل
-            $totalCompletionPercentage += $memberCompletionRate;
-
-            // شمارش اعضایی که 100% کامل هستند
-            if ($memberCompletionRate == 100) {
-                $completeMembersCount++;
-            }
-
-            $memberDetails[] = [
-                'member_id' => $member->id,
-                'name' => $member->first_name . ' ' . $member->last_name,
-                'completion_rate' => round($memberCompletionRate),
-                'field_status' => $memberFieldStatus,
-                'is_head' => $member->is_head
-            ];
-        }
-
-        // محاسبه میانگین درصد تکمیل کل خانواده
-        $overallPercentage = ($totalMembers > 0)
-            ? ($totalCompletionPercentage / $totalMembers)
-            : 0;
-
-        // تعیین وضعیت بر اساس درصد کلی
-        $thresholds = config('ui.validation_thresholds', [
-            'complete_min' => 95,
-            'partial_min' => 50
-        ]);
-
-        // منطق اصلی تعیین وضعیت
-        if ($completeMembersCount == $totalMembers) {
-            // اگر تمام اعضا کامل هستند، وضعیت کامل است و درصد 100
-            $status = 'complete';
-            $overallPercentage = 100;
-            $message = sprintf('اطلاعات %d عضو کامل است.', $completeMembersCount);
-        } elseif ($overallPercentage >= $thresholds['complete_min']) {
-            // اگر درصد تکمیل بالای آستانه کامل است
-            $status = 'complete';
-            $message = sprintf('اطلاعات هویتی تقریباً کامل است (%d%% کامل).', round($overallPercentage));
-        } elseif ($overallPercentage >= $thresholds['partial_min']) {
-            // اگر درصد تکمیل بالای آستانه جزئی است
-            $status = 'partial';
-            $message = sprintf('اطلاعات هویتی ناقص است (%d%% کامل).', round($overallPercentage));
-        } else {
-            // اگر درصد تکمیل پایین است
-            $status = 'none';
-            $overallPercentage = 0; // تضمین همخوانی
-            $message = 'اطلاعات هویتی نیاز به بررسی دارد.';
-        }
-
-        // اضافه کردن لاگ برای دیباگ در محیط توسعه
-        if (config('app.debug')) {
-            \Illuminate\Support\Facades\Log::debug('ValidationStatus', [
-                'family_id' => $this->id,
-                'total_members' => $totalMembers,
-                'complete_members' => $completeMembersCount,
-                'raw_percentage' => $overallPercentage,
-                'adjusted_percentage' => round($overallPercentage),
-                'status' => $status
-            ]);
-        }
-
+    if ($totalMembers === 0) {
         return [
-            'status' => $status,
-            'percentage' => round($overallPercentage),
-            'message' => $message,
-            'complete_members' => $completeMembersCount,
-            'total_members' => $totalMembers,
-            'details' => $memberDetails
+            'status' => 'none',
+            'percentage' => 0,
+            'message' => 'هیچ عضوی ثبت نشده است',
+            'details' => []
         ];
     }
+
+    $totalCompletionPercentage = 0;
+    $memberDetails = [];
+    $completeMembersCount = 0;
+
+    foreach ($members as $member) {
+        $requiredFields = $baseRequiredFields;
+        $completedFields = 0;
+        $memberFieldStatus = [];
+
+        // اگر عضو بیماری خاص دارد، مدرک را به فیلدهای required اضافه کن
+        $hasSpecialDisease = is_array($member->problem_type) && in_array('special_disease', $member->problem_type);
+        if ($hasSpecialDisease) {
+            $requiredFields[] = 'special_disease_document';
+        }
+
+        foreach ($requiredFields as $field) {
+            if ($field === 'special_disease_document') {
+                $isComplete = $member->getMedia('special_disease_documents')->count() > 0;
+            } else {
+                $isComplete = !empty($member->{$field});
+            }
+
+            if ($isComplete) {
+                $completedFields++;
+            }
+            $memberFieldStatus[$field] = $isComplete;
+        }
+
+        // محاسبه درصد تکمیل برای هر عضو
+        $memberCompletionRate = (count($requiredFields) > 0)
+            ? ($completedFields / count($requiredFields)) * 100
+            : 100;
+
+        // اضافه کردن درصد تکمیل این عضو به مجموع کل
+        $totalCompletionPercentage += $memberCompletionRate;
+
+        // شمارش اعضایی که 100% کامل هستند
+        if ($memberCompletionRate == 100) {
+            $completeMembersCount++;
+        }
+
+        $memberDetails[] = [
+            'member_id' => $member->id,
+            'name' => $member->first_name . ' ' . $member->last_name,
+            'completion_rate' => round($memberCompletionRate),
+            'field_status' => $memberFieldStatus,
+            'is_head' => $member->is_head,
+            'has_special_disease' => $hasSpecialDisease
+        ];
+    }
+
+    // محاسبه درصد میانگین کل
+    $averagePercentage = round($totalCompletionPercentage / $totalMembers);
+
+    // تعیین وضعیت کلی
+    if ($averagePercentage == 100) {
+        $status = 'complete';
+        $message = "اطلاعات هویتی همه {$totalMembers} عضو کامل است";
+    } elseif ($averagePercentage > 0) {
+        $status = 'warning';
+        $message = "{$completeMembersCount} از {$totalMembers} عضو اطلاعات کامل دارند";
+    } else {
+        $status = 'incomplete';
+        $message = 'هیچ عضوی اطلاعات کامل ندارد';
+    }
+
+    return [
+        'status' => $status,
+        'percentage' => $averagePercentage,
+        'message' => $message,
+        'complete_members' => $completeMembersCount,
+        'total_members' => $totalMembers,
+        'details' => $memberDetails
+    ];
+}
 
     /**
      * بررسی وضعیت محرومیت منطقه‌ای خانواده

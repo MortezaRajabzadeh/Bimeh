@@ -87,10 +87,12 @@
                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
                                 class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 @error('members.'.$index.'.relationship') border-red-300 @enderror">
                             <option value="">عضو خانواده</option>
-                            <option value="spouse">همسر</option>
-                            <option value="child">فرزند</option>
-                            <option value="parent">والدین</option>
-                            <option value="sibling">خواهر/برادر</option>
+                            <option value="mother">مادر</option>
+                            <option value="father">پدر</option>
+                            <option value="son">پسر</option>
+                            <option value="daughter">دختر</option>
+                            <option value="grandmother">مادربزرگ</option>
+                            <option value="grandfather">پدربزرگ</option>
                             <option value="other">سایر</option>
                         </select>
                         <!-- آیکون کشویی -->
@@ -467,4 +469,4 @@ svg {
     transform-origin: center;
 }
 </style>
-@endpush 
+@endpush

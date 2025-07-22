@@ -272,4 +272,36 @@
         font-size: 1.25rem;
     }
 }
-</style> 
+</style>
+
+@php
+    $totalMembers = $family->members->count();
+    $membersNeedingDocument = 0;
+    $incompleteMembers = 0;
+
+    foreach ($family->members as $member) {
+        if (is_array($member->problem_type) && in_array('special_disease', $member->problem_type)) {
+            $membersNeedingDocument++;
+            if ($member->getMedia('special_disease_documents')->count() === 0) {
+                $incompleteMembers++;
+            }
+        }
+    }
+
+    $completeMembers = $totalMembers - $incompleteMembers;
+    $docPercentage = $totalMembers > 0 ? round(($completeMembers / $totalMembers) * 100) : 100;
+
+    if ($membersNeedingDocument === 0 || $docPercentage === 100) {
+        $docStatus = 'complete';
+        $docMessage = "مدارک بیماری خاص کامل است";
+        $docColors = $colorConfig['complete'];
+    } elseif ($docPercentage > 0) {
+        $docStatus = 'partial';
+        $docMessage = "{$completeMembers} از {$totalMembers} عضو کامل";
+        $docColors = $colorConfig['partial'];
+    } else {
+        $docStatus = 'none';
+        $docMessage = "هیچ مدرکی آپلود نشده";
+        $docColors = $colorConfig['none'];
+    }
+@endphp

@@ -18,12 +18,13 @@ use Illuminate\Support\Facades\URL;
 use App\Models\FamilyInsurance;
 use App\Services\InsuranceShareService;
 use App\Models\FamilyStatusLog;
-use App\InsuranceWizardStep;
+
 use Carbon\Carbon;
 use App\Exports\DynamicDataExport;
 use App\Repositories\FamilyRepository;
 
 use App\Enums\FamilyStatus as FamilyStatusEnum;
+use App\Enums\InsuranceWizardStep;
 use App\Services\InsuranceImportLogger;
 
 class FamiliesApproval extends Component
@@ -44,6 +45,7 @@ class FamiliesApproval extends Component
 
     // متغیرهای جدید برای مودال‌ها
     public bool $showDeleteModal = false;
+    public bool $showExcelUploadModal = false;
     public ?string $deleteReason = null;
 
     public $cached_tab = null;
@@ -1559,12 +1561,12 @@ private function getCriteriaWeights(): array
             // پاک کردن فایل آپلود شده
             $this->reset('insuranceExcelFile');
 
-            // بازگشت به تب pending
-            $this->setTab('pending');
+            // بازگشت به تب excel برای نمایش خانواده‌های باقی‌مانده
+            $this->setTab('excel');
             $this->clearFamiliesCache();
             $this->dispatch('refreshFamiliesList');
 
-            Log::info('🔄 Successfully redirected to pending tab after Excel upload');
+            Log::info('🔄 Successfully redirected to excel tab after Excel upload');
 
         } catch (\Exception $e) {
             Log::error('❌ خطا در پردازش فایل اکسل: ' . $e->getMessage());
@@ -1624,11 +1626,18 @@ private function getCriteriaWeights(): array
 
         session()->flash('error', $errorMessage);
 
-        // ارسال رویداد مخصوص تکرار
+        // ارسال رویداد مخصوص تکرار برای نمایش نوتیفیکیشن
         $this->dispatch('duplicate-upload-detected', [
             'type' => $duplicateType,
             'message' => $messageConfig['message'],
             'existing_log_id' => $result['existing_log_id'] ?? null
+        ]);
+
+        // نوتیفیکیشن toast برای نمایش سریع
+        $this->dispatch('toast', [
+            'message' => $messageConfig['title'] . ': ' . $messageConfig['message'],
+            'type' => 'warning',
+            'duration' => 5000
         ]);
 
         Log::info('✅ پیام تکرار نمایش داده شد', [
@@ -1669,6 +1678,18 @@ private function getCriteriaWeights(): array
             'skipped' => $result['skipped'],
             'total_amount' => $result['total_insurance_amount'],
             'errors_count' => count($result['errors'])
+        ]);
+
+        // نوتیفیکیشن toast برای نمایش سریع موفقیت
+        $toastMessage = "✅ آپلود موفق: {$result['created']} رکورد جدید، {$result['updated']} به‌روزرسانی";
+        if ($result['skipped'] > 0) {
+            $toastMessage .= "، {$result['skipped']} خطا";
+        }
+        
+        $this->dispatch('toast', [
+            'message' => $toastMessage,
+            'type' => 'success',
+            'duration' => 6000
         ]);
 
         Log::info('✅ پیام موفقیت نمایش داده شد', [
@@ -3295,6 +3316,9 @@ protected function buildFamiliesQuery()
             // $query->where('wizard_status', \App\Enums\InsuranceWizardStep::APPROVED->value);
         } elseif ($this->tab === 'rejected') {
             $query->where('wizard_status', \App\Enums\InsuranceWizardStep::REJECTED->value);
+        } elseif ($this->tab === 'excel') {
+            // نمایش خانواده‌های در انتظار صدور (excel_upload) در تب در انتظار صدور
+            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::EXCEL_UPLOAD->value);
         } elseif ($this->tab === 'renewal') {
 
             // خانواده‌هایی که بیمه منقضی شده دارند (نیاز به تمدید)
@@ -3802,6 +3826,32 @@ public function clearCriteriaFilter()
         }
 
     }
+
+    //endregion
+
+    //region Excel Upload Modal
+
+    /**
+     * Opens the Excel upload modal.
+     */
+    public function openExcelUploadModal()
+    {
+        $this->showExcelUploadModal = true;
+        $this->dispatch('showExcelUploadModal');
+        Log::info('✅ Excel upload modal should be shown now, showExcelUploadModal = true');
+    }
+
+    /**
+     * Closes the Excel upload modal.
+     */
+    public function closeExcelUploadModal()
+    {
+        $this->showExcelUploadModal = false;
+        $this->dispatch('closeExcelUploadModal');
+        Log::info('🔒 Excel upload modal closed');
+    }
+
+    //endregion
 
     public function openDeleteModal()
     {

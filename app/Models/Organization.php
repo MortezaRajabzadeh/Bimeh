@@ -115,10 +115,15 @@ class Organization extends Model
      *
      * @return string
      */
-    public function getLogoUrlAttribute()
-    {
-        return $this->attributes['logo_path'] ? Storage::url($this->attributes['logo_path']) : null;
+public function getLogoUrlAttribute()
+{
+    if (!$this->attributes['logo_path']) {
+        return null;
     }
+    
+    // اطمینان از اینکه URL به درستی ساخته می‌شود، صرف نظر از مسیر ذخیره‌سازی
+    return Storage::url($this->attributes['logo_path']);
+}
     
     /**
      * Get the logo path with storage disk

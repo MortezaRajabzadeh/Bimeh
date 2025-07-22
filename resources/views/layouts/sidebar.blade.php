@@ -155,7 +155,7 @@
                    class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->url() === $settingsRoute ? 'bg-blue-500 text-white' : '' }}">
 
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->url() === $settingsRoute ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.591 1.106c1.527-.878 3.286.88 2.408 2.408a1.724 1.724 0 001.107 2.592c1.755.425 1.755 2.923 0 3.349a1.724 1.724 0 00-1.107 2.592c.878 1.527-.881 3.286-2.408 2.408a1.724 1.724 0 00-2.592 1.107c-.425 1.755-2.923 1.755-3.349 0a1.724 1.724 0 00-2.592-1.107c-1.527.878-3.286-.881-2.408-2.408a1.724 1.724 0 00-1.107-2.592c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.107-2.592c-.878-1.527.881-3.286 2.408-2.408.996.574 2.25.072 2.592-1.106z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.591 1.106c1.527-.878 3.286.88 2.408 2.408a1.724 1.724 0 001.107 2.592c1.755.425 1.755 2.923 0 3.349a1.724 1.724 0 00-1.107 2.592c-.878 1.527-.881 3.286-2.408 2.408a1.724 1.724 0 00-2.592 1.107c-.425 1.755-2.923 1.755-3.349 0a1.724 1.724 0 00-2.592-1.107c-1.527.878-3.286-.881-2.408-2.408a1.724 1.724 0 00-1.107-2.592c-1.755-.426-1.755-2.924 0-3.35a1.724 1.724 0 001.107-2.592c-.878-1.527.881-3.286 2.408-2.408.996.574 2.25.072 2.592-1.106z" />
                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span class="sidebar-text">{{ $settingsText }}</span>
@@ -761,3 +761,24 @@
     }
 
 </style
+
+        // گوش دادن به تغییرات localStorage از سایر کامپوننت‌ها
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'sidebarState') {
+                const newState = e.newValue;
+                if (newState === 'collapsed' && isExpanded) {
+                    collapseSidebar();
+                } else if (newState === 'expanded' && !isExpanded) {
+                    expandSidebar();
+                }
+            }
+        });
+        
+        // گوش دادن به رویداد sidebar-toggle
+        window.addEventListener('sidebar-toggle', function(e) {
+            if (e.detail.collapsed && isExpanded) {
+                collapseSidebar();
+            } else if (!e.detail.collapsed && !isExpanded) {
+                expandSidebar();
+            }
+        });

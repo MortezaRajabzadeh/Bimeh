@@ -50,20 +50,9 @@
                 </svg>
                 ورود به سامانه
             </button>
-            
-            <div class="mt-4 text-center">
-                <div class="text-sm text-gray-600">
-                    می‌توانید با استفاده از اطلاعات زیر وارد شوید:
-                </div>
-                <div class="mt-1 text-xs text-gray-500">
-                    <div><strong>مدیر سیستم:</strong> admin@microbime.com / Admin@123456</div>
-                    <div><strong>خیریه:</strong> charity@microbime.com / Charity@123456</div>
-                    <div><strong>بیمه:</strong> insurance@microbime.com / Insurance@123456</div>
-                </div>
-            </div>
         
         </form>
     </div>
 </div>
 
-@livewireScripts 
+@livewireScripts

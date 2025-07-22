@@ -160,6 +160,41 @@ use App\Models\InsurancePayment;
                                     <div class="text-xs text-gray-500 mt-1">{{ $organization->type ?? 'نوع نامشخص' }}</div>
                                 @endif
                             </div>
+
+                            <div class="border-t border-gray-200"></div>
+                            
+                            <!-- عملیات کاربر -->
+                            <div class="py-1">
+                                <!-- تنظیمات کاربر -->
+                                <a href="{{ route('profile.edit') ?? '#' }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                                    <svg class="h-4 w-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    <span>تنظیمات حساب کاربری</span>
+                                </a>
+                                
+                                <!-- تغییر رمز عبور -->
+                                <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                                    <svg class="h-4 w-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"></path>
+                                    </svg>
+                                    <span>تغییر رمز عبور</span>
+                                </a>
+                                
+                                <div class="border-t border-gray-200 my-1"></div>
+                                
+                                <!-- خروج از حساب -->
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
+                                        <svg class="h-4 w-4 ml-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                        </svg>
+                                        <span>خروج از حساب</span>
+                                    </button>
+                                </form>
+                            </div>
                         
                         </div>
                     </div>

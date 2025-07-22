@@ -76,15 +76,19 @@ class FamiliesImport implements ToCollection
             'FALSE' => false,
         ],
         'relationship' => [
-            'سرپرست' => 'head',
-            'همسر' => 'spouse',
-            'فرزند' => 'child',
-            'والدین' => 'parent',
+            'مادر' => 'mother',
+            'پدر' => 'father',
+            'پسر' => 'son',
+            'دختر' => 'daughter',
+            'مادربزرگ' => 'grandmother',
+            'پدربزرگ' => 'grandfather',
             'سایر' => 'other',
-            'head' => 'head',
-            'spouse' => 'spouse',
-            'child' => 'child',
-            'parent' => 'parent',
+            'mother' => 'mother',
+            'father' => 'father',
+            'son' => 'son',
+            'daughter' => 'daughter',
+            'grandmother' => 'grandmother',
+            'grandfather' => 'grandfather',
             'other' => 'other',
         ],
     ];
@@ -343,6 +347,9 @@ class FamiliesImport implements ToCollection
             'تاریخ تولد' => 'birth_date',
             'جنسیت' => 'gender',
             'وضعیت تاهل' => 'marital_status',
+            'موبایل' => 'mobile',
+            'تلفن' => 'phone',
+            'شماره شبا' => 'sheba',
             'اعتیاد' => 'addiction',
             'بیکار' => 'unemployed',
             'بیماری خاص' => 'special_disease',
@@ -629,7 +636,11 @@ class FamiliesImport implements ToCollection
         $relationship = $this->mapRelationshipValue($memberData['relationship_fa']);
 
         // تشخیص جنسیت
-        $gender = in_array($relationship, ['mother']) || $memberData['relationship_fa'] === 'مادر' ? 'female' : 'male';
+        $gender = 'male'; // پیش‌فرض مرد
+        if (in_array($relationship, ['mother', 'daughter', 'grandmother']) || 
+            in_array($memberData['relationship_fa'], ['مادر', 'دختر', 'مادربزرگ'])) {
+            $gender = 'female';
+        }
 
         // تبدیل مقادیر مشکلات
         $problemTypes = [];
@@ -648,7 +659,7 @@ class FamiliesImport implements ToCollection
 
         $memberUpdateData = [
             'family_id' => $family->id,
-            'charity_id' => $this->getValidCharityId(),
+            'charity_id' => $family->charity_id,
             'first_name' => $memberData['first_name'],
             'last_name' => $memberData['last_name'] ?? '',
             'birth_date' => $this->parseDate($memberData['birth_date'] ?? ''),
@@ -657,6 +668,9 @@ class FamiliesImport implements ToCollection
             'relationship_fa' => $memberData['relationship_fa'],
             'is_head' => $isHead,
             'occupation' => $memberData['occupation'] ?? '',
+            'mobile' => $memberData['mobile'] ?? null,
+            'phone' => $memberData['phone'] ?? null,
+            'sheba' => $memberData['sheba'] ?? null,
             'problem_type' => $problemTypes,
             'special_conditions' => $memberData['additional_details'] ?? '',
         ];

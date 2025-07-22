@@ -7,15 +7,5 @@
   ],
   "build": {
     "location": "iran"
-  },
-  "disks": [
-    {
-      "name": "my-disk",
-      "mountTo": "/var/www/html/storage/app/public"
-    },
-    {
-        "name": "temp",
-        "mountTo": "/tmp"
-      }
-  ]
+  }
 }
