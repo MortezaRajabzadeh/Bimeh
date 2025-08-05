@@ -51,6 +51,14 @@ class FamilyInsurance extends Model
     }
 
     /**
+     * رابطه با منبع تامین مالی (پرداخت‌کننده حق بیمه)
+     */
+    public function fundingSource()
+    {
+        return $this->belongsTo(FundingSource::class);
+    }
+
+    /**
      * محاسبه مجموع درصد سهم‌ها
      */
     public function getTotalSharePercentage()

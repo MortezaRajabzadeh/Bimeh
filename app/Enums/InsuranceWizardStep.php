@@ -37,8 +37,6 @@ enum InsuranceWizardStep: string
     /**
      * مرحله بعدی در فرآیند را برمی‌گرداند.
      */
-// in app/Enums/InsuranceWizardStep.php
-
 public function nextStep(): ?self
 {
     return match ($this) {
@@ -47,6 +45,21 @@ public function nextStep(): ?self
         self::SHARE_ALLOCATION => self::APPROVED, // <-- اصلاح شد
         self::APPROVED => self::EXCEL_UPLOAD,     // <-- مرحله بعد از تأیید
         self::EXCEL_UPLOAD => self::INSURED,
+        default => null,
+    };
+}
+
+/**
+ * مرحله قبلی در فرآیند را برمی‌گرداند.
+ */
+public function previousStep(): ?self
+{
+    return match ($this) {
+        self::REVIEWING => self::PENDING,
+        self::SHARE_ALLOCATION => self::REVIEWING,
+        self::APPROVED => self::SHARE_ALLOCATION,
+        self::EXCEL_UPLOAD => self::APPROVED,
+        self::INSURED => self::EXCEL_UPLOAD,
         default => null,
     };
 }

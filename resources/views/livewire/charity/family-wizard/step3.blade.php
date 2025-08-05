@@ -25,16 +25,29 @@
             </div>
         @endif
 
-        @if(session()->has('success'))
-            <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div class="flex items-center text-green-600">
-                    <svg class="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        <!-- نمایش خطاهای validation کد ملی -->
+        @if($errors->any())
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-start text-red-600">
+                    <svg class="w-5 h-5 ml-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                     </svg>
-                    <span>{{ session('success') }}</span>
+                    <div>
+                        <div class="font-medium mb-1">خطاهای موجود در اطلاعات:</div>
+                        <ul class="text-sm space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>• {{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <div class="mt-2 text-sm">
+                            لطفاً به مرحله قبل بازگردید و خطاها را اصلاح کنید.
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
+
+
         
         <!-- شناسه خانواده (به صورت مخفی) -->
         <input type="hidden" id="family_code" wire:model="family_code" value="{{ $family_code }}">
@@ -43,19 +56,6 @@
         <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
             <h4 class="font-semibold mb-3 text-gray-700">اطلاعات خانواده</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div>
-                    <span class="font-medium">وضعیت مسکن:</span>
-                    @switch($housing_status)
-                        @case('owned') ملکی @break
-                        @case('rented') استیجاری @break
-                        @case('relative') منزل اقوام @break
-                        @case('organizational') سازمانی @break
-                        @case('owner') ملک شخصی @break
-                        @case('tenant') استیجاری @break
-                        @case('other') سایر @break
-                        @default -
-                    @endswitch
-                </div>
                 <div>
                     <span class="font-medium flex items-center gap-1">
                         <span class="text-lg" title="خیریه معرف" aria-label="خیریه معرف">🏷️</span>
@@ -69,23 +69,6 @@
                 @endif
             </div>
         </div>
-        
-        <!-- پیش‌نمایش عکس خانواده -->
-        @if($family_photo)
-            <div class="mb-6 flex flex-col items-center justify-center">
-                <div class="w-40 h-40 rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50 flex items-center justify-center shadow-sm">
-                    <img src="{{ $family_photo->temporaryUrl() }}" alt="عکس خانواده" class="object-cover w-full h-full">
-                </div>
-                <div class="mt-2 text-xs text-gray-500">عکس خانواده (پیش‌نمایش)</div>
-                <div class="text-xs text-gray-600 mt-1">{{ $family_photo->getClientOriginalName() }}</div>
-            </div>
-        @else
-            <div class="mb-6 flex flex-col items-center justify-center">
-                <div class="w-40 h-40 rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-50 flex items-center justify-center shadow-sm">
-                    <span class="text-gray-400 text-sm">عکسی انتخاب نشده است</span>
-                </div>
-            </div>
-        @endif
         
         <!-- اطلاعات سرپرست خانوار -->
         <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
@@ -121,9 +104,11 @@
                 @endif
                 @if(!empty($head['mobile']))
                 <div><span class="font-medium">موبایل:</span> {{ $head['mobile'] }}</div>
+                @else
+                <div><span class="font-medium">موبایل:</span> بدون شماره</div>
                 @endif
-                <div><span class="font-medium">شماره تماس:</span> {{ $head['phone'] ?? '-' }}</div>
-                <div><span class="font-medium">شماره شبا:</span> {{ $head['sheba'] ?? '-' }}</div>
+                <div><span class="font-medium">شماره تماس:</span> {{ $head['phone'] ?? 'بدون شماره' }}</div>
+                <div><span class="font-medium">شماره شبا:</span> {{ $head['sheba'] ?? 'بدون شماره شبا' }}</div>
                 
                 @php
                     $hasSpecialConditions = false;
@@ -170,7 +155,7 @@
                                 <th class="py-2 px-3 border-b text-right">کد ملی</th>
                                 <th class="py-2 px-3 border-b text-right">نسبت</th>
                                 <th class="py-2 px-3 border-b text-right">تاریخ تولد</th>
-                                <th class="py-2 px-3 border-b text-right">نوع مشکل</th>
+                                <th class="py-2 px-3 border-b text-right">معیار پذیرش</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -182,10 +167,12 @@
                                         <td class="py-2 px-3 border-b">{{ $member['national_code'] }}</td>
                                         <td class="py-2 px-3 border-b">
                                             @switch($member['relationship'])
-                                                @case('spouse') همسر @break
-                                                @case('child') فرزند @break
-                                                @case('parent') والدین @break
-                                                @case('sibling') خواهر/برادر @break
+                                                @case('mother') مادر @break
+                                                @case('father') پدر @break
+                                                @case('son') پسر @break
+                                                @case('daughter') دختر @break
+                                                @case('grandmother') مادربزرگ @break
+                                                @case('grandfather') پدربزرگ @break
                                                 @case('other') سایر @break
                                                 @default -
                                             @endswitch
@@ -200,7 +187,26 @@
                                         <td class="py-2 px-3 border-b">
                                             @if(isset($member['problem_type']) && !empty($member['problem_type']))
                                                 @if(is_array($member['problem_type']))
-                                                    {{ implode('، ', $member['problem_type']) }}
+                                                    <div class="space-y-1">
+                                                        <div>{{ implode('، ', $member['problem_type']) }}</div>
+                                                        @if(in_array('بیماری خاص', $member['problem_type']))
+                                                            @if(isset($uploadedDocuments[$index]))
+                                                                <div class="flex items-center text-xs text-green-600">
+                                                                    <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                                    </svg>
+                                                                    مدرک آپلود شده: {{ $uploadedDocuments[$index]['original_name'] }}
+                                                                </div>
+                                                            @else
+                                                                <div class="flex items-center text-xs text-red-600">
+                                                                    <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    </svg>
+                                                                    مدرک آپلود نشده
+                                                                </div>
+                                                            @endif
+                                                        @endif
+                                                    </div>
                                                 @else
                                                     {{ $member['problem_type'] }}
                                                 @endif
@@ -249,4 +255,4 @@
         });
     });
 </script>
-@endpush 
+@endpush

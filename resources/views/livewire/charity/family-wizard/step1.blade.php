@@ -141,30 +141,5 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-                        
-                        <!-- آپلود تصویر خانواده -->
-                        <div class="mb-6">
-                            <label for="family_photo_input" class="block mb-1 text-sm font-medium text-gray-700">تصویر خانواده</label>
-                            <div class="flex items-center space-x-4 space-x-reverse">
-                                <div class="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                    @if($family_photo)
-                                        <img src="{{ $family_photo->temporaryUrl() }}" class="max-h-full max-w-full p-1" alt="پیش‌نمایش">
-                                    @else
-                                        <img src="{{ asset('images/default-organization.png') }}" class="max-h-full max-w-full p-1" alt="پیش‌فرض">
-                                    @endif
-                                </div>
-                                <div class="flex-1">
-                                    <input type="file" id="family_photo_input" wire:model="family_photo" accept="image/*"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                    @if($family_photo)
-                                        <div class="text-xs text-gray-600 mt-1">{{ $family_photo->getClientOriginalName() }}</div>
-                                    @endif
-                                    <p class="mt-1 text-xs text-gray-500">فایل‌های مجاز: JPG، PNG با حداکثر حجم ۲ مگابایت</p>
-                                    @error('family_photo')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>

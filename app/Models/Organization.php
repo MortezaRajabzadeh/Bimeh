@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Intervention\Image\Laravel\Facades\Image;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -108,31 +109,56 @@ class Organization extends Model
     }
 
     /**
-     * Get the logo URL attribute.
-     */
-    /**
      * Get the full URL to the organization's logo.
      *
-     * @return string
+     * @return string|null
      */
-public function getLogoUrlAttribute()
-{
-    if (!$this->attributes['logo_path']) {
-        return null;
+    public function getLogoUrlAttribute()
+    {
+        if (!$this->attributes['logo_path']) {
+            return null;
+        }
+        
+        try {
+            // استفاده از روش استاندارد Laravel - url() helper
+            $baseUrl = url('/storage/' . $this->attributes['logo_path']);
+            
+            // اضافه کردن timestamp برای رفع مشکل Cache مرورگر
+            $timestamp = $this->updated_at ? $this->updated_at->timestamp : time();
+            return $baseUrl . '?v=' . $timestamp;
+        } catch (\Exception $e) {
+            Log::error('خطا در تولید URL لوگو سازمان', [
+                'organization_id' => $this->id,
+                'logo_path' => $this->attributes['logo_path'],
+                'error' => $e->getMessage()
+            ]);
+            
+            return null;
+        }
     }
     
-    // اطمینان از اینکه URL به درستی ساخته می‌شود، صرف نظر از مسیر ذخیره‌سازی
-    return Storage::url($this->attributes['logo_path']);
-}
-    
     /**
-     * Get the logo path with storage disk
+     * Get the raw logo path (فقط مسیر بدون URL)
      * 
      * @return string|null
      */
     public function getLogoPathAttribute()
     {
-        return $this->attributes['logo_path'] ? Storage::url($this->attributes['logo_path']) : null;
+        return $this->attributes['logo_path'] ?? null;
+    }
+
+    /**
+     * Get the direct URL to the logo (بدون timestamp)
+     * 
+     * @return string|null
+     */
+    public function getDirectLogoUrlAttribute()
+    {
+        if (!$this->attributes['logo_path']) {
+            return null;
+        }
+        
+        return url('/storage/' . $this->attributes['logo_path']);
     }
 
     /**
@@ -148,16 +174,16 @@ public function getLogoUrlAttribute()
         }
 
         // حذف لوگوی قبلی اگر وجود دارد
-        if ($this->logo_path && Storage::exists($this->logo_path)) {
-            Storage::delete($this->logo_path);
+        if ($this->logo_path && Storage::disk('public')->exists($this->logo_path)) {
+            Storage::disk('public')->delete($this->logo_path);
         }
 
-        $filename = 'org-' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $filename = 'org-' . uniqid() . '.webp';
         $path = 'organizations/logos/' . $filename;
 
         // ایجاد دایرکتوری اگر وجود نداشته باشد
-        if (!Storage::exists('organizations/logos')) {
-            Storage::makeDirectory('organizations/logos');
+        if (!Storage::disk('public')->exists('organizations/logos')) {
+            Storage::disk('public')->makeDirectory('organizations/logos');
         }
 
         // بهینه‌سازی و ذخیره تصویر
@@ -165,8 +191,8 @@ public function getLogoUrlAttribute()
             ->cover(200, 200) // تغییر سایز به 200x200 پیکسل
             ->toWebp(75); // تبدیل به فرمت webp با کیفیت 75%
 
-
-        Storage::put($path, $image);
+        // ذخیره در disk public
+        Storage::disk('public')->put($path, $image);
 
         return $path;
     }
@@ -176,8 +202,8 @@ public function getLogoUrlAttribute()
      */
     public function deleteLogo()
     {
-        if ($this->logo_path && Storage::exists($this->logo_path)) {
-            Storage::delete($this->logo_path);
+        if ($this->logo_path && Storage::disk('public')->exists($this->logo_path)) {
+            Storage::disk('public')->delete($this->logo_path);
             $this->logo_path = null;
             $this->save();
         }

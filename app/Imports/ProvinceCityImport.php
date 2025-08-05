@@ -29,13 +29,25 @@ class ProvinceCityImport implements ToCollection, WithChunkReading
                 $districtName = trim($row[3] ?? '');
                 $districtStatus = trim($row[4] ?? '');
 
-                if ($provinceName) $currentProvince = $provinceName;
-                if ($cityName) {
+                // اگر نام استان جدید وجود دارد، آن را به‌روزرسانی کن
+                if (!empty($provinceName)) {
+                    $currentProvince = $provinceName;
+                }
+                
+                // اگر نام شهرستان جدید وجود دارد، آن را به‌روزرسانی کن
+                if (!empty($cityName)) {
                     $currentCity = $cityName;
                     $cityDeprivation = ($cityStatus === 'محروم');
                 }
 
-                if (!$currentProvince || !$currentCity || !$districtName) {
+                // اگر هیچ‌کدام از مقادیر اصلی وجود نداشته باشد، این ردیف را رد کن
+                if (empty($currentProvince) || empty($currentCity) || empty($districtName)) {
+                    Log::info('Skipping row due to missing data', [
+                        'row_index' => $index + 2, // +2 برای شماره ردیف واقعی (هدر + شروع از 1)
+                        'province' => $currentProvince,
+                        'city' => $currentCity,
+                        'district' => $districtName,
+                    ]);
                     continue;
                 }
 
@@ -46,7 +58,8 @@ class ProvinceCityImport implements ToCollection, WithChunkReading
                     $currentCity,
                     $cityDeprivation,
                     $districtName,
-                    $districtDeprivation
+                    $districtDeprivation,
+                    $index
                 ) {
                     $province = Province::firstOrCreate(['name' => $currentProvince]);
 
@@ -59,14 +72,24 @@ class ProvinceCityImport implements ToCollection, WithChunkReading
                         ['name' => $districtName, 'city_id' => $city->id],
                         ['is_deprived' => $districtDeprivation]
                     );
+                    
+                    Log::info('Successfully imported row', [
+                        'row_index' => $index + 2,
+                        'province' => $currentProvince,
+                        'city' => $currentCity,
+                        'district' => $districtName,
+                    ]);
                 });
 
             } catch (\Throwable $e) {
+                Log::error('Error importing row: ' . $e->getMessage(), [
+                    'row_index' => $index + 2,
                     'row' => $row->toArray(),
+                    'current_province' => $currentProvince ?? 'null',
+                    'current_city' => $currentCity ?? 'null',
                 ]);
             }
         }
-
     }
 
     public function chunkSize(): int

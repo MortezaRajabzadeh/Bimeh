@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Morilog\Jalali\Jalalian;
+use Carbon\Carbon;
 
 class InsuranceShareService
 {
@@ -226,96 +229,139 @@ class InsuranceShareService
      */
     private function extractAndValidateExcelData(array $rows): array
     {
-        $validData = [
-            'family_codes' => [],
-            'premium_amounts' => [],
-            'insurance_types' => [],
-            'start_dates' => [],
-            'end_dates' => [],
-            'errors' => []
-        ];
+        $data = [];
+        $errors = [];
+        $familyCodes = [];
+        $premiumAmounts = [];
+        $insuranceTypes = [];
+        $startDates = [];
+        $endDates = [];
+        $policyNumbers = [];
+        $notes = [];
 
-        for ($i = 1; $i < count($rows); $i++) {
-            $row = $rows[$i];
+        try {
+            // پردازش ردیف‌های اکسل (شروع از ردیف دوم - ردیف اول هدر است)
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                $rowNumber = $i + 1; // شماره ردیف واقعی در اکسل
 
-            try {
-                // بررسی کد خانوار (ستون 0)
-                if (!isset($row[0]) || empty(trim($row[0]))) {
-                    $validData['errors'][] = "ردیف {$i}: کد خانوار خالی است";
+                /* ساختار فایل اکسل بر اساس export:
+                 * A: کد خانواده
+                 * B: نام سرپرست خانوار  
+                 * C: کد ملی سرپرست
+                 * D: نوع بیمه
+                 * E: تاریخ شروع
+                 * F: تاریخ پایان
+                 * G: مبلغ بیمه (ریال)
+                 * H: شماره بیمه‌نامه
+                 * I: توضیحات
+                 */
+                
+                // خواندن داده‌های ردیف بر اساس ساختار صحیح export
+                $familyCode = trim($row[0] ?? ''); // ستون A - کد خانواده
+                $headName = trim($row[1] ?? ''); // ستون B - نام سرپرست
+                $headNationalCode = trim($row[2] ?? ''); // ستون C - کد ملی سرپرست
+                $insuranceType = trim($row[3] ?? ''); // ستون D - نوع بیمه
+                $startDate = trim($row[4] ?? ''); // ستون E - تاریخ شروع
+                $endDate = trim($row[5] ?? ''); // ستون F - تاریخ پایان
+                $insuranceAmount = trim($row[6] ?? ''); // ستون G - مبلغ بیمه
+                $policyNumber = trim($row[7] ?? ''); // ستون H - شماره بیمه‌نامه
+                $noteText = trim($row[8] ?? ''); // ستون I - توضیحات
+
+                // لاگ‌گذاری برای دیباگ
+                Log::debug("پردازش ردیف {$rowNumber}", [
+                    'family_code' => $familyCode,
+                    'head_name' => $headName,
+                    'insurance_type' => $insuranceType,
+                    'insurance_amount' => $insuranceAmount,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'policy_number' => $policyNumber,
+                    'notes' => $noteText
+                ]);
+
+                // بررسی خالی بودن سطر کامل (اگر همه فیلدهای اصلی خالی باشند، سطر را رد کن)
+                if (empty($familyCode) && empty($insuranceType) && empty($insuranceAmount)) {
+                    Log::debug("ردیف {$rowNumber} خالی است، رد می‌شود");
                     continue;
                 }
 
-                $familyCode = trim($row[0]);
+                // بررسی خالی بودن فیلدهای ضروری
+                if (empty($familyCode)) {
+                    $errors[] = "ردیف {$rowNumber}: کد خانوار خالی است";
+                    continue;
+                }
 
-                // نوع بیمه (ستون 3) - بهبود یافته
-                $insuranceType = 'تکمیلی'; // مقدار پیش‌فرض
-                if (isset($row[3]) && !empty(trim($row[3]))) {
-                    $rawType = trim($row[3]);
-                    
-                    // تمیز کردن و تشخیص نوع بیمه
-                    if (stripos($rawType, 'تامین') !== false || stripos($rawType, 'اجتماعی') !== false) {
-                        $insuranceType = 'تامین اجتماعی';
-                    } elseif (stripos($rawType, 'تکمیلی') !== false) {
-                        $insuranceType = 'تکمیلی';
-                    } else {
-                        // ثبت مقدار دقیق از فایل
-                        $insuranceType = $rawType;
+                if (empty($insuranceType)) {
+                    $errors[] = "ردیف {$rowNumber}: نوع بیمه خالی است";
+                    continue;
+                }
+
+                if (empty($insuranceAmount)) {
+                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه خالی است";
+                    continue;
+                }
+
+                // تشخیص نوع بیمه
+                $normalizedInsuranceType = $this->normalizeInsuranceType($insuranceType);
+                if (!$normalizedInsuranceType) {
+                    $errors[] = "ردیف {$rowNumber}: نوع بیمه نامعتبر است: {$insuranceType}";
+                    continue;
+                }
+
+                // تمیز کردن مبلغ بیمه
+                $cleanAmount = $this->cleanInsuranceAmount($insuranceAmount);
+                if ($cleanAmount === null) {
+                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه نامعتبر است: {$insuranceAmount}";
+                    continue;
+                }
+
+                // پردازش تاریخ‌ها
+                $parsedStartDate = null;
+                $parsedEndDate = null;
+
+                if (!empty($startDate)) {
+                    try {
+                        $parsedStartDate = $this->parseJalaliOrGregorianDate($startDate);
+                    } catch (\Exception $e) {
+                        $errors[] = "ردیف {$rowNumber}: تاریخ شروع نامعتبر است: {$startDate}";
+                        continue;
                     }
                 }
 
-                // اضافه کردن لاگ برای دیباگ
-                Log::debug("نوع بیمه تشخیص داده شده", [
-                    'family_code' => $familyCode,
-                    'raw_value' => $row[3] ?? 'خالی',
-                    'detected_type' => $insuranceType
-                ]);
-
-                // مبلغ بیمه (ستون 6)
-                if (!isset($row[6]) || empty(trim($row[6]))) {
-                    $validData['errors'][] = "ردیف {$i} - خانوار {$familyCode}: مبلغ بیمه خالی است";
-                    continue;
+                if (!empty($endDate)) {
+                    try {
+                        $parsedEndDate = $this->parseJalaliOrGregorianDate($endDate);
+                    } catch (\Exception $e) {
+                        $errors[] = "ردیف {$rowNumber}: تاریخ پایان نامعتبر است: {$endDate}";
+                        continue;
+                    }
                 }
 
-                // تمیز کردن مبلغ
-                $premiumString = str_replace([',', ' ', 'ریال', 'تومان'], '', trim($row[6]));
-                $premiumAmount = is_numeric($premiumString) ? floatval($premiumString) : 0;
-
-                if ($premiumAmount <= 0) {
-                    $validData['errors'][] = "مبلغ بیمه نامعتبر برای خانوار {$familyCode}: {$premiumAmount}";
-                    continue;
-                }
-
-                // تاریخ شروع (ستون 4) - بدون تبدیل
-                $startDate = isset($row[4]) ? trim($row[4]) : null;
-                // تاریخ پایان (ستون 5) - بدون تبدیل
-                $endDate = isset($row[5]) ? trim($row[5]) : null;
-
-                $validData['family_codes'][] = $familyCode;
-                $validData['premium_amounts'][$familyCode] = $premiumAmount;
-                $validData['insurance_types'][$familyCode] = $insuranceType;
-                $validData['start_dates'][$familyCode] = $startDate;
-                $validData['end_dates'][$familyCode] = $endDate;
-
-                Log::debug("✅ داده معتبر استخراج شد", [
-                    'family_code' => $familyCode,
-                    'insurance_type' => $insuranceType,
-                    'premium_amount' => $premiumAmount,
-                    'start_date' => $startDate,
-                    'end_date' => $endDate
-                ]);
-
-            } catch (\Exception $e) {
-                $validData['errors'][] = "خطا در پردازش ردیف {$i}: " . $e->getMessage();
-                Log::error("❌ خطا در استخراج ردیف {$i}", ['error' => $e->getMessage()]);
+                // ذخیره داده‌های معتبر
+                $familyCodes[] = $familyCode;
+                $premiumAmounts[$familyCode] = $cleanAmount;
+                $insuranceTypes[$familyCode] = $normalizedInsuranceType;
+                $startDates[$familyCode] = $parsedStartDate;
+                $endDates[$familyCode] = $parsedEndDate;
+                $policyNumbers[$familyCode] = $policyNumber;
+                $notes[$familyCode] = $noteText;
             }
+
+        } catch (\Exception $e) {
+            $errors[] = "خطا در خواندن فایل اکسل: " . $e->getMessage();
         }
 
-        Log::info('📊 خلاصه استخراج داده‌ها', [
-            'valid_families' => count($validData['family_codes']),
-            'errors_count' => count($validData['errors'])
-        ]);
-
-        return $validData;
+        return [
+            'family_codes' => array_unique($familyCodes),
+            'premium_amounts' => $premiumAmounts,
+            'insurance_types' => $insuranceTypes,
+            'start_dates' => $startDates,
+            'end_dates' => $endDates,
+            'policy_numbers' => $policyNumbers,
+            'notes' => $notes,
+            'errors' => $errors
+        ];
     }
 
     /**
@@ -677,12 +723,85 @@ class InsuranceShareService
     }
 
     /**
-     * Parse Jalali or Gregorian date
+     * تبدیل تاریخ جلالی یا میلادی به تاریخ کاربن
      */
     private function parseJalaliOrGregorianDate($dateString)
     {
-        // Add your date parsing logic here
-        // This is a placeholder - implement based on your existing date parsing logic
-        return now(); // Temporary return
+        $dateString = trim($dateString);
+
+        // الگوهای متداول تاریخ
+        $patterns = [
+            // الگوی جلالی: 1403/03/15
+            '/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/' => function ($matches) {
+                return Jalalian::fromFormat('Y/m/d', $matches[1] . '/' . $matches[2] . '/' . $matches[3])->toCarbon();
+            },
+            // الگوی جلالی: 1403-03-15
+            '/^(\d{4})-(\d{1,2})-(\d{1,2})$/' => function ($matches) {
+                return Jalalian::fromFormat('Y-m-d', $matches[1] . '-' . $matches[2] . '-' . $matches[3])->toCarbon();
+            },
+            // الگوی میلادی: 2024/06/04
+            '/^(20\d{2})\/(\d{1,2})\/(\d{1,2})$/' => function ($matches) {
+                return Carbon::createFromFormat('Y/m/d', $matches[1] . '/' . $matches[2] . '/' . $matches[3]);
+            },
+            // الگوی میلادی: 2024-06-04
+            '/^(20\d{2})-(\d{1,2})-(\d{1,2})$/' => function ($matches) {
+                return Carbon::createFromFormat('Y-m-d', $matches[1] . '-' . $matches[2] . '-' . $matches[3]);
+            }
+        ];
+
+        foreach ($patterns as $pattern => $converter) {
+            if (preg_match($pattern, $dateString, $matches)) {
+                return $converter($matches);
+            }
+        }
+
+        throw new \Exception("فرمت تاریخ نامعتبر: {$dateString}");
+    }
+
+    /**
+     * تشخیص و تبدیل نوع بیمه
+     */
+    private function normalizeInsuranceType($insuranceType): ?string
+    {
+        $insuranceType = trim(strtolower($insuranceType));
+        
+        $socialInsuranceKeywords = ['تامین اجتماعی', 'تامین', 'اجتماعی', 'social'];
+        $supplementaryInsuranceKeywords = ['تکمیلی', 'supplementary', 'درمان', 'medical'];
+        
+        foreach ($socialInsuranceKeywords as $keyword) {
+            if (strpos($insuranceType, $keyword) !== false) {
+                return 'تامین اجتماعی';
+            }
+        }
+        
+        foreach ($supplementaryInsuranceKeywords as $keyword) {
+            if (strpos($insuranceType, $keyword) !== false) {
+                return 'تکمیلی';
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * تمیز کردن مبلغ بیمه
+     */
+    private function cleanInsuranceAmount($amount): ?int
+    {
+        // حذف کاراکترهای غیرضروری
+        $cleanAmount = preg_replace('/[^\d]/', '', $amount);
+        
+        if (empty($cleanAmount) || !is_numeric($cleanAmount)) {
+            return null;
+        }
+        
+        $numericAmount = (int) $cleanAmount;
+        
+        // بررسی محدوده منطقی
+        if ($numericAmount < 1000 || $numericAmount > 100000000) {
+            return null;
+        }
+        
+        return $numericAmount;
     }
 }

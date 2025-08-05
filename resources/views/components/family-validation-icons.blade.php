@@ -137,9 +137,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
 
-            {{-- نشانه محرومیت --}}
+            {{-- نشانه محرومیت - تغییر رنگ به سبز برای مناطق محروم --}}
             @if($locationStatus['is_deprived'] === true)
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-3 h-3 flex items-center justify-center text-[8px]">
+                <span class="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full w-3 h-3 flex items-center justify-center text-[8px]">
                     !
                 </span>
             @endif
@@ -166,69 +166,7 @@
         @endif
     </div>
 
-    {{-- آیکون اطلاعات ناقص اعضا --}}
-    @php
-        $incompleteMembers = $family->members->where('has_incomplete_data', true)->count();
-        $totalMembers = $family->members->count();
-        $incompletePercentage = $totalMembers > 0 ? round(($incompleteMembers / $totalMembers) * 100) : 0;
 
-        if ($incompleteMembers > 0) {
-            $incompleteStatus = 'warning';
-            $incompleteMessage = "{$incompleteMembers} عضو دارای اطلاعات ناقص";
-        } else {
-            $incompleteStatus = 'complete';
-            $incompleteMessage = "اطلاعات همه اعضا کامل است";
-        }
-
-        $incompleteColors = $colorConfig[$incompleteStatus] ?? $colorConfig['unknown'] ?? [
-            'bg_class' => 'bg-gray-100',
-            'border_class' => 'border-gray-300',
-            'icon_class' => 'text-gray-600',
-            'text_class' => 'text-gray-800'
-        ];
-    @endphp
-
-    <div class="relative group validation-icon-wrapper">
-        <div class="validation-icon {{ $iconSize }} {{ $incompleteColors['bg_class'] }} {{ $incompleteColors['border_class'] }}
-                    border-2 rounded-lg flex items-center justify-center cursor-help transition-all duration-200 hover:scale-110 hover:z-30">
-            {{-- آیکون اطلاعات ناقص --}}
-            @if($incompleteMembers > 0)
-                <svg class="w-4 h-4 {{ $incompleteColors['icon_class'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"/>
-                </svg>
-            @else
-                <svg class="w-4 h-4 {{ $incompleteColors['icon_class'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            @endif
-
-            {{-- نمایش تعداد اعضای ناقص --}}
-            @if($incompleteMembers > 0)
-                <span class="absolute -bottom-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                    {{ $incompleteMembers }}
-                </span>
-            @endif
-        </div>
-
-        {{-- Tooltip --}}
-        @if($showTooltips)
-            <div class="tooltip-content absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0
-                        transition-all duration-300 pointer-events-none z-50 group-hover:opacity-100 group-hover:pointer-events-auto">
-                <div class="bg-gray-800 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap max-w-xs">
-                    <div class="font-semibold">وضعیت اطلاعات اعضا</div>
-                    <div class="text-xs mt-1">{{ $incompleteMessage }}</div>
-                    @if($incompleteMembers > 0)
-                        <div class="text-xs mt-1 border-t border-gray-600 pt-1">
-                            {{ $totalMembers - $incompleteMembers }}/{{ $totalMembers }} عضو دارای اطلاعات کامل
-                        </div>
-                    @endif
-                </div>
-                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-            </div>
-        @endif
-    </div>
 
     {{-- آیکون درصد تکمیل مدارک بیماری خاص --}}
     @php
@@ -302,7 +240,6 @@
                     </svg>
 
                     {{-- نمایش آیکون تکمیل --}}
-                    // در بخش span برای نمایش درصد
                     @if($documentCompletionPercentage > 0 && $documentCompletionPercentage < 100)
                         <span class="absolute -bottom-1 -right-1 bg-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center border text-[10px] {{ $documentColors['text_class'] }}">
                             {{ $documentCompletionPercentage }}%

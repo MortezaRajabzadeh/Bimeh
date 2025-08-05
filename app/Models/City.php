@@ -13,11 +13,13 @@ class City extends Model
         'province_id', 
         'name', 
         'slug',
-        'is_active'
+        'is_active',
+        'is_deprived'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_deprived' => 'boolean',
     ];
 
     /**

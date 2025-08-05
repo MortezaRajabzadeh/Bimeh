@@ -8,6 +8,7 @@ use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SettingsController extends Controller
@@ -57,19 +58,59 @@ class SettingsController extends Controller
     
         // پردازش آپلود لوگو در صورت وجود
         if ($request->hasFile('logo')) {
-            // حذف لوگوی قبلی در صورت وجود
-            if ($organization->logo_path) {
-                $this->deleteImageIfExists($organization->logo_path);
+            try {
+                // حذف لوگوی قبلی در صورت وجود
+                if ($organization->logo_path) {
+                    // بررسی وجود فایل در storage قبل از حذف
+                    if (Storage::disk('public')->exists($organization->logo_path)) {
+                        Storage::disk('public')->delete($organization->logo_path);
+                    }
+                }
+                
+                // آپلود فایل جدید با استفاده از Storage disk public
+                $file = $request->file('logo');
+                $filename = 'org-' . $organization->id . '-' . uniqid() . '.webp';
+                $path = 'organizations/logos/' . $filename;
+                
+                // بهینه‌سازی و ذخیره تصویر با Intervention Image
+                $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+                $image = $manager->read($file)
+                    ->resize(300, 300, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    })
+                    ->toWebp(80);
+                
+                // ذخیره در storage/app/public. متد put باید به صورت خودکار پوشه را ایجاد کند.
+                Storage::disk('public')->put($path, (string) $image);
+
+                // بررسی مجدد برای اطمینان از ذخیره شدن فایل
+                if (!Storage::disk('public')->exists($path)) {
+                    // اگر فایل وجود نداشت، یک خطای دقیق‌تر ثبت می‌کنیم
+                    Log::error('فایل پس از آپلود یافت نشد', [
+                        'organization_id' => $organization->id,
+                        'path' => $path,
+                        'storage_path' => Storage::disk('public')->path($path)
+                    ]);
+                    throw new \Exception('فایل پس از آپلود در مسیر مورد نظر یافت نشد. لطفاً مجوزهای پوشه storage را بررسی کنید.');
+                }
+                
+                $organization->logo_path = $path;
+                
+                Log::info('لوگو با موفقیت در storage آپلود شد', [
+                    'organization_id' => $organization->id,
+                    'path' => $path,
+                    'storage_path' => Storage::disk('public')->path($path)
+                ]);
+            } catch (\Exception $e) {
+                Log::error('خطا در آپلود لوگو', [
+                    'error' => $e->getMessage(),
+                    'organization_id' => $organization->id,
+                    'trace' => $e->getTraceAsString()
+                ]);
+                
+                return redirect()->back()->with('error', 'خطا در آپلود لوگو: ' . $e->getMessage());
             }
-            
-            // آپلود و بهینه‌سازی تصویر جدید با مسیر یکسان
-            $organization->logo_path = $this->uploadAndOptimizeImage(
-                $request->file('logo'),
-                'organizations/logos',
-                300, // عرض
-                300, // ارتفاع
-                80   // کیفیت (0-100)
-            );
             
             // به‌روزرسانی timestamp برای cache busting
             $organization->touch();

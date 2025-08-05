@@ -15,7 +15,7 @@
                             <p class="text-green-700 mt-1 whitespace-pre-line">{{ session('success') }}</p>
                         </div>
                     </div>
-                    
+
                     @if(session('results'))
                         <div class="mt-4 p-4 bg-white rounded-lg border border-green-200">
                             <h4 class="font-medium text-green-800 mb-3">📊 گزارش تفصیلی:</h4>
@@ -30,7 +30,7 @@
                                         <div class="text-sm text-blue-700">عضو ثبت شده</div>
                                     </div>
                                 @endif
-                                
+
                                 @if(session('results')['failed'] > 0)
                                     <div class="text-center p-3 bg-orange-100 rounded-lg">
                                         <div class="text-2xl font-bold text-orange-600">{{ session('results')['failed'] }}</div>
@@ -38,11 +38,11 @@
                                     </div>
                                 @endif
                             </div>
-                            
+
                             @if(!empty(session('results')['errors']))
                                 <details class="mt-4 bg-red-50 rounded-lg border border-red-200">
                                     <summary class="cursor-pointer p-3 font-medium text-red-800 hover:bg-red-100 rounded-lg transition-colors">
-                                        🔍 مشاهده خطاها 
+                                        🔍 مشاهده خطاها
                                         @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                             (نمایش {{ session('results')['showing_count'] }} از {{ session('results')['total_errors'] }} خطا)
                                         @endif
@@ -56,11 +56,11 @@
                                                 </li>
                                             @endforeach
                                         </ul>
-                                        
+
                                         @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                             <div class="mt-3 p-3 bg-orange-100 rounded-lg border border-orange-200">
                                                 <p class="text-orange-800 text-sm">
-                                                    ⚠️ <strong>توجه:</strong> {{ session('results')['total_errors'] - session('results')['showing_count'] }} خطای دیگر نیز وجود دارد. 
+                                                    ⚠️ <strong>توجه:</strong> {{ session('results')['total_errors'] - session('results')['showing_count'] }} خطای دیگر نیز وجود دارد.
                                                     برای جلوگیری از ایجاد خانواده‌های خالی، خطاهای تکراری و نامعتبر قبل از ثبت شناسایی و رد می‌شوند.
                                                 </p>
                                                 <p class="text-orange-700 text-sm mt-2">
@@ -89,7 +89,7 @@
                             <p class="text-red-700 mt-1 whitespace-pre-line">{{ session('error') }}</p>
                         </div>
                     </div>
-                    
+
                     @if(session('results') && !empty(session('results')['errors']))
                         <div class="mt-4 p-4 bg-white rounded-lg border border-red-200">
                             <h4 class="font-medium text-red-800 mb-3">🔍 جزئیات خطاها:</h4>
@@ -101,12 +101,12 @@
                                     </li>
                                 @endforeach
                             </ul>
-                            
+
                             @if(isset(session('results')['total_errors']) && isset(session('results')['showing_count']) && session('results')['total_errors'] > session('results')['showing_count'])
                                 <div class="mt-3 p-3 bg-red-100 rounded-lg border border-red-200">
                                     <p class="text-red-800 text-sm">
-                                        ⚠️ <strong>توجه:</strong> فقط {{ session('results')['showing_count'] }} خطای اول نمایش داده شده است. 
-                                        در مجموع {{ session('results')['total_errors'] }} خطا وجود دارد. 
+                                        ⚠️ <strong>توجه:</strong> فقط {{ session('results')['showing_count'] }} خطای اول نمایش داده شده است.
+                                        در مجموع {{ session('results')['total_errors'] }} خطا وجود دارد.
                                         لطفاً فایل خود را با دقت بررسی کرده و مطابق نمونه اصلاح کنید.
                                     </p>
                                 </div>
@@ -149,7 +149,7 @@
                                 <script>
                                     const jobId = '{{ session("job_id") }}';
                                     let pollingInterval;
-                                    
+
                                     function refreshJobStatus() {
                                         fetch(`{{ route('charity.import.status') }}?job_id=${jobId}`)
                                             .then(response => response.json())
@@ -158,7 +158,7 @@
                                                     const jobData = data.data;
                                                     const statusElement = document.getElementById('job-status');
                                                     const progressBar = document.getElementById('progress-bar');
-                                                    
+
                                                     // بروزرسانی وضعیت
                                                     let statusText = '';
                                                     switch(jobData.status) {
@@ -185,10 +185,10 @@
                                                             clearInterval(pollingInterval);
                                                             break;
                                                     }
-                                                    
+
                                                     if (statusElement) statusElement.textContent = statusText;
                                                     if (progressBar) progressBar.style.width = (jobData.progress || 0) + '%';
-                                                    
+
                                                     // توقف polling اگر job کامل شد
                                                     if (['completed', 'failed'].includes(jobData.status)) {
                                                         clearInterval(pollingInterval);
@@ -203,10 +203,10 @@
                                                 }
                                             });
                                     }
-                                    
+
                                     // شروع polling خودکار
                                     setTimeout(refreshJobStatus, 1000);
-                                    
+
                                     // بروزرسانی هر 3 ثانیه
                                     pollingInterval = setInterval(refreshJobStatus, 3000);
                                 </script>
@@ -218,12 +218,12 @@
 
             <!-- کامپوننت آمار و نمودارهای داشبورد -->
             <div class="mb-8">
-                <livewire:charity.dashboard-stats />
+                <livewire:charity.dashboard-stats :panel-type="'charity'" />
             </div>
 
             <!-- فاصله و خط جداکننده بین دو بخش -->
             <div class="my-10 border-t border-gray-200"></div>
-       
+
 
         </div>
     </div>

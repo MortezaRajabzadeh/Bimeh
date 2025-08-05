@@ -661,6 +661,50 @@ class FamilySearch extends Component
         cache()->forget('families_query_' . auth()->id());
     }
     
+    /**
+     * Reset all filters to their default values
+     *
+     * @return bool
+     */
+    public function resetFilters()
+    {
+        try {
+            // Reset all filter variables
+            $this->search = '';
+            $this->status = '';
+            $this->province = '';
+            $this->deprivation_rank = '';
+            $this->city = '';
+            $this->charity = '';
+            $this->region = '';
+            $this->family_rank_range = '';
+            $this->specific_criteria = '';
+            $this->selectedCriteria = [];
+            
+            // Reset sorting to default
+            $this->sortField = 'created_at';
+            $this->sortDirection = 'desc';
+            
+            // Reset pagination
+            $this->resetPage();
+            
+            // Clear cache
+            cache()->forget('families_query_' . auth()->id());
+            
+            // Dispatch event for UI updates
+            $this->dispatch('filters-reset');
+            
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Error resetting filters: ' . $e->getMessage());
+            $this->dispatch('show-toast', [
+                'message' => 'خطا در بازنشانی فیلترها: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+            return false;
+        }
+    }
+    
     // Livewire listeners
     protected $listeners = [
         'refresh-family-list' => '$refresh',

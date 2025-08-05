@@ -10,4 +10,4 @@
             <livewire:insurance.dashboard-stats />
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

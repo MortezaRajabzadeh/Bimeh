@@ -110,13 +110,6 @@
                                     </svg>
                                     مشاهده تمام سهم‌های تخصیص داده شده
                                 </a>
-                                <a href="{{ route('insurance.families.approval') }}?tab=approved"
-                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                    تخصیص سهم جدید
-                                </a>
                             </div>
                         </div>
                     </div>

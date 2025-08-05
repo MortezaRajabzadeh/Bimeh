@@ -1,9 +1,9 @@
 <div>
     @php
-        // استفاده از داده‌های واقعی از کامپوننت 
-        $geoLabels = $provinceNames ?? []; 
-        $geoDataMale = $provinceMaleCounts ?? [];   
-        $geoDataFemale = $provinceFemaleCounts ?? [];  
+        // استفاده از داده‌های واقعی از کامپوننت
+        $geoLabels = $provinceNames ?? [];
+        $geoDataMale = $provinceMaleCounts ?? [];
+        $geoDataFemale = $provinceFemaleCounts ?? [];
         $geoDataDeprived = $provinceDeprivedCounts ?? [];
     @endphp
 
@@ -25,7 +25,78 @@
                 </div>
             </div>
         </div>
+    <!-- فیلترهای داشبورد -->
+    <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+        <div class="flex flex-col space-y-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">فیلترهای داشبورد</h3>
+                <p class="text-sm text-gray-600">انتخاب دوره زمانی و سازمان برای نمایش داده‌های مربوطه</p>
+            </div>
 
+            <!-- فیلترها -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- فیلتر سال -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">سال:</label>
+                    <div class="relative">
+                        <select wire:model.live="selectedYear"
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            @foreach($jalaliYears as $year)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- فیلتر ماه -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ماه:</label>
+                    <div class="relative">
+                        <select wire:model.live="selectedMonth"
+                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
+                                class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="">کل سال</option>
+                            @foreach($jalaliMonths as $monthNum => $monthName)
+                                <option value="{{ $monthNum }}">{{ $monthName }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- دکمه ریست -->
+                <div class="flex items-end">
+                    <button wire:click="resetFilters" class="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition-colors duration-200">
+                        <svg class="w-4 h-4 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        ریست فیلترها
+                    </button>
+                </div>
+            </div>
+
+            <!-- نمایش فیلترهای فعال -->
+            <div class="flex flex-wrap gap-2 mt-2">
+                @if($selectedMonth)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {{ $jalaliMonths[$selectedMonth] ?? 'ماه انتخابی' }}
+                        <button wire:click="$set('selectedMonth', '')" class="mr-1 text-blue-600 hover:text-blue-800">×</button>
+                    </span>
+                @endif
+            </div>
+        </div>
+    </div>
         <!-- کارت‌های اصلی -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <!-- کارت خانواده‌های بیمه شده -->
@@ -312,7 +383,7 @@
         <!-- Scripts -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="{{ asset('js/dashboard-charts.js') }}"></script>
-        
+
         <!-- داده‌های چارت برای JavaScript -->
         <script type="application/json" id="chart-data">
             {!! json_encode([

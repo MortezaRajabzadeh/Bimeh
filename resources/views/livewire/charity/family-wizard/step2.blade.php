@@ -42,8 +42,8 @@
                 <div class="flex-1 text-center">نام خانوادگی <span class="text-red-500">*</span></div>
                 <div class="w-32 text-center">تاریخ تولد</div>
                 <div class="w-32 text-center">کد ملی <span class="text-red-500">*</span></div>
-                <div class="w-32 text-center">شغل</div>
-                <div class="w-32 text-center">نوع مشکل</div>
+                <div class="w-32 text-center">وضعیت شغلی</div>
+                <div class="w-32 text-center">معیار پذیرش</div>
                 <div class="w-8 text-center">حذف</div>
             </div>
         </div>
@@ -87,13 +87,15 @@
                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
                                 class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 @error('members.'.$index.'.relationship') border-red-300 @enderror">
                             <option value="">عضو خانواده</option>
-                            <option value="mother">مادر</option>
-                            <option value="father">پدر</option>
-                            <option value="son">پسر</option>
-                            <option value="daughter">دختر</option>
-                            <option value="grandmother">مادربزرگ</option>
-                            <option value="grandfather">پدربزرگ</option>
-                            <option value="other">سایر</option>
+                            <option value="مادر">مادر</option>
+                            <option value="پدر">پدر</option>
+                            <option value="زن">زن</option>
+                            <option value="شوهر">شوهر</option>
+                            <option value="پسر">پسر</option>
+                            <option value="دختر">دختر</option>
+                            <option value="مادربزرگ">مادربزرگ</option>
+                            <option value="پدربزرگ">پدربزرگ</option>
+                            <option value="سایر">سایر</option>
                         </select>
                         <!-- آیکون کشویی -->
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -146,25 +148,113 @@
                         </div>
                     </div>
                     <div class="w-32">
-                        <input type="text" wire:model.debounce.500ms="members.{{ $index }}.national_code" 
-                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 text-center bg-white @error('members.'.$index.'.national_code') border-red-300 @enderror" 
-                               placeholder="0123456789">
+                        <input type="text" 
+                               wire:model.live.debounce.500ms="members.{{ $index }}.national_code" 
+                               wire:blur="checkNationalCodeOnChange({{ $index }}, $event.target.value)"
+                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 text-center bg-white @error('members.'.$index.'.national_code') border-red-300 bg-red-50 @enderror" 
+                               placeholder="0123456789"
+                               maxlength="10">
                         @error('members.'.$index.'.national_code')
-                            <div class="absolute mt-1 text-red-500 text-xs bg-white p-1 rounded shadow-sm border border-red-100">
-                                {{ $message }}
+                            <div class="absolute mt-1 text-red-500 text-xs bg-white p-2 rounded shadow-lg border border-red-200 z-50 max-w-xs">
+                                <div class="flex items-center">
+                                    <svg class="w-3 h-3 ml-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span class="text-right">{{ $message }}</span>
+                                </div>
+                                <button type="button" 
+                                        wire:click="clearNationalCodeError({{ $index }})"
+                                        class="mt-1 text-xs text-blue-600 hover:text-blue-800 underline">
+                                    پاک کردن خطا
+                                </button>
                             </div>
                         @enderror
                     </div>
                     <div class="w-32">
-                        <input type="text" wire:model.debounce.500ms="members.{{ $index }}.occupation" 
-                               class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white" 
-                               placeholder="شغل">
+                        <div x-data="{
+                                selectedStatus: '',
+                                specificJob: '',
+                                memberIndex: {{$index}},
+                                statusOptions: ['شاغل', 'بیکار', 'محصل', 'دانشجو', 'از کار افتاده', 'ترک تحصیل', 'خانه دار'],
+                                init() {
+                                    // مقداردهی اولیه از Livewire
+                                    this.$nextTick(() => {
+                                        const currentValue = this.$wire.get('members.'+this.memberIndex+'.occupation');
+                                        if (currentValue) {
+                                            // بررسی اینکه آیا مقدار فعلی یکی از گزینه‌های اصلی است
+                                            if (this.statusOptions.includes(currentValue)) {
+                                                this.selectedStatus = currentValue;
+                                            } else {
+                                                // اگر مقدار خاصی است، آن را در فیلد شغل خاص قرار می‌دهیم
+                                                this.selectedStatus = 'شاغل';
+                                                this.specificJob = currentValue;
+                                            }
+                                        }
+                                    });
+
+                                    // آپدیت مقادیر وقتی از Livewire تغییر می‌کند
+                                    this.$wire.on('updatedOccupation', (data) => {
+                                        if (data.index === this.memberIndex) {
+                                            const value = data.value;
+                                            if (this.statusOptions.includes(value)) {
+                                                this.selectedStatus = value;
+                                                this.specificJob = '';
+                                            } else {
+                                                this.selectedStatus = 'شاغل';
+                                                this.specificJob = value;
+                                            }
+                                        }
+                                    });
+                                },
+                                updateLivewire() {
+                                    let finalValue = this.selectedStatus;
+                                    if (this.selectedStatus === 'شاغل' && this.specificJob.trim()) {
+                                        finalValue = this.specificJob.trim();
+                                    }
+                                    this.$wire.set('members.'+this.memberIndex+'.occupation', finalValue);
+                                },
+                                onStatusChange() {
+                                    if (this.selectedStatus !== 'شاغل') {
+                                        this.specificJob = '';
+                                    }
+                                    this.updateLivewire();
+                                },
+                                onJobInput() {
+                                    this.updateLivewire();
+                                }
+                            }"
+                            class="relative">
+                            
+                            <!-- دراپ‌داون وضعیت شغلی -->
+                            <select x-model="selectedStatus" 
+                                    @change="onStatusChange()"
+                                    class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 mb-1">
+                                <option value="">انتخاب کنید</option>
+                                <template x-for="option in statusOptions" :key="option">
+                                    <option :value="option" x-text="option"></option>
+                                </template>
+                            </select>
+                            
+                            <!-- فیلد شغل خاص (فقط برای شاغل) -->
+                            <div x-show="selectedStatus === 'شاغل'" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 transform scale-95"
+                                 x-transition:enter-end="opacity-100 transform scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="opacity-100 transform scale-100"
+                                 x-transition:leave-end="opacity-0 transform scale-95">
+                                <input type="text" 
+                                       x-model="specificJob"
+                                       @input.debounce.500ms="onJobInput()"
+                                       class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white" 
+                                       placeholder="مشخص کنید">
+                            </div>
+                        </div>
                     </div>
                     <div class="w-32">
                         <div x-data="{
                                 problems: [],
-                                options: ['اعتیاد', 'بیماری خاص', 'از کار افتادگی', 'معلولیت'],
-                                search: '',
+                                options: ['بیماری خاص', 'اعتیاد', 'از کار افتادگی', 'بیکاری'],
                                 open: false,
                                 dropUp: false,
                                 memberIndex: {{$index}},
@@ -214,7 +304,6 @@
                                     this.open = !this.open;
                                     
                                     if (this.open) {
-                                        this.search = '';
                                         this.$nextTick(() => {
                                             this.updateDropdownPosition();
                                             window.addEventListener('scroll', () => this.updateDropdownPosition(), { passive: true });
@@ -228,7 +317,6 @@
                                 close() {
                                     if (this.open) {
                                         this.open = false;
-                                        this.search = '';
                                         window.removeEventListener('scroll', () => this.updateDropdownPosition());
                                         window.removeEventListener('resize', () => this.updateDropdownPosition());
                                     }
@@ -236,27 +324,21 @@
                                 isSelected(value) { 
                                     return Array.isArray(this.problems) && this.problems.includes(value);
                                 },
-                                addProblem() {
-                                    if (!this.search.trim()) return;
-                                    
-                                    const newValue = this.search.trim();
-                                    if (!this.problems.includes(newValue)) {
-                                        this.problems.push(newValue);
-                                        this.updateLivewire();
-                                        this.$nextTick(() => this.updateDropdownPosition());
+                                toggleProblem(value) {
+                                    if (this.isSelected(value)) {
+                                        this.problems = this.problems.filter(p => p !== value);
+                                    } else {
+                                        this.problems.push(value);
                                     }
+                                    this.updateLivewire();
                                     
-                                    this.search = '';
+                                    // refresh Livewire برای به‌روزرسانی Alpine.js
+                                    this.$wire.$refresh();
                                 },
                                 removeProblem(value) {
                                     this.problems = this.problems.filter(p => p !== value);
                                     this.updateLivewire();
                                     this.$nextTick(() => this.updateDropdownPosition());
-
-                                    if (this.problems.length === 0) {
-                                        const container = this.$el.querySelector('.problem-tags');
-                                        if (container) container.scrollTop = 0;
-                                    }
                                 }
                             }"
                             class="relative dropdown-problem">
@@ -282,7 +364,7 @@
                                         </template>
                                         <div x-show="!Array.isArray(problems) || !problems.length" 
                                              class="text-gray-400 text-sm">
-                                            انتخاب کنید
+                                            معیار پذیرش
                                         </div>
                                     </div>
                                 </div>
@@ -300,24 +382,10 @@
                                  :class="{ 'bottom-full mb-1': dropUp, 'top-full mt-1': !dropUp }"
                                  class="absolute left-0 right-0 bg-white border border-gray-300 rounded-md shadow-xl p-2"
                                  style="min-width: 100%; z-index: 99999;">
-                                <div class="border-b pb-2">
-                                    <input type="text" 
-                                           x-model="search" 
-                                           @keydown.enter.prevent="addProblem()"
-                                           @click.stop
-                                           class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500"
-                                           placeholder="جستجو یا افزودن مورد جدید...">
-                                </div>
-                                <div class="max-h-[200px] overflow-y-auto mt-2">
+                                <div class="max-h-[200px] overflow-y-auto">
                                     <ul class="space-y-1">
-                                        <template x-for="option in options.filter(opt => opt.toLowerCase().includes(search.toLowerCase()))" :key="option">
-                                            <li @click.stop="
-                                                if(!isSelected(option)) {
-                                                    problems.push(option);
-                                                    updateLivewire();
-                                                } else {
-                                                    removeProblem(option);
-                                                }"
+                                        <template x-for="option in options" :key="option">
+                                            <li @click.stop="toggleProblem(option)"
                                                 class="px-3 py-2 cursor-pointer hover:bg-gray-100 rounded-md text-sm"
                                                 :class="{ 'bg-green-50': isSelected(option) }">
                                                 <span x-text="option"></span>
@@ -333,19 +401,20 @@
                                 class="text-red-500 hover:text-red-700 transition-colors duration-150"
                                 title="حذف عضو">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
                     </div>
+
                 </div>
                 <!-- فیلدهای مخصوص سرپرست با نمایش بهتر -->
                 <div id="head-fields-{{ $index }}" 
-                     class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 w-full animate-fade-in bg-green-50 p-3 rounded-lg border border-green-200" 
+                     class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 w-full animate-fade-in bg-green-50 p-3 rounded-lg border border-green-200" 
                      x-data="{}"
                      x-show="$wire.head_member_index == {{ $index }}">
                     <div class="relative">
                         <div class="flex items-center mb-1">
-                            <label class="block text-sm text-gray-800 font-medium">شماره تماس سرپرست</label>
+                            <label class="block text-sm text-gray-800 font-medium">شماره موبایل</label>
                             <span class="mr-1 text-red-500">*</span>
                             <div class="mr-2 group relative">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -353,15 +422,16 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0-4h.01" />
                                 </svg>
                                 <div class="absolute left-0 bottom-6 w-48 bg-white shadow-lg rounded-lg p-2 text-xs text-gray-600 hidden group-hover:block z-50 border border-gray-200">
-                                    این شماره برای ارتباط با خانواده و ارسال پیامک‌های تأیید استفاده خواهد شد.
+                                    شماره موبایل برای ارسال پیامک‌های اطلاع‌رسانی استفاده می‌شود.
                                 </div>
                             </div>
                         </div>
                         <input type="text"
-                               wire:model="members.{{ $index }}.phone"
+                               wire:model="members.{{ $index }}.mobile"
                                class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white"
                                placeholder="مثلاً 0912xxxxxxx">
                     </div>
+                    <!-- Removed fixed phone number field as requested -->
                     <div class="relative">
                         <div class="flex items-center mb-1">
                             <label class="block text-sm text-gray-800 font-medium">شماره شبا</label>
@@ -386,6 +456,48 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- فیلد آپلود مدرک بیماری خاص فقط اگر معیار پذیرش انتخاب شده باشد --}}
+                @if(is_array($member['problem_type'] ?? null) && in_array('بیماری خاص', $member['problem_type']))
+                    <div class="mt-2 w-full bg-red-50 p-3 rounded-lg border border-red-200">
+                        <div class="flex items-center mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <label class="block text-sm text-red-800 font-medium">مدرک بیماری خاص</label>
+                            <span class="mr-1 text-red-500">*</span>
+                        </div>
+                        @if(isset($uploadedDocuments[$index]))
+                            <div class="mb-3 flex items-center p-2 bg-green-100 rounded-lg">
+                                <svg class="h-5 w-5 text-green-500 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-green-800">
+                                        فایل آپلود شده: {{ $uploadedDocuments[$index]['original_name'] }}
+                                    </div>
+                                    <div class="text-xs text-green-600">
+                                        حجم: {{ round($uploadedDocuments[$index]['size'] / 1024) }} کیلوبایت
+                                    </div>
+                                </div>
+                                <button type="button" wire:click="removeDocument({{ $index }})" class="text-red-500 hover:text-red-700 transition-colors duration-150 ml-2">حذف</button>
+                            </div>
+                        @else
+                            <input type="file"
+                                   wire:model="specialDiseaseDocuments.{{ $index }}"
+                                   accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full border border-gray-300 rounded-md text-sm focus:ring-red-500 focus:border-red-500 bg-white">
+                            <div class="mt-1 text-xs text-red-600">
+                                فرمت‌های مجاز: PDF، JPG، PNG (حداکثر 5 مگابایت)
+                            </div>
+                            @error('specialDiseaseDocuments.'.$index)
+                                <div class="mt-1 text-xs text-red-500">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        @endif
+                    </div>
+                @endif
             @endforeach
             <!-- دکمه اضافه کردن -->
             <button type="button" wire:click="addMember" 

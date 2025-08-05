@@ -18,7 +18,7 @@
         $identityTooltip = 'اطلاعات هویتی ناقص است';
     }
     
-    // بررسی مدرک بیماری خاص
+    // بررسی مدرک بیماری خاص - تغییر منطق
     $showSpecialDiseaseIcon = false;
     $specialDiseaseStatus = 'none';
     $specialDiseaseTooltip = '';
@@ -35,12 +35,12 @@
             $specialDiseaseTooltip = 'مدرک بیماری خاص ثبت شده است';
         } else {
             $specialDiseaseStatus = 'incomplete'; // red
-            $specialDiseaseTooltip = 'مدرک بیماری خاص ثبت نشده است';
+            $specialDiseaseTooltip = 'مدرک بیماری خاص ثبت نشده است - نیاز به آپلود';
         }
     }
 @endphp
 
-<div class="flex items-center gap-2">
+<div class="flex items-center justify-center gap-2">
     {{-- آیکون اطلاعات هویتی --}}
     <div class="relative group">
         @if($identityStatus === 'complete')

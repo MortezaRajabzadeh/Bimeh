@@ -16,9 +16,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use App\Helpers\ProblemTypeHelper;
 
 class DashboardStats extends Component
 {
+    // خصوصیات مشترک
     public $totalInsured = 0;
     public $totalPayment = 0;
     public $totalOrganizations = 0;
@@ -27,7 +30,21 @@ class DashboardStats extends Component
     public $selectedMonth;
     public $selectedYear;
     public $selectedOrganization;
-    // فیلترها حذف شدند
+    
+    // خصوصیات خیریه
+    public $insuredFamilies = 0;
+    public $uninsuredFamilies = 0;
+    public $insuredMembers = 0;
+    public $uninsuredMembers = 0;
+    public $totalFamilies = 0;
+    public $totalDeprived = 0;
+    public $pendingFamilies = 0;
+    
+    // نوع پنل (تشخیص خودکار)
+    public $panelType = 'insurance'; // 'insurance' یا 'charity'
+    
+    // خصوصیت جدید برای کنترل نمایش بخش‌های مالی
+    public $showFinancialData = true;
 
     protected $queryString = [
         'selectedMonth' => ['except' => ''],
@@ -35,13 +52,57 @@ class DashboardStats extends Component
         'selectedOrganization' => ['except' => ''],
     ];
 
-    public function mount()
+    public function mount($panelType = null)
     {
-        $currentJalali = Jalalian::now();
-        $this->selectedYear = $currentJalali->getYear();
-        $this->selectedMonth = null; // پیش‌فرض: کل سال
-        $this->selectedOrganization = null;
-        $this->loadStatistics();
+        try {
+            // تشخیص نوع پنل
+            $this->panelType = $panelType ?: $this->detectPanelType();
+            
+            // تعیین نمایش داده‌های مالی بر اساس نوع پنل
+            $this->showFinancialData = ($this->panelType === 'insurance');
+            
+            $currentJalali = Jalalian::now();
+            $this->selectedYear = $currentJalali->getYear();
+            $this->selectedMonth = null; // پیش‌فرض: کل سال
+            $this->selectedOrganization = null;
+            
+            $this->loadStatistics();
+            
+            Log::info('🚀 Dashboard component mounted successfully', [
+                'panel_type' => $this->panelType,
+                'show_financial' => $this->showFinancialData,
+                'user_id' => auth()->id()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error mounting dashboard component', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+            
+            // مقادیر پیش‌فرض در صورت خطا
+            $this->panelType = 'insurance';
+            $this->showFinancialData = true;
+            $this->selectedYear = 1403;
+        }
+    }
+
+    /**
+     * تشخیص نوع پنل بر اساس کاربر یا مسیر
+     */
+    private function detectPanelType()
+    {
+        $user = Auth::user();
+        
+        // بر اساس نقش کاربری
+        if ($user->hasRole('charity') || 
+            $user->organization?->type === 'charity' ||
+            request()->is('charity/*')) {
+            return 'charity';
+        }
+        
+        return 'insurance';
     }
 
     /**
@@ -49,25 +110,248 @@ class DashboardStats extends Component
      */
     private function loadStatistics()
     {
-        // ساخت کلید کش بر اساس فیلترها
-        $cacheKey = "dashboard_stats_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}";
+        $startTime = microtime(true);
+        $traceId = uniqid('DASH_LOAD_', true);
+        
+        try {
+            Log::info("[{$traceId}] 📊 Starting dashboard statistics loading", [
+                'panel_type' => $this->panelType,
+                'filters' => [
+                    'year' => $this->selectedYear,
+                    'month' => $this->selectedMonth,
+                    'organization' => $this->selectedOrganization
+                ],
+                'user_id' => auth()->id(),
+                'timestamp' => now()->toISOString()
+            ]);
+            
+            // ساخت کلید کش بر اساس فیلترها و نوع پنل
+            $cacheKey = "{$this->panelType}_dashboard_stats_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}";
 
-        // استفاده از کش با زمان منقضی شدن 6 ساعت
-        $stats = Cache::remember($cacheKey, now()->addHours(6), function () {
-            return $this->calculateStatistics();
-        });
+            // استفاده از کش با زمان منقضی شدن 6 ساعت
+            $stats = Cache::remember($cacheKey, now()->addHours(6), function () use ($traceId) {
+                Log::info("[{$traceId}] 🔄 Cache miss - calculating fresh statistics");
+                return $this->calculateStatistics();
+            });
 
-        $this->totalInsured = $stats['totalInsured'];
-        $this->maleCount = $stats['maleCount'];
-        $this->femaleCount = $stats['femaleCount'];
-        $this->totalOrganizations = $stats['totalOrganizations'];
-        $this->totalPayment = $stats['totalPayment'];
+            // تنظیم مقادیر مشترک
+            $this->totalInsured = $stats['totalInsured'] ?? 0;
+            $this->maleCount = $stats['maleCount'] ?? 0;
+            $this->femaleCount = $stats['femaleCount'] ?? 0;
+            $this->totalOrganizations = $stats['totalOrganizations'] ?? 0;
+            
+            // مقادیر مالی فقط برای پنل بیمه
+            if ($this->showFinancialData) {
+                $this->totalPayment = $stats['totalPayment'] ?? 0;
+            }
+
+            // مقادیر خاص خیریه
+            if ($this->panelType === 'charity') {
+                $this->insuredFamilies = $stats['insuredFamilies'] ?? 0;
+                $this->uninsuredFamilies = $stats['uninsuredFamilies'] ?? 0;
+                $this->insuredMembers = $stats['insuredMembers'] ?? 0;
+                $this->uninsuredMembers = $stats['uninsuredMembers'] ?? 0;
+                $this->totalFamilies = $stats['totalFamilies'] ?? 0;
+                $this->totalDeprived = $stats['totalDeprived'] ?? 0;
+                $this->pendingFamilies = $stats['pendingFamilies'] ?? 0;
+                
+                Log::info("[{$traceId}] ✅ Charity statistics loaded successfully", [
+                    'total_families' => $this->totalFamilies,
+                    'insured_families' => $this->insuredFamilies,
+                    'uninsured_families' => $this->uninsuredFamilies,
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]);
+            } else {
+                // تنظیم مقادیر بیمه
+                $this->totalPayment = $stats['totalPayment'] ?? 0;
+                
+                Log::info("[{$traceId}] ✅ Insurance statistics loaded successfully", [
+                    'total_insured' => $this->totalInsured,
+                    'total_payment' => $this->totalPayment,
+                    'execution_time' => round((microtime(true) - $startTime) * 1000, 2) . 'ms'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            // مدیریت خطا و مقادیر پیش‌فرض
+            $this->handleStatisticsError($e, $traceId, $startTime);
+        }
+    }
+
+    /**
+     * مدیریت خطاهای آماری و تنظیم مقادیر پیش‌فرض
+     */
+    private function handleStatisticsError(\Exception $e, string $traceId = null, float $startTime = null)
+    {
+        $traceId = $traceId ?: uniqid('ERROR_', true);
+        $executionTime = $startTime ? round((microtime(true) - $startTime) * 1000, 2) . 'ms' : 'N/A';
+        
+        Log::error("[{$traceId}] ❌ Dashboard statistics loading failed", [
+            'error_message' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'panel_type' => $this->panelType,
+            'user_id' => auth()->id(),
+            'execution_time' => $executionTime,
+            'stack_trace' => $e->getTraceAsString()
+        ]);
+        
+        // تنظیم مقادیر پیش‌فرض مشترک
+        $this->totalInsured = 0;
+        $this->maleCount = 0;
+        $this->femaleCount = 0;
+        $this->totalOrganizations = 0;
+        
+        if ($this->panelType === 'charity') {
+            // مقادیر پیش‌فرض خیریه
+            $this->insuredFamilies = 0;
+            $this->uninsuredFamilies = 0;
+            $this->insuredMembers = 0;
+            $this->uninsuredMembers = 0;
+            $this->totalFamilies = 0;
+            $this->totalDeprived = 0;
+            $this->pendingFamilies = 0;
+        } else {
+            // مقادیر پیش‌فرض بیمه
+            $this->totalPayment = 0;
+        }
+        
+        // نمایش پیام خطا به کاربر (اختیاری)
+        session()->flash('error', 'خطا در بارگذاری آمار داشبورد. لطفاً دوباره تلاش کنید.');
     }
 
     /**
      * محاسبه آمار اصلی
      */
     private function calculateStatistics()
+    {
+        if ($this->panelType === 'charity') {
+            return $this->calculateCharityStatistics();
+        }
+        
+        return $this->calculateInsuranceStatistics();
+    }
+
+    /**
+     * محاسبه آمار خیریه
+     */
+    private function calculateCharityStatistics()
+    {
+        try {
+            $charityId = Auth::user()->organization_id;
+            $orgFilter = $this->selectedOrganization ?: $charityId;
+            
+            // آمار خانواده‌های بیمه‌شده
+            $insuredFamilies = Family::where('charity_id', $orgFilter)
+                ->where(function($q) {
+                    $q->whereHas('insurances')
+                      ->orWhere('is_insured', true)
+                      ->orWhere('is_insured', 1);
+                })->count();
+
+            // آمار خانواده‌های بیمه نشده
+            $uninsuredFamilies = Family::where('charity_id', $orgFilter)
+                ->whereDoesntHave('insurances')
+                ->where(function($q) {
+                    $q->where('is_insured', false)
+                      ->orWhere('is_insured', 0)
+                      ->orWhereNull('is_insured');
+                })->count();
+
+            // آمار اعضای بیمه‌شده
+            $insuredMembers = Member::whereHas('family', function($q) use ($orgFilter) {
+                $q->where('charity_id', $orgFilter)
+                  ->where(function($subq) {
+                      $subq->whereHas('insurances')
+                           ->orWhere('is_insured', true)
+                           ->orWhere('is_insured', 1);
+                  });
+            })->count();
+
+            // آمار اعضای بیمه نشده
+            $uninsuredMembers = Member::whereHas('family', function($q) use ($orgFilter) {
+                $q->where('charity_id', $orgFilter)
+                  ->whereDoesntHave('insurances')
+                  ->where(function($subq) {
+                      $subq->where('is_insured', false)
+                           ->orWhere('is_insured', 0)
+                           ->orWhereNull('is_insured');
+                  });
+            })->count();
+
+            // آمار جنسیتی
+            $maleCount = Member::whereHas('family', function($q) use ($orgFilter) {
+                $q->where('charity_id', $orgFilter);
+            })->where('gender', 'male')->count();
+            
+            $femaleCount = Member::whereHas('family', function($q) use ($orgFilter) {
+                $q->where('charity_id', $orgFilter);
+            })->where('gender', 'female')->count();
+
+            // تعداد سازمان‌های فعال
+            $totalOrganizations = Organization::active()->count();
+
+            // کل خانواده‌های ثبت شده
+            $totalFamilies = Family::where('charity_id', $orgFilter)->count();
+
+            // افراد محروم (بر اساس معیارهای محرومیت)
+            $totalDeprived = Member::whereHas('family', function($q) use ($orgFilter) {
+                $q->where('charity_id', $orgFilter)
+                  ->where(function($subq) {
+                      $subq->where('is_deprived', true)
+                           ->orWhere('is_deprived', 1)
+                           ->orWhere('deprivation_score', '>', 0);
+                  });
+            })->count();
+
+            // خانواده‌های در انتظار تایید (وضعیت pending)
+            $pendingFamilies = Family::where('charity_id', $orgFilter)
+                ->where(function($q) {
+                    $q->where('status', 'pending')
+                      ->orWhere('approval_status', 'pending')
+                      ->orWhereNull('approval_status');
+                })->count();
+
+            return [
+                'insuredFamilies' => $insuredFamilies,
+                'uninsuredFamilies' => $uninsuredFamilies,
+                'insuredMembers' => $insuredMembers,
+                'uninsuredMembers' => $uninsuredMembers,
+                'maleCount' => $maleCount,
+                'femaleCount' => $femaleCount,
+                'totalOrganizations' => $totalOrganizations,
+                'totalInsured' => $insuredMembers,
+                'totalPayment' => 0, // خیریه پرداخت مستقیم ندارد
+                'totalFamilies' => $totalFamilies,
+                'totalDeprived' => $totalDeprived,
+                'pendingFamilies' => $pendingFamilies,
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('خطا در محاسبه آمار خیریه: ' . $e->getMessage());
+            
+            return [
+                'insuredFamilies' => 0,
+                'uninsuredFamilies' => 0,
+                'insuredMembers' => 0,
+                'uninsuredMembers' => 0,
+                'maleCount' => 0,
+                'femaleCount' => 0,
+                'totalOrganizations' => 0,
+                'totalInsured' => 0,
+                'totalPayment' => 0,
+                'totalFamilies' => 0,
+                'totalDeprived' => 0,
+                'pendingFamilies' => 0,
+            ];
+        }
+    }
+
+    /**
+     * محاسبه آمار بیمه
+     */
+    private function calculateInsuranceStatistics()
     {
         $dateRange = $this->getDateRange();
         $baseQuery = $this->getBaseQuery($dateRange);
@@ -162,7 +446,7 @@ class DashboardStats extends Component
     }
 
     /**
-     * محاسبه پرداخت‌های کل
+     * محاسبه پرداخت‌های کل (فقط برای پنل بیمه)
      */
     private function getTotalPayments($dateRange)
     {
@@ -381,7 +665,7 @@ class DashboardStats extends Component
     }
 
     /**
-     * داده‌های مالی کلی
+     * داده‌های مالی کلی (فقط برای پنل بیمه)
      */
     private function getFinancialData()
     {
@@ -470,7 +754,7 @@ class DashboardStats extends Component
     }
 
     /**
-     * جریان مالی ماهانه
+     * جریان مالی ماهانه (فقط برای پنل بیمه)
      */
     private function getMonthlyFinancialFlow()
     {
@@ -641,23 +925,95 @@ class DashboardStats extends Component
      */
     public function updatedSelectedMonth()
     {
-        $this->clearCache();
-        $this->loadStatistics();
-        $this->dispatch('refreshAllCharts');
+        try {
+            Log::info('📅 Filter month changed', [
+                'month' => $this->selectedMonth,
+                'year' => $this->selectedYear,
+                'organization' => $this->selectedOrganization,
+                'user_id' => auth()->id()
+            ]);
+            
+            $this->clearCache();
+            $this->loadStatistics();
+            
+            // اجبار به refresh کامل کامپوننت
+            $this->dispatch('refreshDashboard');
+            $this->dispatch('refreshAllCharts');
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('showToast', [
+                'message' => 'فیلتر ماه با موفقیت اعمال شد',
+                'type' => 'success'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error updating month filter', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+        }
     }
 
     public function updatedSelectedYear()
     {
-        $this->clearCache();
-        $this->loadStatistics();
-        $this->dispatch('refreshAllCharts');
+        try {
+            Log::info('📅 Filter year changed', [
+                'year' => $this->selectedYear,
+                'month' => $this->selectedMonth,
+                'organization' => $this->selectedOrganization,
+                'user_id' => auth()->id()
+            ]);
+            
+            $this->clearCache();
+            $this->loadStatistics();
+            
+            // اجبار به refresh کامل کامپوننت
+            $this->dispatch('refreshDashboard');
+            $this->dispatch('refreshAllCharts');
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('showToast', [
+                'message' => 'فیلتر سال با موفقیت اعمال شد',
+                'type' => 'success'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error updating year filter', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+        }
     }
 
     public function updatedSelectedOrganization()
     {
-        $this->clearCache();
-        $this->loadStatistics();
-        $this->dispatch('refreshAllCharts');
+        try {
+            Log::info('🏢 Filter organization changed', [
+                'organization' => $this->selectedOrganization,
+                'year' => $this->selectedYear,
+                'month' => $this->selectedMonth,
+                'user_id' => auth()->id()
+            ]);
+            
+            $this->clearCache();
+            $this->loadStatistics();
+            
+            // اجبار به refresh کامل کامپوننت
+            $this->dispatch('refreshDashboard');
+            $this->dispatch('refreshAllCharts');
+            
+            // نمایش پیام موفقیت
+            $this->dispatch('showToast', [
+                'message' => 'فیلتر سازمان با موفقیت اعمال شد',
+                'type' => 'success'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error updating organization filter', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+        }
     }
 
     public function resetFilters()
@@ -674,15 +1030,62 @@ class DashboardStats extends Component
      */
     private function clearCache()
     {
-        $keys = [
-            $this->getCacheKey(),
-            "geo_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}",
-            "financial_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}",
-            "criteria_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}"
-        ];
+        try {
+            // کلیدهای کش برای تنظیمات فعلی
+            $currentKeys = [
+                $this->getCacheKey(),
+                "geo_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}",
+                "financial_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}",
+                "criteria_data_{$this->selectedYear}_{$this->selectedMonth}_{$this->selectedOrganization}"
+            ];
 
-        foreach ($keys as $key) {
-            Cache::forget($key);
+            // کلیدهای کش برای تمام احتمالات (برای اطمینان)
+            $allPossibleKeys = [];
+            
+            // پاک کردن کش برای تمام سال‌ها و ماه‌ها
+            foreach ($this->jalaliYears as $year) {
+                // کل سال
+                $allPossibleKeys[] = "dashboard_stats_{$year}__{$this->selectedOrganization}";
+                $allPossibleKeys[] = "geo_data_{$year}__{$this->selectedOrganization}";
+                $allPossibleKeys[] = "financial_data_{$year}__{$this->selectedOrganization}";
+                $allPossibleKeys[] = "criteria_data_{$year}__{$this->selectedOrganization}";
+                
+                // هر ماه
+                for ($month = 1; $month <= 12; $month++) {
+                    $allPossibleKeys[] = "dashboard_stats_{$year}_{$month}_{$this->selectedOrganization}";
+                    $allPossibleKeys[] = "geo_data_{$year}_{$month}_{$this->selectedOrganization}";
+                    $allPossibleKeys[] = "financial_data_{$year}_{$month}_{$this->selectedOrganization}";
+                    $allPossibleKeys[] = "criteria_data_{$year}_{$month}_{$this->selectedOrganization}";
+                }
+            }
+
+            // ترکیب همه کلیدها
+            $allKeys = array_merge($currentKeys, $allPossibleKeys);
+            $allKeys = array_unique($allKeys);
+
+            $clearedCount = 0;
+            foreach ($allKeys as $key) {
+                if (Cache::forget($key)) {
+                    $clearedCount++;
+                }
+            }
+
+            Log::info('🗑️ Cache cleared', [
+                'keys_cleared' => $clearedCount,
+                'total_keys' => count($allKeys),
+                'current_filters' => [
+                    'year' => $this->selectedYear,
+                    'month' => $this->selectedMonth,
+                    'organization' => $this->selectedOrganization
+                ],
+                'user_id' => auth()->id()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error clearing cache', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
         }
     }
 

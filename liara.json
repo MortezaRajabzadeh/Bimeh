@@ -1,11 +1,17 @@
 {
-  "platform": "laravel",
   "app": "mikrobimehh",
-  "port": 8000,
-  "cron": [
-    "0 2 * * * cd $ROOT && php artisan app:move-expired-insurances-to-renewal >> /tmp/insurance-renewal.log 2>&1"
-  ],
+  "port": 3000,
   "build": {
     "location": "iran"
-  }
+  },
+  "disks": [
+    {
+      "name": "temp",
+      "mountTo": "/tmp"
+    },
+    {
+      "name": "my-disk",
+      "mountTo": "/var/www/html/storage/app/public"
+    }
+  ]
 }

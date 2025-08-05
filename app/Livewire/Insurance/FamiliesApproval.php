@@ -26,7 +26,12 @@ use App\Repositories\FamilyRepository;
 use App\Enums\FamilyStatus as FamilyStatusEnum;
 use App\Enums\InsuranceWizardStep;
 use App\Services\InsuranceImportLogger;
-
+use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
+use App\QueryFilters\FamilyRankingFilter;
+use App\QuerySorts\FamilyRankingSort;
+use App\Helpers\ProblemTypeHelper;
 class FamiliesApproval extends Component
 {
     use WithFileUploads, WithPagination;
@@ -130,6 +135,17 @@ class FamiliesApproval extends Component
 
     // متغیرهای فیلتر رتبه
     public $province = '';
+
+    /**
+     * تعیین اینکه آیا ستون تاریخ پایان بیمه باید نمایش داده شود یا خیر
+     *
+     * @return bool
+     */
+    public function showInsuranceEndDate()
+    {
+        // نمایش ستون فقط در تب "بیمه‌شده‌ها"
+        return $this->activeTab === 'insured';
+    }
     public $city = '';
     public $deprivation_rank = '';
     public $family_rank_range = '';
@@ -301,18 +317,6 @@ class FamiliesApproval extends Component
         ];
     }
 
-    /**
-     * دریافت وزن هر معیار
-     */
-/**
- * دریافت وزن هر معیار (محافظ‌کارانه)
- */
-    /**
-     * این متد پس از تخصیص موفقیت‌آمیز سهمیه توسط مودال فراخوانی می‌شود.
-     * وظیفه آن انتقال خانواده‌های تخصیص‌داده‌شده به مرحله بعدی است.
-     *
-     * @param array $data اطلاعات ارسالی از رویداد شامل 'family_ids'
-     */
     public function onSharesAllocated(array $data)
     {
         // 1. دریافت ID خانواده‌ها از رویداد
@@ -608,14 +612,15 @@ private function getCriteriaWeights(): array
                     $currentStep = InsuranceWizardStep::from($currentStep);
                 }
 
-                $nextStep = null;
+                Log::info('🔍 Current step for family ' . $familyId . ': ' . $currentStep->value . ' (type: ' . gettype($currentStep) . ')');
 
-                if ($currentStep === InsuranceWizardStep::PENDING) {
-                    $nextStep = InsuranceWizardStep::REVIEWING;
-                    Log::info('⏩ Moving family ' . $familyId . ' from PENDING to REVIEWING');
-                } elseif ($currentStep === InsuranceWizardStep::REVIEWING) {
-                    $nextStep = InsuranceWizardStep::SHARE_ALLOCATION;
-                    Log::info('⏩ Moving family ' . $familyId . ' from REVIEWING to SHARE_ALLOCATION');
+                // استفاده از nextStep method موجود در enum
+                $nextStep = $currentStep->nextStep();
+
+                if ($nextStep) {
+                    Log::info('⏩ Moving family ' . $familyId . ' from ' . $currentStep->value . ' to ' . $nextStep->value);
+                } else {
+                    Log::warning('⚠️ No next step available for family ' . $familyId . ' with current step: ' . $currentStep->value);
                 }
 
                 if ($nextStep) {
@@ -972,8 +977,8 @@ private function getCriteriaWeights(): array
         } elseif ($tab === 'approved') {
             $this->loadFamiliesByWizardStatus([InsuranceWizardStep::SHARE_ALLOCATION, InsuranceWizardStep::APPROVED, InsuranceWizardStep::EXCEL_UPLOAD]);
         } elseif ($tab === 'excel') {
-            // برای تب excel نیازی به لود کردن خانواده نیست
-            $this->wizard_status = null;
+            // تب excel باید خانواده‌های در انتظار صدور بیمه را نمایش دهد
+            $this->loadFamiliesByWizardStatus(InsuranceWizardStep::EXCEL_UPLOAD);
         } elseif ($tab === 'insured') {
             $this->loadFamiliesByWizardStatus(InsuranceWizardStep::INSURED);
         } elseif ($tab === 'renewal') {
@@ -1299,175 +1304,130 @@ private function getCriteriaWeights(): array
      */
     public function export()
     {
-        // ۱. دریافت داده‌ها (دقیقاً همان منطق قبلی)
-        $query = Family::query()->with([
-            'province', 'city', 'district', 'region', 'members', 'head', 'charity', 'organization',
-            'insurances' => fn($q) => $q->orderBy('created_at', 'desc'),
-            'finalInsurances'
-        ]);
-
-        // اعمال فیلترها بر اساس تب فعال
-        switch ($this->activeTab) {
-            case 'pending':
-                $query->where('wizard_status', InsuranceWizardStep::PENDING->value)
-                    ->where('status', '!=', 'deleted');
-                break;
-            case 'reviewing':
-                $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value)
-                    ->where('status', '!=', 'deleted');
-                break;
-                case 'approved':
-                    $query->whereIn('wizard_status', [
-                        InsuranceWizardStep::SHARE_ALLOCATION->value,
-                        InsuranceWizardStep::APPROVED->value,
-                        InsuranceWizardStep::EXCEL_UPLOAD->value
-                    ])->where('status', '!=', 'deleted');
-                    break;
-            case 'excel':
-                $query->where('wizard_status', InsuranceWizardStep::EXCEL_UPLOAD->value)
-                    ->where('status', '!=', 'deleted');
-                break;
-            case 'insured':
-                $query->where('wizard_status', InsuranceWizardStep::INSURED->value)
-                    ->where('status', '!=', 'deleted');
-                break;
-            case 'renewal':
-                $query->where('wizard_status', InsuranceWizardStep::RENEWAL->value)
-                    ->where('status', '!=', 'deleted');
-                break;
-            case 'deleted':
-                $query->where('status', 'deleted');
-                break;
-            default:
-                $query->where('wizard_status', InsuranceWizardStep::PENDING->value)
-                    ->where('status', '!=', 'deleted');
-                break;
+        // اگر خانواده‌ای انتخاب شده باشد، فقط آنها را دانلود کن، وگرنه همه خانواده‌های صفحه را دانلود کن
+        if (!empty($this->selected)) {
+            // دانلود خانواده‌های انتخاب شده
+            $families = Family::whereIn('id', $this->selected)
+                ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members', 'finalInsurances'])
+                ->get();
+            
+            if ($families->isEmpty()) {
+                $this->dispatch('toast', ['message' => 'خانواده‌های انتخاب شده یافت نشدند.', 'type' => 'error']);
+                return null;
+            }
+            
+            $downloadType = 'انتخاب-شده';
+        } else {
+            // دانلود همه خانواده‌های صفحه فعلی
+            $families = $this->getFamiliesProperty();
+            
+            if ($families->isEmpty()) {
+                $this->dispatch('toast', ['message' => 'داده‌ای برای دانلود وجود ندارد.', 'type' => 'error']);
+                return null;
+            }
+            
+            $downloadType = $this->activeTab;
         }
 
-        // اعمال فیلترهای جستجو
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->whereHas('head', fn($sq) => $sq->where('full_name', 'like', '%' . $this->search . '%'))
-                  ->orWhere('family_code', 'like', '%' . $this->search . '%');
-            });
-        }
+        // ایجاد کالکشن برای داده‌های اکسل
+        $excelData = collect();
 
-        // اعمال سایر فیلترها
-        if ($this->province_id) {
-            $query->where('province_id', $this->province_id);
-        }
-
-        if ($this->city_id) {
-            $query->where('city_id', $this->city_id);
-        }
-
-        if ($this->district_id) {
-            $query->where('district_id', $this->district_id);
-        }
-
-        if ($this->region_id) {
-            $query->where('region_id', $this->region_id);
-        }
-
-        if ($this->organization_id) {
-            $query->where('organization_id', $this->organization_id);
-        }
-
-        if ($this->charity_id) {
-            $query->where('charity_id', $this->charity_id);
-        }
-
-        // فیلتر کردن بر اساس معیارهای انتخاب شده
-        if ($this->specific_criteria) {
-            $criteriaIds = array_map('trim', explode(',', $this->specific_criteria));
-
-            // لاگ برای دیباگ
-            Log::info('در حال فیلتر کردن خانواده‌ها بر اساس معیارها:', [
-                'criteria_ids' => $criteriaIds,
-                'original_specific_criteria' => $this->specific_criteria
+        foreach ($families as $family) {
+            // اضافه کردن سرپرست خانواده به عنوان یک ردیف
+            $excelData->push([
+                'family_code' => $family->family_code,
+                'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                'is_head' => 'بله',
+                'member_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                'member_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                'member_relationship' => $family->head && $family->head->relationship ? $family->head->relationship : 'سرپرست خانوار',
+                'member_birth_date' => $family->head && $family->head->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->head->birth_date))->format('Y/m/d') : null,
+                'member_gender' => $this->translateGender($family->head ? $family->head->gender : null),
+                'province' => $family->province ? $family->province->name : 'نامشخص',
+                'city' => $family->city ? $family->city->name : 'نامشخص',
+                'district' => $family->district ? $family->district->name : 'نامشخص',
+                'region' => $family->region ? $family->region->name : 'نامشخص',
+                'organization' => $family->organization ? $family->organization->name : 'نامشخص',
+                'insurance_type' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_type : 'نامشخص',
+                'insurance_amount' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_amount : 0,
+                'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->start_date))->format('Y/m/d') : null,
+                'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->end_date))->format('Y/m/d') : null,
             ]);
 
-            if (!empty($criteriaIds)) {
-                // دریافت نام‌های معیارها
-                $rankSettingNames = \App\Models\RankSetting::whereIn('id', $criteriaIds)->pluck('name')->toArray();
-                Log::info('نام‌های معیارهای یافت شده:', ['rank_setting_names' => $rankSettingNames]);
-
-                if (count($rankSettingNames) > 0) {
-                    $query->where(function($q) use ($criteriaIds, $rankSettingNames) {
-                        // فیلتر با سیستم جدید (جدول family_criteria)
-                        Log::debug('SQL کوئری معیارها (جدید): select * from `rank_settings` inner join `family_criteria` on `rank_settings`.`id` = `family_criteria`.`rank_setting_id` where `families`.`id` = `family_criteria`.`family_id` and `rank_setting_id` in (?, ?) and `has_criteria` = ?', [
-                            'bindings' => $criteriaIds
-                        ]);
-
-                        $q->whereHas('familyCriteria', function($subquery) use ($criteriaIds) {
-                            $subquery->whereIn('rank_setting_id', $criteriaIds)
-                                    ->where('has_criteria', true);
-                        });
-
-                        // همچنین فیلتر با سیستم قدیمی (فیلد rank_criteria)
-                        Log::debug('SQL کوئری معیارها (قدیمی): select * from `families` where (`families`.`rank_criteria` LIKE ? or `families`.`rank_criteria` LIKE ?) and `families`.`deleted_at` is null', [
-                            'bindings' => array_map(function($name) { return "%$name%"; }, $rankSettingNames)
-                        ]);
-
-                        // حداقل یکی از معیارها باید در فیلد rank_criteria وجود داشته باشد
-                        foreach ($rankSettingNames as $name) {
-                            $q->orWhere('rank_criteria', 'LIKE', '%' . $name . '%');
-                        }
-                    });
-
-                    // بررسی وجود داده در جدول family_criteria برای معیارهای انتخابی
-                    Log::info('بررسی وجود داده در جدول family_criteria برای معیارهای ' . $this->specific_criteria);
-                }
+            // اضافه کردن اعضای خانواده (غیر از سرپرست)
+            $nonHeadMembers = $family->members->where('is_head', false);
+            foreach ($nonHeadMembers as $member) {
+                $excelData->push([
+                    'family_code' => $family->family_code,
+                    'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                    'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                    'is_head' => 'خیر',
+                    'member_name' => $member->first_name . ' ' . $member->last_name,
+                    'member_national_id' => $member->national_code,
+                    'member_relationship' => $member->relationship ? $member->relationship : 'نامشخص',
+                    'member_birth_date' => $member->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($member->birth_date))->format('Y/m/d') : null,
+                    'member_gender' => $this->translateGender($member->gender),
+                    'province' => $family->province ? $family->province->name : 'نامشخص',
+                    'city' => $family->city ? $family->city->name : 'نامشخص',
+                    'district' => $family->district ? $family->district->name : 'نامشخص',
+                    'region' => $family->region ? $family->region->name : 'نامشخص',
+                    'organization' => $family->organization ? $family->organization->name : 'نامشخص',
+                    'insurance_type' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_type : 'نامشخص',
+                    'insurance_amount' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_amount : 0,
+                    'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->start_date))->format('Y/m/d') : null,
+                    'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->end_date))->format('Y/m/d') : null,
+                ]);
             }
         }
 
-        $families = $query->orderBy($this->sortField, $this->sortDirection)->get();
-
-        if ($families->isEmpty()) {
-            $this->dispatch('toast', ['message' => 'داده‌ای برای دانلود وجود ندارد.', 'type' => 'error']);
-            return null;
-        }
-
-        // ۲. تعریف هدرها و کلیدها
+        // تعریف هدرهای جدید (بدون ستون‌های اضافی)
         $headings = [
             'کد خانوار',
-            'نام سرپرست',
             'کد ملی سرپرست',
+            'سرپرست',
+            'نام عضو',
+            'کد ملی عضو',
+            'نسبت',
+            'تاریخ تولد',
+            'جنسیت',
             'استان',
             'شهرستان',
             'منطقه',
-            'موسسه خیریه',
-            'وضعیت بیمه',
-            'تاریخ آخرین وضعیت بیمه',
-            'نوع بیمه گر',
-            'مبلغ کل بیمه (ریال)',
-            'سهم بیمه شونده (ریال)',
-            'سهم سایر پرداخت کنندگان (ریال)',
-            'تعداد اعضا',
+            'ناحیه',
+            'سازمان',
+            'نوع بیمه',
+            'مبلغ بیمه',
+            'تاریخ شروع',
+            'تاریخ پایان',
         ];
 
+        // کلیدهای داده جدید (هماهنگ با داده‌های واقعی)
         $dataKeys = [
             'family_code',
-            'head.full_name',
-            'head.national_code',
-            'province.name',
-            'city.name',
-            'district.name',
-            'charity.name',
-            'wizard_status',
-            'finalInsurances.0.updated_at',
-            'finalInsurances.0.insurance_type',
-            'finalInsurances.0.total_premium',
-            'finalInsurances.0.insured_share',
-            'finalInsurances.0.other_share',
-            'members_count',
+            'head_national_id',
+            'is_head',
+            'member_name',
+            'member_national_id',
+            'member_relationship',
+            'member_birth_date',
+            'member_gender',
+            'province',
+            'city',
+            'district',
+            'region',
+            'organization',
+            'insurance_type',
+            'insurance_amount',
+            'start_date',
+            'end_date',
         ];
 
-        // ۳. ایجاد نام فایل
+        // ایجاد نام فایل
         $fileName = 'families-' . $this->activeTab . '-' . now()->format('Y-m-d') . '.xlsx';
 
-        // ۴. استفاده از Excel::download برای ارسال مستقیم فایل به مرورگر
-        return Excel::download(new DynamicDataExport($families, $headings, $dataKeys), $fileName);
+        // استفاده از Excel::download برای ارسال مستقیم فایل به مرورگر
+        return Excel::download(new DynamicDataExport($excelData, $headings, $dataKeys), $fileName);
     }
 
     /**
@@ -1685,7 +1645,7 @@ private function getCriteriaWeights(): array
         if ($result['skipped'] > 0) {
             $toastMessage .= "، {$result['skipped']} خطا";
         }
-        
+
         $this->dispatch('toast', [
             'message' => $toastMessage,
             'type' => 'success',
@@ -1918,7 +1878,7 @@ private function getCriteriaWeights(): array
 
             // پاک کردن کش برای نمایش فوری تغییرات
         $this->clearFamiliesCache();
-        
+
         // اضافه کردن این خط برای به‌روزرسانی فوری UI
         $this->dispatch('refreshFamiliesList');
 
@@ -2239,12 +2199,25 @@ private function getCriteriaWeights(): array
             $this->sortDirection = 'desc';
         }
 
+        // بررسی فیلدهای رتبه‌بندی
+        $rankingFields = ['weighted_rank', 'criteria_count', 'priority_score'];
+        
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortField = $field;
-            // برای created_at پیش‌فرض asc باشد
-            $this->sortDirection = ($field === 'created_at') ? 'asc' : 'desc';
+            
+            // تنظیم جهت پیش‌فرض بر اساس نوع فیلد
+            if (in_array($field, $rankingFields)) {
+                // برای فیلدهای رتبه‌بندی، پیش‌فرض نزولی (امتیاز بالاتر اول)
+                $this->sortDirection = 'desc';
+            } elseif ($field === 'created_at') {
+                // برای تاریخ ایجاد، پیش‌فرض صعودی (قدیمی‌تر اول)
+                $this->sortDirection = 'asc';
+            } else {
+                // برای سایر فیلدها، پیش‌فرض نزولی
+                $this->sortDirection = 'desc';
+            }
         }
 
         // اطمینان از مقدار معتبر
@@ -2257,6 +2230,12 @@ private function getCriteriaWeights(): array
 
         // پاکسازی کش
         $this->clearFamiliesCache();
+        
+        Log::info('🔀 Sorting applied', [
+            'field' => $field,
+            'direction' => $this->sortDirection,
+            'is_ranking_field' => in_array($field, $rankingFields)
+        ]);
     }
     /**
      * مرتب‌سازی بر اساس تعداد اعضای دارای مشکل خاص
@@ -2283,119 +2262,8 @@ private function getCriteriaWeights(): array
         $this->clearFamiliesCache();
     }
 
-    /**
-     * اعمال فیلترهای انتخاب شده در مودال
-     */
-    public function applyFilters()
-    {
-        try {
-            // Debug: بررسی محتوای tempFilters
-            logger('Applying filters - tempFilters:', $this->tempFilters);
 
-            // اگر هیچ فیلتری وجود ندارد
-            if (empty($this->tempFilters)) {
-                $this->dispatch('toast', [
-                    'message' => 'هیچ فیلتری برای اعمال وجود ندارد',
-                    'type' => 'error'
-                ]);
-                return;
-            }
 
-            // ابتدا فیلترهای قبلی را پاک می‌کنیم (بدون پاک کردن search)
-            $this->province_id = null;
-            $this->city_id = null;
-            $this->district_id = null;
-            $this->region_id = null;
-            $this->organization_id = null;
-            $this->charity_id = null;
-
-            $appliedCount = 0;
-            $appliedFilters = [];
-
-            // اعمال فیلترهای جدید
-            foreach ($this->tempFilters as $filter) {
-                if (empty($filter['value'])) {
-                    logger('Skipping empty filter:', $filter);
-                    continue;
-                }
-
-                logger('Applying filter:', $filter);
-
-                switch ($filter['type']) {
-                    case 'status':
-                        // وضعیت بیمه یا وضعیت عمومی خانواده
-                        $this->status = $filter['value']; // اضافه کردن اختصاص مقدار به status
-                        $appliedCount++;
-                        $appliedFilters[] = 'وضعیت: ' . $filter['value'];
-                        logger('Applied status filter:', ['value' => $filter['value']]);
-                        break;
-                    case 'province':
-                        $this->province_id = $filter['value'];
-                        $appliedCount++;
-                        $provinceName = \App\Models\Province::find($filter['value'])->name ?? $filter['value'];
-                        $appliedFilters[] = 'استان: ' . $provinceName;
-                        logger('Applied province filter:', ['value' => $filter['value']]);
-                        break;
-                    case 'city':
-                        $this->city_id = $filter['value'];
-                        $appliedCount++;
-                        $cityName = \App\Models\City::find($filter['value'])->name ?? $filter['value'];
-                        $appliedFilters[] = 'شهر: ' . $cityName;
-                        logger('Applied city filter:', ['value' => $filter['value']]);
-                        break;
-                    case 'district':
-                        $this->district_id = $filter['value'];
-                        $appliedCount++;
-                        $districtName = \App\Models\District::find($filter['value'])->name ?? $filter['value'];
-                        $appliedFilters[] = 'منطقه: ' . $districtName;
-                        logger('Applied district filter:', ['value' => $filter['value']]);
-                        break;
-                    case 'charity':
-                        $this->charity_id = $filter['value'];
-                        $appliedCount++;
-                        $charityName = \App\Models\Organization::find($filter['value'])->name ?? $filter['value'];
-                        $appliedFilters[] = 'موسسه: ' . $charityName;
-                        logger('Applied charity filter:', ['value' => $filter['value']]);
-                        break;
-                }
-            }
-
-            $this->activeFilters = $this->tempFilters;
-            $this->resetPage();
-
-            // Debug: نمایش وضعیت فعلی فیلترها
-            logger('Applied filters result:', [
-                'province_id' => $this->province_id,
-                'city_id' => $this->city_id,
-                'district_id' => $this->district_id,
-                'charity_id' => $this->charity_id,
-                'appliedCount' => $appliedCount
-            ]);
-
-            // پیام با جزئیات فیلترهای اعمال شده
-            if ($appliedCount > 0) {
-                $filtersList = implode('، ', $appliedFilters);
-                $message = "فیلترها با موفقیت اعمال شدند: {$filtersList}";
-            } else {
-                $message = 'هیچ فیلتر معتبری برای اعمال یافت نشد';
-            }
-
-            $this->dispatch('toast', [
-                'message' => $message,
-                'type' => $appliedCount > 0 ? 'success' : 'error'
-            ]);
-
-            // پاک کردن کش برای بارگذاری مجدد داده‌ها با فیلترهای جدید
-            $this->clearFamiliesCache();
-
-        } catch (\Exception $e) {
-            logger('Error applying filters:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            $this->dispatch('toast', [
-                'message' => 'خطا در اعمال فیلترها: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-    }
 
     /**
      * پاک کردن تمام فیلترها
@@ -2440,8 +2308,20 @@ private function getCriteriaWeights(): array
      */
     public function openRankModal()
     {
+        Log::info('🎯 STEP 1: Opening rank modal', [
+            'user_id' => Auth::id(),
+            'timestamp' => now(),
+            'current_tab' => $this->activeTab
+        ]);
+        
         $this->loadRankSettings();
         $this->showRankModal = true;
+        
+        Log::info('✅ STEP 1 COMPLETED: Rank modal opened', [
+            'showRankModal' => $this->showRankModal,
+            'rankSettings_count' => $this->rankSettings->count() ?? 0,
+            'user_id' => Auth::id()
+        ]);
     }
 
     /**
@@ -2449,12 +2329,25 @@ private function getCriteriaWeights(): array
      */
     public function loadRankSettings()
     {
+        Log::info('📋 STEP 2: Loading rank settings', [
+            'user_id' => Auth::id(),
+            'timestamp' => now()
+        ]);
+        
         $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
         $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
         $this->availableCriteria = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
 
         // Update available rank settings for display
         $this->availableRankSettings = $this->rankSettings;
+
+        Log::info('✅ STEP 2 COMPLETED: Rank settings loaded', [
+            'rankSettings_count' => $this->rankSettings->count(),
+            'rankingSchemes_count' => $this->rankingSchemes->count(),
+            'availableCriteria_count' => $this->availableCriteria->count(),
+            'active_criteria' => $this->availableCriteria->pluck('name', 'id')->toArray(),
+            'user_id' => Auth::id()
+        ]);
 
         // نمایش پیام مناسب برای باز شدن تنظیمات
         $this->dispatch('toast', [
@@ -2608,23 +2501,6 @@ private function getCriteriaWeights(): array
         ];
     }
 
-    /**
-     * بازگشت به تنظیمات پیشفرض
-     */
-    public function resetToDefault()
-    {
-        // پاک کردن معیارهای انتخاب شده
-        $this->selectedCriteria = [];
-        $this->criteriaRequireDocument = [];
-
-        // مقداردهی مجدد با مقادیر پیشفرض
-        foreach ($this->availableCriteria as $criterion) {
-            $this->selectedCriteria[$criterion->id] = false;
-            $this->criteriaRequireDocument[$criterion->id] = true;
-        }
-
-        $this->dispatch('toast', ['message' => 'تنظیمات به حالت پیشفرض بازگشت.', 'type' => 'info']);
-    }
 
     /**
      */
@@ -2974,18 +2850,32 @@ private function getCriteriaWeights(): array
     public function applyCriteria()
     {
         try {
-            Log::info('Starting applyCriteria with JSON criteria filter', [
-                'selectedCriteria' => $this->selectedCriteria
+            Log::info('🎯 STEP 3: Starting applyCriteria with ranking sort', [
+                'selectedCriteria' => $this->selectedCriteria,
+                'user_id' => Auth::id(),
+                'timestamp' => now()
             ]);
 
-            // استخراج نام‌های فارسی معیارهای انتخاب شده از RankSettings
+            // استخراج ID معیارهای انتخاب شده
             $selectedRankSettingIds = array_keys(array_filter($this->selectedCriteria,
                 fn($value) => $value === true
             ));
 
+            Log::info('📊 STEP 3.1: Selected criteria analysis', [
+                'selectedRankSettingIds' => $selectedRankSettingIds,
+                'selectedRankSettingIds_count' => count($selectedRankSettingIds),
+                'user_id' => Auth::id()
+            ]);
+
             if (empty($selectedRankSettingIds)) {
-                // پاک کردن فیلتر
+                Log::warning('❌ STEP 3 FAILED: No criteria selected for ranking', [
+                    'user_id' => Auth::id()
+                ]);
+                
+                // پاک کردن فیلتر و سورت
                 $this->specific_criteria = null;
+                $this->sortField = 'created_at';
+                $this->sortDirection = 'desc';
                 $this->resetPage();
                 $this->clearFamiliesCache();
 
@@ -2993,7 +2883,7 @@ private function getCriteriaWeights(): array
                 $this->showRankModal = false;
 
                 $this->dispatch('toast', [
-                    'message' => 'فیلتر معیارها پاک شد',
+                    'message' => 'فیلتر و سورت معیارها پاک شد',
                     'type' => 'info'
                 ]);
                 return;
@@ -3004,19 +2894,34 @@ private function getCriteriaWeights(): array
                 ->pluck('name')
                 ->toArray();
 
+            Log::info('📋 STEP 3.2: Criteria names retrieved', [
+                'criteria_ids' => $selectedRankSettingIds,
+                'criteria_names' => $selectedCriteriaNames,
+                'user_id' => Auth::id()
+            ]);
+
             // اطمینان از اینکه آرایه داریم
             if (empty($selectedCriteriaNames)) {
-                Log::warning('No criteria names found for IDs', ['ids' => $selectedRankSettingIds]);
+                Log::warning('❌ STEP 3 FAILED: No criteria names found for IDs', [
+                    'ids' => $selectedRankSettingIds,
+                    'user_id' => Auth::id()
+                ]);
                 return;
             }
 
-            Log::info('Selected criteria names (Persian)', [
-                'criteria_names' => $selectedCriteriaNames,
-                'criteria_type' => gettype($selectedCriteriaNames)
-            ]);
-
             // ذخیره نام‌های فارسی برای فیلتر
             $this->specific_criteria = implode(',', $selectedCriteriaNames);
+
+            // تنظیم سورت بر اساس رتبه‌بندی
+            $this->sortField = 'weighted_rank';
+            $this->sortDirection = 'desc'; // امتیاز بالاتر اول
+
+            Log::info('⚙️ STEP 3.3: Sort parameters set', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+                'specific_criteria' => $this->specific_criteria,
+                'user_id' => Auth::id()
+            ]);
 
             // Reset صفحه و cache
             $this->resetPage();
@@ -3025,27 +2930,72 @@ private function getCriteriaWeights(): array
             $criteriaList = implode('، ', $selectedCriteriaNames);
 
             $this->dispatch('toast', [
-                'message' => "فیلتر معیارها اعمال شد: {$criteriaList}",
+                'message' => "سورت بر اساس معیارها اعمال شد: {$criteriaList}",
                 'type' => 'success'
             ]);
 
-            // بستن مودال - این خط مهم است!
+            // بستن مودال
             $this->showRankModal = false;
 
-            Log::info('Criteria filter applied successfully', [
-                'specific_criteria' => $this->specific_criteria
+            Log::info('✅ STEP 3 COMPLETED: Ranking sort applied successfully', [
+                'criteria_ids' => $selectedRankSettingIds,
+                'sort_field' => $this->sortField,
+                'sort_direction' => $this->sortDirection,
+                'user_id' => Auth::id()
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error in JSON criteria filter: ' . $e->getMessage(), [
+            Log::error('❌ STEP 3 ERROR: Error in ranking sort: ' . $e->getMessage(), [
                 'exception' => $e,
                 'trace' => $e->getTraceAsString(),
                 'line' => $e->getLine(),
-                'file' => $e->getFile()
+                'file' => $e->getFile(),
+                'user_id' => Auth::id()
             ]);
 
             $this->dispatch('toast', [
-                'message' => 'خطا در اعمال فیلتر معیارها: ' . $e->getMessage(),
+                'message' => 'خطا در اعمال سورت رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * اعمال فیلتر رتبه‌بندی با استفاده از QueryBuilder
+     */
+    public function applyRankingFilter($criteriaIds = null, $schemeId = null)
+    {
+        try {
+            $filters = [];
+            
+            if ($criteriaIds) {
+                $filters['ranking'] = is_array($criteriaIds) ? implode(',', $criteriaIds) : $criteriaIds;
+            }
+            
+            if ($schemeId) {
+                $filters['ranking_scheme'] = $schemeId;
+            }
+            
+            // اعمال فیلترها به درخواست
+            request()->merge(['filter' => $filters]);
+            
+            // پاک کردن کش
+            $this->clearFamiliesCache();
+            
+            $this->dispatch('toast', [
+                'message' => 'فیلتر رتبه‌بندی اعمال شد',
+                'type' => 'success'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying ranking filter', [
+                'error' => $e->getMessage(),
+                'criteria_ids' => $criteriaIds,
+                'scheme_id' => $schemeId
+            ]);
+            
+            $this->dispatch('toast', [
+                'message' => 'خطا در اعمال فیلتر رتبه‌بندی',
                 'type' => 'error'
             ]);
         }
@@ -3298,108 +3248,278 @@ public function calculateDisplayScore($family): int
 // }
 protected function buildFamiliesQuery()
 {
-    $query = Family::query()
-        ->select(['families.*']);
-
-    // افزودن فیلتر wizard_status بر اساس تب انتخاب شده
     try {
-        if ($this->tab === 'pending') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::PENDING->value);
-        } elseif ($this->tab === 'reviewing') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::REVIEWING->value);
-        } elseif ($this->tab === 'approved') {
-            $query->where(function($q) {
-                // $q->where('wizard_status', 'share_allocation')
-                $q->Where('wizard_status', 'approved')
-                ->orWhere('wizard_status', 'excel_upload');
-            })->where('status', '!=', 'deleted');
-            // $query->where('wizard_status', \App\Enums\InsuranceWizardStep::APPROVED->value);
-        } elseif ($this->tab === 'rejected') {
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::REJECTED->value);
-        } elseif ($this->tab === 'excel') {
-            // نمایش خانواده‌های در انتظار صدور (excel_upload) در تب در انتظار صدور
-            $query->where('wizard_status', \App\Enums\InsuranceWizardStep::EXCEL_UPLOAD->value);
-        } elseif ($this->tab === 'renewal') {
+        // ایجاد query اولیه
+        $baseQuery = Family::query()->select(['families.*']);
 
-            // خانواده‌هایی که بیمه منقضی شده دارند (نیاز به تمدید)
-            $query->whereHas('finalInsurances', function ($q) {
-                $q->where('end_date', '<', now());
-            })
-            ->whereIn('wizard_status', [
-                InsuranceWizardStep::INSURED->value,
-                InsuranceWizardStep::RENEWAL->value
+        // اعمال فیلتر wizard_status بر اساس تب انتخاب شده
+        $this->applyTabStatusFilter($baseQuery);
+
+        // بارگذاری روابط مورد نیاز
+
+        // ساختن query parameters برای spatie QueryBuilder
+        $queryParams = [];
+        
+        // اضافه کردن فیلتر criteria به query parameters
+        if (!empty($this->specific_criteria)) {
+            $queryParams['filter']['specific_criteria'] = $this->specific_criteria;
+            
+            Log::info('🎯 STEP 2: Adding criteria to query params', [
+                'specific_criteria' => $this->specific_criteria,
+                'user_id' => Auth::id()
             ]);
-        } elseif ($this->tab === 'deleted') {
-            // فقط خانواده‌های حذف‌شده (deleted_at not null)
-            $query->onlyTrashed();
         }
-    } catch (\Exception $e) {
-        Log::error('Error filtering families by wizard_status', [
-            'tab' => $this->tab,
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ]);
-    }
+        
+        // اضافه کردن سایر فیلترها
+        if (!empty($this->search)) {
+            $queryParams['filter']['search'] = $this->search;
+        }
+        if (!empty($this->province_id)) {
+            $queryParams['filter']['province_id'] = $this->province_id;
+        }
+        if (!empty($this->city_id)) {
+            $queryParams['filter']['city_id'] = $this->city_id;
+        }
+        if (!empty($this->charity_id)) {
+            $queryParams['filter']['charity_id'] = $this->charity_id;
+        }
+        
+        // تنظیم query parameters در request
+        if (!empty($queryParams)) {
+            request()->merge($queryParams);
+        }
 
-    // Load اعضا برای محاسبه امتیاز
-    $query->with(['members']);
+        // اضافه کردن weighted ranking subquery اگر معیارهای رتبه‌بندی انتخاب شده
+        if (!empty($this->specific_criteria)) {
+            Log::info('🎯 STEP 3: Adding weighted ranking subquery', [
+                'specific_criteria' => $this->specific_criteria,
+                'user_id' => Auth::id()
+            ]);
 
-    // اعمال فیلتر معیارها بر اساس JSON field
-    if (!empty($this->specific_criteria)) {
-        $selectedCriteriaNames = explode(',', $this->specific_criteria);
+            $criteriaArray = is_string($this->specific_criteria) 
+                ? explode(',', $this->specific_criteria) 
+                : (array)$this->specific_criteria;
+            $criteriaArray = array_filter($criteriaArray);
 
+            if (!empty($criteriaArray)) {
+                // دریافت وزن‌های معیارها
+                $criteriaWeights = $this->getCriteriaWeights();
+                
+                // ساختن weighted score به عنوان یک field جداگانه با LEFT JOIN
+                $weightedScoreSubquery = "COALESCE(";
+                $scoreParts = [];
+                
+                foreach ($criteriaArray as $criteria) {
+                    $criteria = trim($criteria);
+                    $weight = $criteriaWeights[$criteria] ?? 1;
+                    
+                    // امتیاز از acceptance_criteria خانواده
+                    $scoreParts[] = "(
+                        CASE WHEN JSON_CONTAINS(families.acceptance_criteria, JSON_QUOTE('{$criteria}')) 
+                        THEN {$weight} ELSE 0 END
+                    )";
+                    
+                    // امتیاز از تعداد اعضای مبتلا
+                    $scoreParts[] = "(
+                        {$weight} * (
+                            SELECT COUNT(*) FROM members 
+                            WHERE members.family_id = families.id 
+                            AND JSON_CONTAINS(members.problem_type, JSON_QUOTE('{$criteria}'))
+                            AND members.deleted_at IS NULL
+                        )
+                    )";
+                }
+                
+                $weightedScoreSubquery .= implode(' + ', $scoreParts) . ", 0) as weighted_score";
+                
+                $baseQuery->selectRaw('families.*, ' . $weightedScoreSubquery);
 
-        // فیلتر: خانواده‌هایی که معیار در acceptance_criteria دارن یا اعضاشون مشکل دارن
-        $query->where(function($mainQuery) use ($selectedCriteriaNames) {
-            // شرط 1: معیار در acceptance_criteria خانواده باشه
-            foreach ($selectedCriteriaNames as $criteria) {
-                $mainQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria]);
+                Log::info('📊 STEP 3.1: Weighted ranking subquery added', [
+                    'criteria_count' => count($criteriaArray),
+                    'criteria' => $criteriaArray,
+                    'user_id' => Auth::id()
+                ]);
             }
-
-            // شرط 2: اعضای خانواده این مشکلات رو داشته باشن
-            $mainQuery->orWhereHas('members', function($memberQuery) use ($selectedCriteriaNames) {
-                $mapping = $this->getCriteriaMapping();
-                $englishProblems = [];
-
-                foreach ($selectedCriteriaNames as $persianCriteria) {
-                    $englishProblem = array_search($persianCriteria, $mapping);
-                    if ($englishProblem) {
-                        $englishProblems[] = $englishProblem;
-                    }
-                }
-
-                if (!empty($englishProblems)) {
-                    foreach ($englishProblems as $problem) {
-                        $memberQuery->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$problem]);
-                    }
-                }
-            });
-        });
-
-        // مرتب‌سازی بر اساس امتیاز محاسبه شده (بعداً در Collection)
-        // برای نمایش قدیمی‌ترین‌ها اول
-        $query->orderBy('families.created_at', 'asc');
-    }
-
-    // سایر فیلترها...
-    // اینجا باید فیلترهای دیگر اضافه شوند
-
-    // مرتب‌سازی نهایی
-    if (empty($this->specific_criteria)) {
-        // اعتبارسنجی sortDirection قبل از استفاده
-        $validDirection = in_array($this->sortDirection, ['asc', 'desc']) ? $this->sortDirection : 'asc';
-
-        if ($this->sortField) {
-            $query->orderBy("families.{$this->sortField}", $validDirection);
-        } else {
-            // پیش‌فرض: قدیمی‌ترین‌ها اول
-            $query->orderBy('families.created_at', 'asc');
         }
+
+        Log::info('🔍 STEP 4: Starting QueryBuilder creation', [
+            'has_criteria' => !empty($this->specific_criteria),
+            'query_params' => $queryParams,
+            'user_id' => Auth::id()
+        ]);
+
+        // استفاده از QueryBuilder با فیلترهای مجاز
+        $queryBuilder = QueryBuilder::for($baseQuery)
+            ->allowedFilters([
+                AllowedFilter::partial('search'),
+                AllowedFilter::exact('province_id'),
+                AllowedFilter::exact('city_id'),
+                AllowedFilter::exact('district_id'),
+                AllowedFilter::exact('region_id'),
+                AllowedFilter::exact('charity_id'),
+                AllowedFilter::exact('organization_id'),
+                AllowedFilter::exact('status'),
+                
+                AllowedFilter::callback('members_count', function ($query, $value) {
+                    if (is_numeric($value)) {
+                        return $query->having('members_count', '=', (int)$value);
+                    }
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('specific_criteria', function ($query, $value, $property) {
+                    Log::info('🎯 CRITERIA FILTER ACTIVATED: Processing specific_criteria', [
+                        'value' => $value,
+                        'property' => $property,
+                        'value_type' => gettype($value),
+                        'user_id' => Auth::id()
+                    ]);
+                    
+                    if (!empty($value)) {
+                        // تبدیل رشته معیارها به آرایه
+                        $criteriaArray = is_string($value) ? explode(',', $value) : (array)$value;
+                        $criteriaArray = array_filter(array_map('trim', $criteriaArray)); // حذف مقادیر خالی و spaces
+                        
+                        Log::info('🔍 CRITERIA FILTER: Parsed criteria array', [
+                            'original_value' => $value,
+                            'parsed_array' => $criteriaArray,
+                            'count' => count($criteriaArray),
+                            'user_id' => Auth::id()
+                        ]);
+                        
+                        if (!empty($criteriaArray)) {
+                            $query->where(function($mainQuery) use ($criteriaArray) {
+                                foreach ($criteriaArray as $criteria) {
+                                    if (!empty($criteria)) {
+                                        Log::info('🎯 Adding criteria condition', [
+                                            'criteria' => $criteria,
+                                            'user_id' => Auth::id()
+                                        ]);
+                                        
+                                        $mainQuery->orWhere(function($subQuery) use ($criteria) {
+                                            // شرط 1: معیار در acceptance_criteria خانواده باشد
+                                            $subQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria])
+                                                     // شرط 2: یا حداقل یک عضو این مشکل را داشته باشد  
+                                                     ->orWhereHas('members', function($memberQuery) use ($criteria) {
+                                                         $memberQuery->whereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$criteria]);
+                                                     });
+                                        });
+                                    }
+                                }
+                            });
+                            
+                            Log::info('✅ CRITERIA FILTER: Applied successfully', [
+                                'applied_criteria' => $criteriaArray,
+                                'user_id' => Auth::id()
+                            ]);
+                        }
+                    }
+                    
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('membership_date_from', function ($query, $value) {
+                    if (!empty($value)) {
+                        return $query->whereDate('created_at', '>=', $value);
+                    }
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('membership_date_to', function ($query, $value) {
+                    if (!empty($value)) {
+                        return $query->whereDate('created_at', '<=', $value);
+                    }
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('weighted_score_min', function ($query, $value) {
+                    if (is_numeric($value)) {
+                        return $query->where('weighted_score', '>=', (float)$value);
+                    }
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('weighted_score_max', function ($query, $value) {
+                    if (is_numeric($value)) {
+                        return $query->where('weighted_score', '<=', (float)$value);
+                    }
+                    return $query;
+                }),
+                
+                AllowedFilter::callback('insurance_end_date', function ($query, $value) {
+                    if (!empty($value)) {
+                        return $query->whereHas('finalInsurances', function($q) use ($value) {
+                            $q->whereDate('end_date', '=', $value);
+                        });
+                    }
+                    return $query;
+                })
+            ])
+            ->allowedSorts([
+                AllowedSort::field('created_at'),
+                AllowedSort::field('updated_at'),
+                AllowedSort::field('family_code'),
+                AllowedSort::field('weighted_score'),
+                'members_count'
+            ]);
+
+        // اعمال فیلترهای مودال پیشرفته
+        $this->applyAdvancedModalFilters($queryBuilder);
+
+        Log::info('🎯 STEP 5: About to apply custom sort', [
+            'sortField' => $this->sortField,
+            'sortDirection' => $this->sortDirection,
+            'user_id' => Auth::id(),
+            'timestamp' => now()
+        ]);
+
+        // اعمال سورت سفارشی
+        $this->applySortToQueryBuilder($queryBuilder);
+
+        // اعمال مرتب‌سازی پیش‌فرض اگر سورت سفارشی اعمال نشده
+        if (empty($this->sortField) && !request()->has('sort')) {
+            Log::info('🔄 STEP 5: Applying default sort (no custom sort)', [
+                'user_id' => Auth::id()
+            ]);
+            $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'asc');
+        }
+
+        Log::info('✅ STEP 5 COMPLETED: Query building finished', [
+            'sortField' => $this->sortField,
+            'sortDirection' => $this->sortDirection,
+            'final_query_params' => request()->get('filter', []),
+            'user_id' => Auth::id()
+        ]);
+
+        Log::info('✅ Families query built successfully', [
+            'tab' => $this->activeTab,
+            'filters_applied' => $this->hasActiveFilters(),
+            'active_filters_count' => $this->getActiveFiltersCount(),
+            'user_id' => Auth::id()
+        ]);
+
+        return $queryBuilder;
+
+    } catch (\Exception $e) {
+        Log::error('❌ Critical error in buildFamiliesQuery', [
+            'tab' => $this->activeTab,
+            'error_message' => $e->getMessage(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+            'user_id' => Auth::id()
+        ]);
+
+        // بازگشت به query ساده در صورت خطای غیرمنتظره
+        return QueryBuilder::for(
+            Family::query()
+                ->select(['families.*'])
+                ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'])
+                ->withCount('members')
+                ->orderBy('families.created_at', 'asc')
+        );
     }
-
-    return $query;
 }
-
 
 /**
  * محاسبه امتیاز کامل خانواده با در نظر گیری تعداد اعضای متأثر
@@ -3507,6 +3627,7 @@ private function calculateIntensityMultiplier(int $affectedCount, int $totalMemb
         return 0.8;  // کمتر از 25% اعضا متأثر → ضریب 0.8
     }
 }
+
 /**
  * محاسبه امتیاز کل یک خانواده بر اساس معیارها و مشکلات اعضا
  */
@@ -3617,6 +3738,209 @@ private function addCriteriaToActiveFilters(array $criteriaInfo, int $totalWeigh
             'total_weight' => $totalWeight
         ];
     }
+}
+
+/**
+ * اعمال فیلترهای مودال پیشرفته بر روی QueryBuilder
+ * 
+ * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
+ * @return \Spatie\QueryBuilder\QueryBuilder
+ */
+protected function applyAdvancedModalFilters($queryBuilder)
+{
+    try {
+        $filtersToApply = $this->tempFilters ?? $this->filters ?? [];
+
+        if (empty($filtersToApply)) {
+            Log::info('🔧 No advanced modal filters to apply', [
+                'tempFilters_count' => count($this->tempFilters ?? []),
+                'filters_count' => count($this->filters ?? []),
+                'user_id' => Auth::id()
+            ]);
+            return $queryBuilder;
+        }
+
+        Log::info('🚀 Applying advanced modal filters', [
+            'filters_count' => count($filtersToApply),
+            'user_id' => Auth::id()
+        ]);
+
+        // تفکیک فیلترها به گروه‌های AND و OR
+        $andFilters = collect($filtersToApply)->filter(function($filter) {
+            return ($filter['logical_operator'] ?? 'and') === 'and';
+        });
+        
+        $orFilters = collect($filtersToApply)->filter(function($filter) {
+            return ($filter['logical_operator'] ?? 'and') === 'or';
+        });
+
+        $eloquentQuery = $queryBuilder->getEloquentBuilder();
+
+        // اعمال فیلترهای AND
+        if ($andFilters->isNotEmpty()) {
+            foreach ($andFilters as $filter) {
+                $this->applySingleAdvancedFilter($eloquentQuery, $filter, 'and');
+            }
+        }
+
+        // اعمال فیلترهای OR در یک گروه
+        if ($orFilters->isNotEmpty()) {
+            $eloquentQuery->where(function($query) use ($orFilters) {
+                foreach ($orFilters as $filter) {
+                    $this->applySingleAdvancedFilter($query, $filter, 'or');
+                }
+            });
+        }
+
+        Log::info('✅ Advanced modal filters applied successfully', [
+            'and_filters_count' => $andFilters->count(),
+            'or_filters_count' => $orFilters->count(),
+            'user_id' => Auth::id()
+        ]);
+
+        return $queryBuilder;
+
+    } catch (\Exception $e) {
+        Log::error('❌ Error applying advanced modal filters', [
+            'error_message' => $e->getMessage(),
+            'error_file' => $e->getFile(),
+            'error_line' => $e->getLine(),
+            'filters_data' => $filtersToApply ?? [],
+            'user_id' => Auth::id()
+        ]);
+
+        return $queryBuilder;
+    }
+}
+
+/**
+ * اعمال یک فیلتر پیشرفته بر روی کوئری
+ * 
+ * @param \Illuminate\Database\Eloquent\Builder $query
+ * @param array $filter
+ * @param string $method
+ * @return \Illuminate\Database\Eloquent\Builder
+ */
+protected function applySingleAdvancedFilter($query, $filter, $method = 'and')
+{
+    try {
+        $filterType = $filter['type'] ?? null;
+        $filterValue = $filter['value'] ?? null;
+        $operator = $filter['operator'] ?? 'equals';
+
+        if (empty($filterType) || $filterValue === null || $filterValue === '') {
+            return $query;
+        }
+
+        Log::debug('🔍 Applying single advanced filter', [
+            'type' => $filterType,
+            'value' => $filterValue,
+            'operator' => $operator,
+            'method' => $method
+        ]);
+
+        $queryMethod = $method === 'or' ? 'orWhere' : 'where';
+        $queryMethodHas = $method === 'or' ? 'orWhereHas' : 'whereHas';
+
+        switch ($filterType) {
+            case 'province':
+                return $query->{$queryMethod}('families.province_id', $this->getOperatorQuery($operator), $filterValue);
+
+            case 'city':
+                return $query->{$queryMethod}('families.city_id', $this->getOperatorQuery($operator), $filterValue);
+
+            case 'charity':
+                return $query->{$queryMethod}('families.charity_id', $this->getOperatorQuery($operator), $filterValue);
+
+            case 'members_count':
+                if (is_numeric($filterValue)) {
+                    $havingMethod = $method === 'or' ? 'orHaving' : 'having';
+                    return $query->{$havingMethod}('members_count', $this->getOperatorQuery($operator), (int)$filterValue);
+                }
+                break;
+
+            case 'special_disease':
+                return $query->{$queryMethodHas}('members', function($memberQuery) use ($filterValue) {
+                    $memberQuery->where(function($q) use ($filterValue) {
+                        $q->whereJsonContains('problem_type', $filterValue)
+                          ->orWhereJsonContains('problem_type', \App\Helpers\ProblemTypeHelper::englishToPersian($filterValue))
+                          ->orWhereJsonContains('problem_type', \App\Helpers\ProblemTypeHelper::persianToEnglish($filterValue));
+                    });
+                });
+
+            case 'acceptance_criteria':
+                return $query->{$queryMethod}(function($q) use ($filterValue) {
+                    $q->whereJsonContains('acceptance_criteria', $filterValue);
+                });
+
+            case 'membership_date':
+                if ($operator === 'range' && is_array($filterValue) && count($filterValue) === 2) {
+                    return $query->{$queryMethod}(function($q) use ($filterValue) {
+                        $q->whereDate('families.created_at', '>=', $filterValue[0])
+                          ->whereDate('families.created_at', '<=', $filterValue[1]);
+                    });
+                } else {
+                    return $query->{$queryMethod}('families.created_at', $this->getOperatorQuery($operator), $filterValue);
+                }
+                break;
+
+            case 'weighted_score':
+                if (is_numeric($filterValue)) {
+                    return $query->{$queryMethod}('families.weighted_score', $this->getOperatorQuery($operator), (float)$filterValue);
+                }
+                break;
+
+            case 'insurance_end_date':
+                return $query->{$queryMethodHas}('finalInsurances', function($q) use ($filterValue, $operator) {
+                    $q->whereDate('end_date', $this->getOperatorQuery($operator), $filterValue);
+                });
+
+            case 'created_at':
+                return $query->{$queryMethod}('families.created_at', $this->getOperatorQuery($operator), $filterValue);
+
+            default:
+                Log::warning('⚠️ Unknown filter type', [
+                    'filter_type' => $filterType,
+                    'available_types' => ['province', 'city', 'charity', 'members_count', 'special_disease', 'acceptance_criteria', 'membership_date', 'weighted_score', 'insurance_end_date', 'created_at']
+                ]);
+                break;
+        }
+
+        return $query;
+
+    } catch (\Exception $e) {
+        Log::error('❌ Error applying single advanced filter', [
+            'filter_type' => $filter['type'] ?? 'unknown',
+            'method' => $method,
+            'error_message' => $e->getMessage(),
+            'user_id' => Auth::id()
+        ]);
+
+        return $query;
+    }
+}
+
+/**
+ * تبدیل عملگر فیلتر به عملگر SQL
+ * 
+ * @param string $operator
+ * @return string
+ */
+protected function getOperatorQuery($operator)
+{
+    return match($operator) {
+        'equals' => '=',
+        'not_equals' => '!=',
+        'greater_than' => '>',
+        'greater_than_or_equal' => '>=',
+        'less_than' => '<',
+        'less_than_or_equal' => '<=',
+        'like' => 'LIKE',
+        'not_like' => 'NOT LIKE',
+        'in' => 'IN',
+        'not_in' => 'NOT IN',
+        default => '='
+    };
 }
 
 /**
@@ -3790,7 +4114,7 @@ public function clearCriteriaFilter()
                 // UI Updates after successful commit
                 if (method_exists($this, 'clearFamiliesCache')) {
                     $this->clearFamiliesCache();
-                    
+
                     // اضافه کردن این خط برای به‌روزرسانی فوری UI
                     $this->dispatch('refreshFamiliesList');
                 }
@@ -3993,34 +4317,6 @@ public function clearCriteriaFilter()
         return $count;
     }
 
-    /**
-     * تست فیلترهای انتخاب شده بدون اعمال آنها
-     */
-    public function testFilters()
-    {
-        try {
-            if (empty($this->tempFilters)) {
-                $this->dispatch('toast', [
-                    'message' => 'هیچ فیلتری برای تست وجود ندارد',
-                    'type' => 'error'
-                ]);
-                return;
-            }
-
-            $count = $this->familyRepository->testFilters($this->tempFilters);
-
-            $this->dispatch('toast', [
-                'message' => "نتیجه تست: {$count} خانواده با فیلترهای انتخابی یافت شد.",
-                'type' => 'info'
-            ]);
-
-        } catch (\Exception $e) {
-            $this->dispatch('toast', [
-                'message' => 'خطا در تست فیلترها: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-    }
 
     public function getProvincesProperty()
     {
@@ -4107,9 +4403,10 @@ public function clearCriteriaFilter()
             'addiction' => 'اعتیاد',
             'unemployment' => 'بیکاری',
             'disability' => 'معلولیت',
-            'chronic_illness' => 'بیماری مزمن',
-            'single_parent' => 'سرپرست خانوار زن',
-            'elderly' => 'سالمندی',
+            'special_disease' => 'بیماری خاص',
+            'work_disability' => 'از کار افتادگی',
+            'single_parent' => 'سرپرست خانوار',
+            'elderly' => 'کهولت سن',
             'other' => 'سایر'
         ];
     }
@@ -4208,6 +4505,7 @@ public function clearCriteriaFilter()
         session()->flash('message', 'فایل نمونه شامل ' . count($familyData) . ' خانواده دانلود شد. لطفاً اطلاعات بیمه را تکمیل کرده و در این صفحه آپلود کنید.');
 
         return $response;
+
         } catch (\Exception $e) {
             Log::error('خطا در دانلود قالب بیمه: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -4217,5 +4515,1025 @@ public function clearCriteriaFilter()
             session()->flash('error', 'خطا در دانلود قالب: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * اعمال فیلتر wizard_status بر اساس تب انتخاب شده
+     */
+    protected function applyTabStatusFilter($query)
+    {
+        try {
+            switch ($this->tab) {
+                case 'pending':
+                    $query->where('wizard_status', InsuranceWizardStep::PENDING->value);
+                    break;
+
+                case 'reviewing':
+                    $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value);
+                    break;
+
+                case 'approved':
+                    $query->where(function($q) {
+                        $q->where('wizard_status', 'approved')
+                          ->orWhere('wizard_status', 'excel_upload');
+                    })->where('status', '!=', 'deleted');
+                    break;
+
+                case 'rejected':
+                    $query->where('wizard_status', InsuranceWizardStep::REJECTED->value);
+                    break;
+
+                case 'excel':
+                    $query->where('wizard_status', InsuranceWizardStep::EXCEL_UPLOAD->value);
+                    break;
+
+                case 'renewal':
+                    $query->whereHas('finalInsurances', function ($q) {
+                        $q->where('end_date', '<', now());
+                    })->whereIn('wizard_status', [
+                        InsuranceWizardStep::INSURED->value,
+                        InsuranceWizardStep::RENEWAL->value
+                    ]);
+                    break;
+
+                case 'deleted':
+                    $query->onlyTrashed();
+                    break;
+            }
+
+            Log::debug('📋 Tab status filter applied', [
+                'tab' => $this->tab,
+                'wizard_status_filter' => $this->tab
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying tab status filter', [
+                'tab' => $this->tab,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * اعمال فیلتر معیارهای خاص بر اساس JSON field
+     */
+    protected function applyCriteriaFilter($query)
+    {
+        try {
+            $selectedCriteriaNames = explode(',', $this->specific_criteria);
+
+            $query->where(function($mainQuery) use ($selectedCriteriaNames) {
+                // شرط 1: معیار در acceptance_criteria خانواده باشه
+                foreach ($selectedCriteriaNames as $criteria) {
+                    $mainQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria]);
+                }
+
+                // شرط 2: اعضای خانواده این مشکلات رو داشته باشن
+                $mainQuery->orWhereHas('members', function($memberQuery) use ($selectedCriteriaNames) {
+                    $mapping = $this->getCriteriaMapping();
+                    $englishProblems = [];
+
+                    foreach ($selectedCriteriaNames as $persianCriteria) {
+                        $englishProblem = array_search($persianCriteria, $mapping);
+                        if ($englishProblem) {
+                            $englishProblems[] = $englishProblem;
+                        }
+                    }
+
+                    if (!empty($englishProblems)) {
+                        foreach ($englishProblems as $problem) {
+                            // تبدیل مشکل به فارسی و انگلیسی برای جستجو
+                        $persianProblem = ProblemTypeHelper::englishToPersian($problem);
+                        $englishProblem = ProblemTypeHelper::persianToEnglish($problem);
+
+                        $memberQuery->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$persianProblem])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$problem])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$englishProblem])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['بیماری های خاص'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['بیماری خاص'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['special_disease'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['اعتیاد'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['addiction'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['از کار افتادگی'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['work_disability'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['بیکاری'])
+                                   ->orWhereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", ['unemployment']);
+                        }
+                    }
+                });
+            });
+
+            // مرتب‌سازی بر اساس امتیاز محاسبه شده (بعداً در Collection)
+            $query->orderBy('families.created_at', 'asc');
+
+            Log::debug('🎯 Criteria filter applied', [
+                'criteria_count' => count($selectedCriteriaNames),
+                'criteria' => $selectedCriteriaNames
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying criteria filter', [
+                'specific_criteria' => $this->specific_criteria,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * اعمال فیلترهای اضافی از request
+     */
+    protected function applyRequestFilters($queryBuilder)
+    {
+        try {
+            // اعمال فیلتر و سورت بر اساس پارامترهای فعلی کامپوننت
+            if (!empty($this->specific_criteria)) {
+                // در صورت وجود معیارهای خاص، سورت پیش‌فرض قدیمی‌ترین اول
+                return $queryBuilder;
+            }
+
+            // اعمال سورت بر اساس تنظیمات کامپوننت
+            $validDirection = in_array($this->sortDirection, ['asc', 'desc']) ? $this->sortDirection : 'asc';
+
+            if ($this->sortField) {
+                $sortField = match($this->sortField) {
+                    'created_at' => 'families.created_at',
+                    'updated_at' => 'families.updated_at',
+                    'family_code' => 'families.family_code',
+                    'status' => 'families.status',
+                    'wizard_status' => 'families.wizard_status',
+                    'members_count' => 'members_count',
+                    default => 'families.created_at'
+                };
+
+                // بازنویسی سورت پیش‌فرض
+                $queryBuilder->getEloquentBuilder()->reorder($sortField, $validDirection);
+            }
+
+            Log::debug('🔧 Request filters applied', [
+                'sort_field' => $this->sortField,
+                'sort_direction' => $this->sortDirection,
+                'valid_direction' => $validDirection
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying request filters', [
+                'sort_field' => $this->sortField,
+                'sort_direction' => $this->sortDirection,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * اعمال فیلترهای مودال به QueryBuilder
+     */
+    public function applyFilters()
+    {
+        try {
+            Log::info('🔧 Applying modal filters', [
+                'filters_count' => count($this->filters ?? []),
+                'user_id' => Auth::id()
+            ]);
+
+            // بازنشانی query parameters فعلی
+            $this->resetPage();
+
+            // آپدیت لیست خانواده‌ها با فیلترهای جدید
+            // این کار باعث می‌شود buildFamiliesQuery دوباره اجرا شود
+            $this->dispatch('filters-updated');
+
+            session()->flash('message', 'فیلترها با موفقیت اعمال شدند.');
+
+            Log::info('✅ Modal filters applied successfully', [
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying modal filters', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            session()->flash('error', 'خطا در اعمال فیلترها: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * اعمال سورت بر اساس متغیرهای کلاس
+     */
+    protected function applySortToQueryBuilder($queryBuilder)
+    {
+        try {
+            Log::info('🎯 STEP 4: Starting applySortToQueryBuilder', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+                'user_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+
+            if (empty($this->sortField)) {
+                Log::info('🔄 STEP 4: No sort field specified, using default', [
+                    'user_id' => Auth::id()
+                ]);
+                return $queryBuilder;
+            }
+
+            // تعریف فیلدهای قابل سورت و نگاشت آنها
+            $sortMappings = [
+                'created_at' => 'families.created_at',
+                'updated_at' => 'families.updated_at',
+                'family_code' => 'families.family_code',
+                'status' => 'families.status',
+                'wizard_status' => 'families.wizard_status',
+                'members_count' => 'members_count',
+                'final_insurances_count' => 'final_insurances_count',
+                'calculated_rank' => 'families.calculated_rank',
+                'deprivation_rank' => 'families.deprivation_rank',
+                'weighted_score' => 'families.weighted_score'
+            ];
+
+            $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+
+            Log::info('⚙️ STEP 4.1: Sort parameters prepared', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $sortDirection,
+                'sortMappings' => array_keys($sortMappings),
+                'user_id' => Auth::id()
+            ]);
+
+            // اعمال سورت بر اساس نوع فیلد
+            switch ($this->sortField) {
+                case 'head_name':
+                    Log::info('📋 STEP 4.2: Applying head_name sort');
+                    // سورت خاص برای نام سرپرست
+                    $queryBuilder->getEloquentBuilder()
+                        ->leftJoin('people as head_person', 'families.head_id', '=', 'head_person.id')
+                        ->orderBy('head_person.first_name', $sortDirection)
+                        ->orderBy('head_person.last_name', $sortDirection);
+                    break;
+
+                case 'final_insurances_count':
+                    Log::info('📋 STEP 4.2: Applying final_insurances_count sort');
+                    // سورت بر اساس تعداد بیمه‌های نهایی
+                    $queryBuilder->getEloquentBuilder()
+                        ->withCount('finalInsurances')
+                        ->orderBy('final_insurances_count', $sortDirection);
+                    break;
+
+                case 'calculated_rank':
+                    Log::info('📋 STEP 4.2: Applying calculated_rank sort');
+                    // سورت بر اساس رتبه محاسبه شده
+                    if ($sortDirection === 'desc') {
+                        $queryBuilder->getEloquentBuilder()->orderByRaw('families.calculated_rank IS NULL, families.calculated_rank DESC');
+                    } else {
+                        $queryBuilder->getEloquentBuilder()->orderByRaw('families.calculated_rank IS NULL, families.calculated_rank ASC');
+                    }
+                    break;
+
+                case 'weighted_rank':
+                    Log::info('📋 STEP 4.2: Applying weighted_rank sort');
+                    // سورت بر اساس امتیاز وزنی معیارهای انتخاب شده
+                    $this->applyWeightedRankSort($queryBuilder, $sortDirection);
+                    break;
+
+                default:
+                    Log::info('📋 STEP 4.2: Applying default sort');
+                    // سورت معمولی برای سایر فیلدها
+                    if (isset($sortMappings[$this->sortField])) {
+                        $fieldName = $sortMappings[$this->sortField];
+                        $queryBuilder->getEloquentBuilder()->orderBy($fieldName, $sortDirection);
+                    } else {
+                        Log::warning('⚠️ STEP 4 WARNING: Unknown sort field', [
+                            'sort_field' => $this->sortField,
+                            'user_id' => Auth::id()
+                        ]);
+                        // بازگشت به سورت پیش‌فرض
+                        $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+                    }
+                    break;
+            }
+
+            Log::info('✅ STEP 4 COMPLETED: Sort applied successfully', [
+                'sort_field' => $this->sortField,
+                'sort_direction' => $sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ STEP 4 ERROR: Error applying sort', [
+                'error' => $e->getMessage(),
+                'sort_field' => $this->sortField,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * اعمال سورت بر اساس امتیاز وزنی معیارهای انتخاب شده
+     */
+    protected function applyWeightedRankSort($queryBuilder, $sortDirection)
+    {
+        try {
+            Log::info('🎯 STEP 5: Starting applyWeightedRankSort', [
+                'sortDirection' => $sortDirection,
+                'selectedCriteria' => $this->selectedCriteria ?? [],
+                'user_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+
+            // دریافت معیارهای انتخاب شده
+            $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
+            
+            Log::info('📊 STEP 5.1: Selected criteria analysis', [
+                'selectedCriteriaIds' => $selectedCriteriaIds,
+                'selectedCriteriaIds_count' => count($selectedCriteriaIds),
+                'user_id' => Auth::id()
+            ]);
+            
+            if (empty($selectedCriteriaIds)) {
+                Log::warning('❌ STEP 5 FAILED: No criteria selected for weighted sort', [
+                    'user_id' => Auth::id()
+                ]);
+                // اگر معیاری انتخاب نشده، سورت بر اساس تاریخ ایجاد
+                $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+                return;
+            }
+
+            // ایجاد subquery برای محاسبه امتیاز وزنی با ضرب وزن در تعداد موارد
+            $criteriaIds = implode(',', $selectedCriteriaIds);
+            $weightedScoreSubquery = "
+                (
+                    SELECT COALESCE(SUM(
+                        rs.weight * (
+                            -- شمارش موارد معیار در acceptance_criteria (0 یا 1)
+                            CASE 
+                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON)) 
+                                THEN 1 
+                                ELSE 0 
+                            END +
+                            -- شمارش تعداد اعضای دارای این معیار در problem_type
+                            (
+                                SELECT COUNT(*)
+                                FROM members fm
+                                WHERE fm.family_id = families.id
+                                AND JSON_CONTAINS(fm.problem_type, CAST(rs.id AS JSON))
+                                AND fm.deleted_at IS NULL
+                            )
+                        )
+                    ), 0)
+                    FROM rank_settings rs
+                    WHERE rs.id IN ({$criteriaIds})
+                    AND rs.is_active = 1
+                )
+            ";
+
+            Log::info('⚙️ STEP 5.2: Weighted score subquery created', [
+                'criteriaIds' => $criteriaIds,
+                'weightedScoreSubquery_length' => strlen($weightedScoreSubquery),
+                'user_id' => Auth::id()
+            ]);
+
+            // اضافه کردن امتیاز محاسبه شده به select
+            $queryBuilder->getEloquentBuilder()
+                ->addSelect(DB::raw("({$weightedScoreSubquery}) as weighted_score"))
+                ->orderBy('weighted_score', $sortDirection)
+                ->orderBy('families.created_at', 'desc'); // سورت ثانویه
+
+            Log::info('✅ STEP 5 COMPLETED: Weighted rank sort applied successfully', [
+                'criteria_ids' => $selectedCriteriaIds,
+                'sort_direction' => $sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ STEP 5 ERROR: Error applying weighted rank sort', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // در صورت خطا، سورت بر اساس تاریخ ایجاد
+            $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+        }
+    }
+
+    /**
+     * تست سورت وزنی - برای اشکال‌زدایی
+     */
+    public function testWeightedSort()
+    {
+        try {
+            Log::info('🧪 Testing weighted sort', [
+                'selectedCriteria' => $this->selectedCriteria ?? [],
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+            // تست محاسبه امتیاز برای چند خانواده
+            $testFamilies = Family::with(['members'])->limit(5)->get();
+            
+            foreach ($testFamilies as $family) {
+                $score = $this->calculateFamilyScore($family);
+                Log::info('📊 Family score test', [
+                    'family_id' => $family->id,
+                    'family_code' => $family->family_code,
+                    'acceptance_criteria' => $family->acceptance_criteria,
+                    'members_count' => $family->members->count(),
+                    'calculated_score' => $score
+                ]);
+            }
+
+            $this->dispatch('toast', [
+                'message' => 'تست سورت وزنی انجام شد - لاگ‌ها را بررسی کنید',
+                'type' => 'info'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error in weighted sort test', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('toast', [
+                'message' => 'خطا در تست سورت: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * تست فیلتر استان و کش - برای اشکال‌زدایی
+     */
+    public function testProvinceFilter($provinceId = null)
+    {
+        try {
+            Log::info('🧪 Testing province filter and cache', [
+                'province_id' => $provinceId,
+                'current_filters' => $this->filters ?? [],
+                'user_id' => Auth::id()
+            ]);
+
+            // تست کلیدهای کش فعلی
+            $cacheKey = $this->getCacheKey();
+            $cacheExists = Cache::has($cacheKey);
+
+            Log::info('📊 Cache status before filter test', [
+                'cache_key' => $cacheKey,
+                'cache_exists' => $cacheExists
+            ]);
+
+            // اگر province_id داده شده، تست فیلتر استان
+            if ($provinceId) {
+                // پاک کردن کش قدیمی
+                $this->clearFamiliesCache();
+
+                // تست فیلتر استان
+                $testQuery = Family::query()
+                    ->select(['families.*'])
+                    ->with(['province', 'head'])
+                    ->where('families.province_id', $provinceId)
+                    ->limit(5)
+                    ->get();
+
+                Log::info('✅ Province filter test result', [
+                    'province_id' => $provinceId,
+                    'families_found' => $testQuery->count(),
+                    'sample_family_codes' => $testQuery->pluck('family_code')->toArray()
+                ]);
+
+                $this->dispatch('toast', [
+                    'message' => "تست فیلتر استان: {$testQuery->count()} خانواده یافت شد",
+                    'type' => 'info'
+                ]);
+            }
+
+            // تست کش جدید
+            $newCacheKey = $this->getCacheKey();
+            Log::info('📊 Cache status after test', [
+                'old_cache_key' => $cacheKey,
+                'new_cache_key' => $newCacheKey,
+                'keys_different' => $cacheKey !== $newCacheKey
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error in province filter test', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('toast', [
+                'message' => 'خطا در تست فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * تست فیلترها بدون اعمال
+     */
+    public function testFilters()
+    {
+        try {
+            Log::info('🧪 Testing filters', [
+                'tempFilters_count' => count($this->tempFilters ?? []),
+                'filters_count' => count($this->filters ?? []),
+                'tempFilters_data' => $this->tempFilters,
+                'user_id' => Auth::id()
+            ]);
+
+            $validFilters = [];
+            $invalidFilters = [];
+
+            foreach ($this->tempFilters ?? [] as $index => $filter) {
+                if (empty($filter['type'])) {
+                    $invalidFilters[] = $index + 1;
+                    continue;
+                }
+
+                // برای فیلترهای تاریخ عضویت، بررسی start_date و end_date
+                if ($filter['type'] === 'membership_date') {
+                    if (empty($filter['start_date']) && empty($filter['end_date'])) {
+                        $invalidFilters[] = $index + 1;
+                        continue;
+                    }
+                } else {
+                    // برای سایر فیلترها، بررسی value
+                    if (empty($filter['value'])) {
+                        $invalidFilters[] = $index + 1;
+                        continue;
+                    }
+                }
+
+                // بررسی اعتبار نوع فیلتر
+                $allowedTypes = ['status', 'province', 'city', 'deprivation_rank', 'charity', 'members_count', 'created_at', 'weighted_score', 'special_disease', 'membership_date'];
+                if (!in_array($filter['type'], $allowedTypes)) {
+                    $invalidFilters[] = $index + 1;
+                    continue;
+                }
+
+                $validFilters[] = $index + 1;
+            }
+
+            $message = sprintf(
+                'نتیجه تست: %d فیلتر معتبر، %d فیلتر نامعتبر',
+                count($validFilters),
+                count($invalidFilters)
+            );
+
+            if (!empty($invalidFilters)) {
+                $message .= ' (فیلترهای نامعتبر: ' . implode(', ', $invalidFilters) . ')';
+            }
+
+            session()->flash('message', $message);
+
+            Log::info('✅ Filter test completed', [
+                'valid_filters' => count($validFilters),
+                'invalid_filters' => count($invalidFilters),
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error testing filters', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            session()->flash('error', 'خطا در تست فیلترها: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * بازگشت به تنظیمات پیش‌فرض
+     */
+    public function resetToDefault()
+    {
+        try {
+            Log::info('🔄 Resetting filters to default', [
+                'user_id' => Auth::id()
+            ]);
+
+            // بازنشانی فیلترها
+            $this->activeFilters = [];
+            $this->tempFilters = [];
+            $this->specific_criteria = '';
+            $this->sortField = 'created_at';
+            $this->sortDirection = 'desc';
+
+            // بازنشانی صفحه‌بندی
+            $this->resetPage();
+
+            session()->flash('message', 'فیلترها به حالت پیش‌فرض بازگشتند.');
+
+            Log::info('✅ Filters reset to default successfully', [
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error resetting filters', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            session()->flash('error', 'خطا در بازنشانی فیلترها: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * تبدیل فیلترهای مودال به فرمت QueryBuilder
+     */
+    protected function convertModalFiltersToQueryBuilder($queryBuilder)
+    {
+        try {
+            // استفاده از tempFilters به جای filters (مشکل اصلی فیلتر استان)
+            $filtersToApply = $this->tempFilters ?? $this->filters ?? [];
+
+            if (empty($filtersToApply)) {
+                Log::info('🔧 No modal filters to apply', [
+                    'tempFilters_count' => count($this->tempFilters ?? []),
+                    'filters_count' => count($this->filters ?? []),
+                    'user_id' => Auth::id()
+                ]);
+                return $queryBuilder;
+            }
+
+                        Log::info('🔧 Applying modal filters with AND/OR operators', [
+                'filters_count' => count($filtersToApply),
+                'filters_data' => $filtersToApply,
+                'user_id' => Auth::id()
+            ]);
+
+            // گروه‌بندی فیلترها بر اساس عملگر منطقی (AND/OR)
+            $andFilters = [];
+            $orFilters = [];
+
+            foreach ($filtersToApply as $filter) {
+                if (empty($filter['type'])) {
+                    continue;
+                }
+
+                // برای فیلترهای تاریخ عضویت، بررسی start_date و end_date
+                if ($filter['type'] === 'membership_date') {
+                    if (empty($filter['start_date']) && empty($filter['end_date'])) {
+                        continue;
+                    }
+                } else {
+                    // برای سایر فیلترها، بررسی value
+                    if (empty($filter['value'])) {
+                        continue;
+                    }
+                }
+
+                $logicalOperator = $filter['logical_operator'] ?? 'and';
+
+                if ($logicalOperator === 'or') {
+                    $orFilters[] = $filter;
+                } else {
+                    $andFilters[] = $filter;
+                }
+            }
+
+            // اعمال فیلترهای AND
+            if (!empty($andFilters)) {
+                foreach ($andFilters as $filter) {
+                    $queryBuilder = $this->applySingleFilter($queryBuilder, $filter, 'and');
+                }
+            }
+
+            // اعمال فیلترهای OR
+            if (!empty($orFilters)) {
+                $queryBuilder = $queryBuilder->where(function($query) use ($orFilters) {
+                    foreach ($orFilters as $index => $filter) {
+                        if ($index === 0) {
+                            // اولین فیلتر OR با where معمولی
+                            $query = $this->applySingleFilter($query, $filter, 'where');
+                        } else {
+                            // بقیه فیلترها با orWhere
+                            $query = $this->applySingleFilter($query, $filter, 'or');
+                        }
+                    }
+                    return $query;
+                });
+            }
+
+            Log::info('✅ Modal filters applied successfully', [
+                'and_filters_count' => count($andFilters),
+                'or_filters_count' => count($orFilters),
+                'user_id' => Auth::id()
+            ]);
+
+            return $queryBuilder;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying modal filters', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            return $queryBuilder;
+        }
+    }
+
+    /**
+     * اعمال یک فیلتر منفرد
+     */
+    protected function applySingleFilter($queryBuilder, $filter, $method = 'and')
+    {
+        try {
+            $filterType = $filter['type'];
+            $filterValue = $filter['value'];
+            $operator = $filter['operator'] ?? 'equals';
+
+            Log::info('🔍 Processing filter', [
+                'type' => $filterType,
+                'value' => $filterValue,
+                'operator' => $operator,
+                'method' => $method,
+                'full_filter' => $filter
+            ]);
+
+            // تعیین نوع متد بر اساس عملگر منطقی
+            $whereMethod = $method === 'or' ? 'orWhere' : 'where';
+            $whereHasMethod = $method === 'or' ? 'orWhereHas' : 'whereHas';
+            $whereDoesntHaveMethod = $method === 'or' ? 'orWhereDoesntHave' : 'whereDoesntHave';
+
+            switch ($filterType) {
+                case 'status':
+                    if ($operator === 'equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', $filterValue);
+                    } elseif ($operator === 'not_equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', '!=', $filterValue);
+                    }
+                    break;
+
+                case 'province':
+                    if ($operator === 'equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', $filterValue);
+                    } elseif ($operator === 'not_equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
+                    }
+                    break;
+
+                case 'city':
+                    if ($operator === 'equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', $filterValue);
+                    } elseif ($operator === 'not_equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
+                    }
+                    break;
+
+                case 'charity':
+                    if ($operator === 'equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', $filterValue);
+                    } elseif ($operator === 'not_equals') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', '!=', $filterValue);
+                    }
+                    break;
+
+                case 'members_count':
+                    $queryBuilder = $this->applyNumericFilter($queryBuilder, 'members_count', $operator, $filterValue, $method);
+                    break;
+
+                case 'created_at':
+                    $queryBuilder = $this->applyDateFilter($queryBuilder, 'families.created_at', $operator, $filterValue, $method);
+                    break;
+
+                case 'membership_date':
+                    // فیلتر بر اساس بازه زمانی تاریخ عضویت
+                    Log::info('🔍 Processing membership_date filter', [
+                        'start_date' => $filter['start_date'] ?? 'empty',
+                        'end_date' => $filter['end_date'] ?? 'empty',
+                        'filter_data' => $filter
+                    ]);
+
+                    if (!empty($filter['start_date']) || !empty($filter['end_date'])) {
+                        $queryBuilder = $queryBuilder->$whereMethod(function($q) use ($filter, $method) {
+                            if (!empty($filter['start_date'])) {
+                                $startDate = $this->parseJalaliOrGregorianDate($filter['start_date']);
+                                Log::info('📅 Parsed start_date', [
+                                    'original' => $filter['start_date'],
+                                    'parsed' => $startDate
+                                ]);
+                                if ($startDate) {
+                                    $q->where('families.created_at', '>=', $startDate);
+                                }
+                            }
+                            if (!empty($filter['end_date'])) {
+                                $endDate = $this->parseJalaliOrGregorianDate($filter['end_date']);
+                                Log::info('📅 Parsed end_date', [
+                                    'original' => $filter['end_date'],
+                                    'parsed' => $endDate
+                                ]);
+                                if ($endDate) {
+                                    $q->where('families.created_at', '<=', $endDate . ' 23:59:59');
+                                }
+                            }
+                        });
+                    }
+                    break;
+
+                case 'insurance_end_date':
+                    // فیلتر بر اساس تاریخ پایان بیمه
+                    $queryBuilder = $queryBuilder->$whereHasMethod('finalInsurances', function($q) use ($operator, $filterValue) {
+                        $this->applyDateFilter($q, 'end_date', $operator, $filterValue);
+                    });
+                    break;
+
+                case 'deprivation_rank':
+                    // فیلتر بر اساس رتبه محرومیت
+                    switch ($filterValue) {
+                        case 'high':
+                            if ($method === 'or') {
+                                $queryBuilder = $queryBuilder->orWhere(function($q) {
+                                    $q->whereBetween('families.deprivation_rank', [1, 3]);
+                                });
+                            } else {
+                                $queryBuilder = $queryBuilder->whereBetween('families.deprivation_rank', [1, 3]);
+                            }
+                            break;
+                        case 'medium':
+                            if ($method === 'or') {
+                                $queryBuilder = $queryBuilder->orWhere(function($q) {
+                                    $q->whereBetween('families.deprivation_rank', [4, 6]);
+                                });
+                            } else {
+                                $queryBuilder = $queryBuilder->whereBetween('families.deprivation_rank', [4, 6]);
+                            }
+                            break;
+                        case 'low':
+                            if ($method === 'or') {
+                                $queryBuilder = $queryBuilder->orWhere(function($q) {
+                                    $q->whereBetween('families.deprivation_rank', [7, 10]);
+                                });
+                            } else {
+                                $queryBuilder = $queryBuilder->whereBetween('families.deprivation_rank', [7, 10]);
+                            }
+                            break;
+                    }
+                    break;
+
+                                case 'special_disease':
+                case 'معیار پذیرش':
+                    // پشتیبانی از هر دو نام فیلتر برای سازگاری
+                    if (!empty($filterValue)) {
+                        $queryBuilder = $queryBuilder->$whereMethod(function($q) use ($filterValue) {
+                            // جستجو در اعضای خانواده با problem_type - پشتیبانی از تمام مقادیر
+                            $q->whereHas('members', function($memberQuery) use ($filterValue) {
+                                // تبدیل به مقادیر مختلف
+                                $persianValue = ProblemTypeHelper::englishToPersian($filterValue);
+                                $englishValue = ProblemTypeHelper::persianToEnglish($filterValue);
+
+                                $memberQuery->whereJsonContains('problem_type', $filterValue)
+                                          ->orWhereJsonContains('problem_type', $persianValue)
+                                          ->orWhereJsonContains('problem_type', $englishValue);
+                            });
+                        });
+                    }
+                    break;
+
+                case 'weighted_score':
+                    if (!empty($filter['min'])) {
+                        if ($method === 'or') {
+                            $queryBuilder = $queryBuilder->orWhere('families.weighted_score', '>=', $filter['min']);
+                        } else {
+                            $queryBuilder = $queryBuilder->where('families.weighted_score', '>=', $filter['min']);
+                        }
+                    }
+                    if (!empty($filter['max'])) {
+                        if ($method === 'or') {
+                            $queryBuilder = $queryBuilder->orWhere('families.weighted_score', '<=', $filter['max']);
+                        } else {
+                            $queryBuilder = $queryBuilder->where('families.weighted_score', '<=', $filter['max']);
+                        }
+                    }
+                    break;
+            }
+
+            return $queryBuilder;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying single filter', [
+                'filter_type' => $filter['type'] ?? 'unknown',
+                'method' => $method,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            return $queryBuilder;
+        }
+    }
+
+    /**
+     * اعمال فیلتر عددی
+     */
+    protected function applyNumericFilter($queryBuilder, $field, $operator, $value, $method = 'and')
+    {
+        $whereMethod = $method === 'or' ? 'orWhere' : 'where';
+
+        switch ($operator) {
+            case 'equals':
+                return $queryBuilder->$whereMethod($field, $value);
+            case 'not_equals':
+                return $queryBuilder->$whereMethod($field, '!=', $value);
+            case 'greater_than':
+                return $queryBuilder->$whereMethod($field, '>', $value);
+            case 'less_than':
+                return $queryBuilder->$whereMethod($field, '<', $value);
+            default:
+                return $queryBuilder->$whereMethod($field, $value);
+        }
+    }
+
+    /**
+     * اعمال فیلتر تاریخ
+     */
+    protected function applyDateFilter($queryBuilder, $field, $operator, $value, $method = 'and')
+    {
+        $whereMethod = $method === 'or' ? 'orWhereDate' : 'whereDate';
+
+        switch ($operator) {
+            case 'equals':
+                return $queryBuilder->$whereMethod($field, $value);
+            case 'greater_than':
+                return $queryBuilder->$whereMethod($field, '>', $value);
+            case 'less_than':
+                return $queryBuilder->$whereMethod($field, '<', $value);
+            default:
+                return $queryBuilder->$whereMethod($field, $value);
+        }
+    }
+
+    /**
+     * تبدیل کد نسبت به فارسی
+     *
+     * @param string|null $relationship
+     * @return string
+     */
+    private function translateRelationship($relationship)
+    {
+        if (empty($relationship)) {
+            return 'نامشخص';
+        }
+
+        $relationshipMap = [
+            'spouse' => 'همسر',
+            'child' => 'فرزند',
+            'son' => 'پسر',
+            'daughter' => 'دختر',
+            'father' => 'پدر',
+            'mother' => 'مادر',
+            'brother' => 'برادر',
+            'sister' => 'خواهر',
+            'grandfather' => 'پدربزرگ',
+            'grandmother' => 'مادربزرگ',
+            'uncle' => 'عمو/دایی',
+            'aunt' => 'عمه/خاله',
+            'nephew' => 'برادرزاده',
+            'niece' => 'خواهرزاده',
+            'cousin' => 'پسرعمو/دخترعمو',
+            'son_in_law' => 'داماد',
+            'daughter_in_law' => 'عروس',
+            'father_in_law' => 'پدرشوهر/پدرزن',
+            'mother_in_law' => 'مادرشوهر/مادرزن',
+            'other' => 'سایر'
+        ];
+
+        return $relationshipMap[$relationship] ?? $relationship;
+    }
+
+    /**
+     * تبدیل کد جنسیت به فارسی
+     *
+     * @param string|null $gender
+     * @return string
+     */
+    private function translateGender($gender)
+    {
+        if (empty($gender)) {
+            return 'نامشخص';
+        }
+
+        $genderMap = [
+            'male' => 'مرد',
+            'female' => 'زن',
+            'm' => 'مرد',
+            'f' => 'زن',
+            '1' => 'مرد',
+            '2' => 'زن',
+            'man' => 'مرد',
+            'woman' => 'زن'
+        ];
+
+        return $genderMap[strtolower($gender)] ?? $gender;
     }
 }

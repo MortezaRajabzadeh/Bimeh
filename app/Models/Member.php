@@ -50,6 +50,7 @@ class Member extends Model implements HasMedia
         'special_conditions',
         'problem_type',
         'occupation',
+        'job_type',
         'is_employed',
         'mobile',
         'phone',
@@ -159,30 +160,49 @@ class Member extends Model implements HasMedia
     /**
      * ترجمه نسبت به فارسی
      */
-    // public function getRelationshipFaAttribute()
-    // {
-    //     $relationships = [
-    //         'head' => 'سرپرست',
-    //         'spouse' => 'همسر',
-    //         'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
-    //         'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
-    //         'father' => 'پدر',
-    //         'mother' => 'مادر',
-    //         'brother' => 'برادر',
-    //         'sister' => 'خواهر',
-    //         'grandfather' => 'پدربزرگ',
-    //         'grandmother' => 'مادربزرگ',
-    //         'uncle' => 'عمو/دایی',
-    //         'aunt' => 'عمه/خاله',
-    //         'nephew' => 'برادرزاده/خواهرزاده',
-    //         'niece' => 'برادرزاده/خواهرزاده',
-    //         'cousin' => 'پسرعمو/دخترعمو/پسردایی/دختردایی',
-    //         'son_in_law' => 'داماد',
-    //         'daughter_in_law' => 'عروس',
-    //         'other' => 'سایر',
-    //     ];
-    //     return $relationships[$this->relationship] ?? 'سایر';
-    // }
+    public function getRelationshipFaAttribute()
+    {
+        // اگر فیلد relationship_fa پر شده باشد، از آن استفاده کن
+        if (!empty($this->attributes['relationship_fa'])) {
+            $relationshipFa = $this->attributes['relationship_fa'];
+        } else {
+            // در غیر این صورت، از فیلد relationship ترجمه کن
+            $relationships = [
+                'head' => 'سرپرست',
+                'spouse' => 'همسر',
+                'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
+                'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
+                'father' => 'پدر',
+                'mother' => 'مادر',
+                'brother' => 'برادر',
+                'sister' => 'خواهر',
+                'grandfather' => 'پدربزرگ',
+                'grandmother' => 'مادربزرگ',
+                'uncle' => 'عمو/دایی',
+                'aunt' => 'عمه/خاله',
+                'nephew' => 'برادرزاده/خواهرزاده',
+                'niece' => 'برادرزاده/خواهرزاده',
+                'cousin' => 'پسرعمو/دخترعمو/پسردایی/دختردایی',
+                'son_in_law' => 'داماد',
+                'daughter_in_law' => 'عروس',
+                'other' => 'سایر',
+            ];
+            
+            $relationshipFa = $relationships[$this->relationship] ?? 'سایر';
+        }
+        
+        // فقط نسبت‌های مجاز را برگردان
+        $allowedRelationships = [
+            'مادر', 'پدر', 'زن', 'شوهر', 'پسر', 'دختر', 'مادربزرگ', 'پدربزرگ', 'سایر'
+        ];
+        
+        // اگر نسبت در لیست مجاز نباشد، 'سایر' برگردان
+        if (!in_array($relationshipFa, $allowedRelationships)) {
+            return 'سایر';
+        }
+        
+        return $relationshipFa;
+    }
 
     /**
      * فیلتر افراد سرپرست خانوار

@@ -54,6 +54,7 @@
                             class="rtl-select block w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="charity">سازمان</option>
                             <option value="bank">بانک</option>
+                            <option value="insurance">بیمه</option>
                             <option value="person">شخص حقیقی</option>
                             <option value="government">دولت</option>
                             <option value="other">سایر</option>
@@ -80,6 +81,7 @@
                         $typeLabels = [
                             'charity' => 'سازمان',
                             'bank' => 'بانک',
+                            'insurance' => 'بیمه',
                             'person' => 'شخص حقیقی',
                             'government' => 'دولت',
                             'other' => 'سایر',
@@ -93,7 +95,14 @@
                                 {{ $src->name }}
                             @endif</td>
                             <td class="py-2 px-4">@if($showSourceEditModal && $source_edit_id == $src->id)
-                                {{ $typeLabels[$src->type] ?? $src->type }}
+                                <select wire:model.defer="source_edit_type" class="border rounded px-2 py-1 w-full">
+                                    <option value="charity">سازمان</option>
+                                    <option value="bank">بانک</option>
+                                    <option value="insurance">بیمه</option>
+                                    <option value="person">شخص حقیقی</option>
+                                    <option value="government">دولت</option>
+                                    <option value="other">سایر</option>
+                                </select>
                             @else
                                 {{ $typeLabels[$src->type] ?? $src->type }}
                             @endif</td>

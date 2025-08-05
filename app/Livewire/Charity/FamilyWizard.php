@@ -5,12 +5,14 @@ namespace App\Livewire\Charity;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Services\ProvinceCityService;
 use App\Models\Province;
 use App\Models\City;
 use App\Models\District;
 use Illuminate\Support\Facades\Auth;
 use Morilog\Jalali\Jalalian;
+use App\Helpers\ProblemTypeHelper;
 
 class FamilyWizard extends Component
 {
@@ -18,6 +20,7 @@ class FamilyWizard extends Component
 
     public $currentStep = 1;
     public $totalSteps = 3;
+    public $family_id; // For storing the created family ID
     public $family_code;
     public $province_id;
     public $city_id;
@@ -33,7 +36,6 @@ class FamilyWizard extends Component
     public $housing_description;
     public $members = [];
     public $head_member_index;
-    public $family_photo;
     public $head = [
         'first_name' => '',
         'last_name' => '',
@@ -52,9 +54,20 @@ class FamilyWizard extends Component
     public $additional_info = '';
     public $confirmSubmission = false;
     public $acceptance_criteria = [];
+    public $specialDiseaseDocuments = [];
+    public $uploadedDocuments = [];
 
     protected $listeners = [
         'mapLocationSelected' => 'handleMapLocation'
+    ];
+
+    protected $rules = [
+        'specialDiseaseDocuments.*' => 'file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
+    ];
+
+    protected $messages = [
+        'specialDiseaseDocuments.*.mimes' => 'فرمت فایل باید از نوع: pdf, jpg, jpeg یا png باشد.',
+        'specialDiseaseDocuments.*.max' => 'حداکثر حجم فایل 5 مگابایت می‌باشد.',
     ];
 
     public function mount(): void
@@ -157,21 +170,30 @@ class FamilyWizard extends Component
 
                     // اعتبارسنجی اطلاعات سرپرست
                     if ((int)$index === (int)$this->head_member_index) {
-                        if (empty($member['phone'])) {
-                            throw new \Exception("شماره تماس سرپرست خانوار را وارد کنید");
+                        // بررسی شماره موبایل (اختیاری - اگر خالی باشد مقدار پیش‌فرض ثبت می‌شود)
+                        if (!empty($member['mobile']) && !preg_match('/^09[0-9]{9}$/', $member['mobile'])) {
+                            throw new \Exception("شماره موبایل سرپرست خانوار باید با ۰۹ شروع شود و ۱۱ رقم باشد");
                         }
-                        if (!preg_match('/^09[0-9]{9}$/', $member['phone'])) {
-                            throw new \Exception("شماره تماس سرپرست خانوار باید با ۰۹ شروع شود و ۱۱ رقم باشد");
+
+                        // بررسی شماره تماس ثابت (اختیاری)
+                        if (!empty($member['phone']) && !preg_match('/^0[0-9]{10}$/', $member['phone'])) {
+                            throw new \Exception("شماره تماس ثابت باید با ۰ شروع شود و ۱۱ رقم باشد");
                         }
-                        if (empty($member['sheba'])) {
-                            throw new \Exception("شماره شبا سرپرست خانوار را وارد کنید");
-                        }
-                        if (!preg_match('/^IR[0-9]{24}$/', $member['sheba'])) {
-                            throw new \Exception("شماره شبا باید با IR شروع شود و ۲۶ کاراکتر باشد");
+
+                                            // بررسی شماره شبا (اختیاری - اگر خالی باشد مقدار پیش‌فرض ثبت می‌شود)
+                    if (!empty($member['sheba']) && !preg_match('/^IR[0-9]{24}$/', $member['sheba'])) {
+                        throw new \Exception("شماره شبا باید با IR شروع شود و ۲۶ کاراکتر باشد");
+                    }
+
+                    // بررسی مدرک بیماری خاص
+                    if (isset($member['problem_type']) && is_array($member['problem_type']) && in_array('بیماری خاص', $member['problem_type'])) {
+                        if (!isset($this->uploadedDocuments[$index]) || empty($this->uploadedDocuments[$index])) {
+                            throw new \Exception("برای عضو خانواده شماره " . ($index + 1) . " که بیماری خاص دارد، مدرک پزشکی الزامی است");
                         }
                     }
                 }
-                return true;
+            }
+            return true;
 
             case 3:
                 if (!$this->confirmSubmission) {
@@ -225,7 +247,6 @@ class FamilyWizard extends Component
     public function getFamilyDataProperty()
     {
         return [
-            'photo' => $this->family_photo ? $this->family_photo->temporaryUrl() : null,
             'head_name' => $this->head['first_name'] . ' ' . $this->head['last_name'],
             'code' => $this->family_code,
             'address' => $this->address,
@@ -310,6 +331,7 @@ class FamilyWizard extends Component
         return view('livewire.charity.family-wizard', [
             'cities' => $this->cities,
             'districts' => $this->districts,
+            'uploadedDocuments' => $this->uploadedDocuments,
         ]);
     }
 
@@ -338,18 +360,97 @@ class FamilyWizard extends Component
         ];
     }
 
+    /**
+     * Save uploaded special disease documents to permanent storage
+     */
+    private function saveUploadedDocuments()
+    {
+        foreach ($this->uploadedDocuments as $memberIndex => $document) {
+            try {
+                // Get the member data
+                $member = $this->members[$memberIndex] ?? null;
+                if (!$member) continue;
+
+                // Move file from temp to permanent location
+                $file = Storage::get($document['path']);
+                $newPath = 'special-disease-docs/' . uniqid() . '_' . $document['original_name'];
+
+                // Save to permanent storage
+                Storage::put($newPath, $file);
+
+                // Delete the temp file
+                Storage::delete($document['path']);
+
+                // Update member's document path
+                $this->members[$memberIndex]['special_disease_document'] = $newPath;
+
+                // Update incomplete data status
+                $this->updateMemberIncompleteStatus($memberIndex);
+
+            } catch (\Exception $e) {
+                Log::error('Error saving special disease document', [
+                    'error' => $e->getMessage(),
+                    'member_index' => $memberIndex,
+                ]);
+
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'message' => 'خطا در ذخیره‌سازی مدرک بیماری خاص. لطفاً دوباره تلاش کنید.'
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Update member's incomplete data status after document upload
+     */
+    private function updateMemberIncompleteStatus($memberIndex)
+    {
+        if (!isset($this->members[$memberIndex])) return;
+
+        // Check if member has special disease in their problems
+        $hasSpecialDisease = in_array('بیماری خاص', $this->members[$memberIndex]['problem_type'] ?? []);
+
+        if ($hasSpecialDisease && !empty($this->members[$memberIndex]['special_disease_document'])) {
+            // Remove 'special_disease_document' from incomplete data if it exists
+            $this->members[$memberIndex]['incomplete_data'] = array_filter(
+                $this->members[$memberIndex]['incomplete_data'] ?? [],
+                fn($item) => $item !== 'special_disease_document'
+            );
+        }
+    }
+
     public function submit()
     {
+        Log::debug('Submit method started', ['step' => 'start']);
 
-        if ($this->currentStep == 3) {
-            $this->validate();
+        // Validate all steps before submission
+        try {
+            $this->validateCurrentStep();
+            Log::debug('Validation passed', ['step' => 'validation']);
+        } catch (\Exception $e) {
+            Log::error('Validation failed', ['error' => $e->getMessage()]);
+            throw $e;
         }
-        if (!$this->validateCurrentStep()) {
 
+        if (!$this->validateNationalCodes()) {
+            Log::error('National code validation failed');
             return;
         }
+        Log::debug('National code validation passed');
+
         try {
+            // بررسی یکتایی کد ملی قبل از ایجاد خانواده
+            Log::debug('Validating national codes uniqueness');
+            $this->validateNationalCodes();
+            Log::debug('National codes are unique');
+
             // ایجاد خانواده جدید
+            Log::debug('Creating family record', [
+                'family_code' => $this->family_code,
+                'province_id' => $this->province_id,
+                'city_id' => $this->city_id
+            ]);
             $family = \App\Models\Family::create([
                 'family_code' => $this->family_code,
                 'province_id' => $this->province_id,
@@ -360,33 +461,26 @@ class FamilyWizard extends Component
                 'registered_by' => Auth::id(),
                 'status' => 'pending', // در انتظار تایید بیمه
                 'wizard_status' => 'pending'
-
             ]);
 
-            // ذخیره تصویر خانواده (انتقال از tmp به media)
-            if ($this->family_photo) {
-                $tmpPath = storage_path('app/public/tmp/' . $this->family_photo);
-                if (file_exists($tmpPath)) {
-                    $family->addMedia($tmpPath)->toMediaCollection('family_photos');
-                    @unlink($tmpPath);
-                }
-            }
+            Log::debug('Family created successfully', ['family_id' => $family->id]);
+
+            // ذخیره مدارک آپلود شده
+            $this->saveUploadedDocuments();
 
             // ذخیره اعضای خانواده
             foreach ($this->members as $index => $member) {
-                // Ensure unique national_code
                 $nationalCode = $member['national_code'];
-                if (\App\Models\Member::where('national_code', $nationalCode)->exists()) {
-                    // Generate a random unique 10-digit code
-                    do {
-                        $nationalCode = str_pad(strval(rand(0, 9999999999)), 10, '0', STR_PAD_LEFT);
-                    } while (\App\Models\Member::where('national_code', $nationalCode)->exists());
-                }
                 $birthDate = null;
                 if (!empty($member['birth_date'])) {
                     $birthDate = $member['birth_date'];
                 }
-                $family->members()->create([
+
+                // تنظیم مقادیر پیش‌فرض برای mobile و sheba
+                $mobile = $this->setDefaultMobile($member['mobile'] ?? null);
+                $sheba = $this->setDefaultSheba($member['sheba'] ?? null);
+
+                $createdMember = $family->members()->create([
                     'first_name' => $member['first_name'],
                     'last_name' => $member['last_name'],
                     'national_code' => $nationalCode,
@@ -398,31 +492,190 @@ class FamilyWizard extends Component
                     'gender' => $member['gender'] ?? null,
                     'marital_status' => $member['marital_status'] ?? null,
                     'education' => $member['education'] ?? null,
+                    'mobile' => $mobile,
                     'phone' => $member['phone'] ?? null,
-                    'sheba' => $member['sheba'] ?? null,
+                    'sheba' => $sheba,
                 ]);
+
+                // آپلود مدرک بیماری خاص اگر وجود دارد
+                if (isset($member['special_disease_document']) && !empty($member['special_disease_document'])) {
+                    try {
+                        $filePath = $member['special_disease_document'];
+                        if (Storage::exists($filePath)) {
+                            $file = Storage::get($filePath);
+                            $fileName = basename($filePath);
+                            
+                            $createdMember->addMediaFromString($file)
+                                ->usingName($createdMember->full_name . ' - مدرک بیماری خاص')
+                                ->usingFileName($fileName)
+                                ->toMediaCollection('special_disease_documents');
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error uploading special disease document to media library', [
+                            'error' => $e->getMessage(),
+                            'member_id' => $createdMember->id,
+                            'file_path' => $member['special_disease_document'] ?? null
+                        ]);
+                    }
+                }
             }
 
+            // Store family ID for use in the view
+            $this->family_id = $family->id;
 
-            $this->dispatch('show-message', 'success', 'خانواده با موفقیت ثبت شد');
+            // Set success message in session
+            session()->flash('success', 'خانواده با موفقیت ثبت شد.');
+            
+            // Redirect to families page
+            return redirect()->route('charity.uninsured-families', ['highlight' => $family->id]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // نمایش خطاهای validation بدون پاک کردن داده‌ها
 
-            return $this->redirectRoute('charity.dashboard', ['highlight' => $family->id]);
+            $this->dispatch('show-message', 'error', 'لطفاً خطاهای موجود را برطرف کنید.');
+
+            // بازگشت به مرحله 2 اگر خطای کد ملی وجود دارد
+            $errors = $e->errors();
+            foreach ($errors as $field => $messages) {
+                if (str_contains($field, 'national_code')) {
+                    $this->currentStep = 2;
+                    break;
+                }
+            }
+
+            // پرتاب مجدد exception برای نمایش خطاها
+            throw $e;
         } catch (\Exception $e) {
-
             $msg = $e->getMessage() ?: 'خطای ناشناخته‌ای رخ داده است. لطفاً مجدداً تلاش کنید.';
             $this->dispatch('show-message', 'error', $msg);
+    }
+}
+
+
+
+
+    /**
+     * بررسی یکتایی کدهای ملی
+     */
+    private function validateNationalCodes()
+    {
+        $errors = [];
+        $nationalCodes = [];
+
+        Log::debug('Starting national code validation', [
+            'members_count' => count($this->members),
+            'member_national_codes' => array_map(fn($m) => $m['national_code'] ?? null, $this->members)
+        ]);
+
+        // جمع‌آوری کدهای ملی و بررسی تکراری در لیست
+        foreach ($this->members as $index => $member) {
+            $nationalCode = $member['national_code'] ?? null;
+            Log::debug('Validating member national code', [
+                'member_index' => $index,
+                'national_code' => $nationalCode,
+                'member_name' => ($member['first_name'] ?? '') . ' ' . ($member['last_name'] ?? '')
+            ]);
+
+            if (empty($nationalCode)) {
+                $errors["members.{$index}.national_code"] = "کد ملی الزامی است.";
+                Log::error('Empty national code found', ['member_index' => $index]);
+                continue;
+            }
+
+            // بررسی تکراری در لیست فعلی
+            if (in_array($nationalCode, $nationalCodes)) {
+                $errorMsg = "کد ملی {$nationalCode} در لیست اعضا تکراری است.";
+                $errors["members.{$index}.national_code"] = $errorMsg;
+                Log::error('Duplicate national code in current submission', [
+                    'national_code' => $nationalCode,
+                    'member_index' => $index
+                ]);
+            } else {
+                $nationalCodes[] = $nationalCode;
+            }
+
+            // بررسی وجود در دیتابیس
+            $existingMember = \App\Models\Member::where('national_code', $nationalCode)->first();
+            if ($existingMember) {
+                $errorMsg = "کد ملی {$nationalCode} قبلاً در سیستم ثبت شده است.";
+                $errors["members.{$index}.national_code"] = $errorMsg;
+
+                Log::warning('Attempt to register duplicate national code', [
+                    'national_code' => $nationalCode,
+                    'existing_member_id' => $existingMember->id,
+                    'member_name' => $existingMember->full_name,
+                    'existing_family_id' => $existingMember->family_id,
+                    'user_id' => Auth::id(),
+                    'timestamp' => now()->toDateTimeString()
+                ]);
+            }
         }
+
+        if (!empty($errors)) {
+            Log::error('National code validation failed', [
+                'errors' => $errors,
+                'members_count' => count($this->members),
+                'unique_national_codes' => $nationalCodes
+            ]);
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
+        }
+
+        Log::debug('National code validation passed successfully', [
+            'unique_national_codes' => $nationalCodes
+        ]);
+        return true;
     }
 
-    public function updatedMembers()
+    /**
+     * بررسی کد ملی در زمان واقعی
+     */
+    public function updatedMembers($value, $key)
     {
+        // اگر کد ملی تغییر کرده باشد
+        if (str_contains($key, '.national_code')) {
+            $parts = explode('.', $key);
+            $memberIndex = $parts[0];
+            $nationalCode = $value;
+
+            if ($nationalCode) {
+                // پاک کردن خطای قبلی
+                $this->resetErrorBag("members.{$memberIndex}.national_code");
+
+                // بررسی وجود در دیتابیس
+                $existingMember = \App\Models\Member::where('national_code', $nationalCode)->first();
+                if ($existingMember) {
+                    $this->addError("members.{$memberIndex}.national_code", "این کد ملی قبلاً در سیستم ثبت شده است.");
+                }
+
+                // بررسی تکراری در لیست فعلی
+                $duplicateCount = 0;
+                foreach ($this->members as $index => $member) {
+                    if (($member['national_code'] ?? null) === $nationalCode) {
+                        $duplicateCount++;
+                    }
+                }
+
+                if ($duplicateCount > 1) {
+                    $this->addError("members.{$memberIndex}.national_code", "این کد ملی در لیست اعضا تکراری است.");
+                }
+            } else {
+                // اگر کد ملی خالی شد، خطا را پاک کن
+                $this->resetErrorBag("members.{$memberIndex}.national_code");
+            }
+        }
+
+        // منطق قبلی برای acceptance_criteria
         $allProblems = [];
         foreach ($this->members as $member) {
             if (!empty($member['problem_type'])) {
                 if (is_array($member['problem_type'])) {
-                    $allProblems = array_merge($allProblems, $member['problem_type']);
+                    // تبدیل مقادیر انگلیسی به فارسی
+                    $persianProblems = array_map(function($problem) {
+                        return ProblemTypeHelper::englishToPersian($problem);
+                    }, $member['problem_type']);
+                    $allProblems = array_merge($allProblems, $persianProblems);
                 } else {
-                    $allProblems[] = $member['problem_type'];
+                    // تبدیل مقدار انگلیسی به فارسی
+                    $allProblems[] = ProblemTypeHelper::englishToPersian($member['problem_type']);
                 }
             }
         }
@@ -473,29 +726,12 @@ class FamilyWizard extends Component
             'members.min' => 'حداقل یک عضو خانواده باید ثبت شود.',
             'head_member_index.required' => 'سرپرست خانواده را مشخص کنید.',
             'confirmSubmission.accepted' => 'لطفاً صحت اطلاعات را تأیید کنید.',
+            'members.*.national_code.unique' => 'این کد ملی قبلاً در سیستم ثبت شده است.',
+            'members.*.national_code.distinct' => 'کد ملی نمی‌تواند تکراری باشد.',
         ];
     }
 
-    public function uploadFamilyPhoto()
-    {
-        if (request()->hasFile('family_photo')) {
-            $file = request()->file('family_photo');
-            $filename = uniqid('family_', true) . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('tmp', $filename, 'public');
-            $this->family_photo = $filename;
-        }
-    }
 
-    public function removeFamilyPhoto()
-    {
-        if ($this->family_photo) {
-            $tmpPath = storage_path('app/public/tmp/' . $this->family_photo);
-            if (file_exists($tmpPath)) {
-                @unlink($tmpPath);
-            }
-            $this->family_photo = null;
-        }
-    }
 
     public function updatedHeadMemberIndex($value)
     {
@@ -506,5 +742,143 @@ class FamilyWizard extends Component
     public function updateHeadMemberIndex($value)
     {
         $this->head_member_index = $value;
+    }
+
+
+    /**
+     * پاک کردن خطای کد ملی خاص
+     */
+    public function clearNationalCodeError($memberIndex)
+    {
+        $this->resetErrorBag("members.{$memberIndex}.national_code");
+    }
+
+    /**
+     * بررسی و پاک کردن خطاهای کد ملی هنگام تغییر
+     */
+    public function checkNationalCodeOnChange($memberIndex, $nationalCode)
+    {
+        if (empty($nationalCode)) {
+            $this->resetErrorBag("members.{$memberIndex}.national_code");
+            return;
+        }
+
+        // بررسی وجود در دیتابیس
+        $existingMember = \App\Models\Member::where('national_code', $nationalCode)->first();
+        if ($existingMember) {
+            $this->addError("members.{$memberIndex}.national_code", "این کد ملی قبلاً در سیستم ثبت شده است.");
+            return;
+        }
+
+        // بررسی تکراری در لیست فعلی
+        $duplicateCount = 0;
+        foreach ($this->members as $index => $member) {
+            if (($member['national_code'] ?? null) === $nationalCode) {
+                $duplicateCount++;
+            }
+        }
+
+        if ($duplicateCount > 1) {
+            $this->addError("members.{$memberIndex}.national_code", "این کد ملی در لیست اعضا تکراری است.");
+        } else {
+            $this->resetErrorBag("members.{$memberIndex}.national_code");
+        }
+    }
+
+    /**
+     * Handle file upload for special disease documents
+     */
+    public function updatedSpecialDiseaseDocuments($value, $key)
+    {
+        // Extract member index from the key (e.g., 'specialDiseaseDocuments.1' => 1)
+        $memberIndex = explode('.', $key)[1] ?? null;
+        if ($memberIndex === null) return;
+
+        // Validate the uploaded file
+        $this->validateOnly("specialDiseaseDocuments.{$memberIndex}");
+
+        // Get the file and upload it
+        $file = $this->specialDiseaseDocuments[$memberIndex] ?? null;
+        if ($file) {
+            try {
+                // Store the file temporarily and keep track of it
+                $path = $file->store('temp/special-disease-docs');
+                $this->uploadedDocuments[$memberIndex] = [
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ];
+
+                // Show success message
+                $this->dispatch('notify', [
+                    'type' => 'success',
+                    'message' => 'مدرک بیماری خاص با موفقیت آپلود شد.'
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Error uploading special disease document', [
+                    'error' => $e->getMessage(),
+                    'member_index' => $memberIndex,
+                ]);
+
+                $this->dispatch('notify', [
+                    'type' => 'error',
+                    'message' => 'خطا در آپلود مدرک. لطفاً دوباره تلاش کنید.'
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Remove an uploaded document
+     */
+    public function removeDocument($memberIndex)
+    {
+        try {
+            // Remove the file from storage if it exists
+            if (isset($this->uploadedDocuments[$memberIndex])) {
+                Storage::delete($this->uploadedDocuments[$memberIndex]['path']);
+                unset($this->uploadedDocuments[$memberIndex]);
+                $this->specialDiseaseDocuments[$memberIndex] = null;
+
+                $this->dispatch('notify', [
+                    'type' => 'success',
+                    'message' => 'مدرک با موفقیت حذف شد.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error removing document', [
+                'error' => $e->getMessage(),
+                'member_index' => $memberIndex,
+            ]);
+
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'خطا در حذف مدرک. لطفاً دوباره تلاش کنید.'
+            ]);
+        }
+    }
+
+    /**
+     * Set default value for mobile number if empty
+     *
+     * @param string|null $mobile
+     * @return string
+     */
+    protected function setDefaultMobile($mobile)
+    {
+        return !empty($mobile) ? $mobile : 'بدون شماره';
+    }
+
+    /**
+     * Set default value for Sheba number if empty
+     *
+     * @param string|null $sheba
+     * @return string
+     */
+    protected function setDefaultSheba($sheba)
+    {
+        return !empty($sheba) ? $sheba : 'بدون شماره شبا';
     }
 }

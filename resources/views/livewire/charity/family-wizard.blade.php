@@ -5,8 +5,9 @@
             <div class="relative flex justify-between">
                 @for ($i = 1; $i <= $totalSteps; $i++)
                     <div class="flex flex-col items-center relative z-10">
-                        <button 
-                            wire:click="goToStep({{ $i }})" 
+                        <button
+                        type="button"
+                            wire:click="goToStep({{ $i }})"
                             class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 transform hover:scale-105
                                 {{ $currentStep > $i ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : ($currentStep == $i ? 'bg-blue-600 shadow-lg shadow-blue-100' : 'bg-gray-100') }}
                                 {{ $currentStep == $i ? 'ring-4 ring-blue-100' : '' }}
@@ -53,7 +54,7 @@
                             @endswitch
                         </span>
                     </div>
-                    
+
                     @if ($i < $totalSteps)
                         <div class="flex-1 flex items-center">
                             <div class="h-2 w-full rounded-full transition-all duration-500 relative overflow-hidden
@@ -96,15 +97,16 @@
                         </button>
                     @endif
                 </div>
-                
+
                 <div>
                     @if ($currentStep < $totalSteps)
                         <button type="button" wire:click="nextStep" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
                             مرحله بعد
                         </button>
                     @else
-                        <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
-                            ثبت خانواده
+                        <button type="submit" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600" wire:loading.attr="disabled">
+                            <span wire:loading.remove>ثبت خانواده</span>
+                            <span wire:loading>در حال ثبت...</span>
                         </button>
                     @endif
                 </div>
@@ -174,7 +176,7 @@
             height: 300px;
             width: 100%;
         }
-        
+
         /* استایل برای drag & drop تصاویر */
         .dropzone {
             border: 2px dashed #ddd;
@@ -183,7 +185,7 @@
             text-align: center;
             transition: all 0.3s ease;
         }
-        
+
         .dropzone.dragover {
             border-color: #3490dc;
             background-color: rgba(52, 144, 220, 0.1);
@@ -207,4 +209,4 @@
         }
     </style>
     @endpush
-</div> 
+</div>

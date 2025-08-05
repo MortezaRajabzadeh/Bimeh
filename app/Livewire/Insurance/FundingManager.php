@@ -177,27 +177,36 @@ class FundingManager extends Component
 
     public function showEditSource($id)
     {
-        $src = FundingSource::findOrFail($id);
-        $this->source_edit_id = $src->id;
-        $this->source_edit_name = $src->name;
-        $this->source_edit_type = $src->type;
-        $this->source_edit_description = $src->description;
-        $this->showSourceEditModal = true;
+        try {
+            $src = FundingSource::findOrFail($id);
+            $this->source_edit_id = $src->id;
+            $this->source_edit_name = $src->name;
+            $this->source_edit_type = $src->type;
+            $this->source_edit_description = $src->description;
+            $this->showSourceEditModal = true;
+        } catch (\Exception $e) {
+            Log::error('Error showing edit source form', [
+                'error' => $e->getMessage(),
+                'source_id' => $id
+            ]);
+            session()->flash('error', 'خطا در نمایش فرم ویرایش منبع رخ داد.');
+        }
     }
 
     public function updateSource()
     {
         try {
-            $this->validate([
+            $validated = $this->validate([
                 'source_edit_name' => 'required|string|max:255',
-                'source_edit_type' => 'required',
+                'source_edit_type' => 'required|in:charity,bank,insurance,person,government,other',
                 'source_edit_description' => 'nullable|string|max:255',
             ]);
+            
             $src = FundingSource::findOrFail($this->source_edit_id);
             $src->update([
-                'name' => $this->source_edit_name,
-                'type' => $this->source_edit_type,
-                'description' => $this->source_edit_description,
+                'name' => $validated['source_edit_name'],
+                'type' => $validated['source_edit_type'],
+                'description' => $validated['source_edit_description'] ?? null,
             ]);
             $this->showSourceEditModal = false;
             $this->sources = FundingSource::where('is_active', true)->get();

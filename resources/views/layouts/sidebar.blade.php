@@ -2,24 +2,88 @@
 <aside id="sidebar" class="fixed top-0 bottom-0 right-0 z-40 h-screen transition-all duration-300 bg-white shadow-lg
                            w-64 lg:w-16 translate-x-full lg:translate-x-0">
     <!-- بخش لوگو -->
-    <div class="flex items-center justify-center py-3 border-b border-gray-200">
+    <div class="flex items-center justify-center py-2 border-b border-gray-200">
         <div class="logo-container">
+            @php
+                $userType = $current_user_type ?? auth()->user()->user_type ?? 'guest';
+                $userOrganization = auth()->user()->organization ?? null;
+            @endphp
+            
+            @if($userType === 'charity' || $userType === 'insurance')
+                <!-- لوگوی میکرو بیمه (بالا) -->
+                <div class="microbime-logo">
             <img
-                src="{{ asset('images/logo.jpg') }}"
-                srcset="{{ asset('images/logo.jpg') }} 1x, {{ asset('images/logo@2x.jpg') }} 2x"
-                alt="لوگو خیریه"
+                        src="{{ asset('images/mb6.svg') }}"
+                        alt="لوگوی میکرو بیمه"
                 class="logo-image collapsed-logo"
                 loading="lazy"
                 width="120"
                 height="40">
             <img
-                src="{{ asset('images/image.png') }}"
-                srcset="{{ asset('images/image.png') }} 1x, {{ asset('images/image@2x.png') }} 2x"
-                alt="لوگو خیریه"
+                        src="{{ asset('images/mb6.svg') }}"
+                        alt="لوگوی میکرو بیمه"
                 class="logo-image expanded-logo"
                 loading="lazy"
                 width="180"
                 height="60">
+                </div>
+                
+                <!-- لوگوی سازمان (پایین) -->
+                @if($userOrganization && $userOrganization->logo_path)
+                    <div class="organization-logo">
+                        <img
+                            src="{{ $userOrganization->logo_url }}"
+                            alt="لوگوی {{ $userOrganization->name }}"
+                            class="logo-image collapsed-logo"
+                            loading="lazy"
+                            width="120"
+                            height="40">
+                        <img
+                            src="{{ $userOrganization->logo_url }}"
+                            alt="لوگوی {{ $userOrganization->name }}"
+                            class="logo-image expanded-logo"
+                            loading="lazy"
+                            width="180"
+                            height="60">
+                    </div>
+                @else
+                    <!-- لوگوی پیش‌فرض سازمان -->
+                    <div class="organization-logo">
+                        <img
+                            src="{{ asset('images/default-organization.png') }}"
+                            alt="لوگوی پیش‌فرض سازمان"
+                            class="logo-image collapsed-logo"
+                            loading="lazy"
+                            width="120"
+                            height="40">
+                        <img
+                            src="{{ asset('images/default-organization.png') }}"
+                            alt="لوگوی پیش‌فرض سازمان"
+                            class="logo-image expanded-logo"
+                            loading="lazy"
+                            width="180"
+                            height="60">
+                    </div>
+                @endif
+            @else
+                <!-- برای ادمین فقط لوگوی میکرو بیمه -->
+                <img
+                    src="{{ asset('images/mb6.svg') }}"
+                    srcset="{{ asset('images/mb6.svg') }} 1x, {{ asset('images/mb6.svg') }} 2x"
+                    alt="لوگوی میکرو بیمه"
+                    class="logo-image collapsed-logo"
+                    loading="lazy"
+                    width="120"
+                    height="40">
+                <img
+                    src="{{ asset('images/mb6.svg') }}"
+                    srcset="{{ asset('images/mb6.svg') }} 1x, {{ asset('images/mb6.svg') }} 2x"
+                    alt="لوگوی میکرو بیمه"
+                    class="logo-image expanded-logo"
+                    loading="lazy"
+                    width="180"
+                    height="60">
+            @endif
         </div>
     </div>
 
@@ -605,6 +669,7 @@
     width: 2.5rem;
     height: 2.5rem;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
@@ -614,6 +679,22 @@
     transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: width, height;
+}
+
+.microbime-logo,
+.organization-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.microbime-logo {
+    margin-bottom: 0.5rem;
+}
+
+.organization-logo {
+    margin-top: 0.25rem;
 }
 
 .logo-image {
@@ -637,8 +718,13 @@
 
     @media (min-width: 1024px) {
         #sidebar.sidebar-expanded .logo-container {
+            width: 7rem;
+            height: 10rem; /* افزایش ارتفاع برای دو لوگو */
+        }
+
+        #sidebar.sidebar-collapsed .logo-container {
             width: 5rem;
-            height: 5rem;
+            height: 7rem; /* افزایش ارتفاع برای دو لوگو در حالت collapsed */
         }
 
         #sidebar.sidebar-expanded .collapsed-logo {
@@ -647,6 +733,39 @@
 
         #sidebar.sidebar-expanded .expanded-logo {
             display: block;
+        }
+
+        /* تنظیم اندازه لوگوی میکرو بیمه در حالت expanded */
+        #sidebar.sidebar-expanded .microbime-logo img {
+            width: 6rem;
+            height: 3.75rem;
+        }
+
+        /* تنظیم اندازه لوگوی سازمان در حالت expanded */
+        #sidebar.sidebar-expanded .organization-logo img {
+            width: 6rem;
+            height: 3.75rem;
+        }
+
+        /* تنظیم اندازه لوگوی میکرو بیمه در حالت collapsed */
+        #sidebar.sidebar-collapsed .microbime-logo img {
+            width: 3.75rem;
+            height: 2.25rem;
+        }
+
+        /* تنظیم اندازه لوگوی سازمان در حالت collapsed */
+        #sidebar.sidebar-collapsed .organization-logo img {
+            width: 3.75rem;
+            height: 2.25rem;
+        }
+
+        /* فاصله بین لوگوها در حالت collapsed */
+        #sidebar.sidebar-collapsed .microbime-logo {
+            margin-bottom: 0.25rem;
+        }
+
+        #sidebar.sidebar-collapsed .organization-logo {
+            margin-top: 0.25rem;
         }
     }
 
@@ -681,6 +800,30 @@
 
         .expanded-logo {
             display: block !important;
+        }
+
+        /* تنظیم اندازه لوگوها در موبایل */
+        .microbime-logo img {
+            width: 6rem;
+            height: 3.75rem;
+        }
+
+        .organization-logo img {
+            width: 6rem;
+            height: 3.75rem;
+        }
+
+        .logo-container {
+            height: 10rem !important;
+        }
+
+        /* فاصله بین لوگوها در موبایل */
+        .microbime-logo {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .organization-logo {
+            margin-top: 0.5rem !important;
         }
     }
 
@@ -724,8 +867,46 @@
 
         /* تنظیم اندازه لوگو */
         #sidebar.sidebar-expanded .logo-container {
-            width: 4rem;
-            height: 4rem;
+            width: 6rem;
+            height: 9rem; /* افزایش ارتفاع برای دو لوگو */
+        }
+
+        #sidebar.sidebar-collapsed .logo-container {
+            width: 4.5rem;
+            height: 7rem; /* افزایش ارتفاع برای دو لوگو در حالت collapsed */
+        }
+
+        /* تنظیم اندازه لوگوی میکرو بیمه در حالت expanded */
+        #sidebar.sidebar-expanded .microbime-logo img {
+            width: 4.5rem;
+            height: 3rem;
+        }
+
+        /* تنظیم اندازه لوگوی سازمان در حالت expanded */
+        #sidebar.sidebar-expanded .organization-logo img {
+            width: 4.5rem;
+            height: 3rem;
+        }
+
+        /* تنظیم اندازه لوگوی میکرو بیمه در حالت collapsed */
+        #sidebar.sidebar-collapsed .microbime-logo img {
+            width: 3rem;
+            height: 1.875rem;
+        }
+
+        /* تنظیم اندازه لوگوی سازمان در حالت collapsed */
+        #sidebar.sidebar-collapsed .organization-logo img {
+            width: 3rem;
+            height: 1.875rem;
+        }
+
+        /* فاصله بین لوگوها در حالت collapsed */
+        #sidebar.sidebar-collapsed .microbime-logo {
+            margin-bottom: 0.25rem;
+        }
+
+        #sidebar.sidebar-collapsed .organization-logo {
+            margin-top: 0.25rem;
         }
 
         /* تنظیم padding آیتم‌ها */
@@ -773,7 +954,7 @@
                 }
             }
         });
-        
+
         // گوش دادن به رویداد sidebar-toggle
         window.addEventListener('sidebar-toggle', function(e) {
             if (e.detail.collapsed && isExpanded) {

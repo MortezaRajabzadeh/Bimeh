@@ -1,5 +1,5 @@
 // متغیرهای سراسری برای نگهداری چارت‌ها
-let genderChart, geoChart, financialChart, monthlyChart, criteriaChart, doubleDonutChart, yearlyFlowChart;
+let genderChart, geoChart, financialChart, monthlyChart, criteriaChart, doubleDonutChart, yearlyFlowChart, insuranceCoverageChart;
 
 // خواندن داده‌ها از JSON
 function getChartData() {
@@ -112,10 +112,10 @@ function createGenderChart(maleCount, femaleCount) {
         console.warn('⚠️ Canvas element genderDonut not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     genderChart = safeDestroyChart(genderChart, 'genderChart');
-    
+
     genderChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -147,10 +147,10 @@ function createGeoChart(geoLabels, geoDataMale, geoDataFemale, geoDataDeprived) 
         console.warn('⚠️ Canvas element geoBarLineChart not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     geoChart = safeDestroyChart(geoChart, 'geoChart');
-    
+
     geoChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -237,10 +237,10 @@ function createFinancialChart(financialData) {
         console.warn('⚠️ Canvas element doubleDonut not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     doubleDonutChart = safeDestroyChart(doubleDonutChart, 'doubleDonutChart');
-    
+
     doubleDonutChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -283,10 +283,10 @@ function createMonthlyChart(monthlyData) {
         console.warn('⚠️ Canvas element monthlyClaimsChart not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     monthlyChart = safeDestroyChart(monthlyChart, 'monthlyChart');
-    
+
     monthlyChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -322,10 +322,10 @@ function createCriteriaChart(criteriaData) {
         console.warn('⚠️ Canvas element criteriaBarChart not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     criteriaChart = safeDestroyChart(criteriaChart, 'criteriaChart');
-    
+
     criteriaChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -385,15 +385,15 @@ function createYearlyFlowChart(yearlyData) {
         console.warn('⚠️ No yearly data provided');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     yearlyFlowChart = safeDestroyChart(yearlyFlowChart, 'yearlyFlowChart');
-    
+
     const monthNames = yearlyData.map(item => item.monthName || '');
     const premiums = yearlyData.map(item => item.premiums || 0);
     const claims = yearlyData.map(item => item.claims || 0);
     const budget = yearlyData.map(item => item.budget || 0);
-    
+
     yearlyFlowChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -475,10 +475,10 @@ function createFinancialFlowChart(financialData) {
         console.warn('⚠️ Canvas element financialFlowChart not found');
         return;
     }
-    
+
     // اطمینان از destroy چارت قبلی
     financialChart = safeDestroyChart(financialChart, 'financialChart');
-    
+
     // داده‌های ساده برای نمایش
     const data = {
         labels: ['بودجه', 'حق بیمه', 'خسارات'],
@@ -493,7 +493,7 @@ function createFinancialFlowChart(financialData) {
             borderRadius: 6,
         }]
     };
-    
+
     financialChart = new Chart(ctx, {
         type: 'bar',
         data: data,
@@ -519,54 +519,128 @@ function createFinancialFlowChart(financialData) {
     });
 }
 
-// تابع اصلی برای ایجاد تمام چارت‌ها
+// تابع برای ایجاد چارت پوشش بیمه (مخصوص داشبورد خیریه)
+function createInsuranceCoverageChart(insuredFamilies, uninsuredFamilies) {
+    const ctx = document.getElementById('insuranceCoverageChart');
+    if (!ctx) {
+        console.warn('⚠️ Canvas element insuranceCoverageChart not found');
+        return;
+    }
+
+    // اطمینان از destroy چارت قبلی
+    insuranceCoverageChart = safeDestroyChart(insuranceCoverageChart, 'insuranceCoverageChart');
+
+    const totalFamilies = Number(insuredFamilies) + Number(uninsuredFamilies);
+    const insuredPercentage = totalFamilies > 0 ? (Number(insuredFamilies) / totalFamilies) * 100 : 0;
+    const uninsuredPercentage = totalFamilies > 0 ? (Number(uninsuredFamilies) / totalFamilies) * 100 : 0;
+
+    insuranceCoverageChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['تحت پوشش', 'بدون پوشش'],
+            datasets: [{
+                data: [Number(insuredFamilies), Number(uninsuredFamilies)],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            ...getDefaultChartOptions(),
+            cutout: '70%',
+            plugins: {
+                ...getDefaultChartOptions().plugins,
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const percentage = totalFamilies > 0 ? ((value / totalFamilies) * 100).toFixed(1) : '0';
+                            return `${context.label}: ${new Intl.NumberFormat('fa-IR').format(value)} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// تابع اصلی برای ایجاد تمام چارت‌ها (نسخه هوشمند)
 function initializeAllCharts(data) {
+    if (!data) {
+        console.warn('⚠️ داده‌ای برای ایجاد چارت‌ها موجود نیست');
+        return;
+    }
+
     try {
+        console.log(`🎯 شروع ایجاد چارت‌ها برای داشبورد: ${data.dashboardType || 'insurance'}`);
+
+        // --- چارت‌های مشترک بین هر دو داشبورد ---
         createGenderChart(data.maleCount, data.femaleCount);
         createGeoChart(data.geoLabels, data.geoDataMale, data.geoDataFemale, data.geoDataDeprived);
-        createFinancialChart(data.financialData);
-        createMonthlyChart(data.monthlyData);
         createCriteriaChart(data.criteriaData);
-        createFinancialFlowChart(data.financialData);
-        
-        // چارت جریان ساده
-        if (data.yearlyData) {
-            createYearlyFlowChart(data.yearlyData);
+
+        // --- چارت‌های شرطی بر اساس نوع داشبورد ---
+        if (data.dashboardType === 'charity') {
+            // فقط چارت‌های مخصوص داشبورد خیریه را بساز
+            console.log('📊 ایجاد چارت‌های مخصوص داشبورد خیریه');
+            createInsuranceCoverageChart(data.insuredFamilies, data.uninsuredFamilies);
+        } else {
+            // در غیر این صورت، چارت‌های داشبورد بیمه را بساز
+            console.log('📊 ایجاد چارت‌های مخصوص داشبورد بیمه');
+            createFinancialChart(data.financialData);
+            createMonthlyChart(data.monthlyData);
+            createFinancialFlowChart(data.financialData);
+            
+            // چارت جریان ساله (فقط اگر داده وجود داشت)
+            if (data.yearlyData) {
+                createYearlyFlowChart(data.yearlyData);
+            }
         }
+        
+        console.log('✅ تمام چارت‌ها با موفقیت ایجاد شدند');
     } catch (error) {
-        console.error('خطا در ایجاد چارت‌ها:', error);
+        console.error('❌ خطا در ایجاد چارت‌ها:', error);
     }
 }
 
-// تابع آپدیت چارت‌ها با destroy/recreate (تضمین عدم تداخل)
+// تابع آپدیت چارت‌ها با destroy/recreate (نسخه هوشمند)
 function updateAllCharts(data) {
+    if (!data) {
+        console.warn('⚠️ داده‌ای برای آپدیت چارت‌ها موجود نیست');
+        return;
+    }
+
     try {
-        console.log('🔄 شروع آپدیت چارت‌ها...');
-        
+        console.log(`🔄 شروع آپدیت چارت‌ها برای داشبورد: ${data.dashboardType || 'insurance'}`);
+
         // مرحله 1: Destroy کردن تمام چارت‌های موجود
+        // این تابع تمام نمونه‌های چارت را از بین می‌برد، بدون توجه به نوع داشبورد
         destroyAllCharts();
-        
-        // مرحله 2: کمی تاخیر برای اطمینان از destroy کامل
+
+        // مرحله 2: کمی تاخیر و ایجاد مجدد چارت‌ها
         setTimeout(() => {
             try {
-                // مرحله 3: ایجاد مجدد چارت‌ها با داده‌های جدید
-                recreateAllCharts(data);
+                // تابع initializeAllCharts خودش منطق شرطی را دارد و فقط چارت‌های لازم را می‌سازد
+                initializeAllCharts(data);
                 console.log('✅ تمام چارت‌ها با موفقیت آپدیت شدند');
             } catch (recreateError) {
                 console.error('❌ خطا در recreate چارت‌ها:', recreateError);
             }
         }, 100);
-        
+
     } catch (error) {
         console.error('❌ خطا در آپدیت چارت‌ها:', error);
-        // Fallback: سعی در ایجاد مجدد 
+        // Fallback: سعی در ایجاد مجدد
         setTimeout(() => {
             initializeAllCharts(data);
         }, 200);
     }
 }
 
-// تابع برای destroy کردن همه چارت‌ها
+// تابع برای destroy کردن همه چارت‌ها (هم بیمه و هم خیریه)
 function destroyAllCharts() {
     const charts = [
         { chart: genderChart, name: 'genderChart' },
@@ -575,9 +649,10 @@ function destroyAllCharts() {
         { chart: monthlyChart, name: 'monthlyChart' },
         { chart: criteriaChart, name: 'criteriaChart' },
         { chart: doubleDonutChart, name: 'doubleDonutChart' },
-        { chart: yearlyFlowChart, name: 'yearlyFlowChart' }
+        { chart: yearlyFlowChart, name: 'yearlyFlowChart' },
+        { chart: insuranceCoverageChart, name: 'insuranceCoverageChart' }
     ];
-    
+
     charts.forEach(({ chart, name }) => {
         if (chart && typeof chart.destroy === 'function') {
             try {
@@ -588,7 +663,7 @@ function destroyAllCharts() {
             }
         }
     });
-    
+
     // Reset متغیرهای سراسری
     genderChart = null;
     geoChart = null;
@@ -597,44 +672,16 @@ function destroyAllCharts() {
     criteriaChart = null;
     doubleDonutChart = null;
     yearlyFlowChart = null;
+    insuranceCoverageChart = null;
 }
 
-// تابع برای recreate کردن همه چارت‌ها
-function recreateAllCharts(data) {
-    // بررسی وجود داده‌ها
-    if (!data) {
-        console.warn('⚠️ داده‌ای برای ایجاد چارت‌ها موجود نیست');
-        return;
-    }
-    
-    // ایجاد چارت‌ها به ترتیب
-    const chartCreators = [
-        () => createGenderChart(data.maleCount, data.femaleCount),
-        () => createGeoChart(data.geoLabels, data.geoDataMale, data.geoDataFemale, data.geoDataDeprived),
-        () => createFinancialChart(data.financialData),
-        () => createMonthlyChart(data.monthlyData),
-        () => createCriteriaChart(data.criteriaData),
-        () => createFinancialFlowChart(data.financialData),
-        () => data.yearlyData && createYearlyFlowChart(data.yearlyData)
-    ];
-    
-    chartCreators.forEach((creator, index) => {
-        try {
-            if (creator) {
-                creator();
-            }
-        } catch (e) {
-            console.error(`❌ خطا در ایجاد چارت ${index}:`, e);
-        }
-    });
-}
+
 
 // در دسترس قرار دادن تابع‌ها برای استفاده سراسری
 window.dashboardCharts = {
     initializeAllCharts,
     updateAllCharts,
     destroyAllCharts,
-    recreateAllCharts,
     safeDestroyChart,
     createGenderChart,
     createGeoChart,
@@ -642,11 +689,12 @@ window.dashboardCharts = {
     createMonthlyChart,
     createCriteriaChart,
     createYearlyFlowChart,
-    createFinancialFlowChart
+    createFinancialFlowChart,
+    createInsuranceCoverageChart
 };
 
 // اضافه کردن event listener برای DOM ready
 document.addEventListener('DOMContentLoaded', function() {
     // چارت‌ها پس از لود شدن داده‌ها از طریق Livewire ایجاد می‌شوند
     console.log('Dashboard charts library loaded');
-}); 
+});

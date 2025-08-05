@@ -26,10 +26,40 @@ class FamilyController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        $families = Family::where('charity_id', request()->user()->organization_id)
-                        ->paginate(15);
+        $charity_id = $request->user()->organization_id;
+        $query = $request->input('search');
+        $status = $request->input('status');
+        
+        $families = Family::where('charity_id', $charity_id);
+        
+        // جستجو بر اساس وضعیت بیمه
+        if ($status === 'insured') {
+            $families->where('is_insured', true);
+        } elseif ($status === 'uninsured') {
+            $families->where('is_insured', false);
+        }
+        
+        // جستجو بر اساس کلیدواژه
+        if (!empty($query)) {
+            $families->where(function($q) use ($query) {
+                // جستجو در کد خانواده
+                $q->where('family_code', 'like', "%{$query}%");
+                
+                // جستجو در نام/کد ملی سرپرست
+                $q->orWhereHas('members', function($member) use ($query) {
+                    $member->where('is_head', true)
+                        ->where(function($m) use ($query) {
+                            $m->where('first_name', 'like', "%{$query}%")
+                              ->orWhere('last_name', 'like', "%{$query}%")
+                              ->orWhere('national_code', 'like', "%{$query}%");
+                        });
+                });
+            });
+        }
+        
+        $families = $families->with('members')->paginate(15);
                         
         return view('charity.families.index', compact('families'));
     }

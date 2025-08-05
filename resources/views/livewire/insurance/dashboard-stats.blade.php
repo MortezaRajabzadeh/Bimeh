@@ -1,8 +1,8 @@
 @php
-    // استفاده از داده‌های واقعی از کامپوننت 
-    $geoLabels = $provinceNames ?? []; 
-    $geoDataMale = $provinceMaleCounts ?? [];   
-    $geoDataFemale = $provinceFemaleCounts ?? [];  
+    // استفاده از داده‌های واقعی از کامپوننت
+    $geoLabels = $provinceNames ?? [];
+    $geoDataMale = $provinceMaleCounts ?? [];
+    $geoDataFemale = $provinceFemaleCounts ?? [];
     $geoDataDeprived = $provinceDeprivedCounts ?? [];
 @endphp
 
@@ -36,14 +36,14 @@
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">فیلترهای داشبورد</h3>
                 <p class="text-sm text-gray-600">انتخاب دوره زمانی و سازمان برای نمایش داده‌های مربوطه</p>
             </div>
-            
+
             <!-- فیلترها -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- فیلتر سال -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">سال:</label>
                     <div class="relative">
-                        <select wire:model.live="selectedYear" 
+                        <select wire:model.live="selectedYear"
                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
                                 class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             @foreach($jalaliYears as $year)
@@ -62,7 +62,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">ماه:</label>
                     <div class="relative">
-                        <select wire:model.live="selectedMonth" 
+                        <select wire:model.live="selectedMonth"
                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
                                 class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             <option value="">کل سال</option>
@@ -82,7 +82,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">سازمان:</label>
                     <div class="relative">
-                        <select wire:model.live="selectedOrganization" 
+                        <select wire:model.live="selectedOrganization"
                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
                                 class="w-full border border-gray-300 rounded-md pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                             <option value="">همه سازمان‌ها</option>
@@ -455,7 +455,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ asset('js/dashboard-charts.js') }}"></script>
-    
+
     <!-- داده‌های چارت برای JavaScript -->
     <script type="application/json" id="chart-data">
         {!! json_encode([

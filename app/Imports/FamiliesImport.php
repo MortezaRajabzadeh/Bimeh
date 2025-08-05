@@ -579,13 +579,18 @@ class FamiliesImport implements ToCollection
     protected function mapProblemToCriteria(string $problem): string
     {
         $mapping = [
+            'اعتیاد' => 'اعتیاد',
+            'بیماری های خاص' => 'بیماری های خاص',
+            'از کار افتادگی' => 'از کار افتادگی',
+            'بیکاری' => 'بیکاری',
+            // برای سازگاری با مقادیر قدیمی
             'addiction' => 'اعتیاد',
-            'special_disease' => 'بیماری خاص',
-            'work_disability' => 'ازکارافتادگی',
+            'special_disease' => 'بیماری های خاص',
+            'work_disability' => 'از کار افتادگی',
             'unemployment' => 'بیکاری',
         ];
 
-        return $mapping[$problem] ?? '';
+        return $mapping[$problem] ?? $problem;
     }
 
     /**
@@ -645,16 +650,16 @@ class FamiliesImport implements ToCollection
         // تبدیل مقادیر مشکلات
         $problemTypes = [];
         if ($this->mapBooleanValue($memberData['addiction'] ?? 'خیر')) {
-            $problemTypes[] = 'addiction';
+            $problemTypes[] = 'اعتیاد';
         }
         if ($this->mapBooleanValue($memberData['unemployed'] ?? 'خیر')) {
-            $problemTypes[] = 'unemployment';
+            $problemTypes[] = 'بیکاری';
         }
         if ($this->mapBooleanValue($memberData['special_disease'] ?? 'خیر')) {
-            $problemTypes[] = 'special_disease';
+            $problemTypes[] = 'بیماری های خاص';
         }
         if ($this->mapBooleanValue($memberData['disability'] ?? 'خیر')) {
-            $problemTypes[] = 'work_disability';
+            $problemTypes[] = 'از کار افتادگی';
         }
 
         $memberUpdateData = [
