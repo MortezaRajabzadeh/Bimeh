@@ -250,10 +250,11 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
     Route::middleware('can:view advanced reports')->get('/reports', [\App\Http\Controllers\Insurance\ReportController::class, 'index'])->name('reports.index');
     Route::middleware('can:export reports')->get('/reports/export', [\App\Http\Controllers\Insurance\ReportController::class, 'export'])->name('reports.export');
 
-    Route::middleware('can:view profile')->get('/settings', function () {
-        return view('insurance.settings');
-    })->name('settings');
+    Route::middleware('can:view profile')->get('/settings', [\App\Http\Controllers\Insurance\SettingsController::class, 'index'])->name('settings');
+    Route::middleware('can:view profile')->get('/settings/general', [\App\Http\Controllers\Insurance\SettingsController::class, 'general'])->name('settings.general');
+    Route::middleware('can:view profile')->post('/settings/general', [\App\Http\Controllers\Insurance\SettingsController::class, 'update'])->name('settings.update');
 
+    
     Route::middleware('can:view claims history')->get('/paid-claims', function () {
         return view('insurance.paid-claims');
     })->name('paid-claims');

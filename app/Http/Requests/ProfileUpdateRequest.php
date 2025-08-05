@@ -27,6 +27,7 @@ class ProfileUpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
             'mobile' => ['required', 'string', 'regex:/^09[0-9]{9}$/', Rule::unique(User::class)->ignore($this->user()->id)],
+            'organization_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,svg', 'max:2048'],
         ];
     }
 
@@ -48,6 +49,9 @@ class ProfileUpdateRequest extends FormRequest
             'mobile.string' => 'شماره موبایل باید متن باشد',
             'mobile.regex' => 'فرمت شماره موبایل نامعتبر است',
             'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است',
+            'organization_logo.image' => 'فایل انتخاب شده باید تصویر باشد',
+            'organization_logo.mimes' => 'فرمت‌های مجاز: JPG، PNG، SVG',
+            'organization_logo.max' => 'حجم فایل نمی‌تواند بیشتر از 2 مگابایت باشد',
         ];
     }
 } 
