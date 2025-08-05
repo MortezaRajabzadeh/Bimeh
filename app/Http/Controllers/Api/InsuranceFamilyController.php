@@ -71,6 +71,7 @@ class InsuranceFamilyController extends Controller
             $currentStatus = $validated['current_status'] ?? null;
 
             // لاگ کردن درخواست برای دیباگ
+            Log::info('Bulk status update request', [
                 'family_ids' => $familyIds,
                 'status' => $newStatus,
                 'current_status' => $currentStatus,

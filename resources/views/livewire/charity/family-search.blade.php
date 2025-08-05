@@ -106,14 +106,16 @@
                 @endif
             </button>
 
-            <!-- دکمه تنظیمات رتبه -->
-            <!-- <button wire:click="openRankModal"
-                    class="inline-flex items-center px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                تنظیمات رتبه
-            </button> -->
+            <!-- دکمه تنظیمات رتبه - فقط برای کاربران بیمه -->
+            @if(auth()->user()->isInsurance())
+                <button wire:click="openRankModal"
+                        class="inline-flex items-center px-4 py-2.5 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    تنظیمات رتبه
+                </button>
+            @endif
 
         </div>
 
@@ -155,18 +157,7 @@
                     </span>
                 @endif
 
-                @if($family_rank_range)
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        رتبه:
-                        @if($family_rank_range === 'very_high') خیلی بالا
-                        @elseif($family_rank_range === 'high') بالا
-                        @elseif($family_rank_range === 'medium') متوسط
-                        @elseif($family_rank_range === 'low') پایین
-                        @elseif($family_rank_range === 'very_low') خیلی پایین
-                        @endif
-                        <button wire:click="$set('family_rank_range', '')" class="mr-1 text-purple-600 hover:text-purple-800">×</button>
-                    </span>
-                @endif
+
 
                 @if($specific_criteria && isset($availableRankSettings))
                     @php $criteria = $availableRankSettings->find($specific_criteria); @endphp
@@ -1598,6 +1589,7 @@
         });
     </script>
 
+    @if(auth()->user()->isInsurance())
     <div x-show="showRankModal"
      @keydown.escape.window="showRankModal = false"
      x-transition:enter="transition ease-out duration-300"
@@ -1650,10 +1642,6 @@
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                                 </svg>
-                                            </button>
-                                            <button wire:click="deleteRankSetting({{ $criterion->id }})" class="text-red-500 hover:text-red-700">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                 </svg>
                                             </button>
                                         </div>
@@ -1785,6 +1773,7 @@
         </div>
      </div>
     </div>
+    @endif
 
     <!-- مودال فیلتر -->
     <div x-show="showFilterModal"

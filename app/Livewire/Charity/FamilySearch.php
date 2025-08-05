@@ -24,9 +24,11 @@ use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedSort;
 use Illuminate\Support\Facades\Cache;
-use App\QueryFilters\RankingFilter;
+use App\QueryFilters\FamilyRankingFilter;
 use App\QuerySorts\RankingSort;
 use App\Helpers\ProblemTypeHelper;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class FamilySearch extends Component
 {
@@ -99,6 +101,7 @@ class FamilySearch extends Component
     // مدیریت فیلترهای پیشرفته
     public $tempFilters = [];
     public $activeFilters = [];
+    public $filters = [];
 
     /**
      * Reset all filters to their default values
@@ -160,12 +163,14 @@ class FamilySearch extends Component
     public $rankSettingName = '';
     public $rankSettingDescription = '';
     public $rankSettingWeight = 5;
-    public $rankSettingColor = 'bg-green-100';
-    public $rankSettingNeedsDoc = 1;
+    public $rankSettingColor = '#60A5FA';
+    public $rankSettingNeedsDoc = true;
 
     // متغیرهای مورد نیاز برای مودال رتبه‌بندی جدید
     public $selectedCriteria = [];
     public $criteriaRequireDocument = [];
+
+
 
     protected $paginationTheme = 'tailwind';
 
@@ -268,59 +273,30 @@ class FamilySearch extends Component
             // استفاده از کش برای بهبود عملکرد
             $cacheKey = $this->getCacheKey();
 
-            $families = Cache::remember($cacheKey, 300, function () { // 5 دقیقه کش
+            $families = Cache::remember($cacheKey, 300, function () {
                 $queryBuilder = $this->buildFamiliesQuery();
-
-                // Dynamic Ranking Logic - اگر طرح رتبه‌بندی اعمال شده باشد
-                if ($this->appliedSchemeId) {
-                    $schemeCriteria = \App\Models\RankingSchemeCriterion::where('ranking_scheme_id', $this->appliedSchemeId)
-                        ->pluck('weight', 'rank_setting_id');
-
-                    if ($schemeCriteria->isNotEmpty()) {
-                        $cases = [];
-                        foreach ($schemeCriteria as $rank_setting_id => $weight) {
-                            $cases[] = "CASE WHEN EXISTS (SELECT 1 FROM family_criteria fc WHERE fc.family_id = families.id AND fc.rank_setting_id = {$rank_setting_id} AND fc.has_criteria = true) THEN {$weight} ELSE 0 END";
-                        }
-
-                        $caseQuery = implode(' + ', $cases);
-
-                        // تبدیل QueryBuilder به Eloquent برای selectRaw
-                        $eloquentQuery = $queryBuilder->getEloquentBuilder();
-                        $eloquentQuery->selectRaw("families.*, ({$caseQuery}) as calculated_score")
-                                     ->orderBy('calculated_score', 'desc');
-
-                        return $eloquentQuery->paginate($this->perPage);
-                    }
+                
+                // اطمینان از paginate فقط روی QueryBuilder/Eloquent
+                if ($queryBuilder instanceof \Illuminate\Database\Eloquent\Builder || 
+                    $queryBuilder instanceof \Illuminate\Database\Eloquent\Relations\Relation ||
+                    $queryBuilder instanceof \Spatie\QueryBuilder\QueryBuilder) {
+                    return $queryBuilder->paginate($this->perPage);
+                } else {
+                    // ایجاد paginator خالی برای Collection ها
+                    return new LengthAwarePaginator(
+                        collect([]),  // items
+                        0,           // total
+                        $this->perPage,  // perPage
+                        $this->page,     // currentPage
+                        [
+                            'path' => request()->url(),
+                            'pageName' => 'page',
+                        ]
+                    );
                 }
-
-                // استفاده از QueryBuilder برای پیجینیشن معمولی
-                return $queryBuilder->paginate($this->perPage);
             });
 
-            // نمایش تعداد خانواده‌های فیلتر شده
-            if ($this->hasActiveFilters() && request()->has(['status', 'province', 'city', 'deprivation_rank', 'family_rank_range', 'specific_criteria', 'charity', 'region'])) {
-                $totalCount = $families->total();
-                $activeFiltersCount = $this->getActiveFiltersCount();
-                $this->dispatch('notify', [
-                    'message' => "نمایش {$totalCount} خانواده براساس {$activeFiltersCount} فیلتر فعال",
-                    'type' => 'info'
-                ]);
-            }
-
-            // بارگذاری اعضای خانواده برای نمایش جزئیات
-            if ($this->expandedFamily) {
-                $this->familyMembers = Member::where('family_id', $this->expandedFamily)
-                    ->orderBy('is_head', 'desc')
-                    ->orderBy('created_at')
-                    ->get();
-            }
-
-            Log::info('✅ FamilySearch render completed successfully', [
-                'families_count' => $families->count(),
-                'total_families' => $families->total(),
-                'cache_key' => $cacheKey
-            ]);
-
+            // ... existing code ...
             return view('livewire.charity.family-search', [
                 'families' => $families,
             ]);
@@ -335,8 +311,19 @@ class FamilySearch extends Component
             ]);
 
             // بازگشت به نمایش خالی در صورت خطا
+            $emptyPaginator = new LengthAwarePaginator(
+                collect([]),  // items
+                0,           // total
+                $this->perPage,  // perPage
+                $this->page,     // currentPage
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
             return view('livewire.charity.family-search', [
-                'families' => collect()->paginate($this->perPage),
+                'families' => $emptyPaginator,
             ]);
         }
     }
@@ -470,7 +457,7 @@ class FamilySearch extends Component
                 AllowedFilter::exact('wizard_status'),
                 AllowedFilter::exact('is_insured'),
                 // فیلتر سفارشی رتبه‌بندی و وزن‌دهی
-                AllowedFilter::custom('ranking', new RankingFilter()),
+                AllowedFilter::custom('ranking', new FamilyRankingFilter()),
                 AllowedFilter::exact('ranking_scheme'),
                 AllowedFilter::exact('ranking_weights'),
                 // فیلتر برای جستجوی نام سرپرست
@@ -712,29 +699,27 @@ class FamilySearch extends Component
                 Log::debug('✅ Family rank range filter applied', ['family_rank_range' => $this->family_rank_range]);
             }
 
-            // فیلتر معیار خاص
+            // فیلتر معیار خاص (اصلاح شده مانند FamiliesApproval)
             if (!empty($this->specific_criteria)) {
-                $rankSetting = RankSetting::find($this->specific_criteria);
-                if ($rankSetting) {
-                    $queryBuilder->where(function($q) use ($rankSetting) {
-                        // تبدیل نام معیار به فارسی و انگلیسی برای جستجو
-                        $persianName = ProblemTypeHelper::englishToPersian($rankSetting->name);
-                        $englishName = ProblemTypeHelper::persianToEnglish($rankSetting->name);
-                        
-                        $q->whereJsonContains('acceptance_criteria', $persianName)
-                          ->orWhereJsonContains('acceptance_criteria', $rankSetting->name)
-                          ->orWhereJsonContains('acceptance_criteria', $englishName)
-                          ->orWhereHas('members', function($memberQuery) use ($persianName, $rankSetting, $englishName) {
-                              $memberQuery->whereJsonContains('problem_type', $persianName)
-                                        ->orWhereJsonContains('problem_type', $rankSetting->name)
-                                        ->orWhereJsonContains('problem_type', $englishName);
-                          })
-                          ->orWhereHas('familyCriteria', function ($subQ) use ($rankSetting) {
-                              $subQ->where('rank_setting_id', $rankSetting->id)
-                                   ->where('has_criteria', true);
-                          });
+                $criteriaIds = array_map('trim', explode(',', $this->specific_criteria));
+                // اگر مقدار رشته‌ای است (مثلاً نام معیار)، آن را به id تبدیل کن
+                if (!is_numeric($criteriaIds[0])) {
+                    $criteriaIds = \App\Models\RankSetting::whereIn('name', $criteriaIds)->pluck('id')->toArray();
+                }
+                if (!empty($criteriaIds)) {
+                    $rankSettingNames = \App\Models\RankSetting::whereIn('id', $criteriaIds)->pluck('name')->toArray();
+                    $queryBuilder->where(function($q) use ($criteriaIds, $rankSettingNames) {
+                        // سیستم جدید: family_criteria
+                        $q->whereHas('familyCriteria', function($subquery) use ($criteriaIds) {
+                            $subquery->whereIn('rank_setting_id', $criteriaIds)
+                                     ->where('has_criteria', true);
+                        });
+                        // سیستم قدیمی: rank_criteria
+                        foreach ($rankSettingNames as $name) {
+                            $q->orWhere('rank_criteria', 'LIKE', '%' . $name . '%');
+                        }
                     });
-                    Log::debug('✅ Specific criteria filter applied', ['criteria_id' => $this->specific_criteria]);
+                    Log::debug('✅ Specific criteria filter applied (by id)', ['criteria_ids' => $criteriaIds]);
                 }
             }
 
@@ -1654,12 +1639,30 @@ class FamilySearch extends Component
 
     public function loadRankSettings()
     {
-        // استفاده از آبجکت کالکشن بدون تبدیل به آرایه
+        Log::info('📋 STEP 2: Loading rank settings', [
+            'user_id' => Auth::id(),
+            'timestamp' => now()
+        ]);
         $this->rankSettings = RankSetting::orderBy('sort_order')->get();
-
+        $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
+        $this->availableCriteria = RankSetting::where('is_active', true)->orderBy('sort_order')->get();
+        // Update available rank settings for display
+        $this->availableRankSettings = $this->rankSettings;
+        // اصلاح count برای آرایه/کالکشن
+        $rankSettingsCount = is_array($this->rankSettings) ? count($this->rankSettings) : $this->rankSettings->count();
+        $rankingSchemesCount = is_array($this->rankingSchemes) ? count($this->rankingSchemes) : $this->rankingSchemes->count();
+        $availableCriteriaCount = is_array($this->availableCriteria) ? count($this->availableCriteria) : $this->availableCriteria->count();
+        $activeCriteria = $this->availableCriteria instanceof \Illuminate\Support\Collection ? $this->availableCriteria->pluck('name', 'id')->toArray() : [];
+        Log::info('✅ STEP 2 COMPLETED: Rank settings loaded', [
+            'rankSettings_count' => $rankSettingsCount,
+            'rankingSchemes_count' => $rankingSchemesCount,
+            'availableCriteria_count' => $availableCriteriaCount,
+            'active_criteria' => $activeCriteria,
+            'user_id' => Auth::id()
+        ]);
         // نمایش پیام مناسب برای باز شدن تنظیمات
         $this->dispatch('notify', [
-            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . count($this->rankSettings) . ' معیار',
+            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . $rankSettingsCount . ' معیار',
             'type' => 'info'
         ]);
     }
@@ -1686,36 +1689,150 @@ class FamilySearch extends Component
     }
 
     /**
+     * یک معیار را برای ویرایش انتخاب می‌کند.
+     * @param int $id
+     */
+    public function edit($id)
+    {
+        $this->isCreatingNew = false;
+        $this->editingRankSettingId = $id;
+        $setting = RankSetting::find($id);
+        if ($setting) {
+            $this->editingRankSetting = $setting->toArray();
+        }
+    }
+
+    /**
+     * تغییرات را ذخیره می‌کند (هم برای افزودن جدید و هم ویرایش).
+     */
+    public function save()
+    {
+        $this->validate([
+            'editingRankSetting.name' => 'required|string|max:255',
+            'editingRankSetting.weight' => 'required|integer|min:0|max:10',
+            'editingRankSetting.description' => 'nullable|string',
+            'editingRankSetting.requires_document' => 'boolean',
+            'editingRankSetting.color' => 'nullable|string',
+        ]);
+
+        try {
+            // محاسبه sort_order برای رکورد جدید
+            if (!$this->editingRankSettingId) {
+                $maxOrder = RankSetting::max('sort_order') ?? 0;
+                $this->editingRankSetting['sort_order'] = $maxOrder + 10;
+                $this->editingRankSetting['is_active'] = true;
+                $this->editingRankSetting['slug'] = \Illuminate\Support\Str::slug($this->editingRankSetting['name']);
+            }
+
+            // ذخیره
+            $setting = RankSetting::updateOrCreate(
+                ['id' => $this->editingRankSettingId],
+                $this->editingRankSetting
+            );
+
+            // بازنشانی فرم
+            $this->resetForm();
+
+            // بارگذاری مجدد تنظیمات
+            $this->loadRankSettings();
+
+            // پاک کردن کش لیست خانواده‌ها
+            $this->clearFamiliesCache();
+
+            $this->dispatch('notify', [
+                'message' => 'معیار با موفقیت ذخیره شد',
+                'type' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف یک معیار رتبه‌بندی
+     * @param int $id
+     */
+    public function delete($id)
+    {
+        try {
+            $setting = RankSetting::find($id);
+            if ($setting) {
+                // بررسی استفاده شدن معیار
+                $usageCount = \App\Models\FamilyCriterion::where('rank_setting_id', $id)->count();
+                if ($usageCount > 0) {
+                    $this->dispatch('notify', [
+                        'message' => "این معیار در {$usageCount} خانواده استفاده شده و قابل حذف نیست. به جای حذف می‌توانید آن را غیرفعال کنید.",
+                        'type' => 'error'
+                    ]);
+                    return;
+                }
+
+                $setting->delete();
+                $this->loadRankSettings();
+
+                // پاک کردن کش لیست خانواده‌ها
+                $this->clearFamiliesCache();
+
+                $this->dispatch('notify', [
+                    'message' => 'معیار با موفقیت حذف شد',
+                    'type' => 'success'
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * انصراف از ویرایش/افزودن و بازنشانی فرم
+     */
+    public function cancel()
+    {
+        $this->resetForm();
+        $this->dispatch('notify', [
+            'message' => 'عملیات لغو شد',
+            'type' => 'info'
+        ]);
+    }
+
+    /**
+     * بازنشانی فرم ویرایش/افزودن
+     */
+    private function resetForm()
+    {
+        $this->editingRankSettingId = null;
+        $this->isCreatingNew = false;
+        $this->editingRankSetting = [
+            'name' => '',
+            'weight' => 5,
+            'description' => '',
+            'requires_document' => true,
+            'color' => '#60A5FA'
+        ];
+    }
+
+    /**
      * باز کردن مودال تنظیمات رتبه
      */
     public function openRankModal()
     {
-        // بارگذاری مجدد معیارهای رتبه‌بندی با اسکوپ active و ordered
-        // با لود کردن به صورت collection (بدون ->toArray())
-        $this->availableRankSettings = RankSetting::active()->ordered()->get();
-
-        // ثبت در لاگ برای اشکال‌زدایی - با استفاده از متد count() کالکشن
-        Log::info('Rank settings loaded:', [
-            'loaded_criteria_count' => count($this->availableRankSettings)
+        Log::info('🎯 STEP 1: Opening rank modal', [
+            'user_id' => Auth::id(),
+            'timestamp' => now()
         ]);
-
-        // مقداردهی اولیه فیلدهای فرم معیار جدید
-        $this->resetRankSettingForm();
-
-        // Initialize selectedCriteria from specific_criteria if set
-        if ($this->specific_criteria) {
-            $this->selectedCriteria = explode(',', $this->specific_criteria);
-        } else {
-            $this->selectedCriteria = [];
-        }
-
+        $this->loadRankSettings();
         $this->showRankModal = true;
-        $this->dispatch('show-rank-modal');
-
-        // نمایش پیام برای کاربر - با استفاده از متد count() کالکشن
-        $this->dispatch('notify', [
-            'message' => count($this->availableRankSettings) . ' معیار رتبه‌بندی بارگذاری شد',
-            'type' => 'info'
+        $rankSettingsCount = is_array($this->rankSettings) ? count($this->rankSettings) : $this->rankSettings->count();
+        Log::info('✅ STEP 1 COMPLETED: Rank modal opened', [
+            'showRankModal' => $this->showRankModal,
+            'rankSettings_count' => $rankSettingsCount,
+            'user_id' => Auth::id()
         ]);
     }
 
@@ -1732,24 +1849,89 @@ class FamilySearch extends Component
      */
     public function applyCriteria()
     {
-        if (!empty($this->selectedCriteria)) {
-            $this->specific_criteria = implode(',', $this->selectedCriteria);
-        } else {
-            $this->specific_criteria = null;
+        try {
+            Log::info('🎯 STEP 3: Starting applyCriteria with ranking sort', [
+                'selectedCriteria' => $this->selectedCriteria,
+                'user_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+
+            // استخراج ID معیارهای انتخاب شده
+            $selectedRankSettingIds = array_keys(array_filter($this->selectedCriteria,
+                fn($value) => $value === true
+            ));
+
+            Log::info('📊 STEP 3.1: Selected criteria analysis', [
+                'selectedRankSettingIds' => $selectedRankSettingIds,
+                'selectedRankSettingIds_count' => count($selectedRankSettingIds),
+                'user_id' => Auth::id()
+            ]);
+
+            if (empty($selectedRankSettingIds)) {
+                Log::warning('❌ STEP 3 FAILED: No criteria selected for ranking', [
+                    'user_id' => Auth::id()
+                ]);
+                // پاک کردن فیلتر و سورت
+                $this->specific_criteria = null;
+                $this->sortField = 'created_at';
+                $this->sortDirection = 'desc';
+                $this->resetPage();
+                $this->clearFamiliesCache();
+                // بستن مودال
+                $this->showRankModal = false;
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر و سورت معیارها پاک شد',
+                    'type' => 'info'
+                ]);
+                return;
+            }
+
+            // ذخیره id معیارها برای فیلتر (مانند FamiliesApproval)
+            $this->specific_criteria = implode(',', $selectedRankSettingIds);
+
+            // تنظیم سورت بر اساس رتبه‌بندی
+            $this->sortField = 'weighted_rank';
+            $this->sortDirection = 'desc'; // امتیاز بالاتر اول
+
+            Log::info('⚙️ STEP 3.3: Sort parameters set', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+                'specific_criteria' => $this->specific_criteria,
+                'user_id' => Auth::id()
+            ]);
+
+            // Reset صفحه و cache
+            $this->resetPage();
+            $this->clearFamiliesCache();
+
+            $criteriaList = implode('، ', $selectedRankSettingIds);
+
+            $this->dispatch('notify', [
+                'message' => "سورت بر اساس معیارها اعمال شد: {$criteriaList}",
+                'type' => 'success'
+            ]);
+
+            // بستن مودال
+            $this->showRankModal = false;
+
+            Log::info('✅ STEP 3 COMPLETED: Ranking sort applied successfully', [
+                'criteria_ids' => $selectedRankSettingIds,
+                'sort_field' => $this->sortField,
+                'sort_direction' => $this->sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ STEP 3 ERROR: Error in ranking sort: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در اعمال سورت رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
         }
-
-        $this->resetPage();
-        $this->closeRankModal();
-
-        // Clear cache to ensure fresh data
-        if (Auth::check()) {
-            cache()->forget('families_query_' . Auth::id());
-        }
-
-        $this->dispatch('notify', [
-            'message' => 'معیارهای انتخاب‌شده با موفقیت اعمال شدند',
-            'type' => 'success'
-        ]);
     }
 
     /**
@@ -1818,8 +2000,8 @@ class FamilySearch extends Component
         $this->rankSettingName = '';
         $this->rankSettingDescription = '';
         $this->rankSettingWeight = 5;
-        $this->rankSettingColor = 'bg-green-100';
-        $this->rankSettingNeedsDoc = 1;
+        $this->rankSettingColor = '#60A5FA';
+        $this->rankSettingNeedsDoc = true;
         $this->editingRankSettingId = null;
         $this->isEditingMode = false; // مشخص می‌کند که در حال افزودن هستیم نه ویرایش
 
@@ -1874,7 +2056,7 @@ class FamilySearch extends Component
                 ]);
 
                 // بارگذاری مجدد لیست
-        $this->availableRankSettings = RankSetting::active()->ordereclearCacheAndRefreshd()->get();
+                $this->availableRankSettings = RankSetting::active()->ordered()->get();
             }
         } catch (\Exception $e) {
             Log::error('Error deleting rank setting:', [
@@ -1885,7 +2067,72 @@ class FamilySearch extends Component
             $this->dispatch('notify', [
                 'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
                 'type' => 'error'
-        ]);
+            ]);
+        }
+    }
+
+    /**
+     * ذخیره معیار رتبه‌بندی
+     */
+    public function saveRankSetting()
+    {
+        try {
+            // اعتبارسنجی
+            if ($this->editingRankSettingId) {
+                // در حالت ویرایش فقط وزن قابل تغییر است
+                $this->validate([
+                    'rankSettingWeight' => 'required|integer|min:0|max:10',
+                ]);
+            } else {
+                // در حالت افزودن معیار جدید همه فیلدها الزامی هستند
+                $this->validate([
+                    'rankSettingName' => 'required|string|max:255',
+                    'rankSettingWeight' => 'required|integer|min:0|max:10',
+                    'rankSettingDescription' => 'nullable|string',
+                    'rankSettingNeedsDoc' => 'required|boolean',
+                ]);
+            }
+
+            if ($this->editingRankSettingId) {
+                // ویرایش معیار موجود - فقط وزن
+                $setting = RankSetting::find($this->editingRankSettingId);
+                if ($setting) {
+                    $setting->weight = $this->rankSettingWeight;
+                    $setting->save();
+
+                    $this->dispatch('notify', [
+                        'message' => 'وزن معیار با موفقیت به‌روزرسانی شد: ' . $setting->name,
+                        'type' => 'success'
+                    ]);
+                }
+            } else {
+                // ایجاد معیار جدید
+                RankSetting::create([
+                    'name' => $this->rankSettingName,
+                    'weight' => $this->rankSettingWeight,
+                    'description' => $this->rankSettingDescription,
+                    'requires_document' => (bool)$this->rankSettingNeedsDoc,
+                    'slug' => \Illuminate\Support\Str::slug($this->rankSettingName) ?: 'rank-' . \Illuminate\Support\Str::random(6),
+                    'is_active' => true,
+                    'sort_order' => RankSetting::max('sort_order') + 1,
+                ]);
+
+                $this->dispatch('notify', [
+                    'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
+                    'type' => 'success'
+                ]);
+            }
+
+            // بارگذاری مجدد تنظیمات
+            $this->availableRankSettings = RankSetting::active()->ordered()->get();
+            $this->clearFamiliesCache();
+            $this->resetRankSettingForm();
+
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
         }
     }
 
@@ -1900,6 +2147,208 @@ class FamilySearch extends Component
             'message' => 'فیلتر بیماری خاص اعمال شد',
             'type' => 'success'
         ]);
+    }
+
+    /**
+     * اعمال سورت به query builder
+     */
+    protected function applySortToQueryBuilder($queryBuilder)
+    {
+        try {
+            Log::info('🎯 STEP 4: Starting applySortToQueryBuilder', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+                'user_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+
+            if (empty($this->sortField)) {
+                Log::info('🔄 STEP 4: No sort field specified, using default', [
+                    'user_id' => Auth::id()
+                ]);
+                return $queryBuilder;
+            }
+
+            // تعریف فیلدهای قابل سورت و نگاشت آنها
+            $sortMappings = [
+                'created_at' => 'families.created_at',
+                'updated_at' => 'families.updated_at',
+                'family_code' => 'families.family_code',
+                'status' => 'families.status',
+                'wizard_status' => 'families.wizard_status',
+                'members_count' => 'members_count',
+                'final_insurances_count' => 'final_insurances_count',
+                'calculated_rank' => 'families.calculated_rank',
+                'deprivation_rank' => 'families.deprivation_rank',
+                'weighted_score' => 'families.weighted_score'
+            ];
+
+            $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+
+            Log::info('⚙️ STEP 4.1: Sort parameters prepared', [
+                'sortField' => $this->sortField,
+                'sortDirection' => $sortDirection,
+                'sortMappings' => array_keys($sortMappings),
+                'user_id' => Auth::id()
+            ]);
+
+            // اعمال سورت بر اساس نوع فیلد
+            switch ($this->sortField) {
+                case 'head_name':
+                    Log::info('📋 STEP 4.2: Applying head_name sort');
+                    // سورت خاص برای نام سرپرست
+                    $queryBuilder->getEloquentBuilder()
+                        ->leftJoin('people as head_person', 'families.head_id', '=', 'head_person.id')
+                        ->orderBy('head_person.first_name', $sortDirection)
+                        ->orderBy('head_person.last_name', $sortDirection);
+                    break;
+
+                case 'final_insurances_count':
+                    Log::info('📋 STEP 4.2: Applying final_insurances_count sort');
+                    // سورت بر اساس تعداد بیمه‌های نهایی
+                    $queryBuilder->getEloquentBuilder()
+                        ->withCount('finalInsurances')
+                        ->orderBy('final_insurances_count', $sortDirection);
+                    break;
+
+                case 'calculated_rank':
+                    Log::info('📋 STEP 4.2: Applying calculated_rank sort');
+                    // سورت بر اساس رتبه محاسبه شده
+                    if ($sortDirection === 'desc') {
+                        $queryBuilder->getEloquentBuilder()->orderByRaw('families.calculated_rank IS NULL, families.calculated_rank DESC');
+                    } else {
+                        $queryBuilder->getEloquentBuilder()->orderByRaw('families.calculated_rank IS NULL, families.calculated_rank ASC');
+                    }
+                    break;
+
+                case 'weighted_rank':
+                    Log::info('📋 STEP 4.2: Applying weighted_rank sort');
+                    // سورت بر اساس امتیاز وزنی معیارهای انتخاب شده
+                    $this->applyWeightedRankSort($queryBuilder, $sortDirection);
+                    break;
+
+                default:
+                    Log::info('📋 STEP 4.2: Applying default sort');
+                    // سورت معمولی برای سایر فیلدها
+                    if (isset($sortMappings[$this->sortField])) {
+                        $fieldName = $sortMappings[$this->sortField];
+                        $queryBuilder->getEloquentBuilder()->orderBy($fieldName, $sortDirection);
+                    } else {
+                        Log::warning('⚠️ STEP 4 WARNING: Unknown sort field', [
+                            'sort_field' => $this->sortField,
+                            'user_id' => Auth::id()
+                        ]);
+                        // بازگشت به سورت پیش‌فرض
+                        $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+                    }
+                    break;
+            }
+
+            Log::info('✅ STEP 4 COMPLETED: Sort applied successfully', [
+                'sort_field' => $this->sortField,
+                'sort_direction' => $sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ STEP 4 ERROR: Error applying sort', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // در صورت خطا، سورت بر اساس تاریخ ایجاد
+            $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+        }
+    }
+
+    /**
+     * اعمال سورت وزنی بر اساس معیارهای انتخاب شده
+     */
+    protected function applyWeightedRankSort($queryBuilder, $sortDirection)
+    {
+        try {
+            Log::info('🎯 STEP 5: Starting applyWeightedRankSort', [
+                'sortDirection' => $sortDirection,
+                'selectedCriteria' => $this->selectedCriteria ?? [],
+                'user_id' => Auth::id(),
+                'timestamp' => now()
+            ]);
+
+            // دریافت معیارهای انتخاب شده
+            $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
+            
+            Log::info('📊 STEP 5.1: Selected criteria analysis', [
+                'selectedCriteriaIds' => $selectedCriteriaIds,
+                'selectedCriteriaIds_count' => count($selectedCriteriaIds),
+                'user_id' => Auth::id()
+            ]);
+            
+            if (empty($selectedCriteriaIds)) {
+                Log::warning('❌ STEP 5 FAILED: No criteria selected for weighted sort', [
+                    'user_id' => Auth::id()
+                ]);
+                // اگر معیاری انتخاب نشده، سورت بر اساس تاریخ ایجاد
+                $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+                return;
+            }
+
+            // ایجاد subquery برای محاسبه امتیاز وزنی با ضرب وزن در تعداد موارد
+            $criteriaIds = implode(',', $selectedCriteriaIds);
+            $weightedScoreSubquery = "
+                (
+                    SELECT COALESCE(SUM(
+                        rs.weight * (
+                            -- شمارش موارد معیار در acceptance_criteria (0 یا 1)
+                            CASE 
+                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON)) 
+                                THEN 1 
+                                ELSE 0 
+                            END +
+                            -- شمارش تعداد اعضای دارای این معیار در problem_type
+                            (
+                                SELECT COUNT(*)
+                                FROM members fm
+                                WHERE fm.family_id = families.id
+                                AND JSON_CONTAINS(fm.problem_type, CAST(rs.id AS JSON))
+                                AND fm.deleted_at IS NULL
+                            )
+                        )
+                    ), 0)
+                    FROM rank_settings rs
+                    WHERE rs.id IN ({$criteriaIds})
+                    AND rs.is_active = 1
+                )
+            ";
+
+            Log::info('⚙️ STEP 5.2: Weighted score subquery created', [
+                'criteriaIds' => $criteriaIds,
+                'weightedScoreSubquery_length' => strlen($weightedScoreSubquery),
+                'user_id' => Auth::id()
+            ]);
+
+            // اضافه کردن امتیاز محاسبه شده به select
+            $queryBuilder->getEloquentBuilder()
+                ->addSelect(DB::raw("({$weightedScoreSubquery}) as weighted_score"))
+                ->orderBy('weighted_score', $sortDirection)
+                ->orderBy('families.created_at', 'desc'); // سورت ثانویه
+
+            Log::info('✅ STEP 5 COMPLETED: Weighted rank sort applied successfully', [
+                'criteria_ids' => $selectedCriteriaIds,
+                'sort_direction' => $sortDirection,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ STEP 5 ERROR: Error applying weighted rank sort', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // در صورت خطا، سورت بر اساس تاریخ ایجاد
+            $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
+        }
     }
 
     /**
@@ -2164,4 +2613,5 @@ class FamilySearch extends Component
             'خانه‌دار' => 'خانه‌دار'
         ];
     }
+
 }
