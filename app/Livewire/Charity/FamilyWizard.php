@@ -107,15 +107,78 @@ class FamilyWizard extends Component
     public function nextStep()
     {
         try {
-            $result = $this->validateCurrentStep();
-            if ($result === true && $this->currentStep < $this->totalSteps) {
+            // ذخیره فایل‌های موقت قبل از رفتن به مرحله بعد
+            $this->saveTemporaryDocuments();
+            
+            $this->validateCurrentStep();
+            
+            if ($this->currentStep < $this->totalSteps) {
                 $this->currentStep++;
-                $this->dispatch('show-message', 'success', 'مرحله با موفقیت تکمیل شد');
             }
         } catch (\Exception $e) {
-            $msg = $e->getMessage() ?: 'خطای ناشناخته‌ای رخ داده است. لطفاً مجدداً تلاش کنید.';
-            session()->flash('error', $msg);
-            $this->dispatch('show-message', 'error', $msg);
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ذخیره فایل‌های موقت قبل از رفتن به مرحله بعد
+     */
+    private function saveTemporaryDocuments()
+    {
+        foreach ($this->specialDiseaseDocuments as $index => $file) {
+            if ($file && !isset($this->uploadedDocuments[$index])) {
+                try {
+                    // Check if file is valid
+                    if (!$file->isValid()) {
+                        Log::warning('Invalid file uploaded', [
+                            'member_index' => $index,
+                            'original_name' => $file->getClientOriginalName(),
+                        ]);
+                        continue;
+                    }
+
+                    // Store the file temporarily and keep track of it
+                    $path = $file->store('temp/special-disease-docs');
+                    
+                    // Verify the file was stored successfully
+                    if (!Storage::exists($path)) {
+                        Log::error('File was not stored successfully', [
+                            'member_index' => $index,
+                            'path' => $path,
+                        ]);
+                        continue;
+                    }
+
+                    $this->uploadedDocuments[$index] = [
+                        'path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                    ];
+                    
+                    // Log for debugging
+                    Log::info('Temporary document saved', [
+                        'member_index' => $index,
+                        'original_name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    Log::error('Error saving temporary document', [
+                        'error' => $e->getMessage(),
+                        'member_index' => $index,
+                        'file_info' => $file ? [
+                            'original_name' => $file->getClientOriginalName(),
+                            'size' => $file->getSize(),
+                            'mime_type' => $file->getMimeType(),
+                        ] : 'null',
+                    ]);
+                }
+            }
         }
     }
 
@@ -187,7 +250,11 @@ class FamilyWizard extends Component
 
                     // بررسی مدرک بیماری خاص
                     if (isset($member['problem_type']) && is_array($member['problem_type']) && in_array('بیماری خاص', $member['problem_type'])) {
-                        if (!isset($this->uploadedDocuments[$index]) || empty($this->uploadedDocuments[$index])) {
+                        // بررسی اینکه آیا فایل آپلود شده است یا نه
+                        $hasUploadedDocument = isset($this->uploadedDocuments[$index]) && !empty($this->uploadedDocuments[$index]);
+                        $hasNewDocument = isset($this->specialDiseaseDocuments[$index]) && $this->specialDiseaseDocuments[$index];
+                        
+                        if (!$hasUploadedDocument && !$hasNewDocument) {
                             throw new \Exception("برای عضو خانواده شماره " . ($index + 1) . " که بیماری خاص دارد، مدرک پزشکی الزامی است");
                         }
                     }
@@ -324,10 +391,16 @@ class FamilyWizard extends Component
 
     public function render()
     {
+        // آپلود فایل‌های انتخاب شده در مرحله 3
+        if ($this->currentStep == 3) {
+            $this->saveTemporaryDocuments();
+        }
+        
         // فقط پاس دادن مقادیر، بدون مقداردهی مجدد
         if (isset($this->head_member_index) && isset($this->members[$this->head_member_index])) {
             $this->head = $this->members[$this->head_member_index];
         }
+        
         return view('livewire.charity.family-wizard', [
             'cities' => $this->cities,
             'districts' => $this->districts,
@@ -371,31 +444,52 @@ class FamilyWizard extends Component
                 $member = $this->members[$memberIndex] ?? null;
                 if (!$member) continue;
 
-                // Move file from temp to permanent location
-                $file = Storage::get($document['path']);
-                $newPath = 'special-disease-docs/' . uniqid() . '_' . $document['original_name'];
+                // Check if the file exists and has content
+                if (!Storage::exists($document['path'])) {
+                    Log::warning('Temporary file not found', [
+                        'path' => $document['path'],
+                        'member_index' => $memberIndex,
+                    ]);
+                    continue;
+                }
 
-                // Save to permanent storage
-                Storage::put($newPath, $file);
+                $fileContent = Storage::get($document['path']);
+                if ($fileContent === null || empty($fileContent)) {
+                    Log::warning('Temporary file is empty or null', [
+                        'path' => $document['path'],
+                        'member_index' => $memberIndex,
+                    ]);
+                    continue;
+                }
 
-                // Delete the temp file
+                // Create a temporary file for MediaLibrary
+                $tempPath = storage_path('app/temp/' . uniqid() . '_' . $document['original_name']);
+                file_put_contents($tempPath, $fileContent);
+
+                // Store file path for later use in member creation
+                $this->members[$memberIndex]['special_disease_document_path'] = $tempPath;
+                $this->members[$memberIndex]['special_disease_document_name'] = $document['original_name'];
+
+                // Delete the temp file from Livewire storage
                 Storage::delete($document['path']);
 
-                // Update member's document path
-                $this->members[$memberIndex]['special_disease_document'] = $newPath;
-
-                // Update incomplete data status
-                $this->updateMemberIncompleteStatus($memberIndex);
+                Log::info('Special disease document prepared for MediaLibrary', [
+                    'member_index' => $memberIndex,
+                    'original_path' => $document['path'],
+                    'temp_path' => $tempPath,
+                    'original_name' => $document['original_name'],
+                ]);
 
             } catch (\Exception $e) {
-                Log::error('Error saving special disease document', [
+                Log::error('Error preparing special disease document for MediaLibrary', [
                     'error' => $e->getMessage(),
                     'member_index' => $memberIndex,
+                    'document' => $document,
                 ]);
 
                 $this->dispatch('notify', [
                     'type' => 'error',
-                    'message' => 'خطا در ذخیره‌سازی مدرک بیماری خاص. لطفاً دوباره تلاش کنید.'
+                    'message' => 'خطا در آماده‌سازی مدرک بیماری خاص. لطفاً دوباره تلاش کنید.'
                 ]);
             }
         }
@@ -422,6 +516,9 @@ class FamilyWizard extends Component
 
     public function submit()
     {
+        // Add JavaScript console log for debugging
+        $this->dispatch('console-log', 'Submit method called from PHP');
+        
         Log::debug('Submit method started', ['step' => 'start']);
 
         // Validate all steps before submission
@@ -466,6 +563,11 @@ class FamilyWizard extends Component
             Log::debug('Family created successfully', ['family_id' => $family->id]);
 
             // ذخیره مدارک آپلود شده
+            Log::debug('Starting to save uploaded documents', [
+                'uploaded_documents_count' => count($this->uploadedDocuments),
+                'special_disease_documents_count' => count(array_filter($this->specialDiseaseDocuments)),
+            ]);
+            
             $this->saveUploadedDocuments();
 
             // ذخیره اعضای خانواده
@@ -498,23 +600,36 @@ class FamilyWizard extends Component
                 ]);
 
                 // آپلود مدرک بیماری خاص اگر وجود دارد
-                if (isset($member['special_disease_document']) && !empty($member['special_disease_document'])) {
+                if (isset($member['special_disease_document_path']) && !empty($member['special_disease_document_path'])) {
                     try {
-                        $filePath = $member['special_disease_document'];
-                        if (Storage::exists($filePath)) {
-                            $file = Storage::get($filePath);
-                            $fileName = basename($filePath);
+                        $filePath = $member['special_disease_document_path'];
+                        if (file_exists($filePath)) {
+                            $fileName = $member['special_disease_document_name'];
                             
-                            $createdMember->addMediaFromString($file)
+                            $createdMember->addMedia($filePath)
                                 ->usingName($createdMember->full_name . ' - مدرک بیماری خاص')
                                 ->usingFileName($fileName)
                                 ->toMediaCollection('special_disease_documents');
+
+                            // حذف فایل موقت
+                            unlink($filePath);
+
+                            Log::info('Special disease document uploaded to MediaLibrary', [
+                                'member_id' => $createdMember->id,
+                                'file_path' => $filePath,
+                                'file_name' => $fileName,
+                            ]);
+                        } else {
+                            Log::warning('Special disease document file not found', [
+                                'member_id' => $createdMember->id,
+                                'file_path' => $filePath,
+                            ]);
                         }
                     } catch (\Exception $e) {
                         Log::error('Error uploading special disease document to media library', [
                             'error' => $e->getMessage(),
                             'member_id' => $createdMember->id,
-                            'file_path' => $member['special_disease_document'] ?? null
+                            'file_path' => $member['special_disease_document_path'] ?? null
                         ]);
                     }
                 }
@@ -523,15 +638,20 @@ class FamilyWizard extends Component
             // Store family ID for use in the view
             $this->family_id = $family->id;
 
-            // Set success message in session
-            session()->flash('success', 'خانواده با موفقیت ثبت شد.');
+            // Dispatch success notification
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => 'خانواده با موفقیت ثبت شد.'
+            ]);
             
-            // Redirect to families page
-            return redirect()->route('charity.uninsured-families', ['highlight' => $family->id]);
+            // Redirect to families page using Livewire redirect
+            $this->redirect(route('charity.uninsured-families', ['highlight' => $family->id]));
         } catch (\Illuminate\Validation\ValidationException $e) {
             // نمایش خطاهای validation بدون پاک کردن داده‌ها
-
-            $this->dispatch('show-message', 'error', 'لطفاً خطاهای موجود را برطرف کنید.');
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'لطفاً خطاهای موجود را برطرف کنید.'
+            ]);
 
             // بازگشت به مرحله 2 اگر خطای کد ملی وجود دارد
             $errors = $e->errors();
@@ -546,9 +666,12 @@ class FamilyWizard extends Component
             throw $e;
         } catch (\Exception $e) {
             $msg = $e->getMessage() ?: 'خطای ناشناخته‌ای رخ داده است. لطفاً مجدداً تلاش کنید.';
-            $this->dispatch('show-message', 'error', $msg);
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => $msg
+            ]);
+        }
     }
-}
 
 
 
@@ -816,6 +939,9 @@ class FamilyWizard extends Component
                     'message' => 'مدرک بیماری خاص با موفقیت آپلود شد.'
                 ]);
 
+                // Clear any validation errors for this field
+                $this->resetErrorBag("specialDiseaseDocuments.{$memberIndex}");
+
             } catch (\Exception $e) {
                 Log::error('Error uploading special disease document', [
                     'error' => $e->getMessage(),
@@ -826,6 +952,19 @@ class FamilyWizard extends Component
                     'type' => 'error',
                     'message' => 'خطا در آپلود مدرک. لطفاً دوباره تلاش کنید.'
                 ]);
+            }
+        } else {
+            // اگر فایل حذف شده، از uploadedDocuments هم حذف کنیم
+            if (isset($this->uploadedDocuments[$memberIndex])) {
+                try {
+                    Storage::delete($this->uploadedDocuments[$memberIndex]['path']);
+                    unset($this->uploadedDocuments[$memberIndex]);
+                } catch (\Exception $e) {
+                    Log::error('Error removing uploaded document', [
+                        'error' => $e->getMessage(),
+                        'member_index' => $memberIndex,
+                    ]);
+                }
             }
         }
     }

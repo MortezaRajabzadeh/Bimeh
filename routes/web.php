@@ -258,6 +258,10 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
     Route::middleware('can:view claims history')->get('/paid-claims', function () {
         return view('insurance.paid-claims');
     })->name('paid-claims');
+    
+    Route::middleware('can:view claims history')->get('/claims-summary', function () {
+        return view('insurance.claims-summary');
+    })->name('claims-summary');
 
     Route::middleware('can:manage insurance policies')->get('/funding-manager', function () {
         return view('insurance.funding-manager');

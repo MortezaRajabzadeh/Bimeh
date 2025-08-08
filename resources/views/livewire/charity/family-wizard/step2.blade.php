@@ -84,8 +84,7 @@
                     </div>
                     <div class="w-32 relative">
                         <select wire:model="members.{{ $index }}.relationship"
-                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;"
-                                class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 @error('members.'.$index.'.relationship') border-red-300 @enderror">
+                                class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white custom-select @error('members.'.$index.'.relationship') border-red-300 @enderror">
                             <option value="">عضو خانواده</option>
                             <option value="مادر">مادر</option>
                             <option value="پدر">پدر</option>
@@ -97,12 +96,6 @@
                             <option value="پدربزرگ">پدربزرگ</option>
                             <option value="سایر">سایر</option>
                         </select>
-                        <!-- آیکون کشویی -->
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                            <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
                         @error('members.'.$index.'.relationship') 
                             <div class="absolute mt-1 text-red-500 text-xs bg-white p-1 rounded shadow-sm border border-red-100">
                                 {{ $message }}
@@ -134,6 +127,7 @@
                             <input
                                 type="text"
                                 wire:model.defer="members.{{ $index }}.birth_date"
+                                id="birthDate_{{ $index }}"
                                 class="w-full border border-gray-300 rounded-lg px-2 py-1 text-center bg-white cursor-pointer jalali-datepicker"
                                 placeholder="انتخاب تاریخ"
                                 autocomplete="off"
@@ -228,7 +222,7 @@
                             <!-- دراپ‌داون وضعیت شغلی -->
                             <select x-model="selectedStatus" 
                                     @change="onStatusChange()"
-                                    class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white pr-6 mb-1">
+                                    class="w-full border-gray-300 rounded-md text-sm focus:ring-green-500 focus:border-green-500 bg-white custom-select mb-1">
                                 <option value="">انتخاب کنید</option>
                                 <template x-for="option in statusOptions" :key="option">
                                     <option :value="option" x-text="option"></option>
@@ -486,12 +480,12 @@
                             <input type="file"
                                    wire:model="specialDiseaseDocuments.{{ $index }}"
                                    accept=".pdf,.jpg,.jpeg,.png"
-                                   class="w-full border border-gray-300 rounded-md text-sm focus:ring-red-500 focus:border-red-500 bg-white">
+                                   class="w-full border border-gray-300 rounded-md text-sm focus:ring-red-500 focus:border-red-500 bg-white @error('specialDiseaseDocuments.'.$index) border-red-300 @enderror">
                             <div class="mt-1 text-xs text-red-600">
                                 فرمت‌های مجاز: PDF، JPG، PNG (حداکثر 5 مگابایت)
                             </div>
                             @error('specialDiseaseDocuments.'.$index)
-                                <div class="mt-1 text-xs text-red-500">
+                                <div class="mt-1 text-xs text-red-500 bg-red-50 p-2 rounded border border-red-200">
                                     {{ $message }}
                                 </div>
                             @enderror
@@ -521,18 +515,33 @@
     </div>
 </div>
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/custom-select.css') }}">
+@endpush
+
 @push('scripts')
 <script src="/vendor/jalalidatepicker/jalalidatepicker.min.js"></script>
 <script>
-    document.addEventListener('livewire:load', function () {
-        // تنظیمات تقویم جلالی
+    function initJalaliDatepicker() {
         jalaliDatepicker.startWatch({
-            minDate: '1390/01/01',
-            maxDate: '1450/12/29',
+            selector: '.jalali-datepicker',
+            minDate: '1380/01/01',
+            maxDate: '1420/12/29',
             autoClose: true,
             format: 'YYYY/MM/DD',
             theme: 'green',
+            showTodayBtn: true,
+            showEmptyBtn: true,
+            todayBtnText: 'امروز',
+            emptyBtnText: 'خالی',
+            locale: 'fa',
+            enableTimePicker: false,
+            calendarType: 'persian'
         });
+    }
+    
+    document.addEventListener('livewire:load', function () {
+        initJalaliDatepicker();
         
         // مدیریت انتخاب سرپرست
         Livewire.on('headMemberChanged', function(index) {
@@ -544,7 +553,7 @@
     });
     
     document.addEventListener('DOMContentLoaded', function () {
-        jalaliDatepicker.startWatch();
+        initJalaliDatepicker();
         
         // اطمینان از نمایش صحیح فیلدهای سرپرست در بارگذاری اولیه
         setTimeout(function() {
@@ -559,8 +568,21 @@
         }, 200);
     });
     
+    // برای بروزرسانی‌های Livewire
+    document.addEventListener('livewire:init', function () {
+        setTimeout(initJalaliDatepicker, 100);
+    });
+    
+    window.addEventListener('livewire:navigated', function () {
+        setTimeout(initJalaliDatepicker, 200);
+    });
+    
+    document.addEventListener('livewire:update', function () {
+        setTimeout(initJalaliDatepicker, 300);
+    });
+    
     window.addEventListener('refreshJalali', function () {
-        jalaliDatepicker.startWatch();
+        initJalaliDatepicker();
     });
 </script>
 @endpush

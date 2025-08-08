@@ -849,7 +849,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         </div>
                     @endif
                 @endif
-                
+
                 {{-- حذف بخش قبلی آمار انتخاب --}}
             </div>
 
@@ -879,7 +879,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 </th>
 
                                 @php $sf = $sortField ?? ''; $sd = $sortDirection ?? ''; @endphp
-                                
+
                                 <!-- 0. رتبه -->
                                 <th scope="col" class="px-5 py-3 text-center font-medium">
                                     رتبه
@@ -949,7 +949,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                     </button>
                                 </th>
 
-                                @if($activeTab !== 'pending')
+                                @if($activeTab === 'renewal')
                                 <!-- 4. تعداد بیمه‌ها -->
                                 <th scope="col" class="px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('final_insurances_count')" class="flex items-center justify-center w-full">
@@ -1003,7 +1003,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                         @endif
                                     </button>
                                 </th>
-                                
+
                                 <!-- 7. خیریه معرف -->
                                 <th scope="col" class="px-5 py-3 text-center font-medium">
                                         خیریه معرف
@@ -1105,10 +1105,17 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
                                     <!-- 3. شهر/روستا -->
                                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
-                                        {{ $family->city->name ?? 'نامشخص' }}
+                                        @if($family->city)
+                                            {{ $family->city->name }}
+                                            @if($family->district)
+                                                <span class="text-gray-500">/ {{ $family->district->name }}</span>
+                                            @endif
+                                        @else
+                                            نامشخص
+                                        @endif
                                     </td>
 
-                                    @if($activeTab !== 'pending')
+                                    @if($activeTab === 'renewal')
                                     <!-- 4. تعداد بیمه‌ها -->
                                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                                         <div class="flex flex-col items-center">
@@ -1414,7 +1421,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 @endif
                                                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="{{ (auth()->user()->hasRole('admin') ? 10 : 13) + ($this->showInsuranceEndDate() ? 1 : 0) }}" class="px-6 py-4 text-center text-gray-500">
                                         هیچ خانواده‌ای یافت نشد.
                                     </td>
                                 </tr>
@@ -2204,11 +2211,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
             theme: 'green',
         });
     });
-    
+
     document.addEventListener('DOMContentLoaded', function () {
         jalaliDatepicker.startWatch();
     });
-    
+
     window.addEventListener('refreshJalali', function () {
         jalaliDatepicker.startWatch();
     });

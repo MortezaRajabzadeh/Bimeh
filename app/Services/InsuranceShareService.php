@@ -92,16 +92,15 @@ class InsuranceShareService
                         if ($fundingSourceId) {
                             $fundingSource = $this->getCachedFundingSource($fundingSourceId);
                             if ($fundingSource) {
+                                // همیشه نام منبع مالی را در payer_name ذخیره کن
                                 $shareRecord['payer_name'] = $fundingSource->name;
                                 
-                                // همیشه سازمان فعلی را به عنوان پرداخت‌کننده تنظیم کن
-                                // چون کاربر از طریق سازمان خود منابع را مدیریت می‌کند
-                                $shareRecord['payer_organization_id'] = Auth::user()->organization_id;
-                                
-                                // اگر نوع منبع "person" است، کاربر فعلی را نیز ثبت کن
+                                // فقط اگر نوع منبع "person" است، اطلاعات کاربر و سازمان را ثبت کن
                                 if ($fundingSource->type === 'person') {
                                     $shareRecord['payer_user_id'] = Auth::user()->id;
+                                    $shareRecord['payer_organization_id'] = Auth::user()->organization_id;
                                 }
+                                // برای سایر انواع منابع (مثل bank)، فقط payer_name کافی است
                                 
                                 // تنظیم payer_type_id اگر در shares موجود باشد
                                 if (isset($shareData['payer_type_id'])) {
@@ -240,44 +239,64 @@ class InsuranceShareService
         $notes = [];
 
         try {
+            // شناسایی موقعیت ستون‌های مهم بر اساس اینکه آیا درصد مشارکت وجود دارد یا خیر
+            // اگر ردیف اول (هدر) شامل "درصد مشارکت" باشد، یعنی از تب approved آمده
+            $hasParticipationColumns = false;
+            if (isset($rows[0])) {
+                $headerRow = array_map('trim', $rows[0]);
+                $hasParticipationColumns = in_array('درصد مشارکت', $headerRow) || in_array('نام مشارکت کننده', $headerRow);
+                
+                Log::info('🔍 تحلیل ساختار فایل اکسل', [
+                    'has_participation_columns' => $hasParticipationColumns ? 'yes' : 'no',
+                    'header_columns' => count($headerRow),
+                    'sample_headers' => array_slice($headerRow, 0, 5)
+                ]);
+            }
+            
+            // تعیین موقعیت ستون‌ها بر اساس نوع فایل
+            $familyCodeIndex = 0;        // A: کد خانوار
+            $headNationalCodeIndex = 1;  // B: کد ملی سرپرست
+            
+            if ($hasParticipationColumns) {
+                // فایل دارای ستون‌های مشارکت (21 ستون)
+                // بر اساس لاگ: 17=نوعبیمه, 18=مبلغ, 19=شروع, 20=پایان
+                $insuranceTypeIndex = 17;   // نوع بیمه
+                $insuranceAmountIndex = 18; // مبلغ بیمه
+                $startDateIndex = 19;       // تاریخ شروع
+                $endDateIndex = 20;         // تاریخ پایان
+            } else {
+                // فایل بدون ستون‌های مشارکت (17 ستون)
+                $insuranceTypeIndex = 13;    // N: نوع بیمه
+                $insuranceAmountIndex = 14;  // O: مبلغ بیمه
+                $startDateIndex = 15;        // P: تاریخ شروع
+                $endDateIndex = 16;          // Q: تاریخ پایان
+            }
+
             // پردازش ردیف‌های اکسل (شروع از ردیف دوم - ردیف اول هدر است)
             for ($i = 1; $i < count($rows); $i++) {
                 $row = $rows[$i];
                 $rowNumber = $i + 1; // شماره ردیف واقعی در اکسل
-
-                /* ساختار فایل اکسل بر اساس export:
-                 * A: کد خانواده
-                 * B: نام سرپرست خانوار  
-                 * C: کد ملی سرپرست
-                 * D: نوع بیمه
-                 * E: تاریخ شروع
-                 * F: تاریخ پایان
-                 * G: مبلغ بیمه (ریال)
-                 * H: شماره بیمه‌نامه
-                 * I: توضیحات
-                 */
                 
-                // خواندن داده‌های ردیف بر اساس ساختار صحیح export
-                $familyCode = trim($row[0] ?? ''); // ستون A - کد خانواده
-                $headName = trim($row[1] ?? ''); // ستون B - نام سرپرست
-                $headNationalCode = trim($row[2] ?? ''); // ستون C - کد ملی سرپرست
-                $insuranceType = trim($row[3] ?? ''); // ستون D - نوع بیمه
-                $startDate = trim($row[4] ?? ''); // ستون E - تاریخ شروع
-                $endDate = trim($row[5] ?? ''); // ستون F - تاریخ پایان
-                $insuranceAmount = trim($row[6] ?? ''); // ستون G - مبلغ بیمه
-                $policyNumber = trim($row[7] ?? ''); // ستون H - شماره بیمه‌نامه
-                $noteText = trim($row[8] ?? ''); // ستون I - توضیحات
+                // خواندن داده‌های ردیف
+                $familyCode = trim($row[$familyCodeIndex] ?? '');
+                $headNationalCode = trim($row[$headNationalCodeIndex] ?? '');
+                $insuranceType = trim($row[$insuranceTypeIndex] ?? '');
+                $insuranceAmount = trim($row[$insuranceAmountIndex] ?? '');
+                $startDate = trim($row[$startDateIndex] ?? '');
+                $endDate = trim($row[$endDateIndex] ?? '');
+                $policyNumber = '';  // شماره بیمه‌نامه در ساختار جدید نداریم
+                $noteText = '';     // توضیحات در ساختار جدید نداریم
 
                 // لاگ‌گذاری برای دیباگ
                 Log::debug("پردازش ردیف {$rowNumber}", [
                     'family_code' => $familyCode,
-                    'head_name' => $headName,
+                    'head_national_code' => $headNationalCode,
                     'insurance_type' => $insuranceType,
                     'insurance_amount' => $insuranceAmount,
                     'start_date' => $startDate,
                     'end_date' => $endDate,
-                    'policy_number' => $policyNumber,
-                    'notes' => $noteText
+                    'has_participation_columns' => $hasParticipationColumns ? 'yes' : 'no',
+                    'insurance_type_index' => $insuranceTypeIndex
                 ]);
 
                 // بررسی خالی بودن سطر کامل (اگر همه فیلدهای اصلی خالی باشند، سطر را رد کن)

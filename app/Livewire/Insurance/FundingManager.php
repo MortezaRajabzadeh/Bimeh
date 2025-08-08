@@ -7,6 +7,7 @@ use App\Models\FundingSource;
 use App\Models\FundingTransaction;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class FundingManager extends Component
 {
@@ -76,6 +77,16 @@ class FundingManager extends Component
         $this->source_type = 'charity';
     }
 
+    /**
+     * پاک کردن کش بودجه باقی‌مانده
+     */
+    private function clearBudgetCache()
+    {
+        Cache::forget('remaining_budget');
+        // ارسال event برای به‌روزرسانی navigation
+        $this->dispatch('budget-updated');
+    }
+
     public function addTransaction()
     {
         try {
@@ -93,7 +104,7 @@ class FundingManager extends Component
             ]);
             
             // پاک کردن کش بودجه پس از ایجاد تراکنش
-            \Illuminate\Support\Facades\Cache::forget('remaining_budget');
+            $this->clearBudgetCache();
             
             $this->resetTransactionForm();
             $this->formKey = uniqid();
@@ -109,6 +120,10 @@ class FundingManager extends Component
     {
         try {
             FundingTransaction::findOrFail($id)->delete();
+            
+            // پاک کردن کش بودجه پس از حذف تراکنش
+            $this->clearBudgetCache();
+            
             $this->transactions = FundingTransaction::with('source')->latest()->take(20)->get();
             session()->flash('success', 'تراکنش حذف شد.');
         } catch (\Throwable $e) {
@@ -143,6 +158,10 @@ class FundingManager extends Component
                 'description' => $this->edit_description,
                 'reference_no' => $this->edit_reference_no,
             ]);
+            
+            // پاک کردن کش بودجه پس از ویرایش تراکنش
+            $this->clearBudgetCache();
+            
             $this->showEditModal = false;
             $this->transactions = FundingTransaction::with('source')->latest()->take(20)->get();
             session()->flash('success', 'تراکنش ویرایش شد.');

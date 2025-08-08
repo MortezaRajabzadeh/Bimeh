@@ -11,7 +11,7 @@ class InsuranceAllocation extends Model
     use HasFactory, LogsActivity;
     
     protected $fillable = [
-        'funding_transaction_id', 'family_id', 'amount', 'issue_date', 'paid_at', 'description'
+        'funding_transaction_id', 'family_id', 'amount', 'issue_date', 'paid_at', 'description', 'insurance_type'
     ];
 
     /**
@@ -20,7 +20,7 @@ class InsuranceAllocation extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['amount', 'issue_date', 'paid_at', 'description'])
+            ->logOnly(['amount', 'issue_date', 'paid_at', 'description', 'insurance_type'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn(string $eventName) => "تخصیص بیمه {$eventName} شد");
     }

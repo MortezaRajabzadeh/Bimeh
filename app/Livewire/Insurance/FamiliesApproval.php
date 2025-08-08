@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
 use App\Models\FamilyInsurance;
+use App\Models\FamilyFundingAllocation;
 use App\Services\InsuranceShareService;
 use App\Models\FamilyStatusLog;
 
@@ -4451,7 +4452,7 @@ public function clearCriteriaFilter()
             if (!empty($this->selected)) {
                 // اگر خانواده‌ای انتخاب شده، فقط اونها
                 $families = Family::whereIn('id', $this->selected)
-                    ->with(['head'])
+                    ->with(['head', 'province', 'city', 'district', 'charity', 'organization', 'members', 'finalInsurances'])
                     ->get();
                 $downloadType = 'selected_families';
             } else {
@@ -4465,46 +4466,248 @@ public function clearCriteriaFilter()
                 return null;
             }
 
-            // تبدیل به آرایه برای export
-            $familyData = $families->map(function ($family) {
-                return [
-                    'کد خانواده' => $family->family_code ?? '',
-                    'نام سرپرست خانوار' => $family->head?->first_name . ' ' . $family->head?->last_name ?? '',
-                    'کد ملی سرپرست' => $family->head?->national_code ?? '',
+            // ایجاد کالکشن برای داده‌های اکسل (مشابه متد export)
+            $excelData = collect();
 
-                    // فیلدهای خالی برای پر کردن اطلاعات بیمه
-                    'نوع بیمه' => '',
-                    'تاریخ شروع' => '',
-                    'تاریخ پایان' => '',
-                    'مبلغ بیمه (ریال)' => '',
-                    'شماره بیمه‌نامه' => '',
-                    'توضیحات' => ''
-                ];
-            })->toArray();
+            foreach ($families as $family) {
+                // محاسبه تاریخ عضویت
+                $membershipDate = $family->created_at ? 
+                    \Morilog\Jalali\Jalalian::fromCarbon($family->created_at)->format('Y/m/d') : 
+                    'نامشخص';
+                
+                // محاسبه درصد مشارکت و نام مشارکت کننده (اصلاح شده)
+                $participationPercentage = '';
+                $participantName = '';
+                
+                if ($this->activeTab === 'approved') {
+                    // اول جستجو در FamilyFundingAllocation برای این خانواده (برای سازگاری با سیستم قدیمی)
+                    $latestAllocation = FamilyFundingAllocation::where('family_id', $family->id)
+                        ->orderBy('created_at', 'desc')
+                        ->with(['fundingSource', 'importLog.user'])
+                        ->first();
+                    
+                    if ($latestAllocation) {
+                        // اگر داده‌ای در FamilyFundingAllocation پیدا شد
+                        $participationPercentage = $latestAllocation->percentage . '%';
+                        
+                        // تلاش برای یافتن نام مشارکت‌کننده
+                        if ($latestAllocation->fundingSource) {
+                            // اگر منبع بانک باشد، نام بانک را نمایش بده
+                            if ($latestAllocation->fundingSource->type === 'bank') {
+                                $participantName = $latestAllocation->fundingSource->name; // نام بانک
+                            } else {
+                                $participantName = $latestAllocation->fundingSource->name;
+                            }
+                        } elseif ($latestAllocation->importLog && $latestAllocation->importLog->user) {
+                            $participantName = $latestAllocation->importLog->user->name;
+                        } else {
+                            $participantName = 'نامشخص';
+                        }
+                    } else {
+                        // اگر داده‌ای در FamilyFundingAllocation نبود، از insurance_shares جستجو کن (سیستم جدید)
+                        $latestInsuranceShare = \App\Models\InsuranceShare::whereHas('familyInsurance', function($q) use ($family) {
+                                $q->where('family_id', $family->id);
+                            })
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+                        
+                        if ($latestInsuranceShare) {
+                            // درصد مشارکت از insurance_share
+                            $participationPercentage = $latestInsuranceShare->percentage . '%';
+                            
+                            // نام مشارکت کننده - از متد getPayerNameAttribute که منطق کامل دارد
+                            $participantName = $latestInsuranceShare->payer_name;
+                        } else {
+                            // اگر هیچ داده‌ای پیدا نشد، از ShareAllocationLog جستجو کن (سیستم قدیمی)
+                            $latestShareLog = \App\Models\ShareAllocationLog::whereJsonContains('family_ids', [$family->id])
+                                ->orWhere(function($q) use ($family) {
+                                    $q->whereJsonContains('shares_data->families', $family->id)
+                                      ->orWhereJsonContains('shares_data->allocated_families', $family->id);
+                                })
+                                ->with('user')
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+                            
+                            if ($latestShareLog) {
+                                // استخراج درصد مشارکت از داده‌های JSON
+                                $sharesData = is_string($latestShareLog->shares_data) 
+                                    ? json_decode($latestShareLog->shares_data, true) 
+                                    : $latestShareLog->shares_data;
+                                
+                                // تلاش برای یافتن درصد این خانواده
+                                if (isset($sharesData['family_percentages'][$family->id])) {
+                                    $participationPercentage = $sharesData['family_percentages'][$family->id] . '%';
+                                } elseif (isset($sharesData['default_percentage'])) {
+                                    $participationPercentage = $sharesData['default_percentage'] . '%';
+                                } else {
+                                    $participationPercentage = '50%'; // درصد پیش‌فرض
+                                }
+                                
+                                // نام مشارکت کننده از کاربر
+                                if ($latestShareLog->user) {
+                                    $participantName = $latestShareLog->user->name;
+                                } elseif (isset($sharesData['funding_source_name'])) {
+                                    $participantName = $sharesData['funding_source_name'];
+                                } else {
+                                    $participantName = 'مجموعه خیریه';
+                                }
+                            } else {
+                                // اگر هیچ داده‌ای پیدا نشد، مقادیر پیش‌فرض
+                                $participationPercentage = '50%';
+                                $participantName = 'مجموعه خیریه';
+                            }
+                        }
+                    }
+                }
 
-            $headings = array_keys($familyData[0]);
+                // اضافه کردن سرپرست خانواده به عنوان یک ردیف
+                if ($family->head) {
+                    $headAcceptanceCriteria = $this->getMemberAcceptanceCriteria($family->head);
+                    $headHasDocuments = $this->checkMemberHasDocuments($family->head);
+                    
+                    $excelData->push([
+                        'family_code' => $family->family_code,
+                        'head_name' => $family->head->first_name . ' ' . $family->head->last_name,
+                        'head_national_id' => $family->head->national_code,
+                        'is_head' => 'بله',
+                        'member_name' => $family->head->first_name . ' ' . $family->head->last_name,
+                        'member_national_id' => $family->head->national_code,
+                        'member_relationship' => $family->head->relationship_fa ?? 'سرپرست خانوار',
+                        'member_birth_date' => $family->head->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->head->birth_date))->format('Y/m/d') : null,
+                        'member_gender' => $this->translateGender($family->head->gender),
+                        'acceptance_criteria' => $headAcceptanceCriteria,
+                        'has_documents' => $headHasDocuments,
+                        'membership_date' => $membershipDate,
+                        'participation_percentage' => $participationPercentage,
+                        'participant_name' => $participantName,
+                        'province' => $family->province ? $family->province->name : 'نامشخص',
+                        'city' => $family->city ? $family->city->name : 'نامشخص',
+                        'dehestan' => $family->district ? $family->district->name : 'نامشخص',
+                        'organization' => $family->organization ? $family->organization->name : 'نامشخص',
+                        'insurance_type' => '', // ادمین باید پر کند
+                        'insurance_amount' => 0, // ادمین باید پر کند
+                        'start_date' => null, // ادمین باید پر کند
+                        'end_date' => null, // ادمین باید پر کند
+                    ]);
+                }
 
+                // اضافه کردن اعضای خانواده (غیر از سرپرست)
+                $nonHeadMembers = $family->members->where('is_head', false);
+                foreach ($nonHeadMembers as $member) {
+                    $memberAcceptanceCriteria = $this->getMemberAcceptanceCriteria($member);
+                    $memberHasDocuments = $this->checkMemberHasDocuments($member);
+                    
+                    $excelData->push([
+                        'family_code' => $family->family_code,
+                        'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                        'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                        'is_head' => 'خیر',
+                        'member_name' => $member->first_name . ' ' . $member->last_name,
+                        'member_national_id' => $member->national_code,
+                        'member_relationship' => $member->relationship_fa ?? 'نامشخص',
+                        'member_birth_date' => $member->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($member->birth_date))->format('Y/m/d') : null,
+                        'member_gender' => $this->translateGender($member->gender),
+                        'acceptance_criteria' => $memberAcceptanceCriteria,
+                        'has_documents' => $memberHasDocuments,
+                        'membership_date' => $membershipDate,
+                        'participation_percentage' => $participationPercentage,
+                        'participant_name' => $participantName,
+                        'province' => $family->province ? $family->province->name : 'نامشخص',
+                        'city' => $family->city ? $family->city->name : 'نامشخص',
+                        'dehestan' => $family->district ? $family->district->name : 'نامشخص',
+                        'organization' => $family->organization ? $family->organization->name : 'نامشخص',
+                        'insurance_type' => '', // ادمین باید پر کند
+                        'insurance_amount' => 0, // ادمین باید پر کند
+                        'start_date' => null, // ادمین باید پر کند
+                        'end_date' => null, // ادمین باید پر کند
+                    ]);
+                }
+            }
 
-            $collection = collect($familyData);
-        // دانلود فایل
-        $response = Excel::download(
-            new DynamicDataExport($collection, $headings, array_keys($familyData[0])),
-            'قالب_بیمه_خانواده‌ها_' . now()->format('Y-m-d') . '.xlsx'
-        );
+            // تعریف هدرهای جدید (شامل ستون‌های جدید)
+            $headings = [
+                'کد خانوار',
+                'کد ملی سرپرست',
+                'سرپرست',
+                'نام عضو',
+                'کد ملی عضو',
+                'نسبت',
+                'تاریخ تولد',
+                'جنسیت',
+                'معیار پذیرش',
+                'مدرک',
+                'تاریخ عضویت',
+            ];
+            
+            // اضافه کردن ستون‌های درصد مشارکت و نام مشارکت کننده فقط برای تب "در انتظار حمایت"
+            if ($this->activeTab === 'approved') {
+                $headings[] = 'درصد مشارکت';
+                $headings[] = 'نام مشارکت کننده';
+            }
+            
+            $headings = array_merge($headings, [
+                'استان',
+                'شهرستان',
+                'دهستان',
+                'سازمان',
+                'نوع بیمه',
+                'مبلغ بیمه',
+                'تاریخ شروع',
+                'تاریخ پایان',
+            ]);
 
-        // ✅ بعد از دانلود موفق، انتقال به تب "در انتظار صدور"
-        $this->dispatch('file-downloaded-successfully', [
-            'message' => 'فایل نمونه با موفقیت دانلود شد. لطفاً اطلاعات بیمه را تکمیل کرده و در این صفحه آپلود کنید.',
-            'families_count' => count($familyData)
-        ]);
+            // کلیدهای داده جدید (هماهنگ با داده‌های واقعی)
+            $dataKeys = [
+                'family_code',
+                'head_national_id',
+                'is_head',
+                'member_name',
+                'member_national_id',
+                'member_relationship',
+                'member_birth_date',
+                'member_gender',
+                'acceptance_criteria',
+                'has_documents',
+                'membership_date',
+            ];
+            
+            // اضافه کردن کلیدهای درصد مشارکت و نام مشارکت کننده فقط برای تب "در انتظار حمایت"
+            if ($this->activeTab === 'approved') {
+                $dataKeys[] = 'participation_percentage';
+                $dataKeys[] = 'participant_name';
+            }
+            
+            $dataKeys = array_merge($dataKeys, [
+                'province',
+                'city',
+                'dehestan',
+                'organization',
+                'insurance_type',
+                'insurance_amount',
+                'start_date',
+                'end_date',
+            ]);
 
-        // تغییر تب به "در انتظار صدور"
-        $this->setTab('excel');
+            // دانلود فایل
+            $fileName = 'sample-families-' . $this->activeTab . '-' . now()->format('Y-m-d') . '.xlsx';
+            $response = Excel::download(
+                new DynamicDataExport($excelData, $headings, $dataKeys),
+                $fileName
+            );
 
-        // نمایش پیام راهنما
-        session()->flash('message', 'فایل نمونه شامل ' . count($familyData) . ' خانواده دانلود شد. لطفاً اطلاعات بیمه را تکمیل کرده و در این صفحه آپلود کنید.');
+            // ✅ بعد از دانلود موفق، انتقال به تب "در انتظار صدور"
+            $this->dispatch('file-downloaded-successfully', [
+                'message' => 'فایل نمونه با موفقیت دانلود شد. این فایل شامل تمام ستون‌های مورد نیاز برای بیمه خانواده‌ها است.',
+                'families_count' => $families->count()
+            ]);
 
-        return $response;
+            // تغییر تب به "در انتظار صدور"
+            $this->setTab('excel');
+
+            // نمایش پیام راهنما
+            session()->flash('message', 'فایل نمونه شامل ' . $families->count() . ' خانواده دانلود شد. نوع بیمه، مبلغ بیمه، تاریخ شروع و پایان خالی گذاشته شده تا ادمین پر کند. درصد مشارکت و نام مشارکت‌کننده از سهمیه‌بندی قبلی گرفته شده است.');
+
+            return $response;
 
         } catch (\Exception $e) {
             Log::error('خطا در دانلود قالب بیمه: ' . $e->getMessage(), [
@@ -5505,11 +5708,68 @@ public function clearCriteriaFilter()
             'daughter_in_law' => 'عروس',
             'father_in_law' => 'پدرشوهر/پدرزن',
             'mother_in_law' => 'مادرشوهر/مادرزن',
-            'other' => 'سایر'
+            'other' => 'سایر',
+            // مقادیر فارسی برای سازگاری
+            'همسر' => 'همسر',
+            'فرزند' => 'فرزند',
+            'پسر' => 'پسر',
+            'دختر' => 'دختر',
+            'پدر' => 'پدر',
+            'مادر' => 'مادر',
+            'برادر' => 'برادر',
+            'خواهر' => 'خواهر',
+            'سرپرست خانوار' => 'سرپرست خانوار',
+            'سرپرست' => 'سرپرست خانوار'
         ];
 
         return $relationshipMap[$relationship] ?? $relationship;
     }
+
+    /**
+     * بررسی نیاز به مدرک برای نوع مشکل
+     * 
+     * @param string $problemType
+     * @return bool
+     */
+    private function checkDocumentRequirement($problemType)
+    {
+        // معیارهایی که نیاز به مدرک دارند
+        $requiresDocumentation = [
+            'disability' => true,
+            'معلولیت' => true,
+            'special_disease' => true,
+            'بیماری خاص' => true,
+            'بیماری های خاص' => true,
+            'work_disability' => true,
+            'از کار افتادگی' => true,
+            'ازکارافتادگی' => true,
+            'chronic_illness' => true,
+            'بیماری مزمن' => true,
+        ];
+        
+        return isset($requiresDocumentation[trim($problemType)]) && $requiresDocumentation[trim($problemType)];
+    }
+    
+    /**
+     * ترجمه انواع مشکلات
+     * 
+     * @var array
+     */
+    private $problemTypeTranslations = [
+        'addiction' => 'اعتیاد',
+        'unemployment' => 'بیکاری',
+        'disability' => 'معلولیت',
+        'special_disease' => 'بیماری خاص',
+        'work_disability' => 'ازکارافتادگی',
+        'single_parent' => 'سرپرست خانوار زن',
+        'elderly' => 'سالمندی',
+        'chronic_illness' => 'بیماری مزمن',
+        'other' => 'سایر',
+        // Persian to Persian normalization
+        'بیماری های خاص' => 'بیماری خاص',
+        'از کار افتادگی' => 'ازکارافتادگی',
+        'کهولت سن' => 'سالمندی'
+    ];
 
     /**
      * تبدیل کد جنسیت به فارسی
@@ -5535,5 +5795,67 @@ public function clearCriteriaFilter()
         ];
 
         return $genderMap[strtolower($gender)] ?? $gender;
+    }
+
+    /**
+     * دریافت معیارهای پذیرش یک عضو
+     *
+     * @param \App\Models\Member $member
+     * @return string
+     */
+    private function getMemberAcceptanceCriteria($member)
+    {
+        if (!$member || !$member->problem_type) {
+            return 'ندارد';
+        }
+
+        $problemTypes = is_array($member->problem_type) 
+            ? $member->problem_type 
+            : json_decode($member->problem_type, true) ?? [];
+
+        if (empty($problemTypes)) {
+            return 'ندارد';
+        }
+
+        $translatedTypes = [];
+        foreach ($problemTypes as $type) {
+            $translatedType = $this->problemTypeTranslations[trim($type)] ?? trim($type);
+            if (!in_array($translatedType, $translatedTypes)) {
+                $translatedTypes[] = $translatedType;
+            }
+        }
+
+        return !empty($translatedTypes) ? implode('، ', $translatedTypes) : 'ندارد';
+    }
+
+    /**
+     * بررسی اینکه عضو مدرک دارد یا نه
+     *
+     * @param \App\Models\Member $member
+     * @return string
+     */
+    private function checkMemberHasDocuments($member)
+    {
+        if (!$member || !$member->problem_type) {
+            return 'ندارد';
+        }
+
+        $problemTypes = is_array($member->problem_type) 
+            ? $member->problem_type 
+            : json_decode($member->problem_type, true) ?? [];
+
+        if (empty($problemTypes)) {
+            return 'ندارد';
+        }
+
+        $hasDocumentRequirement = false;
+        foreach ($problemTypes as $type) {
+            if ($this->checkDocumentRequirement($type)) {
+                $hasDocumentRequirement = true;
+                break;
+            }
+        }
+
+        return $hasDocumentRequirement ? 'دارد' : 'ندارد';
     }
 }

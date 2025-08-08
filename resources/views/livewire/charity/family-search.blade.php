@@ -273,6 +273,19 @@
                             </button>
                         </th>
 
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium min-w-[180px]">
+                            <div class="flex items-center justify-center">
+                                <span>سرپرست خانوار</span>
+                            </div>
+                        </th>
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
+                            <div class="flex items-center justify-center">
+                                <span>معیار پذیرش</span>
+                            </div>
+                        </th>
+
+                        @if($status === 'insured' && auth()->user()->isInsurance())
+                        <!-- تعداد اعضا -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
                             <div class="flex items-center justify-center space-s-1">
                                 <span>تعداد اعضا</span>
@@ -291,19 +304,43 @@
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium min-w-[180px]">
+
+                        <!-- تعداد بیمه‌ها -->
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
                             <div class="flex items-center justify-center">
-                                <span>سرپرست خانوار</span>
-                            </div>
-                        </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
-                            <div class="flex items-center justify-center">
-                                <span>معیار پذیرش</span>
+                                <span>تعداد بیمه‌ها</span>
                             </div>
                         </th>
 
-                        @if($status === 'insured')
                         <!-- نوع بیمه -->
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>نوع بیمه</span>
+                            </div>
+                        </th>
+                        
+                        <!-- تاریخ شروع و پایان بیمه -->
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>تاریخ شروع و پایان بیمه</span>
+                            </div>
+                        </th>
+
+                        <!-- تاریخ عضویت -->
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>تاریخ عضویت</span>
+                            </div>
+                        </th>
+                        
+                        <!-- پرداخت کننده حق بیمه -->
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>پرداخت کننده حق بیمه</span>
+                            </div>
+                        </th>
+                        @elseif($status === 'insured')
+                        <!-- نوع بیمه برای کاربران غیر بیمه -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>نوع بیمه</span>
@@ -368,28 +405,6 @@
                                 </button>
                             </th>
                         @endif
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
-                            <button wire:click="sortBy('created_at')" class="flex items-center justify-center w-full">
-                                @if($status === 'insured')
-                                    تاریخ پایان بیمه
-                                @else
-                                    تاریخ عضویت
-                                @endif
-                                @if($sf === 'created_at')
-                                    <span class="mr-1 text-[0.5rem]">
-                                        @if($sd === 'asc')
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                            </svg>
-                                        @else
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        @endif
-                                    </span>
-                                @endif
-                            </button>
-                        </th>
                         @if(!auth()->user()->hasRole('admin'))
 
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
@@ -430,13 +445,17 @@
                             {{ $family->province->name ?? 'نامشخص' }}
                         </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
-                            {{ $family->city->name ?? 'نامشخص' }}
+                            @if($family->city)
+                                {{ $family->city->name }}
+                                @if($family->district)
+                                    <span class="text-gray-500">/ {{ $family->district->name }}</span>
+                                @endif
+                            @else
+                                نامشخص
+                            @endif
                         </td>
 
 
-                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
-                            {{ $family->members->count() ?? 0 }}
-                        </td>
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200">
                             @php
                                 $head = $family->members?->where('is_head', true)->first();
@@ -510,8 +529,138 @@
                             </div>
                         </td>
 
-                        @if($status === 'insured')
+                        @if($status === 'insured' && auth()->user()->isInsurance())
+                        <!-- تعداد اعضا -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            {{ $family->members->count() ?? 0 }}
+                        </td>
+
+                        <!-- تعداد بیمه‌ها -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @php
+                                $insuranceCount = $family->finalInsurances ? $family->finalInsurances->count() : 0;
+                            @endphp
+                            <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-bold">
+                                {{ $insuranceCount }}
+                            </span>
+                        </td>
+
                         <!-- نوع بیمه -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @php
+                                $insuranceTypes = $family->insuranceTypes();
+                                $insuranceTypeLabels = [
+                                    'health' => 'سلامت',
+                                    'life' => 'عمر',
+                                    'accident' => 'حوادث',
+                                    'disability' => 'معلولیت',
+                                    'unemployment' => 'بیکاری',
+                                    'old_age' => 'کهولت سن',
+                                    'single_parent' => 'سرپرست خانوار'
+                                ];
+                            @endphp
+                            <div class="flex flex-wrap gap-1 justify-center">
+                                @if($insuranceTypes->count() > 0)
+                                    @foreach($insuranceTypes as $type)
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
+                                            {{ $insuranceTypeLabels[$type] ?? $type }}
+                                        </span>
+                                    @endforeach
+                                @else
+                                    <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                        -
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
+                        
+                        <!-- تاریخ شروع و پایان بیمه -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @php
+                                // گرفتن اولین تاریخ شروع و آخرین تاریخ پایان از تمام بیمه‌های نهایی
+                                $allInsurances = $family->finalInsurances;
+                                $earliestStart = $allInsurances->min('start_date');
+                                $latestEnd = $allInsurances->max('end_date');
+                            @endphp
+                            <div class="flex flex-col items-center gap-1">
+                                @if($earliestStart)
+                                    <div class="text-green-700 font-medium">
+                                        <span class="text-xs text-gray-500">شروع:</span>
+                                        @php
+                                            try {
+                                                echo jdate($earliestStart)->format('Y/m/d');
+                                            } catch (\Exception $e) {
+                                                echo \Carbon\Carbon::parse($earliestStart)->format('Y/m/d');
+                                            }
+                                        @endphp
+                                    </div>
+                                @else
+                                    <div class="text-gray-400">-</div>
+                                @endif
+
+                                @if($latestEnd)
+                                    <div class="text-red-600 font-medium">
+                                        <span class="text-xs text-gray-500">پایان:</span>
+                                        @php
+                                            try {
+                                                echo jdate($latestEnd)->format('Y/m/d');
+                                            } catch (\Exception $e) {
+                                                echo \Carbon\Carbon::parse($latestEnd)->format('Y/m/d');
+                                            }
+                                        @endphp
+                                    </div>
+                                @else
+                                    <div class="text-gray-400">-</div>
+                                @endif
+                            </div>
+                        </td>
+                        
+                        <!-- تاریخ عضویت -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @if($family->created_at)
+                                <div class="text-blue-700 font-medium">
+                                    @php
+                                        try {
+                                            echo jdate($family->created_at)->format('Y/m/d');
+                                        } catch (\Exception $e) {
+                                            echo $family->created_at->format('Y/m/d');
+                                        }
+                                    @endphp
+                                </div>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        
+                        <!-- پرداخت کننده حق بیمه -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @php
+                                $latestInsurance = $family->finalInsurances()->latest('start_date')->first();
+                            @endphp
+                            @if($latestInsurance)
+                                <div class="flex flex-wrap gap-1 justify-center">
+                                    @if($latestInsurance->fundingSource)
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
+                                            {{ $latestInsurance->fundingSource->name }}
+                                        </span>
+                                    @elseif($latestInsurance->insurance_payer)
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
+                                            {{ $latestInsurance->insurance_payer }}
+                                        </span>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                            -
+                                        </span>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                    -
+                                </span>
+                            @endif
+                        </td>
+                        @elseif($status === 'insured')
+                        <!-- نوع بیمه برای کاربران غیر بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
                                 $insuranceTypes = $family->insuranceTypes();
@@ -596,19 +745,6 @@
                                 {{ number_format($family->total_paid_claims ?? 0) }} تومان
                             </td>
                         @endif
-                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
-                            @if($family->created_at)
-                                @php
-                                    try {
-                                        echo jdate($family->created_at)->format('Y/m/d');
-                                    } catch (\Exception $e) {
-                                        echo $family->created_at->format('Y/m/d');
-                                    }
-                                @endphp
-                            @else
-                                -
-                            @endif
-                        </td>
 
 
                         @if(!auth()->user()->hasRole('admin'))

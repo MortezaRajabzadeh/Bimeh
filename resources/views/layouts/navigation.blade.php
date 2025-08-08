@@ -235,11 +235,11 @@ use App\Models\InsurancePayment;
                     }
                 @endphp
                 <!-- نمایش در دسکتاپ -->
-                <div class="hidden md:flex items-center gap-6">
+                <div class="hidden md:flex items-center gap-6" id="budget-display-desktop">
                     <div class="w-px h-10 bg-gray-200"></div>
                     <div class="flex items-center gap-2">
                         <span class="text-xl font-medium text-gray-700">بودجه باقی مانده  </span>
-                        <span class="text-2xl font-bold text-green-600">{{ formatBudget($remainingBudget) }} <span class="text-2xl font-bold text-green-600">تومان</span></span>
+                        <span class="text-2xl font-bold text-green-600" id="budget-amount-desktop">{{ formatBudget($remainingBudget) }} <span class="text-2xl font-bold text-green-600">تومان</span></span>
                     </div>
                     <a href="{{ route('insurance.funding-manager') }}"
                        class="p-1.5 -mr-1 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
@@ -252,9 +252,9 @@ use App\Models\InsurancePayment;
                 </div>
 
                 <!-- نمایش در موبایل -->
-                <div class="flex md:hidden items-center gap-2">
+                <div class="flex md:hidden items-center gap-2" id="budget-display-mobile">
                     <span class="text-xl font-medium text-gray-700">بودجه باقی مانده  </span>
-                    <span class="text-2xl font-bold text-green-600">{{ formatBudget($remainingBudget) }} <span class="text-2xl font-bold text-green-600">تومان</span></span>
+                    <span class="text-2xl font-bold text-green-600" id="budget-amount-mobile">{{ formatBudget($remainingBudget) }} <span class="text-2xl font-bold text-green-600">تومان</span></span>
                     <a href="{{ route('insurance.funding-manager') }}"
                        class="p-1.5 -mr-1 text-gray-500 hover:text-green-600 rounded-full transition-colors"
                        title="مدیریت بودجه">
@@ -265,6 +265,54 @@ use App\Models\InsurancePayment;
                     </a>
                 </div>
             @endif
+
+            <!-- اسکریپت برای به‌روزرسانی بودجه -->
+            <script>
+                document.addEventListener('livewire:init', () => {
+                    Livewire.on('budget-updated', () => {
+                        // به‌روزرسانی بودجه با درخواست AJAX
+                        fetch('/api/budget/remaining')
+                            .then(response => response.json())
+                            .then(data => {
+                                const formatBudget = (number) => {
+                                    let result = '';
+                                    const billions = Math.floor(number / 1000000000);
+                                    const millions = Math.floor((number % 1000000000) / 1000000);
+
+                                    if (billions > 0) {
+                                        result += billions.toLocaleString('fa-IR') + ' میلیارد';
+                                        if (millions > 0) {
+                                            result += ' و ' + millions.toLocaleString('fa-IR') + ' میلیون';
+                                        }
+                                    } else if (millions > 0) {
+                                        result = millions.toLocaleString('fa-IR') + ' میلیون';
+                                    } else {
+                                        result = number.toLocaleString('fa-IR');
+                                    }
+
+                                    return result;
+                                };
+
+                                const formattedBudget = formatBudget(data.remaining_budget);
+                                
+                                // به‌روزرسانی نمایش دسکتاپ
+                                const desktopElement = document.getElementById('budget-amount-desktop');
+                                if (desktopElement) {
+                                    desktopElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
+                                }
+
+                                // به‌روزرسانی نمایش موبایل
+                                const mobileElement = document.getElementById('budget-amount-mobile');
+                                if (mobileElement) {
+                                    mobileElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('خطا در به‌روزرسانی بودجه:', error);
+                            });
+                    });
+                });
+            </script>
 
             <!-- دکمه خروج و عملیات کاربر -->
             <div class="flex items-center space-x-reverse space-x-2">

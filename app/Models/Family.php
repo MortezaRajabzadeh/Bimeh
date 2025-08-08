@@ -803,63 +803,134 @@ class Family extends Model implements HasMedia
      */
     public function getLocationValidationStatus(): array
     {
-        // بررسی اتصال از طریق charity → district → province
+        // متغیرهای اصلی
         $province = null;
-        $isDeprived = null;
+        $city = null;
+        $district = null;
+        $isDeprived = false;
+        $deprivationDetails = [];
         $path = [];
 
-        // مسیر اول: مستقیماً از خانواده
-        if ($this->province_id && $this->province) {
-            $province = $this->province;
-            $path[] = 'خانواده → استان';
-        }
-        // مسیر دوم: از طریق شهر
-        elseif ($this->city_id && $this->city && $this->city->province) {
-            $province = $this->city->province;
-            $path[] = 'خانواده → شهر → استان';
-        }
-        // مسیر سوم: از طریق منطقه
-        elseif ($this->district_id && $this->district && $this->district->province) {
-            $province = $this->district->province;
-            $path[] = 'خانواده → منطقه → استان';
-        }
-        // مسیر چهارم: از طریق خیریه
-        elseif ($this->organization && $this->organization->district && $this->organization->district->province) {
-            $province = $this->organization->district->province;
-            $path[] = 'خانواده → خیریه → منطقه → استان';
+        // بررسی دهستان (دقیق‌ترین سطح)
+        if ($this->district_id && $this->district) {
+            $district = $this->district;
+            $path[] = 'دهستان: ' . $district->name;
+            
+            // بررسی محرومیت دهستان
+            if ($district->is_deprived) {
+                $isDeprived = true;
+                $deprivationDetails[] = 'دهستان محروم';
+            }
+            
+            // دریافت شهرستان از طریق دهستان
+            if ($district->city) {
+                $city = $district->city;
+            }
         }
 
-        if (!$province) {
+        // بررسی شهرستان
+        if (!$city && $this->city_id && $this->city) {
+            $city = $this->city;
+        }
+        
+        if ($city) {
+            $path[] = 'شهرستان: ' . $city->name;
+            
+            // بررسی محرومیت شهرستان
+            if ($city->is_deprived) {
+                $isDeprived = true;
+                $deprivationDetails[] = 'شهرستان محروم';
+            }
+            
+            // دریافت استان از طریق شهرستان
+            if ($city->province) {
+                $province = $city->province;
+            }
+        }
+
+        // بررسی استان
+        if (!$province && $this->province_id && $this->province) {
+            $province = $this->province;
+        }
+        
+        // اگر از طریق خیریه باشد
+        if (!$province && !$city && !$district) {
+            if ($this->organization && $this->organization->district) {
+                $orgDistrict = $this->organization->district;
+                $district = $orgDistrict;
+                $path[] = 'دهستان خیریه: ' . $orgDistrict->name;
+                
+                if ($orgDistrict->is_deprived) {
+                    $isDeprived = true;
+                    $deprivationDetails[] = 'دهستان خیریه محروم';
+                }
+                
+                if ($orgDistrict->city) {
+                    $city = $orgDistrict->city;
+                    $path[] = 'شهرستان خیریه: ' . $city->name;
+                    
+                    if ($city->is_deprived) {
+                        $isDeprived = true;
+                        $deprivationDetails[] = 'شهرستان خیریه محروم';
+                    }
+                    
+                    if ($city->province) {
+                        $province = $city->province;
+                    }
+                }
+            }
+        }
+        
+        if ($province) {
+            $path[] = 'استان: ' . $province->name;
+            
+            // بررسی رتبه محرومیت استان (رتبه‌های پایین‌تر = محروم‌تر)
+            $deprivationRank = $province->deprivation_rank ?? null;
+            if ($deprivationRank && $deprivationRank <= 10) { // فرض: استان‌های با رتبه 1-10 محروم هستند
+                $isDeprived = true;
+                $deprivationDetails[] = sprintf('استان محروم (رتبه %d)', $deprivationRank);
+            }
+        }
+
+        // اگر هیچ اطلاعات جغرافیایی نداریم
+        if (!$province && !$city && !$district) {
             return [
                 'status' => 'unknown',
                 'message' => 'اطلاعات منطقه جغرافیایی نامشخص است',
                 'province_name' => null,
+                'city_name' => null,
+                'district_name' => null,
                 'is_deprived' => null,
-                'path' => $path
+                'deprivation_details' => [],
+                'path' => []
             ];
         }
 
-        // بررسی وضعیت محرومیت
-        $isDeprived = $province->is_deprived ?? false;
-        $deprivationRank = $province->deprivation_rank ?? null;
-
+        // تعیین وضعیت و پیام
         if ($isDeprived) {
-            $status = 'complete'; // سبز - منطقه محروم (مطلوب)
-            $message = sprintf('منطقه محروم: %s (رتبه محرومیت: %s) - مطلوب برای حمایت',
-                $province->name,
-                $deprivationRank ? $deprivationRank : 'نامشخص'
-            );
+            $status = 'complete'; // سبز - منطقه محروم (مطلوب برای حمایت)
+            $message = 'منطقه محروم: ' . implode('، ', $deprivationDetails);
         } else {
-            $status = 'none'; // قرمز - منطقه غیرمحروم (نامطلوب)
-            $message = sprintf('منطقه غیرمحروم: %s - اولویت پایین‌تر', $province->name);
+            $status = 'incomplete'; // قرمز - منطقه غیرمحروم
+            $message = 'منطقه غیرمحروم - ';
+            
+            $locationNames = [];
+            if ($district) $locationNames[] = 'دهستان: ' . $district->name;
+            if ($city) $locationNames[] = 'شهرستان: ' . $city->name;
+            if ($province) $locationNames[] = 'استان: ' . $province->name;
+            
+            $message .= implode('، ', $locationNames);
         }
 
         return [
             'status' => $status,
             'message' => $message,
-            'province_name' => $province->name,
+            'province_name' => $province ? $province->name : null,
+            'city_name' => $city ? $city->name : null,
+            'district_name' => $district ? $district->name : null,
             'is_deprived' => $isDeprived,
-            'deprivation_rank' => $deprivationRank,
+            'deprivation_rank' => $deprivationRank ?? null,
+            'deprivation_details' => $deprivationDetails,
             'path' => $path
         ];
     }

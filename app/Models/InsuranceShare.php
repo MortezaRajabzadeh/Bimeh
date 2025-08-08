@@ -182,16 +182,23 @@ class InsuranceShare extends Model
      */
    /**
      * ✅ دریافت نام پرداخت کننده بر اساس نوع (اصلاح شده)
+     * اولویت: نام ذخیره شده در payer_name > نام سازمان > نام کاربر
      */
     public function getPayerNameAttribute($value)
     {
+        // اول چک کنیم که آیا مقدار مستقیم payer_name موجود است
+        if (!empty($value)) {
+            return $value;
+        }
+        
+        // در غیر این صورت از سازمان یا کاربر استفاده کنیم
         if ($this->payer_organization_id && $this->payerOrganization) {
             return $this->payerOrganization->name;
         } elseif ($this->payer_user_id && $this->payerUser) {
             return $this->payerUser->name;
         }
 
-        return $value ?? 'نامشخص';
+        return 'نامشخص';
     }
         /**
      * ✅ محاسبه مجموع سهم‌های یک خانواده

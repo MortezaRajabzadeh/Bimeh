@@ -11,7 +11,7 @@ class FundingTransaction extends Model
     use HasFactory, LogsActivity;
     
     protected $fillable = [
-        'funding_source_id', 'amount', 'description', 'reference_no', 'allocated'
+        'funding_source_id', 'amount', 'description', 'reference_no', 'allocated', 'status'
     ];
 
     /**
@@ -20,7 +20,7 @@ class FundingTransaction extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['amount', 'description', 'reference_no', 'allocated'])
+            ->logOnly(['amount', 'description', 'reference_no', 'allocated', 'status'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn(string $eventName) => "تراکنش بودجه {$eventName} شد");
     }
