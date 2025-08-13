@@ -4,10 +4,10 @@
     <!-- بخش لوگو -->
     <div class="flex items-center justify-center py-2 border-b border-gray-200">
         <div class="logo-container">
-            @php
-                $userType = $current_user_type ?? auth()->user()->user_type ?? 'guest';
-                $userOrganization = auth()->user()->organization ?? null;
-            @endphp
+        @php
+            $userType = $current_user_type ?? 'guest';
+            $userOrganization = $current_organization ?? null;
+        @endphp
             
             @if($userType === 'charity' || $userType === 'insurance')
                 <!-- لوگوی میکرو بیمه (بالا) -->
@@ -90,7 +90,7 @@
     <!-- آیتم‌های منو -->
     <nav class="flex flex-col flex-grow py-2">
         @php
-            $userType = $current_user_type ?? auth()->user()->user_type ?? 'guest';
+            $userType = $current_user_type ?? 'guest';
             // Add default values to prevent undefined variable errors
             $insuredFamilies = $insuredFamilies ?? 0;
             $insuredMembers = $insuredMembers ?? 0;
@@ -170,7 +170,7 @@
         @endif
 
         <!-- منوی فقط مخصوص ادمین -->
-        @if(auth()->check() && $userType === 'admin' && (!isset($admin_acting_as) || $admin_acting_as === 'admin'))
+        @if(auth()->check() && $userType === 'admin' && $admin_acting_as === 'admin')
             <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center py-3 px-6 hover:bg-gray-100 {{ request()->routeIs('admin.users.*') ? 'bg-blue-500 text-white' : '' }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-3 {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-700' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

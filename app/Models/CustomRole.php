@@ -7,7 +7,7 @@ use Spatie\Permission\Models\Role;
 class CustomRole extends Role
 {
     protected $table = 'roles';
-    
+
     protected $fillable = [
         'name',
         'display_name',
@@ -52,12 +52,12 @@ class CustomRole extends Role
     {
         $ancestors = collect();
         $role = $this;
-        
+
         while ($role->parent) {
             $ancestors->push($role->parent);
             $role = $role->parent;
         }
-        
+
         return $ancestors;
     }
 
@@ -75,12 +75,12 @@ class CustomRole extends Role
     public function getInheritedPermissions()
     {
         $permissions = $this->permissions;
-        
+
         if ($this->inherit_permissions && $this->parent) {
             $inheritedPermissions = $this->parent->getInheritedPermissions();
             $permissions = $permissions->merge($inheritedPermissions)->unique('id');
         }
-        
+
         return $permissions;
     }
 
@@ -110,13 +110,13 @@ class CustomRole extends Role
             'view dashboard' => 'مشاهده داشبورد',
             'view profile' => 'مشاهده پروفایل',
             'edit profile' => 'ویرایش پروفایل',
-            
+
             // مجوزهای گزارش‌ها
             'view basic reports' => 'مشاهده گزارش‌های پایه',
             'view advanced reports' => 'مشاهده گزارش‌های پیشرفته',
             'export reports' => 'خروجی گرفتن از گزارش‌ها',
             'view financial reports' => 'مشاهده گزارش‌های مالی',
-            
+
             // مجوزهای خانواده
             'view all families' => 'مشاهده همه خانواده‌ها',
             'view own families' => 'مشاهده خانواده‌های خود',
@@ -128,13 +128,13 @@ class CustomRole extends Role
             'change family status' => 'تغییر وضعیت خانواده',
             'verify family' => 'تایید خانواده',
             'reject family' => 'رد خانواده',
-            
+
             // مجوزهای اعضای خانواده
             'view family members' => 'مشاهده اعضای خانواده',
             'add family member' => 'افزودن عضو خانواده',
             'edit family member' => 'ویرایش عضو خانواده',
             'remove family member' => 'حذف عضو خانواده',
-            
+
             // مجوزهای بیمه
             'manage insurance policies' => 'مدیریت پالیس‌های بیمه',
             'process claims' => 'پردازش درخواست‌های بیمه',
@@ -142,14 +142,14 @@ class CustomRole extends Role
             'reject claims' => 'رد درخواست‌های بیمه',
             'view claims history' => 'مشاهده تاریخچه درخواست‌ها',
             'calculate premiums' => 'محاسبه حق بیمه',
-            
+
             // مجوزهای سهم‌بندی بیمه
             'view insurance shares' => 'مشاهده سهم‌بندی بیمه',
             'manage insurance shares' => 'مدیریت سهم‌بندی بیمه',
             'create insurance shares' => 'ایجاد سهم‌بندی بیمه',
             'edit insurance shares' => 'ویرایش سهم‌بندی بیمه',
             'delete insurance shares' => 'حذف سهم‌بندی بیمه',
-            
+
             // مجوزهای پرداخت
             'view insurance payments' => 'مشاهده پرداخت‌های بیمه',
             'manage insurance payments' => 'مدیریت پرداخت‌های بیمه',
@@ -158,9 +158,13 @@ class CustomRole extends Role
             'delete insurance payments' => 'حذف پرداخت بیمه',
             'view payment details' => 'مشاهده جزئیات پرداخت',
             'export payment reports' => 'خروجی گزارش پرداخت‌ها',
-            
+
             // مجوزهای مدیریت سیستم
             'manage users' => 'مدیریت کاربران',
+            'view users' => 'مشاهده کاربران',
+            'create user' => 'ایجاد کاربر',
+            'edit user' => 'ویرایش کاربر',
+            'delete user' => 'حذف کاربر',
             'manage roles' => 'مدیریت نقش‌ها',
             'manage permissions' => 'مدیریت مجوزها',
             'view system logs' => 'مشاهده لاگ‌های سیستم',
@@ -169,7 +173,7 @@ class CustomRole extends Role
             'manage regions' => 'مدیریت مناطق',
             'backup system' => 'پشتیبان‌گیری سیستم',
             'restore system' => 'بازیابی سیستم',
-            
+
             // مجوزهای سازمان
             'manage organizations' => 'مدیریت سازمان‌ها',
             'view organizations' => 'مشاهده سازمان‌ها',

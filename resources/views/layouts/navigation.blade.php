@@ -46,6 +46,22 @@ use App\Models\InsurancePayment;
 
                             <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                                 <!-- گزینه‌های نقش -->
+                                
+                                <!-- نقش ادمین -->
+                                <form method="POST" action="{{ route('admin.switch-role.store') }}">
+                                    @csrf
+                                    <input type="hidden" name="role" value="admin">
+                                    <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('admin') ? 'bg-blue-50' : '' }}">
+                                        <span>ادمین</span>
+                                        @if(auth()->user()->isActiveAs('admin'))
+                                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        @endif
+                                    </button>
+                                </form>
+                                
+                                <!-- نقش خیریه -->
                                 <form method="POST" action="{{ route('admin.switch-role.store') }}">
                                     @csrf
                                     <input type="hidden" name="role" value="charity">
@@ -58,7 +74,20 @@ use App\Models\InsurancePayment;
                                         @endif
                                     </button>
                                 </form>
-                                <!-- سایر گزینه‌ها... -->
+                                
+                                <!-- نقش بیمه -->
+                                <form method="POST" action="{{ route('admin.switch-role.store') }}">
+                                    @csrf
+                                    <input type="hidden" name="role" value="insurance">
+                                    <button type="submit" class="flex items-center justify-between w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ auth()->user()->isActiveAs('insurance') ? 'bg-blue-50' : '' }}">
+                                        <span>بیمه</span>
+                                        @if(auth()->user()->isActiveAs('insurance'))
+                                        <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        @endif
+                                    </button>
+                                </form>
                             </div>
                         </div>
 
