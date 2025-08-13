@@ -116,10 +116,8 @@ class FamilyWizard extends Component
                 $this->currentStep++;
             }
         } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => $e->getMessage()
-            ]);
+            // Use session flash message for error display
+            session()->flash('error', $e->getMessage());
         }
     }
 
@@ -301,7 +299,8 @@ class FamilyWizard extends Component
         if ($this->canProceedToStep($step)) {
             $this->currentStep = $step;
         } else {
-            $this->dispatch('show-message', 'error', 'لطفاً ابتدا مرحله قبل را تکمیل کنید');
+            // Use session flash message for error display
+            session()->flash('error', 'لطفاً ابتدا مرحله قبل را تکمیل کنید');
         }
     }
 
@@ -335,7 +334,7 @@ class FamilyWizard extends Component
             'is_head' => false     // سرپرست
         ];
 
-        $this->dispatch('show-message', 'success', 'عضو جدید اضافه شد');
+        session()->flash('success', 'عضو جدید اضافه شد');
     }
 
     public function removeMember($index)

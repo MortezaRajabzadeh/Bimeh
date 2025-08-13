@@ -32,6 +32,17 @@ class UserController extends Controller
             $query->where('user_type', $userType);
         }
         
+        // اعمال جستجو
+        if ($request->has('search') && !empty($request->input('search'))) {
+            $search = $request->input('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('mobile', 'like', '%' . $search . '%')
+                  ->orWhere('username', 'like', '%' . $search . '%');
+            });
+        }
+        
         $users = $query->paginate(15);
         
         // دریافت سازمان‌ها و نقش‌ها برای فرم ایجاد کاربر جدید
@@ -151,6 +162,10 @@ class UserController extends Controller
         
         $validated = $request->validated();
         
+        // حذف role از validated چون بعداً جداگانه پردازش می‌شود
+        $role = $validated['role'] ?? null;
+        unset($validated['role']);
+        
         // اگر رمز عبور جدید وارد شده باشد، آن را هش می‌کنیم
         if (isset($validated['password']) && !empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
@@ -158,11 +173,16 @@ class UserController extends Controller
             unset($validated['password']);
         }
         
+        // به‌روزرسانی user_type با به‌روزرسانی role
+        if ($role) {
+            $validated['user_type'] = $role;
+        }
+        
         $user->update($validated);
         
         // به‌روزرسانی نقش کاربر
-        if ($request->input('role')) {
-            $user->syncRoles([$request->input('role')]);
+        if ($role) {
+            $user->syncRoles([$role]);
         }
         
         return redirect()->route('admin.users.index')

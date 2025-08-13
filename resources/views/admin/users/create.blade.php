@@ -4,21 +4,24 @@
             <div class="p-6 bg-white border-b border-gray-200">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg font-semibold text-gray-700">افزودن کاربر جدید</h2>
-                    <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-700 hover:text-green-500">
-                        <span>بازگشت به لیست کاربران</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    <a href="{{ route('admin.users.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center justify-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                         </svg>
+                        بازگشت به لیست
                     </a>
                 </div>
 
-                <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate>
                     @csrf
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- نام -->
                         <div>
-                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">نام</label>
+                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                نام
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="text" name="first_name" id="first_name" value="{{ old('first_name') }}" required 
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                             @error('first_name')
@@ -28,7 +31,10 @@
 
                         <!-- نام خانوادگی -->
                         <div>
-                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                نام خانوادگی
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="text" name="last_name" id="last_name" value="{{ old('last_name') }}" required 
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                             @error('last_name')
@@ -36,20 +42,14 @@
                             @enderror
                         </div>
 
-                        <!-- کد ملی / شناسه -->
-                        <div>
-                            <label for="national_code" class="block text-sm font-medium text-gray-700 mb-1">کد ملی</label>
-                            <input type="text" name="national_code" id="national_code" value="{{ old('national_code') }}" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                            @error('national_code')
-                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                            @enderror
-                        </div>
 
                         <!-- موبایل -->
                         <div>
-                            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
-                            <input type="text" name="mobile" id="mobile" value="{{ old('mobile') }}" dir="ltr" 
+                            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">
+                                شماره موبایل
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
+                            <input type="text" name="mobile" id="mobile" value="{{ old('mobile') }}" dir="ltr" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                             @error('mobile')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
@@ -68,7 +68,10 @@
 
                         <!-- نام کاربری -->
                         <div>
-                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                                نام کاربری
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="text" name="username" id="username" value="{{ old('username') }}" dir="ltr" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                             @error('username')
@@ -78,8 +81,11 @@
 
                         <!-- سطح دسترسی -->
                         <div>
-                            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">سطح دسترسی</label>
-                            <select name="role" id="role"
+                            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
+                                سطح دسترسی
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
+                            <select name="role" id="role" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                 <option value="">انتخاب کنید</option>
                                 @foreach($roles as $role)
@@ -95,7 +101,10 @@
 
                         <!-- کلمه عبور -->
                         <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">کلمه عبور</label>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                                کلمه عبور
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="password" name="password" id="password" dir="ltr" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                             @error('password')
@@ -105,7 +114,10 @@
 
                         <!-- تایید کلمه عبور -->
                         <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">تایید کلمه عبور</label>
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">
+                                تایید کلمه عبور
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="password" name="password_confirmation" id="password_confirmation" dir="ltr" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                         </div>

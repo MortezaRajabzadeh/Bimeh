@@ -8,6 +8,7 @@
                         selectAll: false,
                         selectedOrgs: [], 
                         showModal: false,
+                        hasErrors: {{ $errors->any() ? 'true' : 'false' }},
                         toggleAllOrgs() {
                             if (this.selectAll) {
                                 this.selectedOrgs = this.getIds();
@@ -20,6 +21,15 @@
                         },
                         get hasSelected() {
                             return this.selectedOrgs.length > 0;
+                        },
+                        init() {
+                            if (this.hasErrors) {
+                                this.showModal = true;
+                            }
+                        },
+                        closeModal() {
+                            this.showModal = false;
+                            this.hasErrors = false;
                         }
                     }">
                     
@@ -115,7 +125,7 @@
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         دسترسی ها
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         عملیات
                                     </th>
                                 </tr>
@@ -162,9 +172,9 @@
                                             {{ $organization->users_count ?? 0 }} کاربر
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                                        <div class="flex space-x-2 space-x-reverse justify-end">
-                                            <a href="{{ route('admin.organizations.edit', $organization) }}" class="text-blue-600 hover:text-blue-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div class="flex space-x-2 space-x-reverse justify-center">
+                                            <a href="{{ route('admin.organizations.edit', $organization) }}" class="text-green-600 hover:text-green-900">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                 </svg>
@@ -212,36 +222,85 @@
                     <div x-show="showModal" 
                          x-cloak
                          class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center" 
-                         @click.away="showModal = false"
-                         @keydown.escape.window="showModal = false">
+                         @click.away="closeModal()"
+                         @keydown.escape.window="closeModal()">
                         <div class="bg-white rounded-lg shadow-lg max-w-3xl w-full max-h-screen overflow-y-auto" @click.stop>
                             <div class="p-6 bg-white border-b border-gray-200">
                                 <div class="flex justify-between items-center mb-6">
                                     <h2 class="text-lg font-semibold text-gray-700">افزودن سازمان جدید</h2>
-                                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
+                                    <button @click="closeModal()" class="text-gray-500 hover:text-gray-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                 </div>
 
-                                <form action="{{ route('admin.organizations.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                                <!-- استایل‌های سفارشی برای غیرفعال کردن حالت قرمز اینپوت‌ها -->
+                                <style>
+                                    input:invalid,
+                                    select:invalid,
+                                    textarea:invalid,
+                                    input:invalid:focus,
+                                    select:invalid:focus,
+                                    textarea:invalid:focus {
+                                        border-color: #d1d5db !important;
+                                        box-shadow: none !important;
+                                        outline: none !important;
+                                    }
+                                    input:focus:invalid,
+                                    select:focus:invalid,
+                                    textarea:focus:invalid {
+                                        border-color: #10b981 !important;
+                                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+                                    }
+                                    input:required:invalid,
+                                    select:required:invalid,
+                                    textarea:required:invalid {
+                                        border-color: #d1d5db !important;
+                                        box-shadow: none !important;
+                                    }
+                                </style>
+
+                                <form action="{{ route('admin.organizations.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate>
                                     @csrf
+                                    
+                                    <!-- نمایش خطاهای اعتبارسنجی داخل مودال -->
+                                    <div x-show="hasErrors" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                        <strong class="font-bold">خطاهای اعتبارسنجی:</strong>
+                                        <ul class="list-disc list-inside mt-2">
+                                            @if($errors->any())
+                                                @foreach($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            @endif
+                                        </ul>
+                                        <button @click="hasErrors = false" class="absolute top-0 left-0 mt-2 ml-2 text-red-500 hover:text-red-700">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <!-- نام سازمان -->
                                         <div>
-                                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">نام سازمان</label>
+                                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                                                نام سازمان
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="text" name="name" id="name" value="{{ old('name') }}" required 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('name')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- نوع سازمان -->
                                         <div>
-                                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">نوع سازمان</label>
+                                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
+                                                نوع سازمان
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <select name="type" id="type" required
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right appearance-none bg-no-repeat bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] pr-10">
                                                 <option value="">انتخاب کنید</option>
@@ -251,7 +310,7 @@
                                                 <option value="خصوصی" {{ old('type') === 'خصوصی' ? 'selected' : '' }}>خصوصی</option>
                                             </select>
                                             @error('type')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
@@ -261,7 +320,7 @@
                                             <textarea name="address" id="address" rows="3" 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">{{ old('address') }}</textarea>
                                             @error('address')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
@@ -271,7 +330,7 @@
                                             <textarea name="description" id="description" rows="3" 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">{{ old('description') }}</textarea>
                                             @error('description')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
                                     </div>
@@ -291,7 +350,7 @@
                                             </div>
                                         </div>
                                         @error('logo')
-                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                            <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                         @enderror
                                     </div>
 

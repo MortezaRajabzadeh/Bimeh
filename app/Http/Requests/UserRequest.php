@@ -26,10 +26,10 @@ class UserRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($this->user)],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->user)],
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users')->ignore($this->user)],
             'mobile' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($this->user)],
             'organization_id' => ['nullable', 'exists:organizations,id'],
-            'user_type' => ['required', Rule::in(['admin', 'charity', 'insurance'])],
+            'role' => ['required', 'string', 'exists:roles,name'],
             'is_active' => ['boolean'],
         ];
 
@@ -59,7 +59,7 @@ class UserRequest extends FormRequest
             'password' => 'رمز عبور',
             'password_confirmation' => 'تکرار رمز عبور',
             'organization_id' => 'سازمان',
-            'user_type' => 'نوع کاربر',
+            'role' => 'سطح دسترسی',
             'is_active' => 'وضعیت فعال',
         ];
     }
@@ -75,15 +75,14 @@ class UserRequest extends FormRequest
             'name.required' => 'وارد کردن نام الزامی است.',
             'username.required' => 'وارد کردن نام کاربری الزامی است.',
             'username.unique' => 'این نام کاربری قبلاً ثبت شده است.',
-            'email.required' => 'وارد کردن ایمیل الزامی است.',
             'email.email' => 'فرمت ایمیل صحیح نیست.',
             'email.unique' => 'این ایمیل قبلاً ثبت شده است.',
             'mobile.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
             'password.required' => 'وارد کردن رمز عبور الزامی است.',
             'password.confirmed' => 'رمز عبور و تکرار آن مطابقت ندارند.',
             'organization_id.exists' => 'سازمان انتخاب شده معتبر نیست.',
-            'user_type.required' => 'انتخاب نوع کاربر الزامی است.',
-            'user_type.in' => 'نوع کاربر باید یکی از موارد ادمین، خیریه یا بیمه باشد.',
+            'role.required' => 'انتخاب سطح دسترسی الزامی است.',
+            'role.exists' => 'سطح دسترسی انتخاب شده معتبر نیست.',
         ];
     }
 } 

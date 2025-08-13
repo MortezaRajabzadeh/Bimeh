@@ -128,6 +128,7 @@
         document.addEventListener('livewire:update', function () {
             jalaliDatepicker.startWatch();
         });
+        
     </script>
     @endpush
 

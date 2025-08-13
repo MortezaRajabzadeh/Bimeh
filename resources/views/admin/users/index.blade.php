@@ -1,6 +1,22 @@
 <x-app-layout>
 
 <div class="container mx-auto px-4 py-6">
+    <!-- نمایش پیام‌های فلش -->
+    @if(session('success'))
+        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">موفق!</strong>
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">خطا!</strong>
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
+
 <div class="w-full overflow-x-auto">
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200" 
@@ -8,7 +24,13 @@
                         selectAll: false,
                         selectedUsers: [], 
                         showModal: false,
+                        hasErrors: {{ $errors->any() ? 'true' : 'false' }},
                         createOrganization: false,
+                        init() {
+                            if (this.hasErrors) {
+                                this.showModal = true;
+                            }
+                        },
                         toggleAllUsers() {
                             if (this.selectAll) {
                                 this.selectedUsers = this.getIds();
@@ -30,6 +52,10 @@
                             } else {
                                 orgSelect.disabled = false;
                             }
+                        },
+                        closeModal() {
+                            this.showModal = false;
+                            this.hasErrors = false;
                         }
                     }">
                     
@@ -108,10 +134,7 @@
                                         </div>
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        نام
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        نام خانوادگی
+                                        نام کامل
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         شماره همراه
@@ -125,7 +148,7 @@
                                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         دسترسی ها
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         عملیات
                                     </th>
                                 </tr>
@@ -141,10 +164,7 @@
                                             class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $user->first_name }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $user->last_name }}
+                                        {{ $user->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span dir="ltr" class="inline-block">{{ $user->mobile }}</span>
@@ -162,9 +182,9 @@
                                             </span>
                                         @endforeach
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                                        <div class="flex space-x-2 space-x-reverse justify-end">
-                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <div class="flex space-x-2 space-x-reverse justify-center">
+                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-green-600 hover:text-green-900">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                 </svg>
@@ -183,7 +203,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="10" class="px-6 py-4 text-center text-gray-500">
+                                <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                                         هیچ کاربری یافت نشد!
                                     </td>
                                 </tr>
@@ -212,60 +232,103 @@
                     <div x-show="showModal" 
                          x-cloak
                          class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center" 
-                         @click.away="showModal = false"
-                         @keydown.escape.window="showModal = false">
+                         @click.away="closeModal()"
+                         @keydown.escape.window="closeModal()">
                         <div class="bg-white rounded-lg shadow-lg max-w-5xl w-full max-h-screen overflow-y-auto" @click.stop>
                             <div class="p-6 bg-white border-b border-gray-200">
                                 <div class="flex justify-between items-center mb-6">
                                     <h2 class="text-lg font-semibold text-gray-700">افزودن کاربر جدید</h2>
-                                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
+                                    <button @click="closeModal()" class="text-gray-500 hover:text-gray-700">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                 </div>
 
-                                <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                                <!-- استایل‌های سفارشی برای غیرفعال کردن حالت قرمز اینپوت‌ها -->
+                                <style>
+                                    input:invalid,
+                                    select:invalid,
+                                    input:invalid:focus,
+                                    select:invalid:focus {
+                                        border-color: #d1d5db !important;
+                                        box-shadow: none !important;
+                                        outline: none !important;
+                                    }
+                                    input:focus:invalid,
+                                    select:focus:invalid {
+                                        border-color: #10b981 !important;
+                                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+                                    }
+                                    input:required:invalid,
+                                    select:required:invalid {
+                                        border-color: #d1d5db !important;
+                                        box-shadow: none !important;
+                                    }
+                                    /* Custom dropdown arrow */
+                                    select {
+                                        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+                                    }
+                                </style>
+
+                                <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate>
                                     @csrf
+                                    
+                                    <!-- نمایش خطاهای اعتبارسنجی داخل مودال -->
+                                    <div x-show="hasErrors" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                        <strong class="font-bold">خطاهای اعتبارسنجی:</strong>
+                                        <ul class="list-disc list-inside mt-2">
+                                            @if($errors->any())
+                                                @foreach($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            @endif
+                                        </ul>
+                                        <button @click="hasErrors = false" class="absolute top-0 left-0 mt-2 ml-2 text-red-500 hover:text-red-700">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <!-- نام -->
                                         <div>
-                                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">نام</label>
+                                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                                نام
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="text" name="first_name" id="first_name" value="{{ old('first_name') }}" required 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('first_name')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- نام خانوادگی -->
                                         <div>
-                                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">نام خانوادگی</label>
+                                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                                نام خانوادگی
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="text" name="last_name" id="last_name" value="{{ old('last_name') }}" required 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('last_name')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
-                                        <!-- کد ملی / شناسه -->
-                                        <div>
-                                            <label for="national_code" class="block text-sm font-medium text-gray-700 mb-1">کد ملی</label>
-                                            <input type="text" name="national_code" id="national_code" value="{{ old('national_code') }}" 
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('national_code')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
 
                                         <!-- موبایل -->
                                         <div>
-                                            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
-                                            <input type="text" name="mobile" id="mobile" value="{{ old('mobile') }}" dir="ltr" 
+                                            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">
+                                                شماره موبایل
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
+                                            <input type="text" name="mobile" id="mobile" value="{{ old('mobile') }}" dir="ltr" required
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('mobile')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
@@ -275,50 +338,70 @@
                                             <input type="email" name="email" id="email" value="{{ old('email') }}" dir="ltr" 
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('email')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- نام کاربری -->
                                         <div>
-                                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+                                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                                                نام کاربری
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="text" name="username" id="username" value="{{ old('username') }}" dir="ltr" required
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('username')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- سطح دسترسی -->
                                         <div>
-                                            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">سطح دسترسی</label>
-                                            <select name="role" id="role"
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
+                                                سطح دسترسی
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
+                                            <select name="role" id="role" required
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right appearance-none bg-no-repeat bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] pr-10">
                                                 <option value="">انتخاب کنید</option>
                                                 @foreach($roles as $role)
                                                     <option value="{{ $role->name }}" {{ old('role') === $role->name ? 'selected' : '' }}>
-                                                        {{ $role->name }}
+                                                        @if($role->name === 'admin')
+                                                            مدیر کل
+                                                        @elseif($role->name === 'charity')
+                                                            خیریه
+                                                        @elseif($role->name === 'insurance')
+                                                            بیمه
+                                                        @else
+                                                            {{ $role->name }}
+                                                        @endif
                                                     </option>
                                                 @endforeach
                                             </select>
                                             @error('role')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- کلمه عبور -->
                                         <div>
-                                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">کلمه عبور</label>
+                                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                                                کلمه عبور
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="password" name="password" id="password" dir="ltr" required
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                             @error('password')
-                                                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
                                             @enderror
                                         </div>
 
                                         <!-- تایید کلمه عبور -->
                                         <div>
-                                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">تایید کلمه عبور</label>
+                                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">
+                                                تایید کلمه عبور
+                                                <span class="text-red-500 mr-1">*</span>
+                                            </label>
                                             <input type="password" name="password_confirmation" id="password_confirmation" dir="ltr" required
                                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                                         </div>

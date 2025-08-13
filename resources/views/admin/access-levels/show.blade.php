@@ -4,20 +4,15 @@
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <a href="{{ route('admin.access-levels.index') }}" 
-                       class="text-blue-600 hover:text-blue-800 mr-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800">
-                            {{ $accessLevel->display_name ?: $accessLevel->name }}
-                        </h1>
-                        <p class="text-gray-600">جزئیات نقش</p>
-                    </div>
-                </div>
+                <h2 class="text-lg font-semibold text-gray-700">
+                    {{ $accessLevel->display_name ?: $accessLevel->name }} - جزئیات نقش
+                </h2>
+                <a href="{{ route('admin.access-levels.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center justify-center text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    بازگشت به لیست
+                </a>
                 
                 @can('manage roles')
                 <div class="flex space-x-2 space-x-reverse">

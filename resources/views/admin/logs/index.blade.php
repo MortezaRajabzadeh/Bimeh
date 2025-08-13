@@ -7,7 +7,7 @@
         'logout' => 'خروج',
         'restored' => 'بازیابی',
     ];
-    
+
     $modelLabels = [
         // مدل‌های اصلی
         'User' => 'کاربر',
@@ -20,7 +20,7 @@
         'Member' => 'عضو خانواده',
         'FamilyInsurance' => 'بیمه خانواده',
         'FundingSource' => 'منبع تامین',
-        
+
         // مدل‌های مالی
         'Payment' => 'پرداخت',
         'Transaction' => 'تراکنش',
@@ -30,21 +30,21 @@
         'FundingSource' => 'منبع بودجه',
         'InsuranceAllocation' => 'تخصیص بیمه',
         'InsuranceImportLog' => 'ایمپورت بیمه',
-        
+
         // مدل‌های سیستمی
         'Role' => 'نقش کاربری',
         'Permission' => 'دسترسی',
         'ActivityLog' => 'لاگ فعالیت',
         'Media' => 'فایل',
         'Notification' => 'اعلان',
-        
+
         // مدل‌های بیمه
         'InsurancePolicy' => 'پالیس بیمه',
         'Claim' => 'ادعای بیمه',
         'Premium' => 'حق بیمه',
         'Coverage' => 'پوشش بیمه',
     ];
-    
+
     $attributeLabels = [
         // فیلدهای عمومی
         'id' => 'شناسه',
@@ -59,7 +59,7 @@
         'created_at' => 'تاریخ ایجاد',
         'updated_at' => 'تاریخ بروزرسانی',
         'deleted_at' => 'تاریخ حذف',
-        
+
         // فیلدهای کاربر
         'username' => 'نام کاربری',
         'email' => 'ایمیل',
@@ -71,7 +71,7 @@
         'email_verified_at' => 'تاریخ تایید ایمیل',
         'last_login_at' => 'آخرین ورود',
         'organization_id' => 'سازمان',
-        
+
         // فیلدهای سازمان
         'code' => 'کد',
         'license_number' => 'شماره مجوز',
@@ -80,7 +80,7 @@
         'postal_code' => 'کد پستی',
         'website' => 'وب‌سایت',
         'established_at' => 'تاریخ تاسیس',
-        
+
         // فیلدهای خانواده
         'family_code' => 'کد خانواده',
         'head_national_id' => 'کد ملی سرپرست',
@@ -97,7 +97,7 @@
         'province_id' => 'استان',
         'city_id' => 'شهر',
         'district_id' => 'منطقه شهری',
-        
+
         // فیلدهای عضو خانواده
         'national_id' => 'کد ملی',
         'birth_date' => 'تاریخ تولد',
@@ -108,7 +108,7 @@
         'job' => 'شغل',
         'health_condition' => 'وضعیت سلامت',
         'family_id' => 'خانواده',
-        
+
         // فیلدهای مالی
         'amount' => 'مبلغ',
         'currency' => 'واحد پول',
@@ -117,7 +117,7 @@
         'due_date' => 'سررسید',
         'reference_id' => 'شماره مرجع',
         'transaction_id' => 'شماره تراکنش',
-        
+
         // فیلدهای بیمه
         'policy_number' => 'شماره پالیس',
         'coverage_amount' => 'مبلغ پوشش',
@@ -126,7 +126,7 @@
         'claim_amount' => 'مبلغ ادعا',
         'approval_date' => 'تاریخ تایید',
         'rejection_reason' => 'دلیل رد',
-        
+
         // فیلدهای تایید و وضعیت خانواده
         'verified_at' => 'تاریخ تایید',
         'verified_by' => 'تایید شده توسط',
@@ -149,22 +149,22 @@
         'social_worker_id' => 'مددکار اجتماعی',
         'case_worker_id' => 'مسئول پرونده',
     ];
-    
+
     $typeLabels = [
         // نوع کاربران
         'admin' => 'ادمین',
-        'charity' => 'خیریه', 
+        'charity' => 'خیریه',
         'insurance' => 'بیمه',
-        
+
         // نوع سازمان‌ها
         'government' => 'دولتی',
         'private' => 'خصوصی',
         'ngo' => 'غیرانتفاعی',
-        
+
         // جنسیت
         'male' => 'مرد',
         'female' => 'زن',
-        
+
         // نسبت خانوادگی
         'father' => 'پدر',
         'mother' => 'مادر',
@@ -176,7 +176,7 @@
         'brother' => 'برادر',
         'sister' => 'خواهر',
         'other' => 'سایر',
-        
+
         // وضعیت
         'active' => 'فعال',
         'inactive' => 'غیرفعال',
@@ -184,19 +184,19 @@
         'approved' => 'تایید شده',
         'rejected' => 'رد شده',
         'suspended' => 'تعلیق شده',
-        
+
         // روش پرداخت
         'cash' => 'نقدی',
         'card' => 'کارتی',
         'bank_transfer' => 'انتقال بانکی',
         'online' => 'آنلاین',
-        
+
         // مقادیر بولین
         '1' => 'فعال',
         '0' => 'غیرفعال',
         'true' => 'بله',
         'false' => 'خیر',
-        
+
         // وضعیت‌های تکمیلی
         'verified' => 'تایید شده',
         'unverified' => 'تایید نشده',
@@ -205,15 +205,15 @@
         'cancelled' => 'لغو شده',
         'draft' => 'پیش‌نویس',
         'published' => 'منتشر شده',
-        
+
         // سطح اولویت
         'high' => 'بالا',
-        'medium' => 'متوسط', 
+        'medium' => 'متوسط',
         'low' => 'پایین',
         'urgent' => 'فوری',
         'normal' => 'عادی',
         'critical' => 'بحرانی',
-        
+
         // نوع کمک
         'financial' => 'مالی',
         'medical' => 'پزشکی',
@@ -222,7 +222,7 @@
         'clothing' => 'پوشاک',
         'housing' => 'مسکن',
         'emergency' => 'اضطراری',
-        
+
         // روش تماس
         'phone' => 'تلفن',
         'sms' => 'پیامک',
@@ -232,11 +232,11 @@
         'whatsapp' => 'واتساپ',
         'telegram' => 'تلگرام',
     ];
-    
+
     function readableDescription($log) {
         $modelName = $modelLabels[class_basename($log->subject_type) ?? ''] ?? class_basename($log->subject_type);
         $userName = $log->causer ? ($log->causer->name ?? $log->causer->username ?? $log->causer->mobile ?? 'سیستم') : 'سیستم';
-        
+
         // نام موضوع (اگر موجود باشد)
         $subjectName = '';
         if ($log->subject) {
@@ -252,7 +252,7 @@
                 $subjectName = $log->subject->name ?? $log->subject->title ?? $log->subject->display_name ?? '';
             }
         }
-        
+
         if ($log->event === 'created') {
             return $modelName . ($subjectName ? " «{$subjectName}» " : ' ') . 'ایجاد شد توسط ' . $userName;
         }
@@ -271,7 +271,7 @@
         if ($log->event === 'restored') {
             return $modelName . ($subjectName ? " «{$subjectName}» " : ' ') . 'بازیابی شد توسط ' . $userName;
         }
-        
+
         return $log->description ?? ($modelName . ' تغییر کرد');
     }
 @endphp
@@ -282,32 +282,39 @@
             <div class="p-6 bg-white border-b border-gray-200">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-lg font-semibold text-gray-700">لاگ فعالیت‌های سیستم</h2>
+                    <a href="{{ route('admin.users.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center justify-center text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                        بازگشت به لیست
+                    </a>
                 </div>
-                
+
                 <!-- منوی ناوبری -->
                 <x-admin-nav />
 
+                <!-- جدول لاگ‌ها -->
                 <!-- جدول لاگ‌ها -->
                 <div class="overflow-x-auto bg-white rounded-lg shadow overflow-y-auto relative">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     #
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     کاربر
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     عملیات
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     مورد تغییر
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     تاریخ
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     عملیات
                                 </th>
                     </tr>
@@ -315,10 +322,10 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($logs as $log)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                                     {{ $log->id }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="text-sm font-medium text-gray-900">
                                         {{ $log->causer ? ($log->causer->name ?? $log->causer->username ?? $log->causer->mobile ?? '-') : 'سیستم' }}
                                     </div>
@@ -328,7 +335,7 @@
                                         </div>
                                     @endif
                             </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         @if($log->event == 'created') bg-green-100 text-green-800
                                         @elseif($log->event == 'updated') bg-blue-100 text-blue-800
@@ -340,13 +347,13 @@
                                 {{ $eventLabels[$log->event] ?? $log->event }}
                                     </span>
                             </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 text-center">
                                     <div class="text-sm text-gray-900">
                                 {{ $modelLabels[class_basename($log->subject_type) ?? ''] ?? class_basename($log->subject_type) }}
                                 @if($log->subject_id)
                                             <span class="text-gray-500">(شناسه: {{ $log->subject_id }})</span>
                                         @endif
-                                        
+
                                         {{-- نمایش اطلاعات اضافی بر اساس نوع مدل --}}
                                         @if($log->subject)
                                             <div class="text-xs text-gray-600 mt-1">
@@ -384,16 +391,18 @@
                                         </div>
                                 @endif
                             </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                     {{ jdate($log->created_at)->format('Y/m/d H:i') }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                                    <a href="{{ route('admin.logs.show', $log) }}" class="text-blue-600 hover:text-blue-900" title="مشاهده جزئیات">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    </a>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    <div class="flex justify-center">
+                                        <a href="{{ route('admin.logs.show', $log) }}" class="text-blue-600 hover:text-blue-900" title="مشاهده جزئیات">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </a>
+                                    </div>
                             </td>
                         </tr>
                     @empty
@@ -416,4 +425,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>

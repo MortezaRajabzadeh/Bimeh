@@ -278,14 +278,9 @@
                                 <span>سرپرست خانوار</span>
                             </div>
                         </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
-                            <div class="flex items-center justify-center">
-                                <span>معیار پذیرش</span>
-                            </div>
-                        </th>
 
-                        @if($status === 'insured' && auth()->user()->isInsurance())
-                        <!-- تعداد اعضا -->
+                        <!-- تعداد اعضا - برای کاربران خیریه و بیمه -->
+                        @if(auth()->user()->isCharity() || auth()->user()->isInsurance())
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
                             <div class="flex items-center justify-center space-s-1">
                                 <span>تعداد اعضا</span>
@@ -304,6 +299,15 @@
                                 @endif
                             </div>
                         </th>
+                        @endif
+
+                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
+                            <div class="flex items-center justify-center">
+                                <span>معیار پذیرش</span>
+                            </div>
+                        </th>
+
+                        @if($status === 'insured' && auth()->user()->isInsurance())
 
                         <!-- تعداد بیمه‌ها -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
@@ -485,6 +489,14 @@
                                 </div>
                             @endif
                         </td>
+
+                        <!-- تعداد اعضا - برای کاربران خیریه و بیمه -->
+                        @if(auth()->user()->isCharity() || auth()->user()->isInsurance())
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            {{ $family->members->count() ?? 0 }}
+                        </td>
+                        @endif
+
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
                                 // شمارش مشکلات تجمیعی خانواده
@@ -530,10 +542,6 @@
                         </td>
 
                         @if($status === 'insured' && auth()->user()->isInsurance())
-                        <!-- تعداد اعضا -->
-                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
-                            {{ $family->members->count() ?? 0 }}
-                        </td>
 
                         <!-- تعداد بیمه‌ها -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">

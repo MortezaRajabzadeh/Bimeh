@@ -9,7 +9,7 @@ class ToastNotifications extends Component
 {
     public $toasts = [];
 
-    protected $listeners = ['toast'];
+    protected $listeners = ['toast', 'notify'];
 
     public function mount()
     {
@@ -71,6 +71,20 @@ class ToastNotifications extends Component
         
         // برنامه‌ریزی برای حذف اعلان بعد از 10 ثانیه
         $this->dispatch('removeToastAfterDelay', id: $id, delay: 10000);
+    }
+
+    public function notify($data)
+    {
+        // Handle both array and direct parameters
+        if (is_array($data)) {
+            $message = $data['message'] ?? '';
+            $type = $data['type'] ?? 'info';
+        } else {
+            $message = $data;
+            $type = 'info';
+        }
+        
+        $this->toast($message, $type);
     }
 
     public function removeToast($id)
