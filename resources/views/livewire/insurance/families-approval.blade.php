@@ -1931,8 +1931,15 @@ total items: {{ $families->count() ?? 0 }}</pre>
     </div>
 
 
-    <!-- مودال تنظیمات رتبه -->
-    <div x-show="showRankModal"
+    <!-- کامپوننت تنظیمات رتبه -->
+    <x-rank-settings-modal 
+        :showModal="'showRankModal'" 
+        :availableRankSettings="$availableRankSettings ?? null" 
+        :isInsuranceUser="auth()->user()->isInsurance()" 
+    />
+
+    <!-- مودال تنظیمات رتبه (کدهای قدیمی که نباید دیده شود) -->
+    <div x-show="false"
 
      @keydown.escape.window="showRankModal = false"
      x-transition:enter="transition ease-out duration-300"
