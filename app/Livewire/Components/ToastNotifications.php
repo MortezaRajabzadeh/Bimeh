@@ -73,8 +73,13 @@ class ToastNotifications extends Component
         $this->dispatch('removeToastAfterDelay', id: $id, delay: 10000);
     }
 
-    public function notify($data)
+    public function notify($data = null)
     {
+        // اگر پارامتر خالی باشد، از event.detail استفاده می‌کنیم
+        if ($data === null) {
+            return;
+        }
+        
         // Handle both array and direct parameters
         if (is_array($data)) {
             $message = $data['message'] ?? '';

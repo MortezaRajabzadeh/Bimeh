@@ -33,6 +33,9 @@ use Spatie\QueryBuilder\AllowedSort;
 use App\QueryFilters\FamilyRankingFilter;
 use App\QuerySorts\FamilyRankingSort;
 use App\Helpers\ProblemTypeHelper;
+use App\Models\SavedFilter;
+use App\Helpers\DateHelper;
+
 class FamiliesApproval extends Component
 {
     use WithFileUploads, WithPagination;
@@ -1311,22 +1314,22 @@ private function getCriteriaWeights(): array
             $families = Family::whereIn('id', $this->selected)
                 ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members', 'finalInsurances'])
                 ->get();
-            
+
             if ($families->isEmpty()) {
                 $this->dispatch('toast', ['message' => 'خانواده‌های انتخاب شده یافت نشدند.', 'type' => 'error']);
                 return null;
             }
-            
+
             $downloadType = 'انتخاب-شده';
         } else {
             // دانلود همه خانواده‌های صفحه فعلی
             $families = $this->getFamiliesProperty();
-            
+
             if ($families->isEmpty()) {
                 $this->dispatch('toast', ['message' => 'داده‌ای برای دانلود وجود ندارد.', 'type' => 'error']);
                 return null;
             }
-            
+
             $downloadType = $this->activeTab;
         }
 
@@ -2202,12 +2205,12 @@ private function getCriteriaWeights(): array
 
         // بررسی فیلدهای رتبه‌بندی
         $rankingFields = ['weighted_rank', 'criteria_count', 'priority_score'];
-        
+
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortField = $field;
-            
+
             // تنظیم جهت پیش‌فرض بر اساس نوع فیلد
             if (in_array($field, $rankingFields)) {
                 // برای فیلدهای رتبه‌بندی، پیش‌فرض نزولی (امتیاز بالاتر اول)
@@ -2231,7 +2234,7 @@ private function getCriteriaWeights(): array
 
         // پاکسازی کش
         $this->clearFamiliesCache();
-        
+
         Log::info('🔀 Sorting applied', [
             'field' => $field,
             'direction' => $this->sortDirection,
@@ -2314,10 +2317,10 @@ private function getCriteriaWeights(): array
             'timestamp' => now(),
             'current_tab' => $this->activeTab
         ]);
-        
+
         $this->loadRankSettings();
         $this->showRankModal = true;
-        
+
         Log::info('✅ STEP 1 COMPLETED: Rank modal opened', [
             'showRankModal' => $this->showRankModal,
             'rankSettings_count' => $this->rankSettings->count() ?? 0,
@@ -2334,7 +2337,7 @@ private function getCriteriaWeights(): array
             'user_id' => Auth::id(),
             'timestamp' => now()
         ]);
-        
+
         $this->rankSettings = \App\Models\RankSetting::orderBy('sort_order')->get();
         $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
         $this->availableCriteria = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
@@ -2872,7 +2875,7 @@ private function getCriteriaWeights(): array
                 Log::warning('❌ STEP 3 FAILED: No criteria selected for ranking', [
                     'user_id' => Auth::id()
                 ]);
-                
+
                 // پاک کردن فیلتر و سورت
                 $this->specific_criteria = null;
                 $this->sortField = 'created_at';
@@ -2968,33 +2971,33 @@ private function getCriteriaWeights(): array
     {
         try {
             $filters = [];
-            
+
             if ($criteriaIds) {
                 $filters['ranking'] = is_array($criteriaIds) ? implode(',', $criteriaIds) : $criteriaIds;
             }
-            
+
             if ($schemeId) {
                 $filters['ranking_scheme'] = $schemeId;
             }
-            
+
             // اعمال فیلترها به درخواست
             request()->merge(['filter' => $filters]);
-            
+
             // پاک کردن کش
             $this->clearFamiliesCache();
-            
+
             $this->dispatch('toast', [
                 'message' => 'فیلتر رتبه‌بندی اعمال شد',
                 'type' => 'success'
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('❌ Error applying ranking filter', [
                 'error' => $e->getMessage(),
                 'criteria_ids' => $criteriaIds,
                 'scheme_id' => $schemeId
             ]);
-            
+
             $this->dispatch('toast', [
                 'message' => 'خطا در اعمال فیلتر رتبه‌بندی',
                 'type' => 'error'
@@ -3260,17 +3263,17 @@ protected function buildFamiliesQuery()
 
         // ساختن query parameters برای spatie QueryBuilder
         $queryParams = [];
-        
+
         // اضافه کردن فیلتر criteria به query parameters
         if (!empty($this->specific_criteria)) {
             $queryParams['filter']['specific_criteria'] = $this->specific_criteria;
-            
+
             Log::info('🎯 STEP 2: Adding criteria to query params', [
                 'specific_criteria' => $this->specific_criteria,
                 'user_id' => Auth::id()
             ]);
         }
-        
+
         // اضافه کردن سایر فیلترها
         if (!empty($this->search)) {
             $queryParams['filter']['search'] = $this->search;
@@ -3284,7 +3287,7 @@ protected function buildFamiliesQuery()
         if (!empty($this->charity_id)) {
             $queryParams['filter']['charity_id'] = $this->charity_id;
         }
-        
+
         // تنظیم query parameters در request
         if (!empty($queryParams)) {
             request()->merge($queryParams);
@@ -3297,42 +3300,42 @@ protected function buildFamiliesQuery()
                 'user_id' => Auth::id()
             ]);
 
-            $criteriaArray = is_string($this->specific_criteria) 
-                ? explode(',', $this->specific_criteria) 
+            $criteriaArray = is_string($this->specific_criteria)
+                ? explode(',', $this->specific_criteria)
                 : (array)$this->specific_criteria;
             $criteriaArray = array_filter($criteriaArray);
 
             if (!empty($criteriaArray)) {
                 // دریافت وزن‌های معیارها
                 $criteriaWeights = $this->getCriteriaWeights();
-                
+
                 // ساختن weighted score به عنوان یک field جداگانه با LEFT JOIN
                 $weightedScoreSubquery = "COALESCE(";
                 $scoreParts = [];
-                
+
                 foreach ($criteriaArray as $criteria) {
                     $criteria = trim($criteria);
                     $weight = $criteriaWeights[$criteria] ?? 1;
-                    
+
                     // امتیاز از acceptance_criteria خانواده
                     $scoreParts[] = "(
-                        CASE WHEN JSON_CONTAINS(families.acceptance_criteria, JSON_QUOTE('{$criteria}')) 
+                        CASE WHEN JSON_CONTAINS(families.acceptance_criteria, JSON_QUOTE('{$criteria}'))
                         THEN {$weight} ELSE 0 END
                     )";
-                    
+
                     // امتیاز از تعداد اعضای مبتلا
                     $scoreParts[] = "(
                         {$weight} * (
-                            SELECT COUNT(*) FROM members 
-                            WHERE members.family_id = families.id 
+                            SELECT COUNT(*) FROM members
+                            WHERE members.family_id = families.id
                             AND JSON_CONTAINS(members.problem_type, JSON_QUOTE('{$criteria}'))
                             AND members.deleted_at IS NULL
                         )
                     )";
                 }
-                
+
                 $weightedScoreSubquery .= implode(' + ', $scoreParts) . ", 0) as weighted_score";
-                
+
                 $baseQuery->selectRaw('families.*, ' . $weightedScoreSubquery);
 
                 Log::info('📊 STEP 3.1: Weighted ranking subquery added', [
@@ -3360,14 +3363,14 @@ protected function buildFamiliesQuery()
                 AllowedFilter::exact('charity_id'),
                 AllowedFilter::exact('organization_id'),
                 AllowedFilter::exact('status'),
-                
+
                 AllowedFilter::callback('members_count', function ($query, $value) {
                     if (is_numeric($value)) {
                         return $query->having('members_count', '=', (int)$value);
                     }
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('specific_criteria', function ($query, $value, $property) {
                     Log::info('🎯 CRITERIA FILTER ACTIVATED: Processing specific_criteria', [
                         'value' => $value,
@@ -3375,19 +3378,19 @@ protected function buildFamiliesQuery()
                         'value_type' => gettype($value),
                         'user_id' => Auth::id()
                     ]);
-                    
+
                     if (!empty($value)) {
                         // تبدیل رشته معیارها به آرایه
                         $criteriaArray = is_string($value) ? explode(',', $value) : (array)$value;
                         $criteriaArray = array_filter(array_map('trim', $criteriaArray)); // حذف مقادیر خالی و spaces
-                        
+
                         Log::info('🔍 CRITERIA FILTER: Parsed criteria array', [
                             'original_value' => $value,
                             'parsed_array' => $criteriaArray,
                             'count' => count($criteriaArray),
                             'user_id' => Auth::id()
                         ]);
-                        
+
                         if (!empty($criteriaArray)) {
                             $query->where(function($mainQuery) use ($criteriaArray) {
                                 foreach ($criteriaArray as $criteria) {
@@ -3396,11 +3399,11 @@ protected function buildFamiliesQuery()
                                             'criteria' => $criteria,
                                             'user_id' => Auth::id()
                                         ]);
-                                        
+
                                         $mainQuery->orWhere(function($subQuery) use ($criteria) {
                                             // شرط 1: معیار در acceptance_criteria خانواده باشد
                                             $subQuery->orWhereRaw("JSON_CONTAINS(acceptance_criteria, JSON_QUOTE(?))", [$criteria])
-                                                     // شرط 2: یا حداقل یک عضو این مشکل را داشته باشد  
+                                                     // شرط 2: یا حداقل یک عضو این مشکل را داشته باشد
                                                      ->orWhereHas('members', function($memberQuery) use ($criteria) {
                                                          $memberQuery->whereRaw("JSON_CONTAINS(problem_type, JSON_QUOTE(?))", [$criteria]);
                                                      });
@@ -3408,45 +3411,45 @@ protected function buildFamiliesQuery()
                                     }
                                 }
                             });
-                            
+
                             Log::info('✅ CRITERIA FILTER: Applied successfully', [
                                 'applied_criteria' => $criteriaArray,
                                 'user_id' => Auth::id()
                             ]);
                         }
                     }
-                    
+
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('membership_date_from', function ($query, $value) {
                     if (!empty($value)) {
                         return $query->whereDate('created_at', '>=', $value);
                     }
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('membership_date_to', function ($query, $value) {
                     if (!empty($value)) {
                         return $query->whereDate('created_at', '<=', $value);
                     }
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('weighted_score_min', function ($query, $value) {
                     if (is_numeric($value)) {
                         return $query->where('weighted_score', '>=', (float)$value);
                     }
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('weighted_score_max', function ($query, $value) {
                     if (is_numeric($value)) {
                         return $query->where('weighted_score', '<=', (float)$value);
                     }
                     return $query;
                 }),
-                
+
                 AllowedFilter::callback('insurance_end_date', function ($query, $value) {
                     if (!empty($value)) {
                         return $query->whereHas('finalInsurances', function($q) use ($value) {
@@ -3743,7 +3746,7 @@ private function addCriteriaToActiveFilters(array $criteriaInfo, int $totalWeigh
 
 /**
  * اعمال فیلترهای مودال پیشرفته بر روی QueryBuilder
- * 
+ *
  * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
  * @return \Spatie\QueryBuilder\QueryBuilder
  */
@@ -3770,7 +3773,7 @@ protected function applyAdvancedModalFilters($queryBuilder)
         $andFilters = collect($filtersToApply)->filter(function($filter) {
             return ($filter['logical_operator'] ?? 'and') === 'and';
         });
-        
+
         $orFilters = collect($filtersToApply)->filter(function($filter) {
             return ($filter['logical_operator'] ?? 'and') === 'or';
         });
@@ -3816,7 +3819,7 @@ protected function applyAdvancedModalFilters($queryBuilder)
 
 /**
  * اعمال یک فیلتر پیشرفته بر روی کوئری
- * 
+ *
  * @param \Illuminate\Database\Eloquent\Builder $query
  * @param array $filter
  * @param string $method
@@ -3923,7 +3926,7 @@ protected function applySingleAdvancedFilter($query, $filter, $method = 'and')
 
 /**
  * تبدیل عملگر فیلتر به عملگر SQL
- * 
+ *
  * @param string $operator
  * @return string
  */
@@ -4471,25 +4474,25 @@ public function clearCriteriaFilter()
 
             foreach ($families as $family) {
                 // محاسبه تاریخ عضویت
-                $membershipDate = $family->created_at ? 
-                    \Morilog\Jalali\Jalalian::fromCarbon($family->created_at)->format('Y/m/d') : 
+                $membershipDate = $family->created_at ?
+                    \Morilog\Jalali\Jalalian::fromCarbon($family->created_at)->format('Y/m/d') :
                     'نامشخص';
-                
+
                 // محاسبه درصد مشارکت و نام مشارکت کننده (اصلاح شده)
                 $participationPercentage = '';
                 $participantName = '';
-                
+
                 if ($this->activeTab === 'approved') {
                     // اول جستجو در FamilyFundingAllocation برای این خانواده (برای سازگاری با سیستم قدیمی)
                     $latestAllocation = FamilyFundingAllocation::where('family_id', $family->id)
                         ->orderBy('created_at', 'desc')
                         ->with(['fundingSource', 'importLog.user'])
                         ->first();
-                    
+
                     if ($latestAllocation) {
                         // اگر داده‌ای در FamilyFundingAllocation پیدا شد
                         $participationPercentage = $latestAllocation->percentage . '%';
-                        
+
                         // تلاش برای یافتن نام مشارکت‌کننده
                         if ($latestAllocation->fundingSource) {
                             // اگر منبع بانک باشد، نام بانک را نمایش بده
@@ -4510,11 +4513,11 @@ public function clearCriteriaFilter()
                             })
                             ->orderBy('created_at', 'desc')
                             ->first();
-                        
+
                         if ($latestInsuranceShare) {
                             // درصد مشارکت از insurance_share
                             $participationPercentage = $latestInsuranceShare->percentage . '%';
-                            
+
                             // نام مشارکت کننده - از متد getPayerNameAttribute که منطق کامل دارد
                             $participantName = $latestInsuranceShare->payer_name;
                         } else {
@@ -4527,13 +4530,13 @@ public function clearCriteriaFilter()
                                 ->with('user')
                                 ->orderBy('created_at', 'desc')
                                 ->first();
-                            
+
                             if ($latestShareLog) {
                                 // استخراج درصد مشارکت از داده‌های JSON
-                                $sharesData = is_string($latestShareLog->shares_data) 
-                                    ? json_decode($latestShareLog->shares_data, true) 
+                                $sharesData = is_string($latestShareLog->shares_data)
+                                    ? json_decode($latestShareLog->shares_data, true)
                                     : $latestShareLog->shares_data;
-                                
+
                                 // تلاش برای یافتن درصد این خانواده
                                 if (isset($sharesData['family_percentages'][$family->id])) {
                                     $participationPercentage = $sharesData['family_percentages'][$family->id] . '%';
@@ -4542,7 +4545,7 @@ public function clearCriteriaFilter()
                                 } else {
                                     $participationPercentage = '50%'; // درصد پیش‌فرض
                                 }
-                                
+
                                 // نام مشارکت کننده از کاربر
                                 if ($latestShareLog->user) {
                                     $participantName = $latestShareLog->user->name;
@@ -4564,7 +4567,7 @@ public function clearCriteriaFilter()
                 if ($family->head) {
                     $headAcceptanceCriteria = $this->getMemberAcceptanceCriteria($family->head);
                     $headHasDocuments = $this->checkMemberHasDocuments($family->head);
-                    
+
                     $excelData->push([
                         'family_code' => $family->family_code,
                         'head_name' => $family->head->first_name . ' ' . $family->head->last_name,
@@ -4596,7 +4599,7 @@ public function clearCriteriaFilter()
                 foreach ($nonHeadMembers as $member) {
                     $memberAcceptanceCriteria = $this->getMemberAcceptanceCriteria($member);
                     $memberHasDocuments = $this->checkMemberHasDocuments($member);
-                    
+
                     $excelData->push([
                         'family_code' => $family->family_code,
                         'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
@@ -4638,13 +4641,13 @@ public function clearCriteriaFilter()
                 'مدرک',
                 'تاریخ عضویت',
             ];
-            
+
             // اضافه کردن ستون‌های درصد مشارکت و نام مشارکت کننده فقط برای تب "در انتظار حمایت"
             if ($this->activeTab === 'approved') {
                 $headings[] = 'درصد مشارکت';
                 $headings[] = 'نام مشارکت کننده';
             }
-            
+
             $headings = array_merge($headings, [
                 'استان',
                 'شهرستان',
@@ -4670,13 +4673,13 @@ public function clearCriteriaFilter()
                 'has_documents',
                 'membership_date',
             ];
-            
+
             // اضافه کردن کلیدهای درصد مشارکت و نام مشارکت کننده فقط برای تب "در انتظار حمایت"
             if ($this->activeTab === 'approved') {
                 $dataKeys[] = 'participation_percentage';
                 $dataKeys[] = 'participant_name';
             }
-            
+
             $dataKeys = array_merge($dataKeys, [
                 'province',
                 'city',
@@ -5051,13 +5054,13 @@ public function clearCriteriaFilter()
 
             // دریافت معیارهای انتخاب شده
             $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
-            
+
             Log::info('📊 STEP 5.1: Selected criteria analysis', [
                 'selectedCriteriaIds' => $selectedCriteriaIds,
                 'selectedCriteriaIds_count' => count($selectedCriteriaIds),
                 'user_id' => Auth::id()
             ]);
-            
+
             if (empty($selectedCriteriaIds)) {
                 Log::warning('❌ STEP 5 FAILED: No criteria selected for weighted sort', [
                     'user_id' => Auth::id()
@@ -5074,10 +5077,10 @@ public function clearCriteriaFilter()
                     SELECT COALESCE(SUM(
                         rs.weight * (
                             -- شمارش موارد معیار در acceptance_criteria (0 یا 1)
-                            CASE 
-                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON)) 
-                                THEN 1 
-                                ELSE 0 
+                            CASE
+                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON))
+                                THEN 1
+                                ELSE 0
                             END +
                             -- شمارش تعداد اعضای دارای این معیار در problem_type
                             (
@@ -5119,7 +5122,7 @@ public function clearCriteriaFilter()
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // در صورت خطا، سورت بر اساس تاریخ ایجاد
             $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
         }
@@ -5140,7 +5143,7 @@ public function clearCriteriaFilter()
 
             // تست محاسبه امتیاز برای چند خانواده
             $testFamilies = Family::with(['members'])->limit(5)->get();
-            
+
             foreach ($testFamilies as $family) {
                 $score = $this->calculateFamilyScore($family);
                 Log::info('📊 Family score test', [
@@ -5727,7 +5730,7 @@ public function clearCriteriaFilter()
 
     /**
      * بررسی نیاز به مدرک برای نوع مشکل
-     * 
+     *
      * @param string $problemType
      * @return bool
      */
@@ -5746,13 +5749,13 @@ public function clearCriteriaFilter()
             'chronic_illness' => true,
             'بیماری مزمن' => true,
         ];
-        
+
         return isset($requiresDocumentation[trim($problemType)]) && $requiresDocumentation[trim($problemType)];
     }
-    
+
     /**
      * ترجمه انواع مشکلات
-     * 
+     *
      * @var array
      */
     private $problemTypeTranslations = [
@@ -5809,8 +5812,8 @@ public function clearCriteriaFilter()
             return 'ندارد';
         }
 
-        $problemTypes = is_array($member->problem_type) 
-            ? $member->problem_type 
+        $problemTypes = is_array($member->problem_type)
+            ? $member->problem_type
             : json_decode($member->problem_type, true) ?? [];
 
         if (empty($problemTypes)) {
@@ -5840,8 +5843,8 @@ public function clearCriteriaFilter()
             return 'ندارد';
         }
 
-        $problemTypes = is_array($member->problem_type) 
-            ? $member->problem_type 
+        $problemTypes = is_array($member->problem_type)
+            ? $member->problem_type
             : json_decode($member->problem_type, true) ?? [];
 
         if (empty($problemTypes)) {
@@ -5857,5 +5860,335 @@ public function clearCriteriaFilter()
         }
 
         return $hasDocumentRequirement ? 'دارد' : 'ندارد';
+    }
+
+    //======================================================================
+    //== متدهای سیستم ذخیره و بارگذاری فیلترها
+    //======================================================================
+
+    /**
+     * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
+     * @param string $name
+     * @param string|null $description
+     * @param string $visibility
+     * @return void
+     */
+    public function saveFilter($name, $description = null, $visibility = 'private')
+    {
+        try {
+            Log::info('🔍 Starting saveFilter method from', [
+                'component' => 'FamiliesApproval',
+                'showRankModal' => $this->showRankModal,
+                'user_id' => Auth::id(),
+                'name' => $name
+            ]);
+            
+            // بررسی وجود فیلترهایی برای ذخیره
+            $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
+            
+            // در اینجا بررسی می‌کنیم که از کدام مودال درخواست ذخیره آمده است
+            $isFromRankModal = $this->showRankModal;
+            
+            // اگر از مودال رتبه‌بندی نیست، فقط در صورت عدم وجود فیلتر خطا نمایش دهد
+            if (!$isFromRankModal && empty($currentFilters)) {
+                session()->flash('message', 'هیچ فیلتری برای ذخیره وجود ندارد');
+                session()->flash('type', 'warning');
+                return;
+            }
+            
+            // تنظیم فیلترهای پایه
+            $configData = [
+                'filters' => $currentFilters,
+                'component_filters' => [
+                    'search' => $this->search,
+                    'status' => $this->status,
+                    'province_id' => $this->province_id,
+                    'city_id' => $this->city_id,
+                    'charity_id' => $this->charity_id,
+                    'deprivation_rank' => $this->deprivation_rank,
+                    'family_rank_range' => $this->family_rank_range,
+                    'specific_criteria' => $this->specific_criteria
+                ],
+                'sort' => [
+                    'field' => $this->sortField,
+                    'direction' => $this->sortDirection
+                ],
+                'tab' => $this->activeTab
+            ];
+            
+            // اگر از مودال رتبه‌بندی است، اطلاعات آن را هم اضافه کنیم
+            if ($isFromRankModal) {
+                $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
+                
+                Log::info('💾 Saving rank settings filter', [
+                    'selectedCriteriaIds' => $selectedCriteriaIds,
+                    'selectedCriteriaIds_count' => count($selectedCriteriaIds),
+                    'user_id' => Auth::id()
+                ]);
+                
+                $configData['rank_settings'] = [
+                    'selected_criteria' => $this->selectedCriteria ?? [],
+                    'selected_criteria_ids' => $selectedCriteriaIds
+                ];
+            }
+
+            // ایجاد فیلتر ذخیره شده
+            $savedFilter = SavedFilter::create([
+                'name' => trim($name),
+                'description' => $description ? trim($description) : null,
+                'filters_config' => $configData,
+                'filter_type' => 'families_approval',
+                'visibility' => $visibility,
+                'user_id' => Auth::id(),
+                'organization_id' => auth()->user()->organization_id ?? null,
+                'usage_count' => 0
+            ]);
+
+            Log::info('Filter saved successfully', [
+                'filter_id' => $savedFilter->id,
+                'name' => $name,
+                'user_id' => Auth::id()
+            ]);
+
+            // ارسال پیام موفقیت به session برای نمایش در toast
+            session()->flash('success', "فیلتر '{$name}' با موفقیت ذخیره شد");
+
+        } catch (\Exception $e) {
+            Log::error('Error saving filter', [
+                'name' => $name,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            // ارسال پیام خطا به session برای نمایش در toast
+            session()->flash('error', 'خطا در ذخیره فیلتر: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * بارگذاری فیلترهای ذخیره شده کاربر
+     * @return array
+     */
+    public function loadSavedFilters()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return [];
+            }
+
+            // فیلترهای قابل دسترس برای کاربر بر اساس سطح دسترسی
+            $query = SavedFilter::where('filter_type', 'families_approval')
+                ->where(function ($q) use ($user) {
+                    // فیلترهای خصوصی خود کاربر
+                    $q->where(function ($private) use ($user) {
+                        $private->where('visibility', 'private')
+                               ->where('user_id', $user->id);
+                    })
+                    // فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                    ->orWhere(function ($org) use ($user) {
+                        if ($user->organization_id) {
+                            $org->where('visibility', 'organization')
+                               ->where('organization_id', $user->organization_id);
+                        }
+                    })
+                    // فیلترهای عمومی
+                    ->orWhere('visibility', 'public');
+                })
+                ->orderBy('usage_count', 'desc')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($filter) {
+                    return [
+                        'id' => $filter->id,
+                        'name' => $filter->name,
+                        'description' => $filter->description,
+                        'visibility' => $filter->visibility,
+                        'usage_count' => $filter->usage_count,
+                        'created_at' => DateHelper::toJalali($filter->created_at, 'Y/m/d'),
+                        'is_owner' => $filter->user_id === Auth::id()
+                    ];
+                });
+
+            return $query->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('Error loading saved filters', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * بارگذاری و اعمال فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function loadFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بررسی دسترسی
+            $user = Auth::user();
+            $hasAccess = false;
+
+            if ($savedFilter->visibility === 'private' && $savedFilter->user_id === $user->id) {
+                $hasAccess = true;
+            } elseif ($savedFilter->visibility === 'organization' &&
+                     $savedFilter->organization_id === $user->organization_id) {
+                $hasAccess = true;
+            } elseif ($savedFilter->visibility === 'public') {
+                $hasAccess = true;
+            }
+
+            if (!$hasAccess) {
+                $this->dispatch('notify', [
+                    'message' => 'شما به این فیلتر دسترسی ندارید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بارگذاری داده‌های فیلتر
+            $filterData = $savedFilter->filters_config;
+
+            // اعمال فیلترهای مودال
+            if (isset($filterData['filters']) && is_array($filterData['filters'])) {
+                $this->tempFilters = $filterData['filters'];
+                $this->activeFilters = $filterData['filters'];
+            }
+
+            // اعمال فیلترهای کامپوننت
+            if (isset($filterData['component_filters'])) {
+                $componentFilters = $filterData['component_filters'];
+                $this->search = $componentFilters['search'] ?? '';
+                $this->status = $componentFilters['status'] ?? '';
+                $this->province_id = $componentFilters['province_id'] ?? null;
+                $this->city_id = $componentFilters['city_id'] ?? null;
+                $this->charity_id = $componentFilters['charity_id'] ?? null;
+                $this->deprivation_rank = $componentFilters['deprivation_rank'] ?? '';
+                $this->family_rank_range = $componentFilters['family_rank_range'] ?? '';
+                $this->specific_criteria = $componentFilters['specific_criteria'] ?? '';
+            }
+            
+            // اعمال تنظیمات رتبه‌بندی اگر در فیلتر ذخیره شده باشد
+            if (isset($filterData['rank_settings'])) {
+                $rankSettings = $filterData['rank_settings'];
+                $this->selectedCriteria = $rankSettings['selected_criteria'] ?? [];
+                
+                Log::info('📋 Loaded rank settings from filter', [
+                    'selected_criteria' => $this->selectedCriteria,
+                    'selected_criteria_ids' => $rankSettings['selected_criteria_ids'] ?? [],
+                    'user_id' => Auth::id()
+                ]);
+            }
+
+            // اعمال تنظیمات سورت
+            if (isset($filterData['sort'])) {
+                $this->sortField = $filterData['sort']['field'] ?? 'created_at';
+                $this->sortDirection = $filterData['sort']['direction'] ?? 'desc';
+            }
+
+            // اعمال تب مناسب
+            if (isset($filterData['tab'])) {
+                $this->setTab($filterData['tab']);
+            }
+
+            // افزایش شمارنده استفاده
+            $savedFilter->increment('usage_count');
+            $savedFilter->update(['last_used_at' => now()]);
+
+            // بازنشانی صفحه و پاک کردن کش
+            $this->resetPage();
+            $this->clearFamiliesCache();
+
+            Log::info('Filter loaded successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $savedFilter->name,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$savedFilter->name}' با موفقیت بارگذاری شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در بارگذاری فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function deleteFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // فقط صاحب فیلتر می‌تواند آن را حذف کند
+            if ($savedFilter->user_id !== Auth::id()) {
+                $this->dispatch('notify', [
+                    'message' => 'شما فقط می‌توانید فیلترهای خود را حذف کنید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            $filterName = $savedFilter->name;
+            $savedFilter->delete();
+
+            Log::info('Filter deleted successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $filterName,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$filterName}' با موفقیت حذف شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 }

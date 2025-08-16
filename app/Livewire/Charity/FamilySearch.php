@@ -10,6 +10,7 @@ use App\Models\Province;
 use App\Models\City;
 use App\Models\RankSetting;
 use App\Models\FamilyCriterion;
+use App\Models\SavedFilter;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use App\QueryFilters\FamilyRankingFilter;
 use App\QuerySorts\RankingSort;
 use App\Helpers\ProblemTypeHelper;
+use App\Helpers\DateHelper;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 
@@ -2612,6 +2614,449 @@ class FamilySearch extends Component
             'ترک تحصیل' => 'ترک تحصیل',
             'خانه‌دار' => 'خانه‌دار'
         ];
+    }
+
+    //======================================================================
+    //== متدهای سیستم ذخیره و بارگذاری فیلترها
+    //======================================================================
+
+    /**
+     * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
+     * @param string $name
+     * @param string|null $description
+     * @param string $visibility
+     * @return void
+     */
+    public function saveFilter($name, $description = null, $visibility = 'private')
+    {
+        try {
+            // بررسی وجود فیلترهایی برای ذخیره
+            $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
+            if (empty($currentFilters)) {
+                session()->flash('message', 'هیچ فیلتری برای ذخیره وجود ندارد');
+                session()->flash('type', 'warning');
+                return;
+            }
+
+            // ایجاد فیلتر ذخیره شده
+            $savedFilter = SavedFilter::create([
+                'name' => trim($name),
+                'description' => $description ? trim($description) : null,
+                'filters_config' => [
+                    'filters' => $currentFilters,
+                    'component_filters' => [
+                        'search' => $this->search,
+                        'status' => $this->status,
+                        'province' => $this->province,
+                        'city' => $this->city,
+                        'deprivation_rank' => $this->deprivation_rank,
+                        'family_rank_range' => $this->family_rank_range,
+                        'specific_criteria' => $this->specific_criteria,
+                        'charity' => $this->charity
+                    ],
+                    'sort' => [
+                        'field' => $this->sortField,
+                        'direction' => $this->sortDirection
+                    ]
+                ],
+                'filter_type' => 'family_search',
+                'visibility' => $visibility,
+                'user_id' => Auth::id(),
+                'organization_id' => auth()->user()->organization_id ?? null,
+                'usage_count' => 0
+            ]);
+
+            Log::info('Filter saved successfully', [
+                'filter_id' => $savedFilter->id,
+                'name' => $name,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$name}' با موفقیت ذخیره شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error saving filter', [
+                'name' => $name,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * بارگذاری فیلترهای ذخیره شده کاربر
+     * @return array
+     */
+    public function loadSavedFilters()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return [];
+            }
+
+            // فیلترهای قابل دسترس برای کاربر بر اساس سطح دسترسی
+            $query = SavedFilter::where('filter_type', 'family_search')
+                ->where(function ($q) use ($user) {
+                    // فیلترهای خصوصی خود کاربر
+                    $q->where(function ($private) use ($user) {
+                        $private->where('visibility', 'private')
+                               ->where('user_id', $user->id);
+                    })
+                    // فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                    ->orWhere(function ($org) use ($user) {
+                        if ($user->organization_id) {
+                            $org->where('visibility', 'organization')
+                               ->where('organization_id', $user->organization_id);
+                        }
+                    })
+                    // فیلترهای عمومی
+                    ->orWhere('visibility', 'public');
+                })
+                ->orderBy('usage_count', 'desc')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($filter) {
+                    return [
+                        'id' => $filter->id,
+                        'name' => $filter->name,
+                        'description' => $filter->description,
+                        'visibility' => $filter->visibility,
+                        'usage_count' => $filter->usage_count,
+                        'created_at' => DateHelper::toJalali($filter->created_at, 'Y/m/d'),
+                        'is_owner' => $filter->user_id === Auth::id()
+                    ];
+                });
+
+            return $query->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('Error loading saved filters', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * بارگذاری و اعمال فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function loadFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بررسی دسترسی
+            $user = Auth::user();
+            $hasAccess = false;
+
+            if ($savedFilter->visibility === 'private' && $savedFilter->user_id === $user->id) {
+                $hasAccess = true;
+            } elseif ($savedFilter->visibility === 'organization' && 
+                     $savedFilter->organization_id === $user->organization_id) {
+                $hasAccess = true;
+            } elseif ($savedFilter->visibility === 'public') {
+                $hasAccess = true;
+            }
+
+            if (!$hasAccess) {
+                $this->dispatch('notify', [
+                    'message' => 'شما به این فیلتر دسترسی ندارید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بارگذاری داده‌های فیلتر
+            $filterData = $savedFilter->filters_config;
+
+            // اعمال فیلترهای مودال
+            if (isset($filterData['filters']) && is_array($filterData['filters'])) {
+                $this->tempFilters = $filterData['filters'];
+                $this->activeFilters = $filterData['filters'];
+                $this->filters = $filterData['filters'];
+            }
+
+            // اعمال فیلترهای کامپوننت
+            if (isset($filterData['component_filters'])) {
+                $componentFilters = $filterData['component_filters'];
+                $this->search = $componentFilters['search'] ?? '';
+                $this->status = $componentFilters['status'] ?? '';
+                $this->province = $componentFilters['province'] ?? '';
+                $this->city = $componentFilters['city'] ?? '';
+                $this->deprivation_rank = $componentFilters['deprivation_rank'] ?? '';
+                $this->family_rank_range = $componentFilters['family_rank_range'] ?? '';
+                $this->specific_criteria = $componentFilters['specific_criteria'] ?? '';
+                $this->charity = $componentFilters['charity'] ?? '';
+            }
+
+            // اعمال تنظیمات سورت
+            if (isset($filterData['sort'])) {
+                $this->sortField = $filterData['sort']['field'] ?? 'created_at';
+                $this->sortDirection = $filterData['sort']['direction'] ?? 'desc';
+            }
+
+            // افزایش شمارنده استفاده
+            $savedFilter->increment('usage_count');
+            $savedFilter->update(['last_used_at' => now()]);
+
+            // بازنشانی صفحه و پاک کردن کش
+            $this->resetPage();
+            $this->clearCache();
+
+            Log::info('Filter loaded successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $savedFilter->name,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$savedFilter->name}' با موفقیت بارگذاری شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در بارگذاری فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function deleteFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // فقط صاحب فیلتر می‌تواند آن را حذف کند
+            if ($savedFilter->user_id !== Auth::id()) {
+                $this->dispatch('notify', [
+                    'message' => 'شما فقط می‌توانید فیلترهای خود را حذف کنید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            $filterName = $savedFilter->name;
+            $savedFilter->delete();
+
+            Log::info('Filter deleted successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $filterName,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$filterName}' با موفقیت حذف شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * به‌روزرسانی فیلتر ذخیره شده
+     * @param int $filterId
+     * @param string $name
+     * @param string|null $description
+     * @param string $visibility
+     * @return void
+     */
+    public function updateFilter($filterId, $name, $description = null, $visibility = 'private')
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // فقط صاحب فیلتر می‌تواند آن را به‌روزرسانی کند
+            if ($savedFilter->user_id !== Auth::id()) {
+                $this->dispatch('notify', [
+                    'message' => 'شما فقط می‌توانید فیلترهای خود را ویرایش کنید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // به‌روزرسانی داده‌های فیلتر با فیلترهای فعلی
+            $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
+            
+            $savedFilter->update([
+                'name' => trim($name),
+                'description' => $description ? trim($description) : null,
+                'visibility' => $visibility,
+                'filters_config' => [
+                    'filters' => $currentFilters,
+                    'component_filters' => [
+                        'search' => $this->search,
+                        'status' => $this->status,
+                        'province' => $this->province,
+                        'city' => $this->city,
+                        'deprivation_rank' => $this->deprivation_rank,
+                        'family_rank_range' => $this->family_rank_range,
+                        'specific_criteria' => $this->specific_criteria,
+                        'charity' => $this->charity
+                    ],
+                    'sort' => [
+                        'field' => $this->sortField,
+                        'direction' => $this->sortDirection
+                    ]
+                ]
+            ]);
+
+            Log::info('Filter updated successfully', [
+                'filter_id' => $filterId,
+                'name' => $name,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "فیلتر '{$name}' با موفقیت به‌روزرسانی شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating filter', [
+                'filter_id' => $filterId,
+                'name' => $name,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در به‌روزرسانی فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * کپی فیلتر برای کاربر جاری
+     * @param int $filterId
+     * @return void
+     */
+    public function duplicateFilter($filterId)
+    {
+        try {
+            $originalFilter = SavedFilter::find($filterId);
+            if (!$originalFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بررسی دسترسی
+            $user = Auth::user();
+            $hasAccess = false;
+
+            if ($originalFilter->visibility === 'private' && $originalFilter->user_id === $user->id) {
+                $hasAccess = true;
+            } elseif ($originalFilter->visibility === 'organization' && 
+                     $originalFilter->organization_id === $user->organization_id) {
+                $hasAccess = true;
+            } elseif ($originalFilter->visibility === 'public') {
+                $hasAccess = true;
+            }
+
+            if (!$hasAccess) {
+                $this->dispatch('notify', [
+                    'message' => 'شما به این فیلتر دسترسی ندارید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // ایجاد کپی از فیلتر
+            $newFilterName = $originalFilter->name . ' (کپی)';
+            $duplicatedFilter = SavedFilter::create([
+                'name' => $newFilterName,
+                'description' => $originalFilter->description,
+                'filters_config' => $originalFilter->filters_config,
+                'filter_type' => $originalFilter->filter_type,
+                'visibility' => 'private', // کپی‌ها همیشه خصوصی هستند
+                'user_id' => $user->id,
+                'organization_id' => $user->organization_id,
+                'usage_count' => 0
+            ]);
+
+            Log::info('Filter duplicated successfully', [
+                'original_filter_id' => $filterId,
+                'new_filter_id' => $duplicatedFilter->id,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => "کپی فیلتر '{$newFilterName}' با موفقیت ایجاد شد",
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error duplicating filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در کپی کردن فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
     }
 
 }

@@ -292,6 +292,163 @@
             </div>
         </div>
 
+        <!-- بخش ذخیره سازی و بارگذاری فیلترها -->
+        <div class="p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50" 
+             x-data="{
+                 showSaveForm: false,
+                 filterName: '',
+                 filterDescription: '',
+                 filterVisibility: 'private',
+                 showLoadOptions: false,
+                 savedFilters: [],
+                 loadSavedFilters() {
+                     // فراخوانی API برای دریافت فیلترهای ذخیره شده
+                     $wire.loadSavedFilters().then(data => {
+                         this.savedFilters = data;
+                     });
+                 },
+                 saveCurrentFilter() {
+                     if (!this.filterName.trim()) {
+                         alert('لطفا نام فیلتر را وارد کنید');
+                         return;
+                     }
+                     $wire.saveFilter(this.filterName, this.filterDescription, this.filterVisibility)
+                         .then((result) => {
+                             console.log('Filter saved successfully:', result);
+                             this.filterName = '';
+                             this.filterDescription = '';
+                             this.showSaveForm = false;
+                             // بارگیری مجدد فیلترهای ذخیره شده
+                             this.loadSavedFilters();
+                         })
+                         .catch((error) => {
+                             console.error('Error saving filter:', error);
+                             alert('خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'));
+                         });
+                 }
+             }">
+            
+            <!-- نوار ابزارهای ذخیره/بارگذاری -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex gap-2">
+                    <!-- دکمه بارگذاری فیلترهای ذخیره شده -->
+                    <button @click="showLoadOptions = !showLoadOptions; if(showLoadOptions) loadSavedFilters()"
+                            class="inline-flex items-center px-3 py-2 bg-blue-100 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        بارگذاری فیلتر
+                    </button>
+                    
+                    <!-- دکمه ذخیره فیلتر جاری -->
+                    <button @click="showSaveForm = !showSaveForm"
+                            class="inline-flex items-center px-3 py-2 bg-green-100 border border-green-300 rounded-lg text-sm font-medium text-green-700 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        ذخیره فیلتر
+                    </button>
+                </div>
+            </div>
+            
+            <!-- فرم بارگذاری فیلترها -->
+            <div x-show="showLoadOptions" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="bg-white rounded-lg border-2 border-blue-200 p-4 mb-4">
+                
+                <div class="mb-4">
+                    <h4 class="text-lg font-medium text-gray-900 mb-3">فیلترهای ذخیره شده</h4>
+                </div>
+                
+                <div class="max-h-64 overflow-y-auto">
+                    <template x-for="filter in savedFilters" :key="filter.id">
+                        <div class="p-3 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer mb-2 transition-colors"
+                             @click="$wire.loadFilter(filter.id); showLoadOptions = false">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <h5 class="text-sm font-medium text-gray-900" x-text="filter.name"></h5>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="filter.description"></p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-400">
+                                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span x-text="'استفاده: ' + filter.usage_count + ' بار'"></span>
+                                        <span class="mx-2">•</span>
+                                        <span x-text="filter.created_at"></span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="px-2 py-1 text-xs rounded-full"
+                                          :class="{
+                                              'bg-green-100 text-green-800': filter.visibility === 'private',
+                                              'bg-blue-100 text-blue-800': filter.visibility === 'organization',
+                                              'bg-purple-100 text-purple-800': filter.visibility === 'public'
+                                          }"
+                                          x-text="{
+                                              'private': 'خصوصی',
+                                              'organization': 'سازمانی',
+                                              'public': 'عمومی'
+                                          }[filter.visibility]"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <div x-show="savedFilters.length === 0" class="p-4 text-center text-gray-500">
+                        <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-sm">هیچ فیلتر ذخیره‌ای وجود ندارد</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-4">
+                    <button @click="showLoadOptions = false"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        بستن
+                    </button>
+                </div>
+            </div>
+            
+            <!-- فرم ذخیره فیلتر -->
+            <div x-show="showSaveForm" x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="bg-white rounded-lg border-2 border-green-200 p-4 mb-4">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">نام فیلتر *</label>
+                    <input type="text" x-model="filterName" placeholder="نام مناسبی برای فیلتر انتخاب کنید"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">توضیحات (اختیاری)</label>
+                    <textarea x-model="filterDescription" rows="2" placeholder="توضیح کوتاهی درباره کاربرد این فیلتر"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                </div>
+                
+                
+                <div class="flex justify-end gap-2">
+                    <button @click="showSaveForm = false; filterName = ''; filterDescription = ''"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        انصراف
+                    </button>
+                    <button @click="saveCurrentFilter()"
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        ذخیره فیلتر
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- فوتر مودال -->
         <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
             <div class="flex gap-2">

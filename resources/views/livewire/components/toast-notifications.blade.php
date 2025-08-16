@@ -70,6 +70,16 @@
                 }, 3000);
             }
         }
+        
+        // لیسنر برای رویداد notify
+        window.addEventListener('notify', function(event) {
+            if (event.detail && event.detail.message) {
+                // ارسال پیام به کامپوننت Livewire
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('notify', event.detail);
+                }
+            }
+        });
     });
 </script>
 

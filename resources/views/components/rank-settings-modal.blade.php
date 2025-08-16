@@ -5,8 +5,8 @@
 ])
 
 @if($isInsuranceUser)
-<div x-show="{{ $showModal }}"
-     @keydown.escape.window="{{ $showModal }} = false"
+<div x-show="showRankModal"
+     @keydown.escape.window="showRankModal = false"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform scale-90"
      x-transition:enter-end="opacity-100 transform scale-100"
@@ -16,12 +16,12 @@
      x-cloak
      class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black bg-opacity-50">
 
-    <div @click.away="{{ $showModal }} = false"
+    <div @click.away="showRankModal = false"
          class="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-lg">
 
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 class="text-2xl font-bold text-gray-800">تنظیمات رتبه</h3>
-            <button @click="{{ $showModal }} = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showRankModal = false" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -179,6 +179,191 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             ذخیره
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بخش ذخیره سازی و بارگذاری فیلترها -->
+            <div class="mt-8 p-4 border-t border-gray-200 bg-gray-50 rounded-lg"
+                 x-data="{
+                     showSaveForm: false,
+                     filterName: '',
+                     filterDescription: '',
+                     filterVisibility: 'private',
+                     showLoadOptions: false,
+                     savedFilters: [],
+                     loading: false,
+                     async loadSavedFilters() {
+                         this.loading = true;
+                         try {
+                             const data = await $wire.loadSavedFilters();
+                             this.savedFilters = data || [];
+                         } catch (error) {
+                             console.error('خطا در بارگذاری فیلترها:', error);
+                             this.savedFilters = [];
+                         } finally {
+                             this.loading = false;
+                         }
+                     },
+                     async saveCurrentFilter() {
+                         if (!this.filterName.trim()) {
+                             $wire.dispatch('notify', {
+                                 message: 'لطفا نام فیلتر را وارد کنید',
+                                 type: 'warning'
+                             });
+                             return;
+                         }
+                         this.loading = true;
+                        try {
+                            await $wire.saveFilter(this.filterName, this.filterDescription, this.filterVisibility);
+                            this.filterName = '';
+                            this.filterDescription = '';
+                            this.showSaveForm = false;
+                            await this.loadSavedFilters();
+                            // ارسال پیام موفقیت به کامپوننت ToastNotifications
+                            window.dispatchEvent(new CustomEvent('notify', {
+                                detail: {
+                                    message: 'فیلتر با موفقیت ذخیره شد',
+                                    type: 'success'
+                                }
+                            }));
+                        } catch (error) {
+                            console.error('خطا در ذخیره فیلتر:', error);
+                            // ارسال پیام خطا به کامپوننت ToastNotifications
+                            window.dispatchEvent(new CustomEvent('notify', {
+                                detail: {
+                                    message: 'خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'),
+                                    type: 'error'
+                                }
+                            }));
+                         } finally {
+                             this.loading = false;
+                         }
+                     }
+                 }">
+
+                <div class="mb-4">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-2">مدیریت فیلترهای ذخیره شده</h4>
+                    <p class="text-sm text-gray-600">می‌توانید تنظیمات فعلی را ذخیره کرده و بعداً بارگذاری کنید</p>
+                </div>
+
+                <!-- نوار ابزارهای کمپکت -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button @click="showLoadOptions = !showLoadOptions; showLoadOptions && loadSavedFilters()"
+                            :disabled="loading"
+                            class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200"
+                            :class="showLoadOptions 
+                                ? 'bg-blue-600 text-white shadow-md' 
+                                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'"> 
+                        <svg class="w-4 h-4 ml-1" :class="loading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span x-text="showLoadOptions ? 'بستن' : 'بارگذاری'"></span>
+                    </button>
+
+                    <button @click="showSaveForm = !showSaveForm"
+                            class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200"
+                            :class="showSaveForm 
+                                ? 'bg-green-600 text-white shadow-md' 
+                                : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'">
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        <span x-text="showSaveForm ? 'لغو' : 'ذخیره'"></span>
+                    </button>
+                </div>
+
+                <!-- فرم بارگذاری کمپکت -->
+                <div x-show="showLoadOptions" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="mb-4 bg-white rounded-lg border border-blue-200 p-3">
+                    
+                    <div class="max-h-48 overflow-y-auto space-y-2">
+                        <template x-for="filter in savedFilters" :key="filter.id">
+                            <div class="group flex items-center justify-between p-2 rounded-md hover:bg-blue-50 cursor-pointer transition-colors"
+                                 @click="$wire.loadFilter(filter.id); showLoadOptions = false">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h6 class="text-sm font-medium text-gray-900 truncate" x-text="filter.name"></h6>
+                                        <span class="inline-flex px-2 py-1 text-xs rounded-full"
+                                              :class="{
+                                                  'bg-green-100 text-green-700': filter.visibility === 'private',
+                                                  'bg-blue-100 text-blue-700': filter.visibility === 'organization',
+                                                  'bg-purple-100 text-purple-700': filter.visibility === 'public'
+                                              }"
+                                              x-text="{
+                                                  'private': 'شخصی',
+                                                  'organization': 'سازمانی', 
+                                                  'public': 'عمومی'
+                                              }[filter.visibility]"></span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 truncate mt-1" x-text="filter.description || 'بدون توضیح'"></p>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs text-gray-400">
+                                    <span x-text="filter.usage_count + ' بار'"></span>
+                                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <div x-show="savedFilters.length === 0 && !loading" class="text-center py-4 text-gray-500">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-sm">فیلتر ذخیره‌ای وجود ندارد</p>
+                        </div>
+
+                        <div x-show="loading" class="text-center py-4">
+                            <div class="inline-flex items-center gap-2 text-blue-600">
+                                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span class="text-sm">در حال بارگذاری...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- فرم ذخیره کمپکت -->
+                <div x-show="showSaveForm" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="bg-white rounded-lg border border-green-200 p-4 space-y-3">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">نام فیلتر *</label>
+                            <input type="text" x-model="filterName" 
+                                   placeholder="نام مناسب برای فیلتر"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">توضیحات</label>
+                        <textarea x-model="filterDescription" rows="2" 
+                                  placeholder="توضیح کوتاه درباره کاربرد این فیلتر"
+                                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <button @click="showSaveForm = false; filterName = ''; filterDescription = ''"
+                                class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+                            انصراف
+                        </button>
+                        <button @click="saveCurrentFilter()"
+                                :disabled="loading"
+                                class="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50">
+                            <span x-text="loading ? 'ذخیره...' : 'ذخیره فیلتر'"></span>
                         </button>
                     </div>
                 </div>
