@@ -1702,6 +1702,321 @@ private function getCriteriaWeights(): array
     }
 
     /**
+     * ذخیره فیلتر فعلی
+     */
+    public function saveFilter()
+    {
+        $this->validate([
+            'filterName' => 'required|string|max:255',
+        ]);
+
+        // جمع‌آوری فیلترهای فعال
+        $filterData = [
+            'search' => $this->search,
+            'province_id' => $this->province_id,
+            'city_id' => $this->city_id,
+            'district_id' => $this->district_id,
+            'region_id' => $this->region_id,
+            'organization_id' => $this->organization_id,
+            'charity_id' => $this->charity_id,
+            'status' => $this->status,
+            'sortField' => $this->sortField,
+            'sortDirection' => $this->sortDirection,
+        ];
+
+        // حذف فیلترهای خالی
+        $filterData = array_filter($filterData, function($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (empty($filterData)) {
+            $this->dispatch('toast', [
+                'message' => 'هیچ فیلتری برای ذخیره وجود ندارد.',
+                'type' => 'warning'
+            ]);
+            return;
+        }
+
+        try {
+            SavedFilter::create([
+                'user_id' => Auth::id(),
+                'name' => $this->filterName,
+                'filter_type' => 'families_approval',
+                'filter_data' => json_encode($filterData),
+            ]);
+
+            $this->filterName = '';
+            $this->dispatch('toast', [
+                'message' => 'فیلتر با موفقیت ذخیره شد.',
+                'type' => 'success'
+            ]);
+
+            // بارگذاری مجدد لیست فیلترها
+            $this->loadSavedFilters('families_approval');
+
+        } catch (\Exception $e) {
+            Log::error('خطا در ذخیره فیلتر: ' . $e->getMessage());
+            $this->dispatch('toast', [
+                'message' => 'خطا در ذخیره فیلتر.',
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * بارگذاری فیلترهای ذخیره شده
+     */
+    public function loadSavedFilters($modalType = 'families_approval')
+    {
+        try {
+            $this->savedFilters = SavedFilter::where('user_id', Auth::id())
+                ->where('filter_type', $modalType)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($filter) {
+                    return [
+                        'id' => $filter->id,
+                        'name' => $filter->name,
+                        'created_at' => $filter->created_at->format('Y/m/d H:i'),
+                    ];
+                })
+                ->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('خطا در بارگذاری فیلترهای ذخیره شده: ' . $e->getMessage());
+            $this->savedFilters = [];
+        }
+    }
+
+    /**
+     * اعمال فیلتر ذخیره شده
+     */
+    public function loadFilter($filterId, $modalType = 'families_approval')
+    {
+        try {
+            $filter = SavedFilter::where('id', $filterId)
+                ->where('user_id', Auth::id())
+                ->where('filter_type', $modalType)
+                ->first();
+
+            if (!$filter) {
+                $this->dispatch('toast', [
+                    'message' => 'فیلتر مورد نظر یافت نشد یا متعلق به این بخش نیست.',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            $filterData = json_decode($filter->filter_data, true);
+
+            if (!$filterData) {
+                $this->dispatch('toast', [
+                    'message' => 'داده‌های فیلتر نامعتبر است.',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // اعمال فیلترها
+            $this->search = $filterData['search'] ?? '';
+            $this->province_id = $filterData['province_id'] ?? null;
+            $this->city_id = $filterData['city_id'] ?? null;
+            $this->district_id = $filterData['district_id'] ?? null;
+            $this->region_id = $filterData['region_id'] ?? null;
+            $this->organization_id = $filterData['organization_id'] ?? null;
+            $this->charity_id = $filterData['charity_id'] ?? null;
+            $this->status = $filterData['status'] ?? '';
+            $this->sortField = $filterData['sortField'] ?? 'created_at';
+            $this->sortDirection = $filterData['sortDirection'] ?? 'desc';
+
+            // پاک کردن کش و رفرش صفحه
+            $this->clearFamiliesCache();
+            $this->resetPage();
+
+            $this->dispatch('toast', [
+                'message' => 'فیلتر "' . $filter->name . '" با موفقیت اعمال شد.',
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('خطا در اعمال فیلتر: ' . $e->getMessage());
+            $this->dispatch('toast', [
+                'message' => 'خطا در اعمال فیلتر.',
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف فیلتر ذخیره شده
+     */
+    public function deleteFilter($filterId)
+    {
+        try {
+            $filter = SavedFilter::where('id', $filterId)
+                ->where('user_id', Auth::id())
+                ->where('filter_type', 'families_approval')
+                ->first();
+
+            if (!$filter) {
+                $this->dispatch('toast', [
+                    'message' => 'فیلتر مورد نظر یافت نشد.',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            $filterName = $filter->name;
+            $filter->delete();
+
+            $this->dispatch('toast', [
+                'message' => 'فیلتر "' . $filterName . '" حذف شد.',
+                'type' => 'success'
+            ]);
+
+            // بارگذاری مجدد لیست فیلترها
+            $this->loadSavedFilters('families_approval');
+
+        } catch (\Exception $e) {
+            Log::error('خطا در حذف فیلتر: ' . $e->getMessage());
+            $this->dispatch('toast', [
+                'message' => 'خطا در حذف فیلتر.',
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * بارگذاری فیلتر رتبه‌بندی و اعمال آن
+     *
+     * @param int $filterId شناسه فیلتر
+     * @return bool
+     */
+    public function loadRankFilter($filterId)
+    {
+        try {
+            $user = auth()->user();
+            
+            // فقط فیلترهای رتبه‌بندی را جستجو کن
+            $filter = SavedFilter::where('filter_type', 'rank_settings')
+                ->where(function ($q) use ($user) {
+                    // فیلترهای خود کاربر
+                    $q->where('user_id', $user->id)
+                      // یا فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                      ->orWhere('organization_id', $user->organization_id);
+                })
+                ->find($filterId);
+            
+            if (!$filter) {
+                $this->dispatch('toast', [
+                    'message' => 'فیلتر رتبه‌بندی یافت نشد یا مخصوص این بخش نیست',
+                    'type' => 'warning'
+                ]);
+                return false;
+            }
+            
+            // اعمال تنظیمات فیلتر
+            $config = $filter->filters_config;
+            
+            $this->selectedCriteria = $config['selectedCriteria'] ?? [];
+            $this->family_rank_range = $config['family_rank_range'] ?? '';
+            $this->specific_criteria = $config['specific_criteria'] ?? '';
+            
+            // بازنشانی صفحه‌بندی
+            $this->resetPage();
+            
+            // افزایش تعداد استفاده و به‌روزرسانی آخرین زمان استفاده
+            $filter->increment('usage_count');
+            $filter->update(['last_used_at' => now()]);
+            
+            // پاک کردن کش
+            $this->clearFamiliesCache();
+            
+            $this->dispatch('toast', [
+                'message' => 'فیلتر تنظیمات رتبه "' . $filter->name . '" با موفقیت بارگذاری شد',
+                'type' => 'success'
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error loading rank filter: ' . $e->getMessage());
+            $this->dispatch('toast', [
+                'message' => 'خطا در بارگذاری فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * ذخیره فیلتر تنظیمات رتبه
+     *
+     * @param string $name نام فیلتر
+     * @param string $description توضیحات فیلتر
+     * @return bool
+     */
+    public function saveRankFilter($name, $description = '')
+    {
+        try {
+            // اعتبارسنجی ورودی
+            if (empty(trim($name))) {
+                $this->dispatch('toast', [
+                    'message' => 'نام فیلتر الزامی است',
+                    'type' => 'error'
+                ]);
+                return false;
+            }
+            
+            // تهیه پیکربندی فیلتر فعلی برای تنظیمات رتبه
+            $filtersConfig = [
+                'selectedCriteria' => $this->selectedCriteria,
+                'family_rank_range' => $this->family_rank_range,
+                'specific_criteria' => $this->specific_criteria,
+                // می‌توانید فیلدهای دیگر مربوط به رتبه‌بندی را اضافه کنید
+            ];
+            
+            // بررسی اینکه فیلتری با همین نام برای این کاربر و نوع فیلتر وجود ندارد
+            $existingFilter = SavedFilter::where('user_id', auth()->id())
+                                        ->where('name', trim($name))
+                                        ->where('filter_type', 'rank_settings')
+                                        ->first();
+            
+            if ($existingFilter) {
+                $this->dispatch('toast', [
+                    'message' => 'فیلتری با این نام قبلاً ذخیره شده است',
+                    'type' => 'error'
+                ]);
+                return false;
+            }
+            
+            // ایجاد فیلتر جدید
+            SavedFilter::create([
+                'name' => trim($name),
+                'description' => trim($description),
+                'user_id' => auth()->id(),
+                'organization_id' => auth()->user()->organization_id,
+                'filter_type' => 'rank_settings',
+                'filters_config' => $filtersConfig,
+                'usage_count' => 0
+            ]);
+            
+            $this->dispatch('toast', [
+                'message' => 'فیلتر تنظیمات رتبه "' . $name . '" با موفقیت ذخیره شد',
+                'type' => 'success'
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error saving rank filter: ' . $e->getMessage());
+            $this->dispatch('toast', [
+                'message' => 'خطا در ذخیره فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * تبدیل تاریخ جلالی یا میلادی به تاریخ کاربن
      */
     private function parseJalaliOrGregorianDate($dateString)
@@ -5870,10 +6185,9 @@ public function clearCriteriaFilter()
      * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
      * @param string $name
      * @param string|null $description
-     * @param string $visibility
      * @return void
      */
-    public function saveFilter($name, $description = null, $visibility = 'private')
+    public function saveFilter($name, $description = null)
     {
         try {
             Log::info('🔍 Starting saveFilter method from', [
@@ -5938,7 +6252,6 @@ public function clearCriteriaFilter()
                 'description' => $description ? trim($description) : null,
                 'filters_config' => $configData,
                 'filter_type' => 'families_approval',
-                'visibility' => $visibility,
                 'user_id' => Auth::id(),
                 'organization_id' => auth()->user()->organization_id ?? null,
                 'usage_count' => 0
@@ -5977,23 +6290,13 @@ public function clearCriteriaFilter()
                 return [];
             }
 
-            // فیلترهای قابل دسترس برای کاربر بر اساس سطح دسترسی
+            // فیلترهای قابل دسترس برای کاربر
             $query = SavedFilter::where('filter_type', 'families_approval')
                 ->where(function ($q) use ($user) {
-                    // فیلترهای خصوصی خود کاربر
-                    $q->where(function ($private) use ($user) {
-                        $private->where('visibility', 'private')
-                               ->where('user_id', $user->id);
-                    })
-                    // فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
-                    ->orWhere(function ($org) use ($user) {
-                        if ($user->organization_id) {
-                            $org->where('visibility', 'organization')
-                               ->where('organization_id', $user->organization_id);
-                        }
-                    })
-                    // فیلترهای عمومی
-                    ->orWhere('visibility', 'public');
+                    // فیلترهای خود کاربر
+                    $q->where('user_id', $user->id)
+                      // یا فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                      ->orWhere('organization_id', $user->organization_id);
                 })
                 ->orderBy('usage_count', 'desc')
                 ->orderBy('name')
@@ -6003,7 +6306,6 @@ public function clearCriteriaFilter()
                         'id' => $filter->id,
                         'name' => $filter->name,
                         'description' => $filter->description,
-                        'visibility' => $filter->visibility,
                         'usage_count' => $filter->usage_count,
                         'created_at' => DateHelper::toJalali($filter->created_at, 'Y/m/d'),
                         'is_owner' => $filter->user_id === Auth::id()
@@ -6041,16 +6343,8 @@ public function clearCriteriaFilter()
 
             // بررسی دسترسی
             $user = Auth::user();
-            $hasAccess = false;
-
-            if ($savedFilter->visibility === 'private' && $savedFilter->user_id === $user->id) {
-                $hasAccess = true;
-            } elseif ($savedFilter->visibility === 'organization' &&
-                     $savedFilter->organization_id === $user->organization_id) {
-                $hasAccess = true;
-            } elseif ($savedFilter->visibility === 'public') {
-                $hasAccess = true;
-            }
+            $hasAccess = ($savedFilter->user_id === $user->id) || 
+                        ($savedFilter->organization_id === $user->organization_id);
 
             if (!$hasAccess) {
                 $this->dispatch('notify', [

@@ -11,26 +11,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('family_criteria', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('family_id')->constrained('families')->onDelete('cascade')
-                  ->comment('شناسه خانواده');
-            $table->foreignId('rank_setting_id')->constrained('rank_settings')->onDelete('cascade')
-                  ->comment('شناسه معیار رتبه‌بندی');
-            $table->boolean('has_criteria')->default(true)->comment('آیا این معیار در خانواده وجود دارد');
-            $table->text('notes')->nullable()->comment('یادداشت‌های اضافی');
-            $table->timestamps();
-            
-            $table->unique(['family_id', 'rank_setting_id'], 'family_criteria_unique');
-            $table->index(['family_id', 'has_criteria']);
-        });
+        // چک کردن اینکه جدول وجود نداره قبل از ساختن
+        if (!Schema::hasTable('family_criteria')) {
+            Schema::create('family_criteria', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('family_id')->constrained('families')->onDelete('cascade')
+                      ->comment('شناسه خانواده');
+                $table->foreignId('rank_setting_id')->constrained('rank_settings')->onDelete('cascade')
+                      ->comment('شناسه معیار رتبه‌بندی');
+                $table->boolean('has_criteria')->default(true)->comment('آیا این معیار در خانواده وجود دارد');
+                $table->text('notes')->nullable()->comment('یادداشت‌های اضافی');
+                $table->timestamps();
+                
+                $table->unique(['family_id', 'rank_setting_id'], 'family_criteria_unique');
+                $table->index(['family_id', 'has_criteria']);
+            });
+        }
         
-        // اضافه کردن فیلد محاسبه رتبه به جدول families
+        // اضافه کردن فیلد محاسبه رتبه به جدول families اگر وجود نداره
         Schema::table('families', function (Blueprint $table) {
-            $table->integer('calculated_rank')->nullable()->after('acceptance_criteria')
-                  ->comment('رتبه محاسبه شده بر اساس معیارها');
-            $table->timestamp('rank_calculated_at')->nullable()->after('calculated_rank')
-                  ->comment('زمان آخرین محاسبه رتبه');
+            if (!Schema::hasColumn('families', 'calculated_rank')) {
+                $table->integer('calculated_rank')->nullable()->after('acceptance_criteria')
+                      ->comment('رتبه محاسبه شده بر اساس معیارها');
+            }
+            if (!Schema::hasColumn('families', 'rank_calculated_at')) {
+                $table->timestamp('rank_calculated_at')->nullable()->after('calculated_rank')
+                      ->comment('زمان آخرین محاسبه رتبه');
+            }
         });
     }
 

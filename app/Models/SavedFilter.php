@@ -19,7 +19,6 @@ class SavedFilter extends Model
         'organization_id',
         'filter_type',
         'filters_config',
-        'visibility',
         'is_active',
         'usage_count',
         'last_used_at',
@@ -59,21 +58,6 @@ class SavedFilter extends Model
     }
 
     // Scopes
-    public function scopeVisible($query, $user)
-    {
-        return $query->where(function ($q) use ($user) {
-            $q->where('user_id', $user->id) // فیلترهای خود کاربر
-              ->orWhere('visibility', 'public') // فیلترهای عمومی
-              ->orWhere(function ($subQuery) use ($user) {
-                  $subQuery->where('visibility', 'organization')
-                           ->where('organization_id', $user->organization_id); // فیلترهای سازمانی
-              })
-              ->orWhereHas('permissions', function ($permQuery) use ($user) {
-                  $permQuery->where('user_id', $user->id)
-                           ->where('permission_type', 'view'); // فیلترهای به اشتراک گذاشته شده
-              });
-        })->where('is_active', true);
-    }
 
     public function scopeEditable($query, $user)
     {
@@ -96,8 +80,7 @@ class SavedFilter extends Model
     public function canView($user): bool
     {
         if ($this->user_id === $user->id) return true;
-        if ($this->visibility === 'public') return true;
-        if ($this->visibility === 'organization' && $this->organization_id === $user->organization_id) return true;
+        if ($this->organization_id === $user->organization_id) return true;
         
         return $this->permissions()
                    ->where('user_id', $user->id)

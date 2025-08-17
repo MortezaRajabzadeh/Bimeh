@@ -2139,6 +2139,136 @@ class FamilySearch extends Component
     }
 
     /**
+     * بارگذاری فیلتر رتبه‌بندی و اعمال آن
+     *
+     * @param int $filterId شناسه فیلتر
+     * @return bool
+     */
+    public function loadRankFilter($filterId)
+    {
+        try {
+            $user = auth()->user();
+            
+            // فقط فیلترهای رتبه‌بندی را جستجو کن
+            $filter = SavedFilter::where('filter_type', 'rank_settings')
+                ->where(function ($q) use ($user) {
+                    // فیلترهای خود کاربر
+                    $q->where('user_id', $user->id)
+                      // یا فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                      ->orWhere('organization_id', $user->organization_id);
+                })
+                ->find($filterId);
+            
+            if (!$filter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر رتبه‌بندی یافت نشد یا مخصوص این بخش نیست',
+                    'type' => 'warning'
+                ]);
+                return false;
+            }
+            
+            // اعمال تنظیمات فیلتر
+            $config = $filter->filters_config;
+            
+            $this->selectedCriteria = $config['selectedCriteria'] ?? [];
+            $this->family_rank_range = $config['family_rank_range'] ?? '';
+            $this->specific_criteria = $config['specific_criteria'] ?? '';
+            
+            // بازنشانی صفحه‌بندی
+            $this->resetPage();
+            
+            // افزایش تعداد استفاده و به‌روزرسانی آخرین زمان استفاده
+            $filter->increment('usage_count');
+            $filter->update(['last_used_at' => now()]);
+            
+            // پاک کردن کش
+            $this->clearFamiliesCache();
+            
+            $this->dispatch('notify', [
+                'message' => 'فیلتر تنظیمات رتبه "' . $filter->name . '" با موفقیت بارگذاری شد',
+                'type' => 'success'
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error loading rank filter: ' . $e->getMessage());
+            $this->dispatch('notify', [
+                'message' => 'خطا در بارگذاری فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * ذخیره فیلتر تنظیمات رتبه
+     *
+     * @param string $name نام فیلتر
+     * @param string $description توضیحات فیلتر
+     * @return bool
+     */
+    public function saveRankFilter($name, $description = '')
+    {
+        try {
+            // اعتبارسنجی ورودی
+            if (empty(trim($name))) {
+                $this->dispatch('notify', [
+                    'message' => 'نام فیلتر الزامی است',
+                    'type' => 'error'
+                ]);
+                return false;
+            }
+            
+            // تهیه پیکربندی فیلتر فعلی برای تنظیمات رتبه
+            $filtersConfig = [
+                'selectedCriteria' => $this->selectedCriteria,
+                'family_rank_range' => $this->family_rank_range,
+                'specific_criteria' => $this->specific_criteria,
+                // می‌توانید فیلدهای دیگر مربوط به رتبه‌بندی را اضافه کنید
+            ];
+            
+            // بررسی اینکه فیلتری با همین نام برای این کاربر و نوع فیلتر وجود ندارد
+            $existingFilter = SavedFilter::where('user_id', auth()->id())
+                                        ->where('name', trim($name))
+                                        ->where('filter_type', 'rank_settings')
+                                        ->first();
+            
+            if ($existingFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتری با این نام قبلاً ذخیره شده است',
+                    'type' => 'error'
+                ]);
+                return false;
+            }
+            
+            // ایجاد فیلتر جدید
+            SavedFilter::create([
+                'name' => trim($name),
+                'description' => trim($description),
+                'user_id' => auth()->id(),
+                'organization_id' => auth()->user()->organization_id,
+                'filter_type' => 'rank_settings',
+                'filters_config' => $filtersConfig,
+                'usage_count' => 0
+            ]);
+            
+            $this->dispatch('notify', [
+                'message' => 'فیلتر تنظیمات رتبه "' . $name . '" با موفقیت ذخیره شد',
+                'type' => 'success'
+            ]);
+            
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Error saving rank filter: ' . $e->getMessage());
+            $this->dispatch('notify', [
+                'message' => 'خطا در ذخیره فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * اضافه کردن فیلتر بیماری خاص
      */
     public function filterBySpecialDisease()
@@ -2624,17 +2754,21 @@ class FamilySearch extends Component
      * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
      * @param string $name
      * @param string|null $description
-     * @param string $visibility
      * @return void
      */
-    public function saveFilter($name, $description = null, $visibility = 'private')
+    public function saveFilter($name, $description = null)
     {
         try {
-            // بررسی وجود فیلترهایی برای ذخیره
+            // بررسی وجود فیلترهای مودال یا معیارهای انتخاب شده
             $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
-            if (empty($currentFilters)) {
-                session()->flash('message', 'هیچ فیلتری برای ذخیره وجود ندارد');
-                session()->flash('type', 'warning');
+            $hasModalFilters = !empty($currentFilters);
+            $hasSelectedCriteria = !empty($this->selectedCriteria) && count(array_filter($this->selectedCriteria)) > 0;
+            
+            if (!$hasModalFilters && !$hasSelectedCriteria) {
+                $this->dispatch('notify', [
+                    'message' => 'هیچ فیلتر یا معیاری برای ذخیره وجود ندارد',
+                    'type' => 'warning'
+                ]);
                 return;
             }
 
@@ -2654,13 +2788,16 @@ class FamilySearch extends Component
                         'specific_criteria' => $this->specific_criteria,
                         'charity' => $this->charity
                     ],
+                    'rank_settings' => [
+                        'selected_criteria' => $this->selectedCriteria ?? [],
+                        'applied_scheme_id' => $this->appliedSchemeId
+                    ],
                     'sort' => [
                         'field' => $this->sortField,
                         'direction' => $this->sortDirection
                     ]
                 ],
                 'filter_type' => 'family_search',
-                'visibility' => $visibility,
                 'user_id' => Auth::id(),
                 'organization_id' => auth()->user()->organization_id ?? null,
                 'usage_count' => 0
@@ -2669,6 +2806,8 @@ class FamilySearch extends Component
             Log::info('Filter saved successfully', [
                 'filter_id' => $savedFilter->id,
                 'name' => $name,
+                'modal_filters_count' => count($currentFilters),
+                'selected_criteria_count' => count(array_filter($this->selectedCriteria ?? [])),
                 'user_id' => Auth::id()
             ]);
 
@@ -2693,9 +2832,10 @@ class FamilySearch extends Component
 
     /**
      * بارگذاری فیلترهای ذخیره شده کاربر
+     * @param string $filterType نوع فیلتر - 'family_search' یا 'rank_settings'
      * @return array
      */
-    public function loadSavedFilters()
+    public function loadSavedFilters($filterType = 'family_search')
     {
         try {
             $user = Auth::user();
@@ -2703,23 +2843,36 @@ class FamilySearch extends Component
                 return [];
             }
 
-            // فیلترهای قابل دسترس برای کاربر بر اساس سطح دسترسی
-            $query = SavedFilter::where('filter_type', 'family_search')
+            // تعیین نوع فیلتر بر اساس پارامتر ورودی
+            $actualFilterType = $filterType;
+            
+            // تبدیل نام‌های متداول به نوع فیلتر واقعی
+            switch ($filterType) {
+                case 'rank_modal':
+                    $actualFilterType = 'rank_settings';
+                    break;
+                case 'family_search':
+                case 'rank_settings':
+                    $actualFilterType = $filterType;
+                    break;
+                default:
+                    $actualFilterType = 'family_search';
+                    break;
+            }
+
+            // فیلترهای قابل دسترس برای کاربر
+            $query = SavedFilter::where('filter_type', $actualFilterType)
                 ->where(function ($q) use ($user) {
-                    // فیلترهای خصوصی خود کاربر
-                    $q->where(function ($private) use ($user) {
-                        $private->where('visibility', 'private')
-                               ->where('user_id', $user->id);
-                    })
-                    // فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
-                    ->orWhere(function ($org) use ($user) {
-                        if ($user->organization_id) {
-                            $org->where('visibility', 'organization')
-                               ->where('organization_id', $user->organization_id);
-                        }
-                    })
-                    // فیلترهای عمومی
-                    ->orWhere('visibility', 'public');
+                    // فیلترهای خود کاربر
+                    $q->where('user_id', $user->id);
+                    
+                    // اگر کاربر بیمه است، می‌تواند همه فیلترهای کاربران سازمانش را ببیند
+                    if ($user->isInsurance() && $user->organization_id) {
+                        $q->orWhereHas('user', function($userQuery) use ($user) {
+                            $userQuery->where('organization_id', $user->organization_id);
+                        });
+                    }
+                    // اگر کاربر خیریه است، فقط فیلترهای خودش را می‌بیند (که در بالا اضافه شده)
                 })
                 ->orderBy('usage_count', 'desc')
                 ->orderBy('name')
@@ -2736,10 +2889,18 @@ class FamilySearch extends Component
                     ];
                 });
 
+            Log::debug('Loaded saved filters', [
+                'requested_type' => $filterType,
+                'actual_type' => $actualFilterType,
+                'count' => count($query),
+                'user_id' => Auth::id()
+            ]);
+
             return $query->toArray();
 
         } catch (\Exception $e) {
             Log::error('Error loading saved filters', [
+                'filter_type' => $filterType,
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id()
             ]);
@@ -2765,16 +2926,16 @@ class FamilySearch extends Component
                 return;
             }
 
-            // بررسی دسترسی
+            // بررسی دسترسی بر اساس user_id و organization_id
             $user = Auth::user();
             $hasAccess = false;
 
-            if ($savedFilter->visibility === 'private' && $savedFilter->user_id === $user->id) {
+            // فیلترهای خود کاربر
+            if ($savedFilter->user_id === $user->id) {
                 $hasAccess = true;
-            } elseif ($savedFilter->visibility === 'organization' && 
-                     $savedFilter->organization_id === $user->organization_id) {
-                $hasAccess = true;
-            } elseif ($savedFilter->visibility === 'public') {
+            }
+            // فیلترهای سازمانی (اگر کاربر عضو همان سازمان باشد)
+            elseif ($savedFilter->organization_id && $savedFilter->organization_id === $user->organization_id) {
                 $hasAccess = true;
             }
 
@@ -2807,6 +2968,13 @@ class FamilySearch extends Component
                 $this->family_rank_range = $componentFilters['family_rank_range'] ?? '';
                 $this->specific_criteria = $componentFilters['specific_criteria'] ?? '';
                 $this->charity = $componentFilters['charity'] ?? '';
+            }
+            
+            // اعمال تنظیمات رتبه‌بندی
+            if (isset($filterData['rank_settings'])) {
+                $rankSettings = $filterData['rank_settings'];
+                $this->selectedCriteria = $rankSettings['selected_criteria'] ?? [];
+                $this->appliedSchemeId = $rankSettings['applied_scheme_id'] ?? null;
             }
 
             // اعمال تنظیمات سورت
@@ -2949,6 +3117,10 @@ class FamilySearch extends Component
                         'family_rank_range' => $this->family_rank_range,
                         'specific_criteria' => $this->specific_criteria,
                         'charity' => $this->charity
+                    ],
+                    'rank_settings' => [
+                        'selected_criteria' => $this->selectedCriteria ?? [],
+                        'applied_scheme_id' => $this->appliedSchemeId
                     ],
                     'sort' => [
                         'field' => $this->sortField,

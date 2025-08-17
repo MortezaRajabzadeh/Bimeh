@@ -14,6 +14,7 @@ use App\Http\Middleware\CheckUserType;
 use App\Livewire\Examples\ToastExample;
 use App\Http\Controllers\FamilyDownloadController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\LandingController;
 
 // Health Check Route for Liara
 Route::get('/health', function () {
@@ -26,7 +27,11 @@ Route::get('/health', function () {
 })->name('health');
 
 // مسیرهای عمومی
-Route::get('/', MicroLogin::class)->name('home.login');
+// صفحه لندینگ میکروبیمه (صفحه اصلی)
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+
+// صفحه لاگین
+Route::get('/login', MicroLogin::class)->name('home.login');
 
 // صفحه انتخاب نوع کاربر
 Route::get('/select-user-type', [\App\Http\Controllers\Auth\LoginController::class, 'showUserTypeSelection'])->name('select-user-type');

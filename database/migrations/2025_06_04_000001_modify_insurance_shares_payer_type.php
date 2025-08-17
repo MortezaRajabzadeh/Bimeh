@@ -12,22 +12,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('insurance_shares', function (Blueprint $table) {
-            // First, create a new column
-            $table->string('payer_type_slug')->after('payer_type')->nullable();
+        // Check if the column needs modification
+        $columnType = DB::select("SHOW COLUMNS FROM insurance_shares WHERE Field = 'payer_type'");
+        
+        if (!empty($columnType) && strpos($columnType[0]->Type, 'enum') !== false) {
+            // Step 1: Add new string column
+            Schema::table('insurance_shares', function (Blueprint $table) {
+                $table->string('payer_type_slug')->after('payer_type')->nullable();
+            });
             
-            // Copy existing data
+            // Step 2: Copy existing data
             DB::statement("UPDATE insurance_shares SET payer_type_slug = payer_type");
             
-            // Drop the old enum column
-            $table->dropColumn('payer_type');
+            // Step 3: Drop the old enum column
+            Schema::table('insurance_shares', function (Blueprint $table) {
+                $table->dropColumn('payer_type');
+            });
             
-            // Rename the new column
-            $table->renameColumn('payer_type_slug', 'payer_type');
+            // Step 4: Rename the new column
+            Schema::table('insurance_shares', function (Blueprint $table) {
+                $table->renameColumn('payer_type_slug', 'payer_type');
+            });
             
-            // Add index
-            $table->index('payer_type');
-        });
+            // Step 5: Add index
+            Schema::table('insurance_shares', function (Blueprint $table) {
+                $table->index('payer_type');
+            });
+        }
     }
 
     /**

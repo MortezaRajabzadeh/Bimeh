@@ -298,12 +298,11 @@
                  showSaveForm: false,
                  filterName: '',
                  filterDescription: '',
-                 filterVisibility: 'private',
                  showLoadOptions: false,
                  savedFilters: [],
                  loadSavedFilters() {
                      // فراخوانی API برای دریافت فیلترهای ذخیره شده
-                     $wire.loadSavedFilters().then(data => {
+                     $wire.loadSavedFilters('filter_modal').then(data => {
                          this.savedFilters = data;
                      });
                  },
@@ -312,7 +311,7 @@
                          alert('لطفا نام فیلتر را وارد کنید');
                          return;
                      }
-                     $wire.saveFilter(this.filterName, this.filterDescription, this.filterVisibility)
+                     $wire.saveFilter(this.filterName, this.filterDescription)
                          .then((result) => {
                              console.log('Filter saved successfully:', result);
                              this.filterName = '';

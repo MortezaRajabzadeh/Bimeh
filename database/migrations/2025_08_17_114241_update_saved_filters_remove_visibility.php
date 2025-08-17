@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('insurance_shares', function (Blueprint $table) {
+        Schema::table('saved_filters', function (Blueprint $table) {
             //
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('insurance_shares', function (Blueprint $table) {
+        Schema::table('saved_filters', function (Blueprint $table) {
             //
         });
     }

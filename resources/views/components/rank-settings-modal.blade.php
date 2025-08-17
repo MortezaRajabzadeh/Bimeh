@@ -197,46 +197,64 @@
                      async loadSavedFilters() {
                          this.loading = true;
                          try {
-                             const data = await $wire.loadSavedFilters();
+                             const data = await $wire.loadSavedFilters('rank_modal');
                              this.savedFilters = data || [];
+                             console.log('فیلترهای رتبه‌بندی بارگذاری شده:', this.savedFilters);
                          } catch (error) {
                              console.error('خطا در بارگذاری فیلترها:', error);
                              this.savedFilters = [];
+                             // نمایش پیام خطا
+                             window.dispatchEvent(new CustomEvent('notify', {
+                                 detail: {
+                                     message: 'خطا در بارگذاری فیلترهای ذخیره شده',
+                                     type: 'error'
+                                 }
+                             }));
                          } finally {
                              this.loading = false;
                          }
                      },
                      async saveCurrentFilter() {
                          if (!this.filterName.trim()) {
-                             $wire.dispatch('notify', {
-                                 message: 'لطفا نام فیلتر را وارد کنید',
-                                 type: 'warning'
-                             });
+                             // نمایش پیام هشدار - مشابه filter-modal
+                             window.dispatchEvent(new CustomEvent('notify', {
+                                 detail: {
+                                     message: 'لطفا نام فیلتر را وارد کنید',
+                                     type: 'warning'
+                                 }
+                             }));
                              return;
                          }
                          this.loading = true;
-                        try {
-                            await $wire.saveFilter(this.filterName, this.filterDescription, this.filterVisibility);
-                            this.filterName = '';
-                            this.filterDescription = '';
-                            this.showSaveForm = false;
-                            await this.loadSavedFilters();
-                            // ارسال پیام موفقیت به کامپوننت ToastNotifications
-                            window.dispatchEvent(new CustomEvent('notify', {
-                                detail: {
-                                    message: 'فیلتر با موفقیت ذخیره شد',
-                                    type: 'success'
-                                }
-                            }));
-                        } catch (error) {
-                            console.error('خطا در ذخیره فیلتر:', error);
-                            // ارسال پیام خطا به کامپوننت ToastNotifications
-                            window.dispatchEvent(new CustomEvent('notify', {
-                                detail: {
-                                    message: 'خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'),
-                                    type: 'error'
-                                }
-                            }));
+                         try {
+                             // ذخیره فیلتر با صدا زدن متد saveRankFilter در کامپوننت
+                             await $wire.saveRankFilter(this.filterName, this.filterDescription);
+                             
+                             // پاک کردن فرم
+                             this.filterName = '';
+                             this.filterDescription = '';
+                             this.showSaveForm = false;
+                             
+                             // بارگذاری مجدد لیست فیلترها
+                             await this.loadSavedFilters();
+                             
+                             // نمایش پیام موفقیت
+                             window.dispatchEvent(new CustomEvent('notify', {
+                                 detail: {
+                                     message: 'فیلتر با موفقیت ذخیره شد',
+                                     type: 'success'
+                                 }
+                             }));
+                             
+                         } catch (error) {
+                             console.error('خطا در ذخیره فیلتر:', error);
+                             // نمایش پیام خطا
+                             window.dispatchEvent(new CustomEvent('notify', {
+                                 detail: {
+                                     message: 'خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'),
+                                     type: 'error'
+                                 }
+                             }));
                          } finally {
                              this.loading = false;
                          }
@@ -286,7 +304,20 @@
                     <div class="max-h-48 overflow-y-auto space-y-2">
                         <template x-for="filter in savedFilters" :key="filter.id">
                             <div class="group flex items-center justify-between p-2 rounded-md hover:bg-blue-50 cursor-pointer transition-colors"
-                                 @click="$wire.loadFilter(filter.id); showLoadOptions = false">
+                            @click="async () => { 
+                                try {
+                                    await $wire.loadRankFilter(filter.id);
+                                    showLoadOptions = false;
+                                } catch (error) {
+                                    console.error('خطا در بارگذاری فیلتر:', error);
+                                    window.dispatchEvent(new CustomEvent('notify', {
+                                        detail: {
+                                            message: 'خطا در بارگذاری فیلتر: ' + (error.message || 'خطای ناشناخته'),
+                                            type: 'error'
+                                        }
+                                    }));
+                                }
+                            }"
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2">
                                         <h6 class="text-sm font-medium text-gray-900 truncate" x-text="filter.name"></h6>
