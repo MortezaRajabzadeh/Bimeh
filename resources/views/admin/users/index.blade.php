@@ -80,12 +80,12 @@
                             </form>
                         </div>
                         <div>
-                            <button @click="showModal = true" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center justify-center text-sm">
+                            <a href="{{ route('admin.users.create') }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center justify-center text-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
                                 </svg>
                                 افزودن کاربر
-                            </button>
+                            </a>
                         </div>
                     </div>
                     
@@ -214,11 +214,11 @@
 
                     <!-- دکمه افزودن کاربر -->
                     <div class="mt-8 flex justify-center">
-                        <button @click="showModal = true" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg">
+                        <a href="{{ route('admin.users.create') }}" class="w-16 h-16 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                        </button>
+                        </a>
                     </div>
 
                     <!-- پیجینیشن -->
@@ -226,199 +226,6 @@
                         @if(isset($users) && $users->hasPages())
                             {{ $users->links() }}
                         @endif
-                    </div>
-                    
-                    <!-- مودال افزودن کاربر جدید -->
-                    <div x-show="showModal" 
-                         x-cloak
-                         class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center" 
-                         @click.away="closeModal()"
-                         @keydown.escape.window="closeModal()">
-                        <div class="bg-white rounded-lg shadow-lg max-w-5xl w-full max-h-screen overflow-y-auto" @click.stop>
-                            <div class="p-6 bg-white border-b border-gray-200">
-                                <div class="flex justify-between items-center mb-6">
-                                    <h2 class="text-lg font-semibold text-gray-700">افزودن کاربر جدید</h2>
-                                    <button @click="closeModal()" class="text-gray-500 hover:text-gray-700">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <!-- استایل‌های سفارشی برای غیرفعال کردن حالت قرمز اینپوت‌ها -->
-                                <style>
-                                    input:invalid,
-                                    select:invalid,
-                                    input:invalid:focus,
-                                    select:invalid:focus {
-                                        border-color: #d1d5db !important;
-                                        box-shadow: none !important;
-                                        outline: none !important;
-                                    }
-                                    input:focus:invalid,
-                                    select:focus:invalid {
-                                        border-color: #10b981 !important;
-                                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
-                                    }
-                                    input:required:invalid,
-                                    select:required:invalid {
-                                        border-color: #d1d5db !important;
-                                        box-shadow: none !important;
-                                    }
-                                    /* Custom dropdown arrow */
-                                    select {
-                                        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-                                    }
-                                </style>
-
-                                <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate>
-                                    @csrf
-                                    
-                                    <!-- نمایش خطاهای اعتبارسنجی داخل مودال -->
-                                    <div x-show="hasErrors" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                                        <strong class="font-bold">خطاهای اعتبارسنجی:</strong>
-                                        <ul class="list-disc list-inside mt-2">
-                                            @if($errors->any())
-                                                @foreach($errors->all() as $error)
-                                                    <li>{{ $error }}</li>
-                                                @endforeach
-                                            @endif
-                                        </ul>
-                                        <button @click="hasErrors = false" class="absolute top-0 left-0 mt-2 ml-2 text-red-500 hover:text-red-700">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <!-- نام -->
-                                        <div>
-                                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
-                                                نام
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="text" name="first_name" id="first_name" value="{{ old('first_name') }}" required 
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('first_name')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- نام خانوادگی -->
-                                        <div>
-                                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
-                                                نام خانوادگی
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="text" name="last_name" id="last_name" value="{{ old('last_name') }}" required 
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('last_name')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-
-                                        <!-- موبایل -->
-                                        <div>
-                                            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">
-                                                شماره موبایل
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="text" name="mobile" id="mobile" value="{{ old('mobile') }}" dir="ltr" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('mobile')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- ایمیل -->
-                                        <div>
-                                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
-                                            <input type="email" name="email" id="email" value="{{ old('email') }}" dir="ltr" 
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('email')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- نام کاربری -->
-                                        <div>
-                                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
-                                                نام کاربری
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="text" name="username" id="username" value="{{ old('username') }}" dir="ltr" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('username')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- سطح دسترسی -->
-                                        <div>
-                                            <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
-                                                سطح دسترسی
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <select name="role" id="role" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right appearance-none bg-no-repeat bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] pr-10">
-                                                <option value="">انتخاب کنید</option>
-                                                @foreach($roles as $role)
-                                                    <option value="{{ $role->name }}" {{ old('role') === $role->name ? 'selected' : '' }}>
-                                                        @if($role->name === 'admin')
-                                                            مدیر کل
-                                                        @elseif($role->name === 'charity')
-                                                            خیریه
-                                                        @elseif($role->name === 'insurance')
-                                                            بیمه
-                                                        @else
-                                                            {{ $role->name }}
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('role')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- کلمه عبور -->
-                                        <div>
-                                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                                                کلمه عبور
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="password" name="password" id="password" dir="ltr" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                            @error('password')
-                                                <p x-show="hasErrors" class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <!-- تایید کلمه عبور -->
-                                        <div>
-                                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">
-                                                تایید کلمه عبور
-                                                <span class="text-red-500 mr-1">*</span>
-                                            </label>
-                                            <input type="password" name="password_confirmation" id="password_confirmation" dir="ltr" required
-                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                                        </div>
-                                    </div>
-
-                                    <!-- دکمه ثبت -->
-                                    <div class="flex justify-end">
-                                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                            </svg>
-                                            ثبت کاربر جدید
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     </div>
 
                 </div>

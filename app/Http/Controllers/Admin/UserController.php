@@ -72,7 +72,8 @@ class UserController extends Controller
     {
         Gate::authorize('create user');
 
-        $validated = $request->validate([
+        // تعریف قوانین اعتبارسنجی پایه
+        $rules = [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255', 
             'national_code' => 'nullable|string|max:255',
@@ -81,7 +82,24 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users,username',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|string|exists:roles,name',
-        ], [
+            'create_organization' => 'nullable|boolean',
+        ];
+
+        // اضافه کردن قوانین مربوط به سازمان
+        if ($request->has('create_organization') && $request->create_organization) {
+            $rules = array_merge($rules, [
+                'org_name' => 'required|string|max:255',
+                'org_type' => 'required|string|in:charity,insurance',
+                'org_code' => 'nullable|string|max:255|unique:organizations,code',
+                'org_phone' => 'nullable|string|max:255',
+                'org_email' => 'nullable|email|max:255',
+                'org_address' => 'nullable|string|max:1000',
+            ]);
+        } else {
+            $rules['organization_id'] = 'required|exists:organizations,id';
+        }
+
+        $validated = $request->validate($rules, [
             // پیام‌های خطای فارسی
             'first_name.required' => 'وارد کردن نام الزامی است.',
             'last_name.required' => 'وارد کردن نام خانوادگی الزامی است.',
@@ -94,10 +112,35 @@ class UserController extends Controller
             'password.confirmed' => 'رمز عبور و تکرار آن مطابقت ندارند.',
             'role.required' => 'انتخاب نقش الزامی است.',
             'role.exists' => 'نقش انتخاب شده معتبر نیست.',
+            'organization_id.required' => 'انتخاب سازمان الزامی است.',
+            'organization_id.exists' => 'سازمان انتخاب شده معتبر نیست.',
+            'org_name.required' => 'وارد کردن نام سازمان الزامی است.',
+            'org_type.required' => 'انتخاب نوع سازمان الزامی است.',
+            'org_type.in' => 'نوع سازمان باید خیریه یا بیمه باشد.',
+            'org_code.unique' => 'این کد سازمان قبلاً ثبت شده است.',
+            'org_email.email' => 'فرمت ایمیل سازمان صحیح نیست.',
         ]);
 
         try {
             DB::beginTransaction();
+
+            $organizationId = null;
+
+            // اگر کاربر قصد ایجاد سازمان جدید دارد
+            if ($request->has('create_organization') && $request->create_organization) {
+                $organization = Organization::create([
+                    'name' => $validated['org_name'],
+                    'type' => $validated['org_type'],
+                    'code' => $validated['org_code'] ?? null,
+                    'phone' => $validated['org_phone'] ?? null,
+                    'email' => $validated['org_email'] ?? null,
+                    'address' => $validated['org_address'] ?? null,
+                    'is_active' => true,
+                ]);
+                $organizationId = $organization->id;
+            } else {
+                $organizationId = $validated['organization_id'];
+            }
 
             // ساخت کاربر
             $user = User::create([
@@ -106,6 +149,7 @@ class UserController extends Controller
                 'email' => $validated['email'] ?? null,
                 'mobile' => $validated['mobile'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'organization_id' => $organizationId,
                 'is_active' => true,
                 'user_type' => $validated['role'],
             ]);
@@ -115,8 +159,6 @@ class UserController extends Controller
                 $user->national_code = $validated['national_code'] ?? null;
                 $user->save();
             }
-            
-
 
             // تخصیص نقش به کاربر
             $user->assignRole($validated['role']);
@@ -126,7 +168,7 @@ class UserController extends Controller
                 ->with('success', 'کاربر با موفقیت ایجاد شد');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'خطا در ایجاد کاربر: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'خطا در ایجاد کاربر: ' . $e->getMessage());
         }
     }
 
@@ -156,37 +198,107 @@ class UserController extends Controller
     /**
      * به‌روزرسانی اطلاعات کاربر
      */
-    public function update(UserRequest $request, User $user)
+    public function update(Request $request, User $user)
     {
         Gate::authorize('edit user');
-        
-        $validated = $request->validated();
-        
-        // حذف role از validated چون بعداً جداگانه پردازش می‌شود
-        $role = $validated['role'] ?? null;
-        unset($validated['role']);
-        
-        // اگر رمز عبور جدید وارد شده باشد، آن را هش می‌کنیم
-        if (isset($validated['password']) && !empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
+
+        // تعریف قوانین اعتبارسنجی پایه
+        $rules = [
+            'name' => 'required|string|max:255',
+            'mobile' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'role' => 'required|string|exists:roles,name',
+            'create_organization' => 'nullable|boolean',
+        ];
+
+        // اضافه کردن قوانین مربوط به سازمان
+        if ($request->has('create_organization') && $request->create_organization) {
+            $rules = array_merge($rules, [
+                'org_name' => 'required|string|max:255',
+                'org_type' => 'required|string|in:charity,insurance',
+                'org_address' => 'nullable|string|max:1000',
+                'org_description' => 'nullable|string|max:2000',
+            ]);
         } else {
-            unset($validated['password']);
+            $rules['organization_id'] = 'required|exists:organizations,id';
         }
+
+        $validated = $request->validate($rules, [
+            // پیام‌های خطای فارسی
+            'name.required' => 'وارد کردن نام کامل الزامی است.',
+            'email.email' => 'فرمت ایمیل صحیح نیست.',
+            'email.unique' => 'این ایمیل قبلاً ثبت شده است.',
+            'username.required' => 'وارد کردن نام کاربری الزامی است.',
+            'username.unique' => 'این نام کاربری قبلاً ثبت شده است.',
+            'password.min' => 'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            'password.confirmed' => 'رمز عبور و تکرار آن مطابقت ندارند.',
+            'role.required' => 'انتخاب نقش الزامی است.',
+            'role.exists' => 'نقش انتخاب شده معتبر نیست.',
+            'organization_id.required' => 'انتخاب سازمان الزامی است.',
+            'organization_id.exists' => 'سازمان انتخاب شده معتبر نیست.',
+            'org_name.required' => 'وارد کردن نام سازمان الزامی است.',
+            'org_type.required' => 'انتخاب نوع سازمان الزامی است.',
+            'org_type.in' => 'نوع سازمان باید خیریه یا بیمه باشد.',
+            'org_code.unique' => 'این کد سازمان قبلاً ثبت شده است.',
+            'org_email.email' => 'فرمت ایمیل سازمان صحیح نیست.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $organizationId = null;
+
+            // اگر کاربر قصد ایجاد سازمان جدید دارد
+            if ($request->has('create_organization') && $request->create_organization) {
+                $organization = Organization::create([
+                    'name' => $validated['org_name'],
+                    'type' => $validated['org_type'],
+                    'address' => $validated['org_address'] ?? null,
+                    'description' => $validated['org_description'] ?? null,
+                    'is_active' => true,
+                ]);
+                $organizationId = $organization->id;
+            } else {
+                $organizationId = $validated['organization_id'];
+            }
         
-        // به‌روزرسانی user_type با به‌روزرسانی role
-        if ($role) {
-            $validated['user_type'] = $role;
+            // حذف role از validated چون بعداً جداگانه پردازش می‌شود
+            $role = $validated['role'] ?? null;
+            unset($validated['role']);
+            
+            // حذف فیلدهای سازمان از validated
+            unset($validated['create_organization'], $validated['org_name'], $validated['org_type'], 
+                  $validated['org_address'], $validated['org_description']);
+            
+            // اگر رمز عبور جدید وارد شده باشد، آن را هش می‌کنیم
+            if (isset($validated['password']) && !empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']);
+            }
+            
+            // به‌روزرسانی user_type و organization_id
+            if ($role) {
+                $validated['user_type'] = $role;
+            }
+            $validated['organization_id'] = $organizationId;
+            
+            $user->update($validated);
+            
+            // به‌روزرسانی نقش کاربر
+            if ($role) {
+                $user->syncRoles([$role]);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.users.index')
+                ->with('success', 'اطلاعات کاربر با موفقیت به‌روزرسانی شد.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'خطا در بروزرسانی کاربر: ' . $e->getMessage());
         }
-        
-        $user->update($validated);
-        
-        // به‌روزرسانی نقش کاربر
-        if ($role) {
-            $user->syncRoles([$role]);
-        }
-        
-        return redirect()->route('admin.users.index')
-            ->with('success', 'اطلاعات کاربر با موفقیت به‌روزرسانی شد.');
     }
 
     /**

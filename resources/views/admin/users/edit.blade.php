@@ -12,7 +12,33 @@
                     </a>
                 </div>
 
-                <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <!-- استایل‌های سفارشی برای غیرفعال کردن بوردر قرمز اینپوت‌ها -->
+                <style>
+                    input:invalid,
+                    select:invalid,
+                    textarea:invalid,
+                    input:invalid:focus,
+                    select:invalid:focus,
+                    textarea:invalid:focus {
+                        border-color: #d1d5db !important;
+                        box-shadow: none !important;
+                        outline: none !important;
+                    }
+                    input:focus:invalid,
+                    select:focus:invalid,
+                    textarea:focus:invalid {
+                        border-color: #10b981 !important;
+                        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+                    }
+                    input:required:invalid,
+                    select:required:invalid,
+                    textarea:required:invalid {
+                        border-color: #d1d5db !important;
+                        box-shadow: none !important;
+                    }
+                </style>
+
+                <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-6" novalidate>
                     @csrf
                     @method('PUT')
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -23,7 +49,7 @@
                                 <span class="text-red-500 mr-1">*</span>
                             </label>
                             <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             @error('name')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                             @enderror
@@ -33,7 +59,7 @@
                         <div>
                             <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
                             <input type="text" name="mobile" id="mobile" value="{{ old('mobile', $user->mobile) }}" dir="ltr" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             @error('mobile')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                             @enderror
@@ -43,7 +69,7 @@
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
                             <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" dir="ltr" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             @error('email')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                             @enderror
@@ -51,9 +77,12 @@
 
                         <!-- نام کاربری -->
                         <div>
-                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
+                            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                                نام کاربری
+                                <span class="text-red-500 mr-1">*</span>
+                            </label>
                             <input type="text" name="username" id="username" value="{{ old('username', $user->username) }}" dir="ltr" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             @error('username')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                             @enderror
@@ -66,7 +95,7 @@
                                 <span class="text-red-500 mr-1">*</span>
                             </label>
                             <select name="role" id="role" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-right appearance-none bg-no-repeat bg-[length:1.5em_1.5em] bg-[right_0.5rem_center] pr-10">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-right appearance-none bg-white bg-no-repeat bg-[length:1.2em_1.2em] bg-[left_0.5rem_center] pl-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 4 5\"><path fill=\"%23666\" d=\"M2 0L0 2h4zm0 5L0 3h4z\"/></svg>')">
                                 <option value="">انتخاب کنید</option>
                                 @foreach($roles as $role)
                                     <option value="{{ $role->name }}" {{ (old('role', $user->roles->first()->name ?? null) == $role->name) ? 'selected' : '' }}>
@@ -87,11 +116,112 @@
                             @enderror
                         </div>
 
+                        <!-- مدیریت سازمان -->
+                        <div id="organization_section" class="col-span-2">
+                            <div class="flex items-center mb-3">
+                                <input type="checkbox" id="create_organization" name="create_organization" value="1" 
+                                       {{ old('create_organization') ? 'checked' : '' }}
+                                       onchange="toggleOrganizationForm(this.checked)" 
+                                       class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                                <label for="create_organization" class="mr-2 block text-sm text-gray-700">
+                                    سازمان جدید ایجاد کنم یا تغییر دهم
+                                </label>
+                            </div>
+                            
+                            <!-- انتخاب سازمان موجود -->
+                            <div id="existing_organization">
+                                <label for="organization_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                    سازمان فعلی / انتخاب سازمان جدید
+                                    <span class="text-red-500 mr-1">*</span>
+                                </label>
+                                <select name="organization_id" id="organization_id" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-right appearance-none bg-white bg-no-repeat bg-[length:1.2em_1.2em] bg-[left_0.5rem_center] pl-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 4 5\"><path fill=\"%23666\" d=\"M2 0L0 2h4zm0 5L0 3h4z\"/></svg>')">
+                                    <option value="">انتخاب کنید</option>
+                                    @foreach($organizations as $org)
+                                        <option value="{{ $org->id }}" {{ (old('organization_id', $user->organization_id) == $org->id) ? 'selected' : '' }}>
+                                            {{ $org->name }} - 
+                                            @if($org->type === 'charity')
+                                                خیریه
+                                            @elseif($org->type === 'insurance')
+                                                بیمه
+                                            @else
+                                                {{ $org->type }}
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('organization_id')
+                                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            
+                            <!-- فرم ایجاد سازمان جدید -->
+                            <div id="organization_form" class="{{ old('create_organization') ? '' : 'hidden' }} mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                <h4 class="text-sm font-medium text-gray-700 mb-4">اطلاعات سازمان جدید</h4>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- نام سازمان -->
+                                    <div>
+                                        <label for="org_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                            نام سازمان
+                                            <span class="text-red-500 mr-1">*</span>
+                                        </label>
+                                        <input type="text" name="org_name" id="org_name" value="{{ old('org_name') }}"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                        @error('org_name')
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    
+                                    <!-- نوع سازمان -->
+                                    <div>
+                                        <label for="org_type" class="block text-sm font-medium text-gray-700 mb-1">
+                                            نوع سازمان
+                                            <span class="text-red-500 mr-1">*</span>
+                                        </label>
+                                        <select name="org_type" id="org_type"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-right appearance-none bg-white bg-no-repeat bg-[length:1.2em_1.2em] bg-[left_0.5rem_center] pl-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 4 5\"><path fill=\"%23666\" d=\"M2 0L0 2h4zm0 5L0 3h4z\"/></svg>')">
+                                            <option value="">انتخاب کنید</option>
+                                            <option value="charity" {{ old('org_type') === 'charity' ? 'selected' : '' }}>خیریه</option>
+                                            <option value="insurance" {{ old('org_type') === 'insurance' ? 'selected' : '' }}>بیمه</option>
+                                        </select>
+                                        @error('org_type')
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    
+                                    <!-- آدرس سازمان -->
+                                    <div class="md:col-span-2">
+                                        <label for="org_address" class="block text-sm font-medium text-gray-700 mb-1">
+                                            آدرس سازمان
+                                        </label>
+                                        <textarea name="org_address" id="org_address" rows="2"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">{{ old('org_address') }}</textarea>
+                                        @error('org_address')
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    
+                                    <!-- توضیحات -->
+                                    <div class="md:col-span-2">
+                                        <label for="org_description" class="block text-sm font-medium text-gray-700 mb-1">
+                                            توضیحات سازمان
+                                        </label>
+                                        <textarea name="org_description" id="org_description" rows="3"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">{{ old('org_description') }}</textarea>
+                                        @error('org_description')
+                                            <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- کلمه عبور جدید (اختیاری) -->
                         <div>
                             <label for="password" class="block text-sm font-medium text-gray-700 mb-1">کلمه عبور جدید (اختیاری)</label>
                             <input type="password" name="password" id="password" dir="ltr"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                             @error('password')
                                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                             @enderror
@@ -101,7 +231,7 @@
                         <div>
                             <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">تایید کلمه عبور جدید</label>
                             <input type="password" name="password_confirmation" id="password_confirmation" dir="ltr"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         </div>
                     </div>
 
@@ -118,4 +248,27 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function toggleOrganizationForm(show) {
+            const organizationForm = document.getElementById('organization_form');
+            const organizationSelect = document.getElementById('organization_id');
+            
+            if (show) {
+                organizationForm.classList.remove('hidden');
+                organizationSelect.disabled = true;
+            } else {
+                organizationForm.classList.add('hidden');
+                organizationSelect.disabled = false;
+            }
+        }
+
+        // اجرای اولیه برای حفظ وضعیت فرم بعد از ارسال با خطا
+        document.addEventListener('DOMContentLoaded', function() {
+            const createOrgCheckbox = document.getElementById('create_organization');
+            if (createOrgCheckbox.checked) {
+                toggleOrganizationForm(true);
+            }
+        });
+    </script>
 </x-app-layout>

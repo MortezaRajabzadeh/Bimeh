@@ -82,9 +82,9 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':admin'])->prefix('
 
     // مدیریت کاربران
     Route::middleware('can:manage users')->get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
-    Route::middleware('can:manage users')->get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
     Route::middleware('can:manage users')->get('/users/create', [\App\Http\Controllers\Admin\UserController::class, 'create'])->name('users.create');
     Route::middleware('can:manage users')->post('/users', [\App\Http\Controllers\Admin\UserController::class, 'store'])->name('users.store');
+    Route::middleware('can:manage users')->get('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])->name('users.show');
     Route::middleware('can:manage users')->get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
     Route::middleware('can:manage users')->put('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
     Route::middleware('can:manage users')->delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
