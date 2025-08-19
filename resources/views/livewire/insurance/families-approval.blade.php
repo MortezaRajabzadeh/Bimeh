@@ -194,6 +194,7 @@
             .scrollbar-thin::-webkit-scrollbar-thumb:hover {
                 background: #a0aec0;
             }
+
         </style>
     @endpush
 
@@ -541,7 +542,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
 
                                 <span wire:loading.remove wire:target="export">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                     دانلود اکسل
@@ -614,13 +615,12 @@ total items: {{ $families->count() ?? 0 }}</pre>
                             <span class="mr-2 bg-white bg-opacity-20 rounded px-2 py-1 text-xs" x-show="$wire.selected.length > 0" x-text="$wire.selected.length"></span>
                         </button>
                     @elseif($activeTab === 'approved')
-                    <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                    wire:click="downloadSampleTemplate">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    دانلود فایل نمونه
-                </button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        دانلود فایل نمونه
+                    </button>
                         <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50"
                             wire:click="showDeleteConfirmation"
                             {{ count($selected) === 0 ? 'disabled' : '' }}>
@@ -814,9 +814,9 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         @endphp
                         @if($selectedFamiliesCount > 0)
                             <span class="inline-flex items-center gap-2 bg-blue-100 border border-blue-300 rounded-full px-3 py-1 text-xs font-medium text-blue-900 shadow-sm">
-                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5.13a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 011-1h10a2 2 0 012 2v-1m-4 0a2 2 0 012-2h2a2 2 0 012 2v1m-6 0a2 2 0 00-2 2v-1m0 0a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
                                 <span>انتخاب {{ $selectedFamiliesCount }} خانواده</span>
-                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5.13a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 011-1h10a2 2 0 012 2v-1m-4 0a2 2 0 012-2h2a2 2 0 012 2v1m-6 0a2 2 0 00-2 2v-1m0 0a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
                                 <span class="text-blue-700">({{ $selectedMembersCount }} نفر)</span>
                                 <span class="mx-1 text-gray-400">/</span>
                                 <span>از {{ $totalFamiliesCount }} خانواده ({{ $allMembersCount }} نفر)</span>
@@ -837,9 +837,9 @@ total items: {{ $families->count() ?? 0 }}</pre>
                     @if($selectedFamiliesCount > 0)
                         <div class="mt-3 flex flex-wrap gap-2">
                             <span class="inline-flex items-center gap-2 bg-blue-100 border border-blue-300 rounded-full px-3 py-1 text-xs font-medium text-blue-900 shadow-sm">
-                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5.13a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 011-1h10a2 2 0 012 2v-1m-4 0a2 2 0 012-2h2a2 2 0 012 2v1m-6 0a2 2 0 00-2 2v-1m0 0a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
                                 <span>انتخاب {{ $selectedFamiliesCount }} خانواده</span>
-                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-5.13a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 011-1h10a2 2 0 012 2v-1m-4 0a2 2 0 012-2h2a2 2 0 012 2v1m-6 0a2 2 0 00-2 2v-1m0 0a2 2 0 00-2 2v1a2 2 0 002 2z"></path></svg>
                                 <span class="text-blue-700">({{ $selectedMembersCount }} نفر)</span>
                                 <span class="mx-1 text-gray-400">/</span>
                                 <span>از {{ $totalFamiliesCount }} خانواده ({{ $allMembersCount }} نفر)</span>
@@ -854,7 +854,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
             </div>
 
             {{-- نمایش لیست خانواده‌ها --}}
-            <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
+            <div class="w-full overflow-x-auto overflow-y-auto max-h-[70vh]">
                 @if($activeTab === 'excel' && $families->isEmpty())
                 {{-- تب در انتظار صدور - زمانی که خانواده‌ای وجود ندارد --}}
                 <div class="bg-white p-8 text-center">
@@ -1561,8 +1561,8 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         <!-- دکمه بستن در گوشه بالا سمت چپ -->
                         <button wire:click="closeDeleteModal" type="button" class="absolute top-3 left-3 text-gray-400 hover:text-gray-500">
                             <span class="sr-only">بستن</span>
-                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
 
@@ -1582,7 +1582,9 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-gray-700 mb-2">لطفا دلیل عدم تطابق را انتخاب کنید:</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                لطفا دلیل عدم تطابق را انتخاب کنید:
+                            </label>
                             <select wire:model.defer="deleteReason" class="w-full border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-3">
                                 <option value="">انتخاب کنید...</option>
                                 <option value="incomplete_info">اطلاعات ناقص</option>
@@ -1616,15 +1618,15 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
                         <!-- دکمه‌های سمت راست -->
                         <div class="flex items-center gap-3">
-                            <button wire:click="clearDeleteReason" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                            <button wire:click="clearDeleteReason" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                                 <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
                                 <span class="ml-2">پاک کردن</span>
                             </button>
-                            <button wire:click="closeDeleteModal" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                            <button wire:click="closeDeleteModal" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                                 <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
                                 <span class="ml-2">بستن</span>
                             </button>
@@ -1674,7 +1676,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
 
         <div @click.away="$wire.closeExcelUploadModal()"
-             class="w-full max-w-lg bg-white rounded-lg shadow-xl">
+             class="w-full max-w-lg bg-white rounded-lg">
 
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 class="text-xl font-bold text-gray-800">آپلود فایل اطلاعات صدور</h3>

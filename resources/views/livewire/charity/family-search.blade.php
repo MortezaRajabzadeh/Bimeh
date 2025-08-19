@@ -78,6 +78,7 @@
     }">
     {{-- Knowing others is intelligence; knowing yourself is true wisdom. --}}
 
+
     <!-- نوار جستجو و فیلتر -->
     <div class="mb-8">
         <div class="flex gap-3 items-center">
@@ -181,7 +182,7 @@
     </div>
 
     <!-- جدول خانواده‌ها -->
-    <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg">
+    <div class="w-full overflow-hidden shadow-sm border border-gray-200 rounded-lg sticky top-0">
         <!-- عنوان جدول با دکمه دانلود -->
         <div class="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">لیست خانواده‌ها</h3>
@@ -207,7 +208,7 @@
             @endif
         </div>
 
-        <div class="w-full overflow-x-auto">
+        <div class="w-full overflow-x-auto overflow-y-auto max-h-[70vh]">
             <table class="w-full divide-y divide-gray-200">
                 <thead>
                     <tr class="bg-gray-50 text-xs text-gray-700">
@@ -322,7 +323,7 @@
                                 <span>نوع بیمه</span>
                             </div>
                         </th>
-                        
+
                         <!-- تاریخ شروع و پایان بیمه -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
@@ -336,7 +337,7 @@
                                 <span>تاریخ عضویت</span>
                             </div>
                         </th>
-                        
+
                         <!-- پرداخت کننده حق بیمه -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
@@ -581,7 +582,7 @@
                                 @endif
                             </div>
                         </td>
-                        
+
                         <!-- تاریخ شروع و پایان بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
@@ -622,7 +623,7 @@
                                 @endif
                             </div>
                         </td>
-                        
+
                         <!-- تاریخ عضویت -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @if($family->created_at)
@@ -639,7 +640,7 @@
                                 -
                             @endif
                         </td>
-                        
+
                         <!-- پرداخت کننده حق بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
@@ -707,7 +708,7 @@
                                     try {
                                         echo jdate($latestInsurance->start_date)->format('Y/m/d');
                                     } catch (\Exception $e) {
-                                        echo $latestInsurance->start_date->format('Y/m/d');
+                                        echo \Carbon\Carbon::parse($latestInsurance->start_date)->format('Y/m/d');
                                     }
                                 @endphp
                             @else
@@ -813,7 +814,7 @@
                                                     {{-- خانواده تایید شده یا بیمه شده - فقط نمایش --}}
                                                     @if($member->is_head)
                                                         <span class="text-blue-500 font-bold inline-flex items-center">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                             سرپرست
@@ -1033,14 +1034,14 @@
                                                     <div class="flex items-center justify-center space-x-1 space-x-reverse">
                                                         <button wire:click="saveMember"
                                                                 class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                             </svg>
                                                             ذخیره
                                                         </button>
                                                         <button wire:click="cancelMemberEdit"
                                                                 class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                                             </svg>
                                                             لغو
@@ -1403,7 +1404,7 @@
                 <div class="border-b border-gray-200 p-6 text-center relative">
                     <button type="button" onclick="closeUploadModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">وارد کردن با فایل اکسل</h3>
@@ -1734,17 +1735,17 @@
     </script>
 
     <!-- کامپوننت تنظیمات رتبه -->
-    <x-rank-settings-modal 
-        :showModal="'showRankModal'" 
-        :availableRankSettings="$availableRankSettings ?? null" 
-        :isInsuranceUser="auth()->user()->isInsurance()" 
+    <x-rank-settings-modal
+        :showModal="'showRankModal'"
+        :availableRankSettings="$availableRankSettings ?? null"
+        :isInsuranceUser="auth()->user()->isInsurance()"
     />
 
 
     <!-- مودال فیلتر با قابلیت ذخیره و بارگذاری -->
-    <x-filter-modal 
-        :showModal="'showFilterModal'" 
-        :provinces="$provinces ?? null" 
+    <x-filter-modal
+        :showModal="'showFilterModal'"
+        :provinces="$provinces ?? null"
         :cities="$cities ?? null"
         :organizations="auth()->user()->isInsurance() ? \App\Models\Organization::all() : null"
     />
