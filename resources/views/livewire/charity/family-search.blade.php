@@ -645,23 +645,34 @@
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
                                 $latestInsurance = $family->finalInsurances()->latest('start_date')->first();
+                                $fundingSources = [];
+                                if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
+                                    $fundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                }
                             @endphp
-                            @if($latestInsurance)
-                                <div class="flex flex-wrap gap-1 justify-center">
-                                    @if($latestInsurance->fundingSource)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
-                                            {{ $latestInsurance->fundingSource->name }}
-                                        </span>
-                                    @elseif($latestInsurance->insurance_payer)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
-                                            {{ $latestInsurance->insurance_payer }}
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                            -
-                                        </span>
-                                    @endif
+                            @if($latestInsurance && $fundingSources->count() > 0)
+                                <div class="flex flex-col gap-1 justify-center items-center">
+                                    @foreach($fundingSources as $share)
+                                        <div class="flex items-center gap-2">
+                                            {{-- For now, we don't have logo field in funding_sources table --}}
+                                            {{-- @if($share->fundingSource && $share->fundingSource->logo)
+                                                <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
+                                                     alt="{{ $share->fundingSource->name }}" 
+                                                     class="w-6 h-6 rounded-full object-cover">
+                                            @endif --}}
+                                            <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
+                                                {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                            </span>
+                                            <span class="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-bold">
+                                                {{ number_format($share->percentage, 1) }}%
+                                            </span>
+                                        </div>
+                                    @endforeach
                                 </div>
+                            @elseif($latestInsurance && $latestInsurance->insurance_payer)
+                                <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
+                                    {{ $latestInsurance->insurance_payer }}
+                                </span>
                             @else
                                 <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
                                     -
@@ -720,23 +731,34 @@
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
                                 $latestInsurance = $family->finalInsurances()->latest('start_date')->first();
+                                $fundingSources = [];
+                                if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
+                                    $fundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                }
                             @endphp
-                            @if($latestInsurance)
-                                <div class="flex flex-wrap gap-1 justify-center">
-                                    @if($latestInsurance->fundingSource)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
-                                            {{ $latestInsurance->fundingSource->name }}
-                                        </span>
-                                    @elseif($latestInsurance->insurance_payer)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
-                                            {{ $latestInsurance->insurance_payer }}
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                            -
-                                        </span>
-                                    @endif
+                            @if($latestInsurance && $fundingSources->count() > 0)
+                                <div class="flex flex-col gap-1 justify-center items-center">
+                                    @foreach($fundingSources as $share)
+                                        <div class="flex items-center gap-2">
+                                            {{-- For now, we don't have logo field in funding_sources table --}}
+                                            {{-- @if($share->fundingSource && $share->fundingSource->logo)
+                                                <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
+                                                     alt="{{ $share->fundingSource->name }}" 
+                                                     class="w-6 h-6 rounded-full object-cover">
+                                            @endif --}}
+                                            <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
+                                                {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                            </span>
+                                            <span class="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-bold">
+                                                {{ number_format($share->percentage, 1) }}%
+                                            </span>
+                                        </div>
+                                    @endforeach
                                 </div>
+                            @elseif($latestInsurance && $latestInsurance->insurance_payer)
+                                <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800">
+                                    {{ $latestInsurance->insurance_payer }}
+                                </span>
                             @else
                                 <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
                                     -
@@ -931,7 +953,34 @@
 
                                             {{-- پرداخت کننده حق بیمه --}}
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
-                                                <div>{{ $latestInsurance->fundingSource->name ?? ($latestInsurance->premium_payer ?? '-') }}</div>
+                                                @php
+                                                    $memberFundingSources = [];
+                                                    if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
+                                                        $memberFundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                                    }
+                                                @endphp
+                                                @if($memberFundingSources->count() > 0)
+                                                    <div class="flex flex-col gap-1 items-center">
+                                                        @foreach($memberFundingSources as $share)
+                                                            <div class="flex items-center gap-1 text-xs">
+                                                                {{-- For now, we don't have logo field in funding_sources table --}}
+                                                                {{-- @if($share->fundingSource && $share->fundingSource->logo)
+                                                                    <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
+                                                                         alt="{{ $share->fundingSource->name }}" 
+                                                                         class="w-4 h-4 rounded-full object-cover">
+                                                                @endif --}}
+                                                                <span class="font-medium text-green-700">
+                                                                    {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                                                </span>
+                                                                <span class="text-blue-600 font-bold">
+                                                                    {{ number_format($share->percentage, 1) }}%
+                                                                </span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <div>{{ $latestInsurance->fundingSource->name ?? ($latestInsurance->premium_payer ?? '-') }}</div>
+                                                @endif
                                             </td>
 
                                             {{-- تاریخ شروع بیمه --}}
