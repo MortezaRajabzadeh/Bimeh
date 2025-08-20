@@ -442,7 +442,8 @@ class FamilySearch extends Component
                     'familyCriteria.rankSetting',
                     'insurances' => fn($q) => $q->orderBy('created_at', 'desc'),
                     'finalInsurances' => fn($q) => $q->where('status', 'insured')->orderBy('created_at', 'desc'),
-                    'finalInsurances.fundingSource' => fn($q) => $q->where('is_active', true)
+                    'finalInsurances.fundingSource' => fn($q) => $q->where('is_active', true),
+                    'finalInsurances.shares.fundingSource' // added to avoid N+1 when reading shares in view
                 ])
                 ->withCount('members');
 

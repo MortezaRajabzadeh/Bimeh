@@ -356,6 +356,8 @@
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>تاریخ شروع</span>
+
+                        
                             </div>
                         </th>
 
@@ -644,27 +646,35 @@
                         <!-- پرداخت کننده حق بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
-                                $latestInsurance = $family->finalInsurances()->latest('start_date')->first();
-                                $fundingSources = [];
+                                $latestInsurance = $family->finalInsurances()->with('shares.fundingSource')->latest('start_date')->first();
+                                $fundingSummary = collect([]);
                                 if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
-                                    $fundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                    $fundingSummary = $latestInsurance->shares
+                                        ->where('funding_source_id', '!=', null)
+                                        ->groupBy('funding_source_id')
+                                        ->map(function($group) {
+                                            return [
+                                                'source' => $group->first()->fundingSource,
+                                                'percentage' => $group->sum('percentage')
+                                            ];
+                                        });
                                 }
                             @endphp
-                            @if($latestInsurance && $fundingSources->count() > 0)
+                            @if($latestInsurance && $fundingSummary->count() > 0)
                                 <div class="flex flex-col gap-1 justify-center items-center">
-                                    @foreach($fundingSources as $share)
+                                    @foreach($fundingSummary as $summary)
                                         <div class="flex items-center gap-2">
                                             {{-- For now, we don't have logo field in funding_sources table --}}
-                                            {{-- @if($share->fundingSource && $share->fundingSource->logo)
-                                                <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
-                                                     alt="{{ $share->fundingSource->name }}" 
+                                            {{-- @if($summary['source'] && $summary['source']->logo)
+                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
+                                                     alt="{{ $summary['source']->name }}" 
                                                      class="w-6 h-6 rounded-full object-cover">
                                             @endif --}}
                                             <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
-                                                {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                                {{ $summary['source']->name ?? 'نامشخص' }}
                                             </span>
                                             <span class="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-bold">
-                                                {{ number_format($share->percentage, 1) }}%
+                                                {{ number_format($summary['percentage'], 1) }}%
                                             </span>
                                         </div>
                                     @endforeach
@@ -730,27 +740,35 @@
                         <!-- پرداخت کننده حق بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
-                                $latestInsurance = $family->finalInsurances()->latest('start_date')->first();
-                                $fundingSources = [];
+                                $latestInsurance = $family->finalInsurances()->with('shares.fundingSource')->latest('start_date')->first();
+                                $fundingSummary = collect([]);
                                 if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
-                                    $fundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                    $fundingSummary = $latestInsurance->shares
+                                        ->where('funding_source_id', '!=', null)
+                                        ->groupBy('funding_source_id')
+                                        ->map(function($group) {
+                                            return [
+                                                'source' => $group->first()->fundingSource,
+                                                'percentage' => $group->sum('percentage')
+                                            ];
+                                        });
                                 }
                             @endphp
-                            @if($latestInsurance && $fundingSources->count() > 0)
+                            @if($latestInsurance && $fundingSummary->count() > 0)
                                 <div class="flex flex-col gap-1 justify-center items-center">
-                                    @foreach($fundingSources as $share)
+                                    @foreach($fundingSummary as $summary)
                                         <div class="flex items-center gap-2">
                                             {{-- For now, we don't have logo field in funding_sources table --}}
-                                            {{-- @if($share->fundingSource && $share->fundingSource->logo)
-                                                <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
-                                                     alt="{{ $share->fundingSource->name }}" 
+                                            {{-- @if($summary['source'] && $summary['source']->logo)
+                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
+                                                     alt="{{ $summary['source']->name }}" 
                                                      class="w-6 h-6 rounded-full object-cover">
                                             @endif --}}
                                             <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
-                                                {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                                {{ $summary['source']->name ?? 'نامشخص' }}
                                             </span>
                                             <span class="px-1.5 py-0.5 rounded text-xs bg-blue-100 text-blue-800 font-bold">
-                                                {{ number_format($share->percentage, 1) }}%
+                                                {{ number_format($summary['percentage'], 1) }}%
                                             </span>
                                         </div>
                                     @endforeach
@@ -954,32 +972,41 @@
                                             {{-- پرداخت کننده حق بیمه --}}
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @php
-                                                    $memberFundingSources = [];
-                                                    if ($latestInsurance && $latestInsurance->shares && $latestInsurance->shares->count() > 0) {
-                                                        $memberFundingSources = $latestInsurance->shares->where('funding_source_id', '!=', null)->unique('funding_source_id');
+                                                    $memberLatestInsurance = $family->finalInsurances()->with('shares.fundingSource')->latest('start_date')->first();
+                                                    $memberFundingSummary = collect([]);
+                                                    if ($memberLatestInsurance && $memberLatestInsurance->shares && $memberLatestInsurance->shares->count() > 0) {
+                                                        $memberFundingSummary = $memberLatestInsurance->shares
+                                                            ->where('funding_source_id', '!=', null)
+                                                            ->groupBy('funding_source_id')
+                                                            ->map(function($group) {
+                                                                return [
+                                                                    'source' => $group->first()->fundingSource,
+                                                                    'percentage' => $group->sum('percentage')
+                                                                ];
+                                                            });
                                                     }
                                                 @endphp
-                                                @if($memberFundingSources->count() > 0)
+                                                @if($memberFundingSummary->count() > 0)
                                                     <div class="flex flex-col gap-1 items-center">
-                                                        @foreach($memberFundingSources as $share)
+                                                        @foreach($memberFundingSummary as $summary)
                                                             <div class="flex items-center gap-1 text-xs">
                                                                 {{-- For now, we don't have logo field in funding_sources table --}}
-                                                                {{-- @if($share->fundingSource && $share->fundingSource->logo)
-                                                                    <img src="{{ asset('storage/' . $share->fundingSource->logo) }}" 
-                                                                         alt="{{ $share->fundingSource->name }}" 
+                                                                {{-- @if($summary['source'] && $summary['source']->logo)
+                                                                    <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
+                                                                         alt="{{ $summary['source']->name }}" 
                                                                          class="w-4 h-4 rounded-full object-cover">
                                                                 @endif --}}
                                                                 <span class="font-medium text-green-700">
-                                                                    {{ $share->fundingSource->name ?? 'نامشخص' }}
+                                                                    {{ $summary['source']->name ?? 'نامشخص' }}
                                                                 </span>
                                                                 <span class="text-blue-600 font-bold">
-                                                                    {{ number_format($share->percentage, 1) }}%
+                                                                    {{ number_format($summary['percentage'], 1) }}%
                                                                 </span>
                                                             </div>
                                                         @endforeach
                                                     </div>
                                                 @else
-                                                    <div>{{ $latestInsurance->fundingSource->name ?? ($latestInsurance->premium_payer ?? '-') }}</div>
+                                                    <div>{{ $memberLatestInsurance->fundingSource->name ?? ($memberLatestInsurance->insurance_payer ?? '-') }}</div>
                                                 @endif
                                             </td>
 
