@@ -88,12 +88,23 @@ class InsuranceShareService
                             'updated_at' => now(),
                         ];
                         
-                        // تنظیم اطلاعات پرداخت‌کننده
-                        if ($fundingSourceId) {
-                            $fundingSource = $this->getCachedFundingSource($fundingSourceId);
+                        // تنظیم اطلاعات پرداخت‌کننده - استفاده از funding_source_id مربوط به هر سهم
+                        $currentFundingSourceId = null;
+                        
+                        // اولویت با funding_source_id موجود در shareData
+                        if (isset($shareData['funding_source_id']) && !empty($shareData['funding_source_id'])) {
+                            $currentFundingSourceId = (int)$shareData['funding_source_id'];
+                        } elseif ($fundingSourceId) {
+                            // fallback به پارامتر کلی
+                            $currentFundingSourceId = $fundingSourceId;
+                        }
+                        
+                        if ($currentFundingSourceId) {
+                            $fundingSource = $this->getCachedFundingSource($currentFundingSourceId);
                             if ($fundingSource) {
                                 // همیشه نام منبع مالی را در payer_name ذخیره کن
                                 $shareRecord['payer_name'] = $fundingSource->name;
+                                $shareRecord['funding_source_id'] = $fundingSource->id;
                                 
                                 // فقط اگر نوع منبع "person" است، اطلاعات کاربر و سازمان را ثبت کن
                                 if ($fundingSource->type === 'person') {
@@ -106,7 +117,19 @@ class InsuranceShareService
                                 if (isset($shareData['payer_type_id'])) {
                                     $shareRecord['payer_type_id'] = $shareData['payer_type_id'];
                                 }
+                                
+                                // لاگ برای دیباگ
+                                Log::info('InsuranceShareService::allocate - تنظیم منبع مالی', [
+                                    'funding_source_id' => $fundingSource->id,
+                                    'funding_source_name' => $fundingSource->name,
+                                    'shareData_funding_source_id' => $shareData['funding_source_id'] ?? 'not_set',
+                                    'percentage' => $shareData['percentage']
+                                ]);
+                            } else {
+                                Log::warning('InsuranceShareService::allocate - منبع مالی با ID ' . $currentFundingSourceId . ' یافت نشد');
                             }
+                        } else {
+                            Log::warning('InsuranceShareService::allocate - هیچ funding_source_id معتبری برای سهم یافت نشد');
                         }
 
                         $sharesData[] = $shareRecord;

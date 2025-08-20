@@ -124,6 +124,11 @@ class FamiliesApproval extends Component
     public $renewalDate = null;
     public $renewalNote = '';
 
+    // متغیرهای نمایش نتیجه آپلود
+    public $showUploadResult = false;
+    public $uploadResultMessage = '';
+    public $uploadResultType = 'info';
+
     // متغیرهای جستجو و فیلتر
     public $search = '';
     public $status = '';
@@ -1485,21 +1490,16 @@ private function getCriteriaWeights(): array
      */
     public function uploadInsuranceExcel()
     {
-
-
         // اعتبارسنجی فایل
         $this->validate([
             'insuranceExcelFile' => 'required|file|mimes:xlsx,xls|max:10240',
         ]);
 
-
         try {
             // ذخیره فایل
             $filename = time() . '_' . $this->insuranceExcelFile->getClientOriginalName();
-
             $path = $this->insuranceExcelFile->storeAs('excel_imports', $filename, 'public');
             $fullPath = storage_path('app/public/' . $path);
-
 
             // بررسی وجود فایل
             if (!file_exists($fullPath)) {
@@ -1516,6 +1516,8 @@ private function getCriteriaWeights(): array
             // ✅ بررسی تکرار و نمایش پیام مناسب
             if (isset($result['is_duplicate']) && $result['is_duplicate']) {
                 $this->handleDuplicateUpload($result);
+                // بستن مودال حتی در صورت تکرار
+                $this->closeExcelUploadModal();
                 return;
             }
 
@@ -1524,6 +1526,9 @@ private function getCriteriaWeights(): array
 
             // پاک کردن فایل آپلود شده
             $this->reset('insuranceExcelFile');
+
+            // بستن مودال آپلود
+            $this->closeExcelUploadModal();
 
             // بازگشت به تب excel برای نمایش خانواده‌های باقی‌مانده
             $this->setTab('excel');
@@ -1536,7 +1541,26 @@ private function getCriteriaWeights(): array
             Log::error('❌ خطا در پردازش فایل اکسل: ' . $e->getMessage());
             Log::error('❌ جزئیات خطا: ' . $e->getTraceAsString());
 
-            session()->flash('error', 'خطا در پردازش فایل اکسل: ' . $e->getMessage());
+            // بستن مودال در صورت خطا
+            $this->closeExcelUploadModal();
+            
+            // نمایش خطا با جزئیات کامل
+            $errorMessage = 'خطا در پردازش فایل اکسل:\n\n' . $e->getMessage();
+            if (config('app.debug')) {
+                $errorMessage .= '\n\nجزئیات تکنیکی: ' . $e->getFile() . ':' . $e->getLine();
+            }
+            
+            session()->flash('error', $errorMessage);
+            
+            // ارسال رویداد خطا برای نمایش toast
+            $this->dispatch('toast', [
+                'message' => 'خطا در آپلود فایل: ' . $e->getMessage(),
+                'type' => 'error',
+                'duration' => 15000
+            ]);
+            
+            // پاک کردن فایل در صورت خطا
+            $this->reset('insuranceExcelFile');
         }
     }
 
@@ -1576,7 +1600,7 @@ private function getCriteriaWeights(): array
         $duplicateType = $result['duplicate_type'] ?? 'unknown';
         $messageConfig = $duplicateMessages[$duplicateType] ?? $duplicateMessages['idempotency'];
 
-        // نمایش پیام تکرار
+        // تنظیم پیام هشدار در متغیر کامپوننت
         $errorMessage = $messageConfig['title'] . "\n\n";
         $errorMessage .= $messageConfig['message'] . "\n";
         if (!empty($result['errors'][0])) {
@@ -1588,20 +1612,17 @@ private function getCriteriaWeights(): array
             $errorMessage .= "\n📋 شناسه لاگ قبلی: " . $result['existing_log_id'];
         }
 
-        session()->flash('error', $errorMessage);
+        // نمایش پیام با تاخیر
+        $this->uploadResultMessage = $errorMessage;
+        $this->uploadResultType = 'warning';
+        $this->showUploadResult = true;
 
-        // ارسال رویداد مخصوص تکرار برای نمایش نوتیفیکیشن
-        $this->dispatch('duplicate-upload-detected', [
-            'type' => $duplicateType,
-            'message' => $messageConfig['message'],
-            'existing_log_id' => $result['existing_log_id'] ?? null
-        ]);
-
-        // نوتیفیکیشن toast برای نمایش سریع
+        // اضافه کردن toast برای نمایش پایدار پیام تکرار
         $this->dispatch('toast', [
             'message' => $messageConfig['title'] . ': ' . $messageConfig['message'],
             'type' => 'warning',
-            'duration' => 5000
+            'duration' => 15000,
+            'persistent' => true  // پیام پایدار تا کاربر خودش ببندد
         ]);
 
         Log::info('✅ پیام تکرار نمایش داده شد', [
@@ -1653,7 +1674,7 @@ private function getCriteriaWeights(): array
         $this->dispatch('toast', [
             'message' => $toastMessage,
             'type' => 'success',
-            'duration' => 6000
+            'duration' => 12000
         ]);
 
         Log::info('✅ پیام موفقیت نمایش داده شد', [

@@ -1542,7 +1542,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
     </div>
 
     {{-- لوادینگ --}}
-    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50" wire:loading wire:target="changeTab, approveSelected, returnToPendingSelected, deleteSelected, approveAndContinueSelected">
+    <div class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50" wire:loading wire:target="changeTab, approveSelected, returnToPendingSelected, deleteSelected, approveAndContinueSelected, uploadInsuranceExcel">
         <div class="bg-white p-8 rounded-xl shadow-2xl flex items-center max-w-lg mx-auto">
             <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

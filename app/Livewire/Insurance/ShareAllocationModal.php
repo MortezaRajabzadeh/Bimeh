@@ -197,6 +197,12 @@ class ShareAllocationModal extends Component
         try {
             $this->validate();
 
+            // لاگ داده‌های shares برای دیباگ
+            // Log::info('ShareAllocationModal::allocateShares - بررسی داده‌های shares', [
+            //     'shares' => $this->shares,
+            //     'totalPercentage' => $this->totalPercentage
+            // ]);
+
             // بررسی مجموع درصدها
             $this->calculateTotalPercentage();
             

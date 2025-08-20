@@ -5,16 +5,20 @@
                 <div
                     x-data="{ show: true }"
                     x-show="show"
-                    x-init="setTimeout(() => show = false, 10000)"
+                    x-init="
+                        // تایمر برای بستن خودکار هر نوتیفیکیشن
+                        @if(!($toast['persistent'] ?? false))
+                            setTimeout(() => show = false, {{ $toast['duration'] ?? 8000 }});
+                            setTimeout(() => $wire.removeToast('{{ $toast['id'] }}'), {{ ($toast['duration'] ?? 8000) + 500 }});
+                        @endif
+                    "
                     x-transition:enter="transform ease-out duration-300 transition"
-                    x-transition:enter-start="translate-y-2 opacity-0"
-                    x-transition:enter-end="translate-y-0 opacity-100"
+                    x-transition:enter-start="opacity-0 -translate-x-2"
+                    x-transition:enter-end="opacity-100 translate-y-0"
                     x-transition:leave="transition ease-in duration-200"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    @toast-start-timer.window="if ($event.detail.id === '{{ $toast['id'] }}') setTimeout(() => { $wire.removeToast('{{ $toast['id'] }}') }, 10000)"
-                    @removeToastAfterDelay.window="if ($event.detail.id === '{{ $toast['id'] }}') setTimeout(() => { show = false; $wire.removeToast('{{ $toast['id'] }}') }, $event.detail.delay)"
-                    class="toast-notification toast-{{ $toast['type'] }}"
+                    class="toast-notification toast-{{ $toast['type'] }} max-w-lg w-full notification-card"
                     role="{{ $toast['type'] === 'error' ? 'alert' : 'status' }}"
                     aria-live="polite">
                     <div class="toast-content">
@@ -39,6 +43,11 @@
                         </div>
                         <div class="toast-message">
                             {{ $toast['message'] }}
+                            @if($toast['persistent'] ?? false)
+                                <div class="text-xs mt-1 text-gray-500">
+                                    (این پیام تا زمان بستن نمایش داده می‌شود)
+                                </div>
+                            @endif
                         </div>
                         <button
                             @click="show = false; $wire.removeToast('{{ $toast['id'] }}')"
@@ -57,58 +66,56 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // اضافه کردن اسکریپت برای اسکرول به عنصر مشخص شده
-        if (window.scrollToMember) {
-            const memberElement = document.getElementById('member-' + window.scrollToMember);
-            if (memberElement) {
-                memberElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                memberElement.classList.add('highlight-member');
-                
-                // حذف کلاس هایلایت بعد از چند ثانیه
-                setTimeout(() => {
-                    memberElement.classList.remove('highlight-member');
-                }, 3000);
-            }
-        }
+        // لیسنر برای رویداد notify و نوتیفیکیشن‌های سیستمی
+        const notifyEventListeners = ['notify', 'show-notification', 'toast'];
         
-        // لیسنر برای رویداد notify
-        window.addEventListener('notify', function(event) {
-            if (event.detail && event.detail.message) {
-                // ارسال پیام به کامپوننت Livewire
-                if (typeof Livewire !== 'undefined') {
-                    Livewire.dispatch('notify', event.detail);
+        notifyEventListeners.forEach(eventName => {
+            window.addEventListener(eventName, function(event) {
+                if (event.detail && (event.detail.message || typeof event.detail === 'string')) {
+                    if (typeof Livewire !== 'undefined') {
+                        const eventData = typeof event.detail === 'string' 
+                            ? { message: event.detail, type: 'info' }
+                            : event.detail;
+                            
+                        Livewire.dispatch(eventName, eventData);
+                    }
                 }
-            }
+            });
         });
     });
 </script>
 
 <style>
     .toast-container {
-        direction: rtl;
+        direction: ltr;
         min-width: 300px;
-        max-width: 450px;
+        max-width: 500px;
+        pointer-events: none; /* برای عبور کلیک از کانتینر */
+    }
+    
+    .notification-card {
+        pointer-events: auto; /* برای فعال کردن کلیک روی کارت */
     }
     
     .toast-notification {
         border-width: 1px;
         border-style: solid;
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         margin-bottom: 0.75rem;
         overflow: hidden;
-        animation: slideRight 0.3s ease-out forwards;
     }
     
     .toast-content {
         display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
+        align-items: flex-start;
+        padding: 1rem 1.25rem;
     }
     
     .toast-icon {
         flex-shrink: 0;
-        margin-left: 0.75rem;
+        margin-right: 0.75rem;
+        margin-top: 0.125rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -124,16 +131,24 @@
         font-size: 0.875rem;
         line-height: 1.25rem;
         font-weight: 500;
+        white-space: pre-line; /* برای حفظ خطوط جدید */
     }
     
     .toast-close {
-        margin-right: 0.5rem;
+        margin-left: 0.5rem;
         color: rgba(107, 114, 128, 0.7);
         transition: color 0.15s ease-in-out;
+        height: 1.5rem;
+        width: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
     }
     
     .toast-close:hover {
         color: rgba(107, 114, 128, 1);
+        background-color: rgba(0, 0, 0, 0.05);
     }
     
     /* استایل‌های انواع توست */
@@ -171,27 +186,5 @@
     
     .toast-info .toast-icon svg {
         color: #2563eb;
-    }
-    
-    /* انیمیشن ورود توست از سمت چپ */
-    @keyframes slideRight {
-        0% {
-            transform: translateX(-20px);
-            opacity: 0;
-        }
-        100% {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    /* استایل برای هایلایت‌کردن عنصر */
-    .highlight-member {
-        animation: highlight-pulse 3s ease-in-out;
-    }
-    
-    @keyframes highlight-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.3); }
     }
 </style> 
