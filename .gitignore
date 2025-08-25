@@ -28,6 +28,56 @@ yarn-error.log
 *.swp
 *.swo
 
+# AI Assistant and Code Tools
+.qoder/
+.ai/
+.github/copilot/
+.aider*
+.cursor-tutor/
+.deepseek/
+codeium.json
+.codegen/
+.assistant/
+.codehelper/
+.continue/
+.windsurf/
+.replit/
+.gitpod/
+
+# Development and Testing
+.phpunit.cache
+/coverage/
+*.cache
+/tests/coverage/
+/build/
+/dist/
+/temp/
+/tmp/
+
+# Logs and debug files
+*.log
+debug.log
+error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+/database/database.sqlite
+
+# Backup and temporary files
+*.bak
+*.backup
+*.tmp
+*~
+.#*
+#*#
+
 # OS generated files
 Thumbs.db
 .DS_Store
