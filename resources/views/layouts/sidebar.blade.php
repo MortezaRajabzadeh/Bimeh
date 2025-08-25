@@ -203,13 +203,13 @@
             @php
                 $settingsRoute = null;
                 $settingsText = null;
-                if(auth()->user()->hasRole('admin')) {
+                if(auth()->user()->isActiveAs('admin')) {
                     $settingsRoute = route('admin.settings');
                     $settingsText = 'تنظیمات ادمین';
-                } elseif(auth()->user()->hasRole('charity')) {
+                } elseif(auth()->user()->isActiveAs('charity')) {
                     $settingsRoute = route('charity.settings');
                     $settingsText = 'تنظیمات خیریه';
-                } elseif(auth()->user()->hasRole('insurance')) {
+                } elseif(auth()->user()->isActiveAs('insurance')) {
                     $settingsRoute = route('insurance.settings');
                     $settingsText = 'تنظیمات بیمه';
                 }

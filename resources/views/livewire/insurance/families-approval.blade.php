@@ -1301,7 +1301,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
                                     @if($expandedFamily === $family->id)
                                 <tr class="bg-green-50">
-                                <td colspan="{{ (auth()->user()->hasRole('admin') ? 10 : 13) + ($this->showInsuranceEndDate() ? 1 : 0) }}" class="p-0">
+                                <td colspan="{{ (auth()->user()->isActiveAs('admin') ? 10 : 13) + ($this->showInsuranceEndDate() ? 1 : 0) }}" class="p-0">
                                 <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
                                 <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                                                         <table class="w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
@@ -1314,7 +1314,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">تاریخ تولد</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">شغل</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">نوع مشکل</th>
-                                            @if(!auth()->user()->hasRole('admin'))
+                                            @if(!auth()->user()->isActiveAs('admin'))
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">اعتبارسنجی</th>
                                             @endif
                                         </tr>
@@ -1386,7 +1386,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                         @endif
                                                                     </td>
 
-                                                                    @if(!auth()->user()->hasRole('admin'))
+                                                                    @if(!auth()->user()->isActiveAs('admin'))
                                                                     <td class="px-5 py-3 text-sm text-gray-800 text-center">
                                                                         <x-member-validation-icons :member="$member" size="sm" />
                                                                     </td>
@@ -1394,7 +1394,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                 </tr>
                                                                 @empty
                                                                     <tr>
-                                                                        <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 12 }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                                                        <td colspan="{{ auth()->user()->isActiveAs('admin') ? 11 : 12 }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
                                                                             عضوی برای این خانواده ثبت نشده است.
                                                                         </td>
                                                                     </tr>
@@ -1434,7 +1434,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 @endif
                                                             @empty
                                 <tr>
-                                    <td colspan="{{ (auth()->user()->hasRole('admin') ? 10 : 13) + ($this->showInsuranceEndDate() ? 1 : 0) }}" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="{{ (auth()->user()->isActiveAs('admin') ? 10 : 13) + ($this->showInsuranceEndDate() ? 1 : 0) }}" class="px-6 py-4 text-center text-gray-500">
                                         هیچ خانواده‌ای یافت نشد.
                                     </td>
                                 </tr>

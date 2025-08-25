@@ -113,10 +113,18 @@ use App\Models\InsurancePayment;
                             <div x-show="open" @click.away="open = false" class="absolute -left-10 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
                                 @php
                                     $activeRole = auth()->user()->getActiveRole();
-                                    // نمایش همه کاربران بجای فیلتر بر اساس نقش فعلی
-                                    $users = \App\Models\User::whereHas('roles', function($q) {
-                                        $q->whereIn('name', ['admin', 'charity', 'insurance']);
-                                    })->with('organization')->get();
+                                    // فیلتر کاربران بر اساس نقش انتخاب شده
+                                    if ($activeRole === 'admin') {
+                                        // ادمین همه کاربران را می‌بیند
+                                        $users = \App\Models\User::whereHas('roles', function($q) {
+                                            $q->whereIn('name', ['admin', 'charity', 'insurance']);
+                                        })->with('organization')->get();
+                                    } else {
+                                        // برای نقش‌های خیریه و بیمه، فقط کاربران همان نقش
+                                        $users = \App\Models\User::whereHas('roles', function($q) use ($activeRole) {
+                                            $q->where('name', $activeRole);
+                                        })->with('organization')->get();
+                                    }
                                 @endphp
 
                                 @foreach($users as $user)

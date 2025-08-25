@@ -105,7 +105,7 @@
             </div>
         </div>
         
-        @if(auth()->check() && auth()->user()->hasRole('admin'))
+        @if(auth()->check() && auth()->user()->isActiveAs('admin'))
         <a href="{{ route('admin.dashboard') }}" class="back-button" title="برگشت به صفحه اصلی">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-left">
                 <polyline points="15 18 9 12 15 6"></polyline>

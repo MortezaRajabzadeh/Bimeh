@@ -2,7 +2,7 @@
     <div class="container mx-auto px-4 py-6">
         <h2 class="text-2xl font-bold text-center mb-6">پنل‌های مدیریت</h2>
         
-        @if(auth()->user()->hasRole('admin'))
+        @if(auth()->user()->isActiveAs('admin'))
         <div class="bg-white rounded-xl p-4 mb-6 relative border border-gray-100 shadow-sm">
             <div class="absolute top-0 right-0 w-full h-1 bg-red-500 rounded-t-xl"></div>
             <p>شما با دسترسی مدیر سیستم وارد شده‌اید و به تمام بخش‌ها دسترسی دارید.</p>

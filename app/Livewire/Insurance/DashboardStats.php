@@ -96,7 +96,7 @@ class DashboardStats extends Component
         $user = Auth::user();
         
         // بر اساس نقش کاربری
-        if ($user->hasRole('charity') || 
+        if ($user->isActiveAs('charity') || 
             $user->organization?->type === 'charity' ||
             request()->is('charity/*')) {
             return 'charity';

@@ -370,7 +370,7 @@
                         @endif
 
 
-                        @if(auth()->user()->hasRole('admin'))
+                        @if(auth()->user()->isActiveAs('admin'))
                             <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                                 <button wire:click="sortBy('total_paid_premium')" class="flex items-center justify-center w-full">
                                     مجموع حق بیمه پرداختی
@@ -412,7 +412,7 @@
                                 </button>
                             </th>
                         @endif
-                        @if(!auth()->user()->hasRole('admin'))
+                        @if(!auth()->user()->isActiveAs('admin'))
 
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             اعتبارسنجی
@@ -786,7 +786,7 @@
                         @endif
 
 
-                        @if(auth()->user()->hasRole('admin'))
+                        @if(auth()->user()->isActiveAs('admin'))
                             <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                                 {{ number_format($family->total_paid_premium ?? 0) }} تومان
                             </td>
@@ -796,7 +796,7 @@
                         @endif
 
 
-                        @if(!auth()->user()->hasRole('admin'))
+                        @if(!auth()->user()->isActiveAs('admin'))
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             <div class="flex items-center justify-center">
                                 <x-family-validation-icons :family="$family" size="sm" />
@@ -817,9 +817,9 @@
                         @endif
                     </tr>
 
-                    @if($expandedFamily === $family->id && !auth()->user()->hasRole('admin'))
+                    @if($expandedFamily === $family->id && !auth()->user()->isActiveAs('admin'))
                     <tr class="bg-green-50">
-                        <td colspan="{{ auth()->user()->hasRole('admin') ? ($status === 'insured' ? 17 : 14) : ($status === 'insured' ? 20 : 17) }}" class="p-0">
+                        <td colspan="{{ auth()->user()->isActiveAs('admin') ? ($status === 'insured' ? 17 : 14) : ($status === 'insured' ? 20 : 17) }}" class="p-0">
                             <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
                                 <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                                     <table class="min-w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
@@ -838,7 +838,7 @@
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">تاریخ پایان بیمه</th>
                                             @endif
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">معیار پذیرش</th>
-                                            @if(!auth()->user()->hasRole('admin'))
+                                            @if(!auth()->user()->isActiveAs('admin'))
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">اعتبارسنجی</th>
                                             @endif
                                             @if(!$family->verified_at && $status !== 'insured')
@@ -1081,7 +1081,7 @@
                                                 @endif
                                             </td>
 
-                                            @if(!auth()->user()->hasRole('admin'))
+                                            @if(!auth()->user()->isActiveAs('admin'))
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @php
                                                     // چک کنیم آیا این عضو نیاز به مدرک دارد
@@ -1138,7 +1138,7 @@
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="{{ (!$family->verified_at && $status !== 'insured') ? (auth()->user()->hasRole('admin') ? 8 : 9) : (auth()->user()->hasRole('admin') ? 7 : 8) }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
+                                            <td colspan="{{ (!$family->verified_at && $status !== 'insured') ? (auth()->user()->isActiveAs('admin') ? 8 : 9) : (auth()->user()->isActiveAs('admin') ? 7 : 8) }}" class="px-3 py-3 text-sm text-gray-500 text-center border-b border-gray-100">
                                                 عضوی برای این خانواده ثبت نشده است.
                                             </td>
                                         </tr>
@@ -1189,7 +1189,7 @@
 
                     @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->hasRole('admin') ? 11 : 14 }}" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
+                        <td colspan="{{ auth()->user()->isActiveAs('admin') ? 11 : 14 }}" class="px-5 py-4 text-sm text-gray-500 border-b border-gray-200 text-center">
                             هیچ خانواده‌ای یافت نشد.
                         </td>
                     </tr>
