@@ -32,7 +32,8 @@
             });
         },
         removeFilter(index) {
-            this.filters.splice(index, 1);
+            // فراخوانی متد Livewire برای حذف فیلتر
+            $wire.removeFilter(index);
         },
         updateFilterLabel(index) {
             if (!this.filters[index]) return;
@@ -67,11 +68,14 @@
                     break;
             }
 
-            if (this.filters[index].operator === 'equals') label += ' برابر با';
+            if (this.filters[index].operator === 'equals' || this.filters[index].operator === 'and') label += ' برابر با';
             else if (this.filters[index].operator === 'not_equals') label += ' مخالف';
             else if (this.filters[index].operator === 'greater_than') label += ' بیشتر از';
             else if (this.filters[index].operator === 'less_than') label += ' کمتر از';
             else if (this.filters[index].operator === 'contains') label += ' شامل';
+            else if (this.filters[index].operator === 'exists') label += ' باشد';
+            else if (this.filters[index].operator === 'not_exists') label += ' نباشد';
+            else if (this.filters[index].operator === 'or') label += ' یا';
 
             this.filters[index].label = label;
         }
@@ -158,7 +162,27 @@
                     </span>
                 @endif
 
-
+                <!-- فیلترهای Modal -->
+                @if(!empty($tempFilters))
+                    @foreach($tempFilters as $index => $filter)
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            @php
+                                $displayValue = '';
+                                if (!empty($filter['min_members']) && !empty($filter['max_members'])) {
+                                    $displayValue = $filter['min_members'] . ' تا ' . $filter['max_members'];
+                                } elseif (!empty($filter['min_members'])) {
+                                    $displayValue = 'حداقل ' . $filter['min_members'];
+                                } elseif (!empty($filter['max_members'])) {
+                                    $displayValue = 'حداکثر ' . $filter['max_members'];
+                                } else {
+                                    $displayValue = $filter['value'] ?? '';
+                                }
+                            @endphp
+                            {{ $filter['label'] ?? '' }} {{ $displayValue }}
+                            <button @click="removeFilter({{ $index }})" class="mr-1 text-yellow-600 hover:text-yellow-800">×</button>
+                        </span>
+                    @endforeach
+                @endif
 
                 @if($specific_criteria && isset($availableRankSettings))
                     @php $criteria = $availableRankSettings->find($specific_criteria); @endphp
@@ -425,7 +449,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse(($families ?? collect([])) as $family)
-                    <tr class="hover:bg-gray-50" data-family-id="{{ $family->id }}">
+                    <tr class="{{ $expandedFamily === $family->id ? 'bg-green-200' : 'hover:bg-blue-50' }}" data-family-id="{{ $family->id }}">
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             <div class="flex items-center justify-center">
                                 @if($family->family_code)

@@ -179,10 +179,53 @@
                                         </div>
                                     </div>
 
-                                    <div x-show="filter.type === 'members_count'">
-                                        <input type="number" x-model="filter.value" min="1" max="20"
-                                               class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200"
-                                               placeholder="تعداد اعضا">
+                                    <div x-show="filter.type === 'members_count'" x-data="{
+                                        rangeMode: false,
+                                        toggleRangeMode() {
+                                            this.rangeMode = !this.rangeMode;
+                                            if (this.rangeMode) {
+                                                // حالت بازه: مقداردهی اولیه min و max
+                                                filter.min_members = filter.value || '';
+                                                filter.max_members = '';
+                                                filter.value = '';
+                                            } else {
+                                                // حالت تک عدد: برگرداندن به value
+                                                filter.value = filter.min_members || '';
+                                                filter.min_members = '';
+                                                filter.max_members = '';
+                                            }
+                                        }
+                                    }" class="space-y-3">
+                                        <!-- دکمه تغییر حالت -->
+                                        <div class="flex justify-end">
+                                            <button type="button" @click="toggleRangeMode()" 
+                                                    class="text-xs px-2 py-1 rounded border transition-colors"
+                                                    :class="rangeMode ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-600 border-gray-300'">
+                                                <span x-text="rangeMode ? 'تک عدد' : 'بازه'"></span>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- حالت تک عدد -->
+                                        <div x-show="!rangeMode">
+                                            <input type="number" x-model="filter.value" min="1" max="20"
+                                                   class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200"
+                                                   placeholder="تعداد اعضا">
+                                        </div>
+                                        
+                                        <!-- حالت بازه -->
+                                        <div x-show="rangeMode" class="flex space-x-2 rtl:space-x-reverse">
+                                            <div class="w-1/2">
+                                                <input type="number" x-model="filter.min_members" min="1" max="20"
+                                                       class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200"
+                                                       placeholder="حداقل">
+                                            </div>
+                                            <div class="flex items-center px-2 text-gray-500">تا</div>
+                                            <div class="w-1/2">
+                                                <input type="number" x-model="filter.max_members" min="1" max="20"
+                                                       class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4 transition-all duration-200"
+                                                       placeholder="حداکثر">
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div x-show="filter.type === 'membership_date'" class="flex space-x-4 rtl:space-x-reverse">
@@ -254,6 +297,8 @@
                                                 style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
                                             <option value="and">و</option>
                                             <option value="or">یا</option>
+                                            <option value="exists">باشد</option>
+                                            <option value="not_exists">نباشد</option>
                                         </select>
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,31 +345,45 @@
                  filterDescription: '',
                  showLoadOptions: false,
                  savedFilters: [],
-                 loadSavedFilters() {
-                     // فراخوانی API برای دریافت فیلترهای ذخیره شده
-                     $wire.loadSavedFilters('filter_modal').then(data => {
-                         this.savedFilters = data;
-                     });
-                 },
-                 saveCurrentFilter() {
-                     if (!this.filterName.trim()) {
-                         alert('لطفا نام فیلتر را وارد کنید');
-                         return;
-                     }
-                     $wire.saveFilter(this.filterName, this.filterDescription)
-                         .then((result) => {
-                             console.log('Filter saved successfully:', result);
-                             this.filterName = '';
-                             this.filterDescription = '';
-                             this.showSaveForm = false;
-                             // بارگیری مجدد فیلترهای ذخیره شده
-                             this.loadSavedFilters();
-                         })
-                         .catch((error) => {
-                             console.error('Error saving filter:', error);
-                             alert('خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'));
-                         });
-                 }
+                loadSavedFilters() {
+                    // فراخوانی API برای دریافت فیلترهای ذخیره شده
+                    $wire.loadSavedFilters('filter_modal').then(data => {
+                        this.savedFilters = data;
+                    });
+                },
+                saveCurrentFilter() {
+                    if (!this.filterName.trim()) {
+                        alert('لطفا نام فیلتر را وارد کنید');
+                        return;
+                    }
+                    $wire.saveFilter(this.filterName, this.filterDescription)
+                        .then((result) => {
+                            console.log('Filter saved successfully:', result);
+                            this.filterName = '';
+                            this.filterDescription = '';
+                            this.showSaveForm = false;
+                            // بارگیری مجدد فیلترهای ذخیره شده
+                            this.loadSavedFilters();
+                        })
+                        .catch((error) => {
+                            console.error('Error saving filter:', error);
+                            alert('خطا در ذخیره فیلتر: ' + (error.message || 'خطای ناشناخته'));
+                        });
+                },
+                async deleteSavedFilter(filterId) {
+                    if (!confirm('آیا مطمئن هستید که می‌خواهید این فیلتر را حذف کنید؟')) {
+                        return;
+                    }
+                    try {
+                        await $wire.deleteSavedFilter(filterId);
+                        // بارگیری مجدد لیست فیلترها
+                        this.loadSavedFilters();
+                        alert('فیلتر با موفقیت حذف شد');
+                    } catch (error) {
+                        console.error('Error deleting filter:', error);
+                        alert('خطا در حذف فیلتر: ' + (error.message || 'خطای ناشناخته'));
+                    }
+                }
              }">
             
             <!-- نوار ابزارهای ذخیره/بارگذاری -->
@@ -365,12 +424,24 @@
                 
                 <div class="max-h-64 overflow-y-auto">
                     <template x-for="filter in savedFilters" :key="filter.id">
-                        <div class="p-3 hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer mb-2 transition-colors"
-                             @click="$wire.loadFilter(filter.id); showLoadOptions = false">
-                            <div class="flex items-center justify-between">
-                                <div class="flex-1">
-                                    <h5 class="text-sm font-medium text-gray-900" x-text="filter.name"></h5>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="filter.description"></p>
+                        <div class="p-3 border border-gray-200 rounded-lg mb-2 transition-colors hover:bg-gray-50">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 cursor-pointer" @click="$wire.loadFilter(filter.id); showLoadOptions = false">
+                                    <div class="flex items-center justify-between">
+                                        <h5 class="text-sm font-medium text-gray-900" x-text="filter.name"></h5>
+                                        <span class="px-2 py-1 text-xs rounded-full ml-2"
+                                              :class="{
+                                                  'bg-green-100 text-green-800': filter.visibility === 'private',
+                                                  'bg-blue-100 text-blue-800': filter.visibility === 'organization',
+                                                  'bg-purple-100 text-purple-800': filter.visibility === 'public'
+                                              }"
+                                              x-text="{
+                                                  'private': 'خصوصی',
+                                                  'organization': 'سازمانی',
+                                                  'public': 'عمومی'
+                                              }[filter.visibility]"></span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="filter.description || 'بدون توضیح'"></p>
                                     <div class="flex items-center mt-2 text-xs text-gray-400">
                                         <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -380,18 +451,15 @@
                                         <span x-text="filter.created_at"></span>
                                     </div>
                                 </div>
-                                <div class="flex items-center">
-                                    <span class="px-2 py-1 text-xs rounded-full"
-                                          :class="{
-                                              'bg-green-100 text-green-800': filter.visibility === 'private',
-                                              'bg-blue-100 text-blue-800': filter.visibility === 'organization',
-                                              'bg-purple-100 text-purple-800': filter.visibility === 'public'
-                                          }"
-                                          x-text="{
-                                              'private': 'خصوصی',
-                                              'organization': 'سازمانی',
-                                              'public': 'عمومی'
-                                          }[filter.visibility]"></span>
+                                <!-- دکمه حذف - فقط برای فیلترهای متعلق به کاربر -->
+                                <div class="flex items-center ml-2" x-show="filter.is_owner">
+                                    <button @click.stop="deleteSavedFilter(filter.id)"
+                                            class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                                            title="حذف فیلتر">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         </div>

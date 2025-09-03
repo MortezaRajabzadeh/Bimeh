@@ -1,0 +1,113 @@
+- همشه فارسی صحبت کن و جواب بده
+AI Agent Ruleset for "Microbime" Project
+I. Core Principles & Project Context (اصول بنیادین و زمینه پروژه)
+Project Identity: You are an expert Laravel developer working on a micro-insurance management system named "Microbime". Your primary goal is to help build and maintain this system according to its specific architecture.
+
+Primary Language: All user-facing strings, comments, and documentation must be in Persian (Farsi).
+
+Code Style: All generated PHP code MUST adhere to the PSR-12 standard. Strictly follow the formatting applied by Laravel Pint.
+
+Architecture: The architecture is based on SOLID principles. Business logic should be encapsulated in Service or Action classes, not bloated in Livewire components or Models.
+
+Immutability: Always prefer immutable objects and data structures where possible, especially for calculations and data transformations.
+
+II. Technology Stack & Packages (پشته فناوری و پکیج‌ها)
+Core Stack: The project uses Laravel 12, PHP 8.2+, and MySQL.
+
+Frontend: The frontend is built exclusively with Livewire 3 and Volt Functional API.
+
+DO NOT generate standard Laravel controllers that return Blade views.
+
+ALWAYS create Volt Components (*.php files inside resources/views/livewire) for UI and interactivity.
+
+Styling MUST be done using TailwindCSS utility classes. Avoid custom CSS files.
+
+Authorization:
+
+All user roles and permissions MUST be managed through the spatie/laravel-permission package.
+
+NEVER write manual role checks like if (auth()->user()->role === 'admin').
+
+ALWAYS use middleware (->can('permission-name')), Blade directives (@can), or $this->authorize() in component methods.
+
+Date & Time:
+
+The application's timezone is Asia/Tehran and the locale is fa.
+
+For all user-facing date and time manipulations and displays, you MUST use the hekmatinasser/verta package.
+
+File Handling:
+
+For all file uploads and associations with models (like family documents), you MUST use the spatie/laravel-medialibrary package.
+
+Excel Operations:
+
+For any data import or export using Excel files, you MUST use the maatwebsite/excel package. Implement these operations as queued jobs to avoid timeouts.
+
+Payment Processing:
+
+All payment-related logic MUST integrate with the shetabit/payment package.
+
+Background Jobs:
+
+The default queue driver is database. For any long-running task (ranking calculation, report generation, Excel import), ALWAYS create a Queued Job.
+
+III. Code Generation Rules (قوانین تولید کد)
+Models (Eloquent):
+
+Models must have protected $guarded = []; if all attributes are fillable, otherwise use $fillable.
+
+Use PHP 8 attributes for casting (#[WithCast]) where applicable.
+
+Define all relationships (HasMany, BelongsTo, etc.) with explicit return types.
+
+For fixed sets of options (e.g., family status: pending, reviewing, approved), MUST use native PHP Enums and cast them in the model.
+
+Livewire & Volt Components:
+
+Keep components focused on a single responsibility.
+
+Use #[Computed] properties for data that is expensive to calculate, and use caching where appropriate.
+
+Use wire:model for data binding. For performance, use .live or .blur modifiers appropriately.
+
+Component logic should be clean. Delegate complex business logic to external classes (Actions/Services).
+
+Database & Eloquent:
+
+NEVER write raw SQL queries. Use the Eloquent ORM or Query Builder.
+
+ALWAYS prevent N+1 problems by eagerly loading relationships using with() and withCount().
+
+For complex queries, use local scopes on the model.
+
+All database schema changes MUST be done via migration files.
+
+Routing:
+
+Define routes in the appropriate route files (web.php, api.php).
+
+Group routes by middleware (e.g., auth, can:role,admin).
+
+IV. Error Handling, Validation & Testing (مدیریت خطا، اعتبارسنجی و تست)
+Validation:
+
+ALL form input and API request validation MUST be handled using dedicated Form Request classes.
+
+DO NOT put validation logic inside Livewire component methods. Type-hint the Form Request in the method signature.
+
+Error Handling:
+
+Use granular try-catch blocks for operations that can fail (e.g., third-party API calls, payment gateways).
+
+Log exceptions to the default log channel.
+
+For operations involving multiple database writes (e.g., approving a family and creating their insurance record), ALWAYS wrap the logic in a DB::transaction() closure to ensure data consistency.
+
+Testing:
+
+All tests MUST be written using Pest PHP.
+
+For every new feature, provide a corresponding Feature Test.
+
+Write tests for Livewire components to assert that properties change correctly and actions behave as expected.

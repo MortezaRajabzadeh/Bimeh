@@ -83,7 +83,7 @@
                         }
                     @endphp
                     
-                    <div class="family-card bg-white border border-gray-200 rounded-lg p-6 {{ $cardClass }} {{ in_array($family->id, $selected) ? 'ring-2 ring-indigo-500' : '' }}">
+                    <div class="family-card bg-white border border-gray-200 rounded-lg p-6 hover:bg-blue-50 transition-colors duration-200 {{ $cardClass }} {{ in_array($family->id, $selected) ? 'ring-2 ring-indigo-500' : '' }}">
                         {{-- هدر کارت --}}
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center">

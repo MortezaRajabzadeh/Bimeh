@@ -58,7 +58,6 @@ class FamilySearch extends Component
     public $city_id = null;
     public $district_id = null;
     public $region_id = null;
-    public $organization_id = null;
     public $charity_id = null;
 
     public $deprivation_rank = '';
@@ -122,7 +121,6 @@ class FamilySearch extends Component
                 'city_id',
                 'district_id',
                 'region_id',
-                'organization_id',
                 'charity_id',
                 'deprivation_rank',
                 'family_rank_range',
@@ -155,6 +153,29 @@ class FamilySearch extends Component
     public function clearAllFilters()
     {
         return $this->resetToDefault();
+    }
+
+    /**
+     * حذف فیلتر از لیست فیلترهای موقت
+     * @param int $index
+     * @return void
+     */
+    public function removeFilter($index)
+    {
+        if (isset($this->tempFilters[$index])) {
+            unset($this->tempFilters[$index]);
+            // بازنویسی ایندکس‌ها برای حفظ ترتیب
+            $this->tempFilters = array_values($this->tempFilters);
+            
+            // پاک کردن کش برای بارگیری مجدد نتایج
+            $this->clearFamiliesCache();
+            
+            Log::info('🗑️ Filter removed', [
+                'index' => $index,
+                'remaining_filters_count' => count($this->tempFilters),
+                'user_id' => Auth::id()
+            ]);
+        }
     }
 
     // New ranking properties
@@ -269,7 +290,9 @@ class FamilySearch extends Component
                 'search' => $this->search,
                 'status' => $this->status,
                 'page' => $this->page,
-                'per_page' => $this->perPage
+                'per_page' => $this->perPage,
+                'active_filters' => $this->activeFilters,
+                'temp_filters' => $this->tempFilters
             ]);
 
             // استفاده از کش برای بهبود عملکرد
@@ -278,10 +301,27 @@ class FamilySearch extends Component
             $families = Cache::remember($cacheKey, 300, function () {
                 $queryBuilder = $this->buildFamiliesQuery();
                 
+                // لاگ SQL نهایی درست قبل از paginate
+                $finalSql = $queryBuilder->toSql();
+                $finalBindings = $queryBuilder->getBindings();
+                Log::info('🔥 Final SQL before paginate', [
+                    'sql' => $finalSql,
+                    'bindings' => $finalBindings,
+                    'count_query' => str_replace('select `families`.*', 'select count(*) as aggregate', $finalSql)
+                ]);
+                
                 // اطمینان از paginate فقط روی QueryBuilder/Eloquent
                 if ($queryBuilder instanceof \Illuminate\Database\Eloquent\Builder || 
                     $queryBuilder instanceof \Illuminate\Database\Eloquent\Relations\Relation ||
                     $queryBuilder instanceof \Spatie\QueryBuilder\QueryBuilder) {
+                    // تعداد رکوردها را بررسی کن
+                    $count = $queryBuilder->count();
+                    Log::info('📊 Total records found', [
+                        'count' => $count,
+                        'with_filters' => $this->hasActiveFilters(),
+                        'filters' => $this->activeFilters
+                    ]);
+                    
                     return $queryBuilder->paginate($this->perPage);
                 } else {
                     // ایجاد paginator خالی برای Collection ها
@@ -298,7 +338,15 @@ class FamilySearch extends Component
                 }
             });
 
-            // ... existing code ...
+            // لاگ برای دیباگ فیلتر
+            Log::info('🎬 Rendering view with families', [
+                'total_items' => $families->total(),
+                'current_page' => $families->currentPage(),
+                'per_page' => $families->perPage(),
+                'has_filters' => $this->hasActiveFilters(),
+                'cache_key' => $this->getCacheKey()
+            ]);
+            
             return view('livewire.charity.family-search', [
                 'families' => $families,
             ]);
@@ -445,7 +493,8 @@ class FamilySearch extends Component
                     'finalInsurances.fundingSource' => fn($q) => $q->where('is_active', true),
                     'finalInsurances.shares.fundingSource' // added to avoid N+1 when reading shares in view
                 ])
-                ->withCount('members');
+                ->withCount('members')
+                ->groupBy('families.id');
 
             // فیلترهای مجاز برای QueryBuilder
             $allowedFilters = [
@@ -520,8 +569,8 @@ class FamilySearch extends Component
             // ساخت QueryBuilder
             $queryBuilder = QueryBuilder::for($baseQuery)
                 ->allowedFilters($allowedFilters)
-                ->allowedSorts($allowedSorts)
-                ->defaultSort('families.created_at');
+                ->allowedSorts($allowedSorts);
+                // ->defaultSort('families.created_at'); // حذف چون در applyComponentFilters هم sort اعمال می‌شود
 
             // اعمال فیلترهای کامپوننت
             $this->applyComponentFilters($queryBuilder);
@@ -529,11 +578,17 @@ class FamilySearch extends Component
             // اعمال فیلترهای مودال
             $queryBuilder = $this->convertModalFiltersToQueryBuilder($queryBuilder);
 
-            Log::info('🔍 FamilySearch QueryBuilder initialized successfully', [
+            // لاگ SQL برای debug
+            $sql = $queryBuilder->toSql();
+            $bindings = $queryBuilder->getBindings();
+            
+            Log::info('\ud83d\udd0d FamilySearch QueryBuilder initialized successfully', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'has_modal_filters' => !empty($this->activeFilters ?? $this->tempFilters ?? $this->filters ?? []),
-                'filters_count' => count(request()->query())
+                'filters_count' => count(request()->query()),
+                'sql' => $sql,
+                'bindings' => $bindings
             ]);
 
             return $queryBuilder;
@@ -554,6 +609,7 @@ class FamilySearch extends Component
                     'members' => fn($q) => $q->orderBy('is_head', 'desc')
                 ])
                 ->withCount('members')
+                ->groupBy('families.id')
                 ->orderBy('families.created_at', 'desc');
         }
     }
@@ -782,6 +838,7 @@ class FamilySearch extends Component
 
             Log::debug('🎯 Converting FamilySearch modal filters to QueryBuilder with AND/OR logic', [
                 'filters_count' => count($modalFilters),
+                'raw_filters' => $modalFilters,
                 'user_id' => Auth::id()
             ]);
 
@@ -790,21 +847,35 @@ class FamilySearch extends Component
             $orFilters = [];
 
             foreach ($modalFilters as $filter) {
-                if (empty($filter['type']) || empty($filter['value'])) {
+                // بررسی اعتبار فیلتر
+                if (empty($filter['type'])) {
+                    continue;
+                }
+                
+                $operator = $filter['operator'] ?? 'and';
+                
+                // برای exists و not_exists نیازی به value نداریم
+                if ($operator !== 'exists' && $operator !== 'not_exists' && empty($filter['value'])) {
                     continue;
                 }
 
-                $logicalOperator = $filter['logical_operator'] ?? 'and';
-
-                if ($logicalOperator === 'or') {
+                // تعیین نوع شرط منطقی
+                if ($operator === 'or') {
                     $orFilters[] = $filter;
                 } else {
                     $andFilters[] = $filter;
                 }
             }
 
+            Log::debug('🔍 Final processed filters', [
+                'and_filters' => $andFilters,
+                'or_filters' => $orFilters,
+                'user_id' => Auth::id()
+            ]);
+            
             // اعمال فیلترهای AND
             foreach ($andFilters as $filter) {
+                Log::debug('🔧 Applying AND filter', ['filter' => $filter]);
                 $queryBuilder = $this->applySingleFilter($queryBuilder, $filter, 'and');
             }
 
@@ -855,7 +926,11 @@ class FamilySearch extends Component
         try {
             $filterType = $filter['type'];
             $filterValue = $filter['value'];
+            // اگر operator برای شرط منطقی است (و یا یا) تو equals تبدیلش میکنیم
             $operator = $filter['operator'] ?? 'equals';
+            if ($operator === 'and' || $operator === 'or') {
+                $operator = 'equals';
+            }
 
             // تعیین نوع متد بر اساس عملگر منطقی
             $whereMethod = $method === 'or' ? 'orWhere' : 'where';
@@ -868,6 +943,10 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.status', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.status', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', null);
                     }
                     break;
 
@@ -876,6 +955,10 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', null);
                     }
                     break;
 
@@ -884,19 +967,32 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', null);
                     }
                     break;
 
                 case 'charity':
                     if ($operator === 'equals') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', $filterValue);
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', '!=', $filterValue);
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', null);
                     }
                     break;
 
                 case 'members_count':
-                    $queryBuilder = $this->applyNumericFilter($queryBuilder, 'members_count', $operator, $filterValue, $method);
+                    Log::debug('🔢 Processing members_count filter', [
+                        'operator' => $operator,
+                        'value' => $filterValue,
+                        'method' => $method
+                    ]);
+                    $queryBuilder = $this->applyNumericFilter($queryBuilder, 'members_count', $operator, $filterValue, $method, $filter);
                     break;
 
                 case 'created_at':
@@ -939,7 +1035,21 @@ class FamilySearch extends Component
                 case 'special_disease':
                 case 'معیار پذیرش':
                     // پشتیبانی از هر دو نام فیلتر برای سازگاری
-                    if (!empty($filterValue)) {
+                    if ($operator === 'exists') {
+                        // خانواده‌هایی که حداقل یک عضو دارای معیار پذیرش باشد
+                        $queryBuilder = $queryBuilder->$whereHasMethod('members', function($memberQuery) {
+                            $memberQuery->whereNotNull('problem_type')
+                                       ->where('problem_type', '!=', '[]')
+                                       ->where('problem_type', '!=', 'null');
+                        });
+                    } elseif ($operator === 'not_exists') {
+                        // خانواده‌هایی که هیچ عضوی دارای معیار پذیرش نباشد
+                        $queryBuilder = $queryBuilder->$whereDoesntHaveMethod('members', function($memberQuery) {
+                            $memberQuery->whereNotNull('problem_type')
+                                       ->where('problem_type', '!=', '[]')
+                                       ->where('problem_type', '!=', 'null');
+                        });
+                    } elseif (!empty($filterValue)) {
                         $queryBuilder = $queryBuilder->$whereMethod(function($q) use ($filterValue) {
                             // جستجو در اعضای خانواده با problem_type - پشتیبانی از تمام مقادیر
                             $q->whereHas('members', function($memberQuery) use ($filterValue) {
@@ -996,10 +1106,56 @@ class FamilySearch extends Component
      * @param string $method
      * @return \Spatie\QueryBuilder\QueryBuilder
      */
-    protected function applyNumericFilter($queryBuilder, $field, $operator, $value, $method = 'and')
+    protected function applyNumericFilter($queryBuilder, $field, $operator, $value, $method = 'and', $filter = [])
     {
         $whereMethod = $method === 'or' ? 'orWhere' : 'where';
         $whereBetweenMethod = $method === 'or' ? 'orWhereBetween' : 'whereBetween';
+        $whereNotNullMethod = $method === 'or' ? 'orWhereNotNull' : 'whereNotNull';
+        $whereNullMethod = $method === 'or' ? 'orWhereNull' : 'whereNull';
+        $whereHasMethod = $method === 'or' ? 'orWhereHas' : 'whereHas';
+        $whereDoesntHaveMethod = $method === 'or' ? 'orWhereDoesntHave' : 'whereDoesntHave';
+        $havingMethod = $method === 'or' ? 'orHaving' : 'having';
+        $havingBetweenMethod = $method === 'or' ? 'orHavingBetween' : 'havingBetween';
+
+        // برای فیلد members_count که فیلد محاسباتی است، باید از HAVING یا relation استفاده کنیم
+        if ($field === 'members_count') {
+            Log::debug('🔧 applyNumericFilter for members_count', [
+                'field' => $field,
+                'operator' => $operator,
+                'value' => $value,
+                'method' => $method
+            ]);
+            
+            switch ($operator) {
+                case 'exists':
+                    Log::debug('✅ Applying whereHas for members_count exists', ['value' => $value, 'filter' => $filter]);
+                    return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod);
+                case 'not_exists':
+                    Log::debug('✅ Applying whereDoesntHave for members_count not_exists', ['value' => $value, 'filter' => $filter]);
+                    return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, true);
+                case 'equals':
+                    Log::debug('✅ Applying having equals for members_count');
+                    return $queryBuilder->$havingMethod('members_count', '=', $value);
+                case 'not_equals':
+                    return $queryBuilder->$havingMethod('members_count', '!=', $value);
+                case 'greater_than':
+                    return $queryBuilder->$havingMethod('members_count', '>', $value);
+                case 'less_than':
+                    return $queryBuilder->$havingMethod('members_count', '<', $value);
+                case 'greater_than_or_equal':
+                    return $queryBuilder->$havingMethod('members_count', '>=', $value);
+                case 'less_than_or_equal':
+                    return $queryBuilder->$havingMethod('members_count', '<=', $value);
+                case 'between':
+                    if (is_array($value) && count($value) === 2) {
+                        return $queryBuilder->$havingBetweenMethod('members_count', $value);
+                    }
+                    break;
+                default:
+                    Log::debug('⚠️ Using default having for members_count');
+                    return $queryBuilder->$havingMethod('members_count', $value);
+            }
+        }
 
         switch ($operator) {
             case 'equals':
@@ -1019,11 +1175,62 @@ class FamilySearch extends Component
                     return $queryBuilder->$whereBetweenMethod($field, $value);
                 }
                 break;
+            case 'exists':
+                return $queryBuilder->$whereNotNullMethod($field);
+            case 'not_exists':
+                return $queryBuilder->$whereNullMethod($field);
             default:
                 return $queryBuilder->$whereMethod($field, $value);
         }
 
         return $queryBuilder;
+    }
+    
+    /**
+     * اعمال فیلتر تعداد اعضا با پشتیبانی از بازه
+     *
+     * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
+     * @param array $filter
+     * @param string $havingMethod
+     * @param string $whereHasMethod
+     * @param bool $isNegative آیا شرط منفی است (not_exists)
+     * @return \Spatie\QueryBuilder\QueryBuilder
+     */
+    protected function applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, $isNegative = false)
+    {
+        $whereDoesntHaveMethod = str_replace('whereHas', 'whereDoesntHave', $whereHasMethod);
+        
+        // بررسی بازه
+        if (!empty($filter['min_members']) || !empty($filter['max_members'])) {
+            $minMembers = !empty($filter['min_members']) ? (int)$filter['min_members'] : null;
+            $maxMembers = !empty($filter['max_members']) ? (int)$filter['max_members'] : null;
+            
+            if ($minMembers && $maxMembers) {
+                // بازه کامل: مین تا مکس
+                if ($isNegative) {
+                    return $queryBuilder->$havingMethod('members_count', '<', $minMembers)
+                                       ->orHaving('members_count', '>', $maxMembers);
+                } else {
+                    return $queryBuilder->$havingMethod('members_count', '>=', $minMembers)
+                                       ->having('members_count', '<=', $maxMembers);
+                }
+            } elseif ($minMembers) {
+                // فقط حداقل
+                return $queryBuilder->$havingMethod('members_count', $isNegative ? '<' : '>=', $minMembers);
+            } elseif ($maxMembers) {
+                // فقط حداکثر
+                return $queryBuilder->$havingMethod('members_count', $isNegative ? '>' : '<=', $maxMembers);
+            }
+        }
+        
+        // تک عدد یا شرط عمومی
+        if (!empty($filter['value'])) {
+            $value = (int)$filter['value'];
+            return $queryBuilder->$havingMethod('members_count', $isNegative ? '!=' : '=', $value);
+        } else {
+            // بدون مقدار: فقط وجود/عدم وجود عضو
+            return $queryBuilder->{$isNegative ? $whereDoesntHaveMethod : $whereHasMethod}('members');
+        }
     }
 
     /**
@@ -1039,6 +1246,8 @@ class FamilySearch extends Component
     {
         $whereMethod = $method === 'or' ? 'orWhereDate' : 'whereDate';
         $whereBetweenMethod = $method === 'or' ? 'orWhereBetween' : 'whereBetween';
+        $whereNotNullMethod = $method === 'or' ? 'orWhereNotNull' : 'whereNotNull';
+        $whereNullMethod = $method === 'or' ? 'orWhereNull' : 'whereNull';
 
         switch ($operator) {
             case 'equals':
@@ -1058,6 +1267,10 @@ class FamilySearch extends Component
                     return $queryBuilder->$whereBetweenMethod($field, $value);
                 }
                 break;
+            case 'exists':
+                return $queryBuilder->$whereNotNullMethod($field);
+            case 'not_exists':
+                return $queryBuilder->$whereNullMethod($field);
             default:
                 return $queryBuilder->$whereMethod($field, $value);
         }
@@ -1099,6 +1312,9 @@ class FamilySearch extends Component
 
                 session()->flash('message', "فیلترها با موفقیت اعمال شدند ({$filterCount} فیلتر فعال)");
                 session()->flash('type', 'success');
+                
+                // اجبار به refresh کامپوننت
+                $this->dispatch('refresh-component');
             } else {
                 Log::info('⚠️ FamilySearch no filters to apply');
                 session()->flash('message', 'هیچ فیلتری برای اعمال وجود ندارد');
@@ -1234,7 +1450,8 @@ class FamilySearch extends Component
                !empty($this->family_rank_range) ||
                !empty($this->specific_criteria) ||
                !empty($this->charity) ||
-               !empty($this->activeFilters);
+               !empty($this->activeFilters) ||
+               !empty($this->tempFilters);
     }
 
     /**
@@ -1254,6 +1471,17 @@ class FamilySearch extends Component
         if (!empty($this->specific_criteria)) $count++;
         if (!empty($this->charity)) $count++;
         if (!empty($this->activeFilters)) $count += count($this->activeFilters);
+        if (!empty($this->tempFilters)) {
+            // شمارش فیلترهای فعال در tempFilters
+            foreach ($this->tempFilters as $filter) {
+                if (!empty($filter['type']) && 
+                    (!empty($filter['value']) || !empty($filter['min_members']) || 
+                     !empty($filter['max_members']) || !empty($filter['start_date']) || 
+                     !empty($filter['end_date']))) {
+                    $count++;
+                }
+            }
+        }
 
         return $count;
     }
@@ -2826,6 +3054,61 @@ class FamilySearch extends Component
 
             $this->dispatch('notify', [
                 'message' => 'خطا در ذخیره فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function deleteSavedFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بررسی دسترسی - فقط صاحب فیلتر می‌تواند آن را حذف کند
+            if ($savedFilter->user_id !== Auth::id()) {
+                $this->dispatch('notify', [
+                    'message' => 'شما مجاز به حذف این فیلتر نیستید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // حذف فیلتر
+            $filterName = $savedFilter->name;
+            $savedFilter->delete();
+
+            Log::info('🗑️ Saved filter deleted successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $filterName,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'فیلتر با موفقیت حذف شد',
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error deleting saved filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }

@@ -3671,6 +3671,7 @@ protected function buildFamiliesQuery()
                 ->select(['families.*'])
                 ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'])
                 ->withCount('members')
+                ->groupBy('families.id')
                 ->orderBy('families.created_at', 'asc')
         );
     }
@@ -4008,10 +4009,7 @@ protected function applySingleAdvancedFilter($query, $filter, $method = 'and')
                 return $query->{$queryMethod}('families.charity_id', $this->getOperatorQuery($operator), $filterValue);
 
             case 'members_count':
-                if (is_numeric($filterValue)) {
-                    $havingMethod = $method === 'or' ? 'orHaving' : 'having';
-                    return $query->{$havingMethod}('members_count', $this->getOperatorQuery($operator), (int)$filterValue);
-                }
+                return $this->applyNumericFilter($query, 'members_count', $operator, $filterValue, $method);
                 break;
 
             case 'special_disease':
@@ -4437,6 +4435,7 @@ public function clearCriteriaFilter()
                !empty($this->organization_id) ||
                !empty($this->charity_id) ||
                !empty($this->activeFilters) ||
+               !empty($this->tempFilters) ||
                !empty($this->status) ||
                !empty($this->province) ||
                !empty($this->city) ||
@@ -4461,6 +4460,17 @@ public function clearCriteriaFilter()
         if (!empty($this->organization_id)) $count++;
         if (!empty($this->charity_id)) $count++;
         if (!empty($this->activeFilters)) $count += count($this->activeFilters);
+        if (!empty($this->tempFilters)) {
+            // شمارش فیلترهای فعال در tempFilters
+            foreach ($this->tempFilters as $filter) {
+                if (!empty($filter['type']) && 
+                    (!empty($filter['value']) || !empty($filter['min_members']) || 
+                     !empty($filter['max_members']) || !empty($filter['start_date']) || 
+                     !empty($filter['end_date']))) {
+                    $count++;
+                }
+            }
+        }
         if (!empty($this->status)) $count++;
         if (!empty($this->province)) $count++;
         if (!empty($this->city)) $count++;
@@ -4880,6 +4890,10 @@ public function clearCriteriaFilter()
     protected function applyTabStatusFilter($query)
     {
         try {
+            // اضافه کردن withCount و groupBy برای پشتیبانی از HAVING
+            $query->withCount('members')
+                  ->groupBy('families.id');
+                  
             switch ($this->tab) {
                 case 'pending':
                     $query->where('wizard_status', InsuranceWizardStep::PENDING->value);
@@ -5537,6 +5551,8 @@ public function clearCriteriaFilter()
                 if (empty($filter['type'])) {
                     continue;
                 }
+                
+                $operator = $filter['operator'] ?? 'and';
 
                 // برای فیلترهای تاریخ عضویت، بررسی start_date و end_date
                 if ($filter['type'] === 'membership_date') {
@@ -5544,15 +5560,14 @@ public function clearCriteriaFilter()
                         continue;
                     }
                 } else {
-                    // برای سایر فیلترها، بررسی value
-                    if (empty($filter['value'])) {
+                    // برای exists و not_exists نیازی به value نداریم
+                    if ($operator !== 'exists' && $operator !== 'not_exists' && empty($filter['value'])) {
                         continue;
                     }
                 }
 
-                $logicalOperator = $filter['logical_operator'] ?? 'and';
-
-                if ($logicalOperator === 'or') {
+                // تعیین نوع شرط منطقی
+                if ($operator === 'or') {
                     $orFilters[] = $filter;
                 } else {
                     $andFilters[] = $filter;
@@ -5609,7 +5624,11 @@ public function clearCriteriaFilter()
         try {
             $filterType = $filter['type'];
             $filterValue = $filter['value'];
+            // اگر operator برای شرط منطقی است (و یا یا) تو equals تبدیلش میکنیم
             $operator = $filter['operator'] ?? 'equals';
+            if ($operator === 'and' || $operator === 'or') {
+                $operator = 'equals';
+            }
 
             Log::info('🔍 Processing filter', [
                 'type' => $filterType,
@@ -5630,6 +5649,10 @@ public function clearCriteriaFilter()
                         $queryBuilder = $queryBuilder->$whereMethod('families.status', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.status', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.status', null);
                     }
                     break;
 
@@ -5638,6 +5661,10 @@ public function clearCriteriaFilter()
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', null);
                     }
                     break;
 
@@ -5646,19 +5673,27 @@ public function clearCriteriaFilter()
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', null);
                     }
                     break;
 
                 case 'charity':
                     if ($operator === 'equals') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', $filterValue);
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', $filterValue);
                     } elseif ($operator === 'not_equals') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.organization_id', '!=', $filterValue);
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
+                    } elseif ($operator === 'exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', null);
+                    } elseif ($operator === 'not_exists') {
+                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', null);
                     }
                     break;
 
                 case 'members_count':
-                    $queryBuilder = $this->applyNumericFilter($queryBuilder, 'members_count', $operator, $filterValue, $method);
+                    $queryBuilder = $this->applyNumericFilter($queryBuilder, 'members_count', $operator, $filterValue, $method, $filter);
                     break;
 
                 case 'created_at':
@@ -5742,7 +5777,21 @@ public function clearCriteriaFilter()
                                 case 'special_disease':
                 case 'معیار پذیرش':
                     // پشتیبانی از هر دو نام فیلتر برای سازگاری
-                    if (!empty($filterValue)) {
+                    if ($operator === 'exists') {
+                        // خانواده‌هایی که حداقل یک عضو دارای معیار پذیرش باشد
+                        $queryBuilder = $queryBuilder->$whereHasMethod('members', function($memberQuery) {
+                            $memberQuery->whereNotNull('problem_type')
+                                       ->where('problem_type', '!=', '[]')
+                                       ->where('problem_type', '!=', 'null');
+                        });
+                    } elseif ($operator === 'not_exists') {
+                        // خانواده‌هایی که هیچ عضوی دارای معیار پذیرش نباشد
+                        $queryBuilder = $queryBuilder->$whereDoesntHaveMethod('members', function($memberQuery) {
+                            $memberQuery->whereNotNull('problem_type')
+                                       ->where('problem_type', '!=', '[]')
+                                       ->where('problem_type', '!=', 'null');
+                        });
+                    } elseif (!empty($filterValue)) {
                         $queryBuilder = $queryBuilder->$whereMethod(function($q) use ($filterValue) {
                             // جستجو در اعضای خانواده با problem_type - پشتیبانی از تمام مقادیر
                             $q->whereHas('members', function($memberQuery) use ($filterValue) {
@@ -5793,9 +5842,44 @@ public function clearCriteriaFilter()
     /**
      * اعمال فیلتر عددی
      */
-    protected function applyNumericFilter($queryBuilder, $field, $operator, $value, $method = 'and')
+    protected function applyNumericFilter($queryBuilder, $field, $operator, $value, $method = 'and', $filter = [])
     {
         $whereMethod = $method === 'or' ? 'orWhere' : 'where';
+        $whereNotNullMethod = $method === 'or' ? 'orWhereNotNull' : 'whereNotNull';
+        $whereNullMethod = $method === 'or' ? 'orWhereNull' : 'whereNull';
+        $whereHasMethod = $method === 'or' ? 'orWhereHas' : 'whereHas';
+        $whereDoesntHaveMethod = $method === 'or' ? 'orWhereDoesntHave' : 'whereDoesntHave';
+        $havingMethod = $method === 'or' ? 'orHaving' : 'having';
+        $havingBetweenMethod = $method === 'or' ? 'orHavingBetween' : 'havingBetween';
+
+        // برای فیلد members_count که فیلد محاسباتی است، باید از HAVING یا relation استفاده کنیم
+        if ($field === 'members_count') {
+            switch ($operator) {
+                case 'exists':
+                    return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod);
+                case 'not_exists':
+                    return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, true);
+                case 'equals':
+                    return $queryBuilder->$havingMethod('members_count', '=', $value);
+                case 'not_equals':
+                    return $queryBuilder->$havingMethod('members_count', '!=', $value);
+                case 'greater_than':
+                    return $queryBuilder->$havingMethod('members_count', '>', $value);
+                case 'less_than':
+                    return $queryBuilder->$havingMethod('members_count', '<', $value);
+                case 'greater_than_or_equal':
+                    return $queryBuilder->$havingMethod('members_count', '>=', $value);
+                case 'less_than_or_equal':
+                    return $queryBuilder->$havingMethod('members_count', '<=', $value);
+                case 'between':
+                    if (is_array($value) && count($value) === 2) {
+                        return $queryBuilder->$havingBetweenMethod('members_count', $value);
+                    }
+                    break;
+                default:
+                    return $queryBuilder->$havingMethod('members_count', $value);
+            }
+        }
 
         switch ($operator) {
             case 'equals':
@@ -5806,8 +5890,59 @@ public function clearCriteriaFilter()
                 return $queryBuilder->$whereMethod($field, '>', $value);
             case 'less_than':
                 return $queryBuilder->$whereMethod($field, '<', $value);
+            case 'exists':
+                return $queryBuilder->$whereNotNullMethod($field);
+            case 'not_exists':
+                return $queryBuilder->$whereNullMethod($field);
             default:
                 return $queryBuilder->$whereMethod($field, $value);
+        }
+    }
+    
+    /**
+     * اعمال فیلتر تعداد اعضا با پشتیبانی از بازه
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $queryBuilder
+     * @param array $filter
+     * @param string $havingMethod
+     * @param string $whereHasMethod
+     * @param bool $isNegative آیا شرط منفی است (not_exists)
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, $isNegative = false)
+    {
+        $whereDoesntHaveMethod = str_replace('whereHas', 'whereDoesntHave', $whereHasMethod);
+        
+        // بررسی بازه
+        if (!empty($filter['min_members']) || !empty($filter['max_members'])) {
+            $minMembers = !empty($filter['min_members']) ? (int)$filter['min_members'] : null;
+            $maxMembers = !empty($filter['max_members']) ? (int)$filter['max_members'] : null;
+            
+            if ($minMembers && $maxMembers) {
+                // بازه کامل: مین تا مکس
+                if ($isNegative) {
+                    return $queryBuilder->$havingMethod('members_count', '<', $minMembers)
+                                       ->orHaving('members_count', '>', $maxMembers);
+                } else {
+                    return $queryBuilder->$havingMethod('members_count', '>=', $minMembers)
+                                       ->having('members_count', '<=', $maxMembers);
+                }
+            } elseif ($minMembers) {
+                // فقط حداقل
+                return $queryBuilder->$havingMethod('members_count', $isNegative ? '<' : '>=', $minMembers);
+            } elseif ($maxMembers) {
+                // فقط حداکثر
+                return $queryBuilder->$havingMethod('members_count', $isNegative ? '>' : '<=', $maxMembers);
+            }
+        }
+        
+        // تک عدد یا شرط عمومی
+        if (!empty($filter['value'])) {
+            $value = (int)$filter['value'];
+            return $queryBuilder->$havingMethod('members_count', $isNegative ? '!=' : '=', $value);
+        } else {
+            // بدون مقدار: فقط وجود/عدم وجود عضو
+            return $queryBuilder->{$isNegative ? $whereDoesntHaveMethod : $whereHasMethod}('members');
         }
     }
 
@@ -5817,6 +5952,8 @@ public function clearCriteriaFilter()
     protected function applyDateFilter($queryBuilder, $field, $operator, $value, $method = 'and')
     {
         $whereMethod = $method === 'or' ? 'orWhereDate' : 'whereDate';
+        $whereNotNullMethod = $method === 'or' ? 'orWhereNotNull' : 'whereNotNull';
+        $whereNullMethod = $method === 'or' ? 'orWhereNull' : 'whereNull';
 
         switch ($operator) {
             case 'equals':
@@ -5825,6 +5962,10 @@ public function clearCriteriaFilter()
                 return $queryBuilder->$whereMethod($field, '>', $value);
             case 'less_than':
                 return $queryBuilder->$whereMethod($field, '<', $value);
+            case 'exists':
+                return $queryBuilder->$whereNotNullMethod($field);
+            case 'not_exists':
+                return $queryBuilder->$whereNullMethod($field);
             default:
                 return $queryBuilder->$whereMethod($field, $value);
         }
@@ -6018,6 +6159,29 @@ public function clearCriteriaFilter()
     //======================================================================
 
     /**
+     * حذف فیلتر از لیست فیلترهای موقت
+     * @param int $index
+     * @return void
+     */
+    public function removeFilter($index)
+    {
+        if (isset($this->tempFilters[$index])) {
+            unset($this->tempFilters[$index]);
+            // بازنویسی ایندکس‌ها برای حفظ ترتیب
+            $this->tempFilters = array_values($this->tempFilters);
+            
+            // پاک کردن کش برای بارگیری مجدد نتایج
+            $this->clearFamiliesCache();
+            
+            Log::info('🗑️ Filter removed', [
+                'index' => $index,
+                'remaining_filters_count' => count($this->tempFilters),
+                'user_id' => Auth::id()
+            ]);
+        }
+    }
+
+    /**
      * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
      * @param string $name
      * @param string|null $description
@@ -6111,6 +6275,60 @@ public function clearCriteriaFilter()
 
             // ارسال پیام خطا به session برای نمایش در toast
             session()->flash('error', 'خطا در ذخیره فیلتر: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * حذف فیلتر ذخیره شده
+     * @param int $filterId
+     * @return void
+     */
+    public function deleteSavedFilter($filterId)
+    {
+        try {
+            $savedFilter = SavedFilter::find($filterId);
+            if (!$savedFilter) {
+                $this->dispatch('notify', [
+                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // بررسی دسترسی - فقط صاحب فیلتر می‌تواند آن را حذف کند
+            if ($savedFilter->user_id !== Auth::id()) {
+                $this->dispatch('notify', [
+                    'message' => 'شما مجاز به حذف این فیلتر نیستید',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+
+            // حذف فیلتر
+            $savedFilter->delete();
+
+            Log::info('🗑️ Saved filter deleted successfully', [
+                'filter_id' => $filterId,
+                'filter_name' => $savedFilter->name,
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'فیلتر با موفقیت حذف شد',
+                'type' => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error deleting saved filter', [
+                'filter_id' => $filterId,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            $this->dispatch('notify', [
+                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
+                'type' => 'error'
+            ]);
         }
     }
 

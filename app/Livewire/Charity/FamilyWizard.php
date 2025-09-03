@@ -906,7 +906,6 @@ class FamilyWizard extends Component
             $this->resetErrorBag("members.{$memberIndex}.national_code");
         }
     }
-
     /**
      * Handle file upload for special disease documents
      */
@@ -923,7 +922,23 @@ class FamilyWizard extends Component
         $file = $this->specialDiseaseDocuments[$memberIndex] ?? null;
         if ($file) {
             try {
-                // Store the file temporarily and keep track of it
+                // اگر فایل قبلی وجود دارد، ابتدا آن را حذف کنیم
+                if (isset($this->uploadedDocuments[$memberIndex])) {
+                    try {
+                        Storage::delete($this->uploadedDocuments[$memberIndex]['path']);
+                        Log::info('Previous file deleted before uploading new one', [
+                            'member_index' => $memberIndex,
+                            'previous_file' => $this->uploadedDocuments[$memberIndex]['original_name'],
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning('Could not delete previous file', [
+                            'error' => $e->getMessage(),
+                            'member_index' => $memberIndex,
+                        ]);
+                    }
+                }
+
+                // Store the new file temporarily and keep track of it
                 $path = $file->store('temp/special-disease-docs');
                 $this->uploadedDocuments[$memberIndex] = [
                     'path' => $path,
@@ -933,13 +948,25 @@ class FamilyWizard extends Component
                 ];
 
                 // Show success message
+                $message = isset($this->uploadedDocuments[$memberIndex]) 
+                    ? 'مدرک بیماری خاص جدید با موفقیت جایگزین شد.' 
+                    : 'مدرک بیماری خاص با موفقیت آپلود شد.';
+                    
                 $this->dispatch('notify', [
                     'type' => 'success',
-                    'message' => 'مدرک بیماری خاص با موفقیت آپلود شد.'
+                    'message' => $message
                 ]);
 
                 // Clear any validation errors for this field
                 $this->resetErrorBag("specialDiseaseDocuments.{$memberIndex}");
+
+                // Log successful upload
+                Log::info('Special disease document uploaded successfully', [
+                    'member_index' => $memberIndex,
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                ]);
 
             } catch (\Exception $e) {
                 Log::error('Error uploading special disease document', [
@@ -953,18 +980,9 @@ class FamilyWizard extends Component
                 ]);
             }
         } else {
-            // اگر فایل حذف شده، از uploadedDocuments هم حذف کنیم
-            if (isset($this->uploadedDocuments[$memberIndex])) {
-                try {
-                    Storage::delete($this->uploadedDocuments[$memberIndex]['path']);
-                    unset($this->uploadedDocuments[$memberIndex]);
-                } catch (\Exception $e) {
-                    Log::error('Error removing uploaded document', [
-                        'error' => $e->getMessage(),
-                        'member_index' => $memberIndex,
-                    ]);
-                }
-            }
+            // اگر فایل خالی شده (مثلاً کاربر input را خالی کرده)، اما این معمولاً اتفاق نمی‌افتد
+            // فقط در صورتی که کاربر به طور دستی فایل را پاک کند
+            Log::info('File input cleared', ['member_index' => $memberIndex]);
         }
     }
 
@@ -976,13 +994,32 @@ class FamilyWizard extends Component
         try {
             // Remove the file from storage if it exists
             if (isset($this->uploadedDocuments[$memberIndex])) {
+                $fileName = $this->uploadedDocuments[$memberIndex]['original_name'];
+                
                 Storage::delete($this->uploadedDocuments[$memberIndex]['path']);
                 unset($this->uploadedDocuments[$memberIndex]);
-                $this->specialDiseaseDocuments[$memberIndex] = null;
+                
+                // پاک کردن فایل جاری از input نیز (اگر وجود دارد)
+                if (isset($this->specialDiseaseDocuments[$memberIndex])) {
+                    $this->specialDiseaseDocuments[$memberIndex] = null;
+                }
+
+                // پاک کردن خطاهای مربوط به این فیلد
+                $this->resetErrorBag("specialDiseaseDocuments.{$memberIndex}");
 
                 $this->dispatch('notify', [
                     'type' => 'success',
-                    'message' => 'مدرک با موفقیت حذف شد.'
+                    'message' => "مدرک '{$fileName}' با موفقیت حذف شد. می‌توانید فایل جدید آپلود کنید."
+                ]);
+                
+                Log::info('Document removed successfully', [
+                    'member_index' => $memberIndex,
+                    'file_name' => $fileName,
+                ]);
+            } else {
+                $this->dispatch('notify', [
+                    'type' => 'info',
+                    'message' => 'هیچ مدرکی برای حذف یافت نشد.'
                 ]);
             }
         } catch (\Exception $e) {

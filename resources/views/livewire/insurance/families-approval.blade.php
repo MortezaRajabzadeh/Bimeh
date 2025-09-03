@@ -51,8 +51,9 @@
         if (!this.filters || !Array.isArray(this.filters) || !this.filters[index]) return;
 
         let label = '';
+        const filter = this.filters[index];
 
-        switch(this.filters[index].type) {
+        switch(filter.type) {
             case 'status':
                 label = 'وضعیت';
                 break;
@@ -66,13 +67,32 @@
                 label = 'خیریه معرف';
                 break;
             case 'members_count':
-                label = 'تعداد اعضا';
+                // برای فیلتر تعداد اعضا، برچسب را بر اساس نوع فیلتر تعیین می‌کنیم
+                if (filter.min_members && filter.max_members) {
+                    label = `تعداد اعضا: ${filter.min_members} تا ${filter.max_members}`;
+                } else if (filter.min_members) {
+                    label = `تعداد اعضا: حداقل ${filter.min_members}`;
+                } else if (filter.max_members) {
+                    label = `تعداد اعضا: حداکثر ${filter.max_members}`;
+                } else if (filter.value) {
+                    label = `تعداد اعضا: ${filter.value}`;
+                } else {
+                    label = 'تعداد اعضا';
+                }
                 break;
             case 'special_disease':
                 label = 'معیار پذیرش';
                 break;
             case 'membership_date':
-                label = 'تاریخ عضویت';
+                if (filter.start_date && filter.end_date) {
+                    label = `تاریخ عضویت: ${filter.start_date} تا ${filter.end_date}`;
+                } else if (filter.start_date) {
+                    label = `تاریخ عضویت: از ${filter.start_date}`;
+                } else if (filter.end_date) {
+                    label = `تاریخ عضویت: تا ${filter.end_date}`;
+                } else {
+                    label = 'تاریخ عضویت';
+                }
                 break;
             case 'weighted_score':
                 label = 'امتیاز وزنی';
@@ -83,12 +103,18 @@
             case 'created_at':
                 label = 'تاریخ ایجاد';
                 break;
+            default:
+                label = filter.type || 'فیلتر';
+                break;
         }
 
-        if (this.filters[index].operator === 'and') label += ' و';
-        else if (this.filters[index].operator === 'or') label += ' یا';
+        // برای فیلترهایی که قبلاً دارای برچسب متنی نیستند، عملگر را اضافه کن
+        if (!label.includes(':') && !label.includes('تا') && !label.includes('حداقل') && !label.includes('حداکثر')) {
+            if (filter.operator === 'and') label += ' و';
+            else if (filter.operator === 'or') label += ' یا';
+        }
 
-        this.filters[index].label = label;
+        filter.label = label;
     },
 
     downloadFile(url) {
@@ -809,6 +835,46 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         @endif
                     @endif
 
+                        <!-- نمایش فیلترهای modal (tempFilters) -->
+                        @if(!empty($tempFilters) && is_array($tempFilters))
+                            @foreach($tempFilters as $index => $filter)
+                                @if(!empty($filter['type']) && (!empty($filter['value']) || !empty($filter['min_members']) || !empty($filter['max_members']) || !empty($filter['start_date']) || !empty($filter['end_date'])))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        @if($filter['type'] === 'members_count')
+                                            @if(!empty($filter['min_members']) && !empty($filter['max_members']))
+                                                تعداد اعضا: {{ $filter['min_members'] }} تا {{ $filter['max_members'] }}
+                                            @elseif(!empty($filter['min_members']))
+                                                تعداد اعضا: حداقل {{ $filter['min_members'] }}
+                                            @elseif(!empty($filter['max_members']))
+                                                تعداد اعضا: حداکثر {{ $filter['max_members'] }}
+                                            @elseif(!empty($filter['value']))
+                                                تعداد اعضا: {{ $filter['value'] }}
+                                            @endif
+                                        @elseif($filter['type'] === 'province')
+                                            استان: {{ $provinces->find($filter['value'])->name ?? $filter['value'] }}
+                                        @elseif($filter['type'] === 'city')
+                                            شهر: {{ $cities->find($filter['value'])->name ?? $filter['value'] }}
+                                        @elseif($filter['type'] === 'charity')
+                                            خیریه: {{ isset($organizations) ? ($organizations->find($filter['value'])->name ?? $filter['value']) : $filter['value'] }}
+                                        @elseif($filter['type'] === 'special_disease')
+                                            معیار پذیرش: {{ $filter['value'] }}
+                                        @elseif($filter['type'] === 'membership_date')
+                                            @if(!empty($filter['start_date']) && !empty($filter['end_date']))
+                                                تاریخ عضویت: {{ $filter['start_date'] }} تا {{ $filter['end_date'] }}
+                                            @elseif(!empty($filter['start_date']))
+                                                تاریخ عضویت: از {{ $filter['start_date'] }}
+                                            @elseif(!empty($filter['end_date']))
+                                                تاریخ عضویت: تا {{ $filter['end_date'] }}
+                                            @endif
+                                        @else
+                                            {{ $filter['type'] }}: {{ $filter['value'] ?? '' }}
+                                        @endif
+                                        <button wire:click="removeFilter({{ $index }})" class="mr-1 text-gray-600 hover:text-gray-800">×</button>
+                                    </span>
+                                @endif
+                            @endforeach
+                        @endif
+
                         <!-- دکمه پاک کردن همه فیلترها -->
                         <button wire:click="clearAllFilters" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors">
                             <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1064,7 +1130,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse(($families ?? collect([])) as $family)
-                                <tr class="hover:bg-gray-50" data-family-id="{{ $family->id }}">
+                                <tr class="{{ $expandedFamily === $family->id ? 'bg-green-200' : 'hover:bg-blue-50' }}" data-family-id="{{ $family->id }}">
                                     <!-- ستون چک‌باکس -->
                                     <td class="px-3 py-4 whitespace-nowrap border-b border-gray-200 text-center">
                                         <div class="flex items-center justify-center">

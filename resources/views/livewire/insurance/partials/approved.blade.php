@@ -53,7 +53,7 @@
         <div class="overflow-x-auto scrollbar-thin">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($families as $family)
-                    <div class="family-card bg-white border border-gray-200 rounded-lg p-6 {{ in_array($family->id, $selected) ? 'ring-2 ring-indigo-500 bg-indigo-50' : '' }}">
+                    <div class="family-card bg-white border border-gray-200 rounded-lg p-6 hover:bg-blue-50 transition-colors duration-200 {{ in_array($family->id, $selected) ? 'ring-2 ring-indigo-500 bg-indigo-50' : '' }}">
                         {{-- هدر کارت --}}
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center">

@@ -453,7 +453,7 @@
 
                 {{-- فیلد آپلود مدرک بیماری خاص فقط اگر معیار پذیرش انتخاب شده باشد --}}
                 @if(is_array($member['problem_type'] ?? null) && in_array('بیماری خاص', $member['problem_type']))
-                    <div class="mt-2 w-full bg-red-50 p-3 rounded-lg border border-red-200">
+                    <div class="mt-2 w-full bg-red-50 p-3 rounded-lg border border-red-200 file-upload-section">
                         <div class="flex items-center mb-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -461,35 +461,54 @@
                             <label class="block text-sm text-red-800 font-medium">مدرک بیماری خاص</label>
                             <span class="mr-1 text-red-500">*</span>
                         </div>
+                        
+                        {{-- نمایش فایل آپلود شده (در صورت وجود) --}}
                         @if(isset($uploadedDocuments[$index]))
-                            <div class="mb-3 flex items-center p-2 bg-green-100 rounded-lg">
-                                <svg class="h-5 w-5 text-green-500 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="mb-3 flex items-center p-2 bg-green-100 rounded-lg uploaded-file-info">
+                                <svg class="h-5 w-5 text-green-500 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
-                                <div class="flex-1">
-                                    <div class="text-sm font-medium text-green-800">
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-green-800 truncate">
                                         فایل آپلود شده: {{ $uploadedDocuments[$index]['original_name'] }}
                                     </div>
                                     <div class="text-xs text-green-600">
                                         حجم: {{ round($uploadedDocuments[$index]['size'] / 1024) }} کیلوبایت
                                     </div>
                                 </div>
-                                <button type="button" wire:click="removeDocument({{ $index }})" class="text-red-500 hover:text-red-700 transition-colors duration-150 ml-2">حذف</button>
+                                <button type="button" wire:click="removeDocument({{ $index }})" 
+                                        class="text-red-500 hover:text-red-700 transition-colors duration-150 ml-2 p-1 rounded hover:bg-red-200"
+                                        title="حذف فایل">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
                             </div>
-                        @else
+                        @endif
+                        
+                        {{-- فیلد آپلود (همیشه نمایش داده می‌شود) --}}
+                        <div class="space-y-2">
+                            @if(isset($uploadedDocuments[$index]))
+                                <div class="text-xs text-blue-600 font-medium">
+                                    آپلود فایل جدید (جایگزین فایل فعلی):
+                                </div>
+                            @endif
+                            
                             <input type="file"
                                    wire:model="specialDiseaseDocuments.{{ $index }}"
                                    accept=".pdf,.jpg,.jpeg,.png"
                                    class="w-full border border-gray-300 rounded-md text-sm focus:ring-red-500 focus:border-red-500 bg-white @error('specialDiseaseDocuments.'.$index) border-red-300 @enderror">
+                            
                             <div class="mt-1 text-xs text-red-600">
                                 فرمت‌های مجاز: PDF، JPG، PNG (حداکثر 5 مگابایت)
                             </div>
+                            
                             @error('specialDiseaseDocuments.'.$index)
                                 <div class="mt-1 text-xs text-red-500 bg-red-50 p-2 rounded border border-red-200">
                                     {{ $message }}
                                 </div>
                             @enderror
-                        @endif
+                        </div>
                     </div>
                 @endif
             @endforeach
@@ -601,6 +620,37 @@
 svg {
     direction: ltr;
     transform-origin: center;
+}
+
+/* استایل‌های بهبود یافته برای آپلود فایل */
+.file-upload-section {
+    transition: all 0.3s ease;
+}
+
+.uploaded-file-info {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 1px solid #10b981;
+}
+
+.uploaded-file-info:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.file-input-replacement {
+    border: 2px dashed #d1d5db;
+    transition: all 0.2s ease;
+}
+
+.file-input-replacement:hover {
+    border-color: #6b7280;
+    background-color: #f9fafb;
+}
+
+.file-input-replacement input[type="file"]:focus + label,
+.file-input-replacement:focus-within {
+    border-color: #dc2626;
+    background-color: #fef2f2;
 }
 </style>
 @endpush

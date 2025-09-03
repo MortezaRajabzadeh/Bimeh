@@ -191,33 +191,32 @@
                                                         <div>{{ implode('، ', $member['problem_type']) }}</div>
                                                         @if(in_array('بیماری خاص', $member['problem_type']))
                                                             @if(isset($uploadedDocuments[$index]))
-                                                                <div class="flex items-center text-xs text-green-600">
-                                                                    <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <div class="flex items-center text-xs text-green-600 bg-green-50 p-2 rounded-md mt-1">
+                                                                    <svg class="w-3 h-3 ml-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                                                     </svg>
-                                                                    مدرک آپلود شده: {{ $uploadedDocuments[$index]['original_name'] }}
+                                                                    <span class="truncate">
+                                                                        مدرک آپلود شده: {{ $uploadedDocuments[$index]['original_name'] }}
+                                                                        <span class="text-xs text-green-500">
+                                                                            ({{ round($uploadedDocuments[$index]['size'] / 1024) }}کب)
+                                                                        </span>
+                                                                    </span>
                                                                 </div>
                                                             @elseif(isset($specialDiseaseDocuments[$index]) && $specialDiseaseDocuments[$index])
-                                                                <div class="flex items-center text-xs text-yellow-600">
-                                                                    <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <div class="flex items-center text-xs text-yellow-600 bg-yellow-50 p-2 rounded-md mt-1">
+                                                                    <svg class="w-3 h-3 ml-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                     </svg>
-                                                                    فایل انتخاب شده: {{ $specialDiseaseDocuments[$index]->getClientOriginalName() }}
+                                                                    <span class="truncate">
+                                                                        فایل انتخاب شده: {{ $specialDiseaseDocuments[$index]->getClientOriginalName() }}
+                                                                    </span>
                                                                 </div>
                                                             @else
-                                                                <div class="flex items-center text-xs text-red-600">
-                                                                    <svg class="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <div class="flex items-center text-xs text-red-600 bg-red-50 p-2 rounded-md mt-1">
+                                                                    <svg class="w-3 h-3 ml-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                     </svg>
-                                                                    مدرک آپلود نشده
-                                                                </div>
-                                                            @endif
-                                                            
-                                                            <!-- Debug info -->
-                                                            @if(config('app.debug'))
-                                                                <div class="text-xs text-gray-500 mt-1">
-                                                                    Debug: uploadedDocuments[{{$index}}] = {{ isset($uploadedDocuments[$index]) ? 'exists' : 'null' }}, 
-                                                                    specialDiseaseDocuments[{{$index}}] = {{ isset($specialDiseaseDocuments[$index]) && $specialDiseaseDocuments[$index] ? 'exists' : 'null' }}
+                                                                    <span>مدرک آپلود نشده - الزامی</span>
                                                                 </div>
                                                             @endif
                                                         @endif
