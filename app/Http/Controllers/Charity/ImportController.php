@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Charity;
 
 use App\Http\Controllers\Controller;
 use App\Imports\FamiliesImport;
-use App\Exports\FamiliesTemplateExport;
 use App\Jobs\ProcessFamiliesImport;
 use App\Models\District;
 use Illuminate\Http\Request;
@@ -289,10 +288,13 @@ class ImportController extends Controller
     {
         Gate::authorize('create family');
 
-        return ExcelFacade::download(
-            new FamiliesTemplateExport(),
-            'families_template.xlsx'
-        );
+        $filePath = public_path('exele/sample.xlsx');
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'فایل نمونه یافت نشد.');
+        }
+
+        return response()->download($filePath, 'families_template.xlsx');
     }
 
     /**
