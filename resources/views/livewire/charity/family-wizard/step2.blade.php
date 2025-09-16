@@ -89,7 +89,7 @@
                             <option value="مادر">مادر</option>
                             <option value="پدر">پدر</option>
                             <option value="زن">زن</option>
-                            <option value="شوهر">شوهر</option>
+                            <option value="مرد">مرد</option>
                             <option value="پسر">پسر</option>
                             <option value="دختر">دختر</option>
                             <option value="مادربزرگ">مادربزرگ</option>

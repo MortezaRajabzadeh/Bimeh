@@ -80,6 +80,8 @@ class FamiliesImport implements ToCollection
             'پدر' => 'father',
             'پسر' => 'son',
             'دختر' => 'daughter',
+            'زن' => 'spouse',
+            'مرد' => 'spouse',
             'مادربزرگ' => 'grandmother',
             'پدربزرگ' => 'grandfather',
             'سایر' => 'other',
@@ -94,44 +96,53 @@ class FamiliesImport implements ToCollection
     ];
 
     /**
-     * نقشه کلیدهای ستون‌های برای تطابق
+     * نقشه کلیدهای ستون‌های برای تطابق - ساختار جدید اکسل
      */
     protected array $columnMapping = [
-        'شناسه_خانواده' => 'شناسه خانواده',
-        'نام_روستا' => 'نام روستا',
-        'سرپرست' => 'سرپرست؟',
-        'نوع_عضو_خانواده' => 'نوع عضو خانواده',
+        'تعداد افراد' => 'row_number',
+        'تعداد خانواده' => 'تعداد خانواده',
+        'استان' => 'استان',
+        'شهرستان' => 'شهرستان',
+        'دهستان' => 'دهستان',
+        'سرپرست؟' => 'سرپرست؟',
+        'نوع عضو خانواده' => 'نوع عضو خانواده',
         'نام' => 'نام',
-        'نام_خانوادگی' => 'نام خانوادگی',
+        'نام خانوادگی' => 'نام خانوادگی',
         'شغل' => 'شغل',
-        'کد_ملی' => 'کد ملی',
-        'تاریخ_تولد' => 'تاریخ تولد',
+        '*کد ملی' => 'کد ملی',
+        'کد ملی' => 'کد ملی',
+        'تاریخ تولد' => 'تاریخ تولد',
         'اعتیاد' => 'اعتیاد',
         'بیکار' => 'بیکار',
-        'بیماری_خاص' => 'بیماری خاص',
+        'بیماری خاص' => 'بیماری خاص',
+        'از کار افتادگی' => 'ازکارافتادگی',
         'ازکارافتادگی' => 'ازکارافتادگی',
-        'توضیحات_بیشتر_کمک_کننده' => 'توضیحات بیشتر کمک‌کننده',
+        'توضیحات بیشتر' => 'توضیحات بیشتر',
     ];
 
     /**
-     * کلیدهای ستون‌های فارسی مطابق FamiliesTemplateExport
+     * کلیدهای ستون‌های فارسی - ساختار جدید اکسل
      */
     protected array $expectedHeaders = [
-        'شناسه_خانواده' => 'شناسه خانواده',
+        'تعداد افراد' => 'تعداد افراد',
+        'تعداد خانواده' => 'تعداد خانواده',
         'استان' => 'استان',
-        'شهر' => 'شهر',
-        'سرپرست' => 'سرپرست؟',
-        'نوع_عضو_خانواده' => 'نوع عضو خانواده',
+        'شهرستان' => 'شهرستان', 
+        'دهستان' => 'دهستان',
+        'سرپرست؟' => 'سرپرست؟',
+        'نوع عضو خانواده' => 'نوع عضو خانواده',
         'نام' => 'نام',
-        'نام_خانوادگی' => 'نام خانوادگی',
+        'نام خانوادگی' => 'نام خانوادگی',
         'شغل' => 'شغل',
-        'کد_ملی' => 'کد ملی',
-        'تاریخ_تولد' => 'تاریخ تولد',
+        '*کد ملی' => 'کد ملی',
+        'کد ملی' => 'کد ملی',
+        'تاریخ تولد' => 'تاریخ تولد',
         'اعتیاد' => 'اعتیاد',
         'بیکار' => 'بیکار',
-        'بیماری_خاص' => 'بیماری خاص',
+        'بیماری خاص' => 'بیماری خاص',
+        'از کار افتادگی' => 'ازکارافتادگی',
         'ازکارافتادگی' => 'ازکارافتادگی',
-        'توضیحات_بیشتر_کمک_کننده' => 'توضیحات بیشتر کمک‌کننده',
+        'توضیحات بیشتر' => 'توضیحات بیشتر',
     ];
 
     public function __construct(User $user, int $districtId)
@@ -161,11 +172,11 @@ class FamiliesImport implements ToCollection
     }
 
     /**
-     * تعیین ردیف سرتیتر - ردیف 3 (بعد از عنوان و راهنما)
+     * تعیین ردیف سرتیتر - ردیف 4 (بعد از عنوان، سرآیند اصلی و سرآیند فرعی)
      */
     public function headingRow(): int
     {
-        return 2; // ردیف دوم به عنوان سرتیتر
+        return 3; // ردیف سوم به عنوان سرتیتر ترکیبی
     }
 
     /**
@@ -178,9 +189,10 @@ class FamiliesImport implements ToCollection
             return;
         }
 
-        // تعیین ردیف‌های header
-        $headingRowIndex = 1; // ردیف دوم (index 1) - header اصلی
-        $subHeadingRowIndex = 2; // ردیف سوم (index 2) - sub header
+        // تعیین ردیف‌های header بر اساس ساختار جدید
+        $titleRowIndex = 0; // ردیف اول (index 0) - عنوان کلی
+        $mainHeadingRowIndex = 1; // ردیف دوم (index 1) - header اصلی
+        $subHeadingRowIndex = 2; // ردیف سوم (index 2) - sub header برای نوع مشکل
 
         $headers = [];
         $subHeaders = [];
@@ -195,23 +207,29 @@ class FamiliesImport implements ToCollection
             $rowNumber = $index + 1;
 
             try {
-                // خواندن header اصلی
-                if ($index === $headingRowIndex) {
+                // رد کردن ردیف عنوان (ردیف اول)
+                if ($index === $titleRowIndex) {
+                    continue;
+                }
+
+                // خواندن header اصلی (ردیف دوم)
+                if ($index === $mainHeadingRowIndex) {
                     $headers = $row->toArray();
                     continue;
                 }
 
-                // خواندن sub header
+                // خواندن sub header (ردیف سوم)
                 if ($index === $subHeadingRowIndex) {
                     $subHeaders = $row->toArray();
 
-                    // ساخت header های نهایی
+                    // ساخت header های نهایی بر اساس ساختار جدید
                     foreach ($headers as $col => $mainTitle) {
                         $mainTitle = trim($mainTitle ?? '');
                         $subTitle = trim($subHeaders[$col] ?? '');
 
-                        if ($mainTitle === 'نوع مشکل' && !empty($subTitle)) {
-                            // برای ستون‌های زیر "نوع مشکل"، از sub header استفاده کن
+                        // برای ستون‌های M تا P (نوع مشکل) از sub header استفاده می‌کنیم
+                        if ($col >= 12 && $col <= 15 && !empty($subTitle)) {
+                            // ستون‌های M, N, O, P - نوع مشکل
                             $finalHeaders[$col] = $subTitle;
                         } elseif (!empty($mainTitle)) {
                             // برای سایر ستون‌ها از header اصلی استفاده کن
@@ -276,17 +294,30 @@ class FamiliesImport implements ToCollection
                     continue;
                 }
 
-                // مدیریت شناسه خانواده (برای گروه‌بندی اعضا)
-                $familyId = trim($rowData['family_id'] ?? '');
+                // پردازش منطق سلول‌های ادغام شده برای تعداد خانواده
+                $familyCount = trim($rowData['family_count'] ?? ''); // در واقع این "تعداد خانواده" است
 
-                if (!empty($familyId)) {
-                    $lastFamilyId = $familyId;
-                    $familyIdMapping[$rowNumber] = $familyId;
-                } elseif ($lastFamilyId) {
+                if (!empty($familyCount) && is_numeric($familyCount)) {
+                    // این ردیف شروع یک خانواده جدید است
+                    $lastFamilyId = 'family_' . $rowNumber . '_count_' . $familyCount;
                     $familyId = $lastFamilyId;
-                    $familyIdMapping[$rowNumber] = "استفاده از آخرین ID: {$familyId}";
+                    
+                    Log::info('شروع خانواده جدید', [
+                        'row_number' => $rowNumber,
+                        'family_count' => $familyCount,
+                        'generated_family_id' => $lastFamilyId
+                    ]);
+                } elseif ($lastFamilyId) {
+                    // سلول ادغام شده - از آخرین شناسه خانواده استفاده می‌کنیم
+                    $familyId = $lastFamilyId;
+                    
+                    Log::info('عضو خانواده موجود', [
+                        'row_number' => $rowNumber,
+                        'family_id' => $familyId,
+                        'member_name' => $rowData['first_name'] ?? 'نامشخص'
+                    ]);
                 } else {
-                    $this->addError("ردیف {$rowNumber}: شناسه خانواده مشخص نیست");
+                    $this->addError("ردیف {$rowNumber}: تعداد خانواده برای اولین عضو مشخص نیست");
                     $this->results['failed']++;
                     continue;
                 }
@@ -331,29 +362,36 @@ class FamiliesImport implements ToCollection
     {
         $normalized = [];
 
-        // نقشه تطبیق کلیدها (فارسی به انگلیسی)
+        // نقشه تطبیق کلیدها (فارسی به انگلیسی) - ساختار جدید
         $keyMapping = [
-            'شناسه خانواده' => 'family_id',
-            'نام روستا' => 'village_name',
+            'تعداد افراد' => 'person_count',
+            'تعداد خانواده' => 'family_count', // این فیلد تعداد اعضای خانواده را نشان می‌دهد و برای گروه‌بندی استفاده می‌شود
             'استان' => 'province_name',
-            'شهر' => 'city_name',
-            'شهرستان' => 'county_name',
+            'شهرستان' => 'city_name', // تغییر از county_name به city_name
+            'شهر' => 'city_name', // اضافه کردن این mapping
+            'دهستان' => 'district_name',
             'سرپرست؟' => 'is_head',
             'نوع عضو خانواده' => 'relationship_fa',
             'نام' => 'first_name',
             'نام خانوادگی' => 'last_name',
             'شغل' => 'occupation',
-            'کد ملی' => 'national_code',
+            '*کد ملی' => 'national_code',
+            'کد ملی' => 'national_code', // fallback
             'تاریخ تولد' => 'birth_date',
+            'اعتیاد' => 'addiction',
+            'بیکار' => 'unemployed',
+            'بیماری خاص' => 'special_disease',
+            'از کار افتادگی' => 'disability',
+            'ازکارافتادگی' => 'disability',
+            'توضیحات بیشتر' => 'additional_details',
+            // سازگاری با فرمت قدیمی
+            'شناسه خانواده' => 'family_count', // برای سازگاری
+            'نام روستا' => 'village_name',
             'جنسیت' => 'gender',
             'وضعیت تاهل' => 'marital_status',
             'موبایل' => 'mobile',
             'تلفن' => 'phone',
             'شماره شبا' => 'sheba',
-            'اعتیاد' => 'addiction',
-            'بیکار' => 'unemployed',
-            'بیماری خاص' => 'special_disease',
-            'ازکارافتادگی' => 'disability',
             'توضیحات بیشتر کمک‌کننده' => 'additional_details',
         ];
 
@@ -381,7 +419,7 @@ class FamiliesImport implements ToCollection
             Log::info('Key mapping debug', [
                 'original_keys' => array_keys($row),
                 'mapped_keys' => array_keys($normalized),
-                'family_id' => $normalized['family_id'] ?? 'NOT_FOUND',
+                'family_count' => $normalized['family_count'] ?? 'NOT_FOUND',
                 'first_name' => $normalized['first_name'] ?? 'NOT_FOUND'
             ]);
         }
@@ -394,21 +432,20 @@ class FamiliesImport implements ToCollection
      */
     protected function shouldSkipRow(array $rowData, int $rowNumber): bool
     {
-        $familyId = $rowData['family_id'] ?? '';
+        $familyCount = $rowData['family_count'] ?? '';
         $firstName = $rowData['first_name'] ?? '';
 
         // فقط ردیف‌های راهنما یا مثال را skip کن
-        if ($familyId === 'راهنما' ||
-            str_contains($familyId, 'راهنما') ||
-            str_contains($familyId, 'مثال') ||
+        if ($familyCount === 'راهنما' ||
+            str_contains($familyCount, 'راهنما') ||
+            str_contains($familyCount, 'مثال') ||
             $firstName === 'راهنما' ||
             str_contains($firstName, 'راهنما') ||
             str_contains($firstName, 'مثال')) {
 
-            // Fix: Add the missing Log::info() call
             Log::info('Skipping guide/example row', [
                 'reason' => 'ردیف راهنما یا مثال',
-                'family_id' => $familyId,
+                'family_count' => $familyCount,
                 'first_name' => $firstName
             ]);
             return true;
@@ -488,21 +525,73 @@ class FamiliesImport implements ToCollection
             // تنظیم پیش‌فرض در صورت خالی بودن استان/شهر
             $province = null;
             $city = null;
+            $district = null;
             $address = "نامشخص";
 
             if (!empty($provinceName)) {
+                // یافتن یا ایجاد استان
                 $province = Province::where('name', 'LIKE', "%{$provinceName}%")->first();
-                if ($province && !empty($cityName)) {
+                if (!$province) {
+                    // ایجاد استان جدید
+                    $province = Province::create([
+                        'name' => trim($provinceName),
+                        'code' => str_pad(Province::max('code') + 1 ?? 1, 2, '0', STR_PAD_LEFT),
+                        'is_active' => true
+                    ]);
+                    Log::info('استان جدید ایجاد شد', [
+                        'province_name' => $provinceName,
+                        'province_id' => $province->id
+                    ]);
+                }
+
+                if (!empty($cityName)) {
+                    // یافتن یا ایجاد شهر
                     $city = City::where('province_id', $province->id)
                                ->where('name', 'LIKE', "%{$cityName}%")
                                ->first();
-
-                    if ($city) {
-                        $address = "شهر {$cityName}، استان {$provinceName}";
-                    } else {
-                        $address = "استان {$provinceName}";
+                    
+                    if (!$city) {
+                        // ایجاد شهر جدید
+                        $city = City::create([
+                            'name' => trim($cityName),
+                            'province_id' => $province->id,
+                            'code' => str_pad((City::where('province_id', $province->id)->max('code') ?? 0) + 1, 3, '0', STR_PAD_LEFT),
+                            'is_active' => true
+                        ]);
+                        Log::info('شهر جدید ایجاد شد', [
+                            'city_name' => $cityName,
+                            'city_id' => $city->id,
+                            'province_id' => $province->id
+                        ]);
                     }
-                } elseif ($province) {
+
+                    // یافتن یا ایجاد دهستان (اگر وجود دارد)
+                    $districtName = trim($firstMember['district_name'] ?? '');
+                    if (!empty($districtName)) {
+                        $district = District::where('city_id', $city->id)
+                                          ->where('name', 'LIKE', "%{$districtName}%")
+                                          ->first();
+                        
+                        if (!$district) {
+                            // ایجاد دهستان جدید
+                            $district = District::create([
+                                'name' => trim($districtName),
+                                'city_id' => $city->id,
+                                'province_id' => $province->id,
+                                'code' => str_pad((District::where('city_id', $city->id)->max('code') ?? 0) + 1, 4, '0', STR_PAD_LEFT),
+                                'is_active' => true
+                            ]);
+                            Log::info('دهستان جدید ایجاد شد', [
+                                'district_name' => $districtName,
+                                'district_id' => $district->id,
+                                'city_id' => $city->id
+                            ]);
+                        }
+                        $address = "دهستان {$districtName}، شهر {$cityName}، استان {$provinceName}";
+                    } else {
+                        $address = "شهر {$cityName}، استان {$provinceName}";
+                    }
+                } else {
                     $address = "استان {$provinceName}";
                 }
             }
@@ -513,7 +602,7 @@ class FamiliesImport implements ToCollection
                 'family_code' => $this->generateUniqueFamilyCode(),
                 'province_id' => $province?->id,
                 'city_id' => $city?->id,
-                'district_id' => $this->districtId,
+                'district_id' => $district?->id,
                 'address' => $address,
             ], $this->user);
             Log::info('Using existing family', [
@@ -647,18 +736,19 @@ class FamiliesImport implements ToCollection
             $gender = 'female';
         }
 
-        // تبدیل مقادیر مشکلات
+        // تبدیل مقادیر مشکلات - ساختار جدید با علامت‌گذاری
         $problemTypes = [];
-        if ($this->mapBooleanValue($memberData['addiction'] ?? 'خیر')) {
+        // چک کردن علامت‌گذاری در ستون‌های نوع مشکل
+        if ($this->isMarked($memberData['addiction'] ?? '')) {
             $problemTypes[] = 'اعتیاد';
         }
-        if ($this->mapBooleanValue($memberData['unemployed'] ?? 'خیر')) {
+        if ($this->isMarked($memberData['unemployed'] ?? '')) {
             $problemTypes[] = 'بیکاری';
         }
-        if ($this->mapBooleanValue($memberData['special_disease'] ?? 'خیر')) {
+        if ($this->isMarked($memberData['special_disease'] ?? '')) {
             $problemTypes[] = 'بیماری های خاص';
         }
-        if ($this->mapBooleanValue($memberData['disability'] ?? 'خیر')) {
+        if ($this->isMarked($memberData['disability'] ?? '')) {
             $problemTypes[] = 'از کار افتادگی';
         }
 
@@ -706,6 +796,30 @@ class FamiliesImport implements ToCollection
     }
 
     /**
+     * بررسی اینکه آیا سلول علامت‌گذاری شده است (برای ساختار جدید اکسل)
+     */
+    protected function isMarked(string $value): bool
+    {
+        $value = trim($value);
+        
+        // بررسی انواع مختلف علامت‌گذاری
+        if (empty($value)) {
+            return false;
+        }
+        
+        // علامت‌های مختلف که ممکن است استفاده شوند
+        $markers = ['*', 'x', 'X', '✓', '√', '1', 'بلی', 'بله', 'yes', 'YES', 'دارد'];
+        
+        foreach ($markers as $marker) {
+            if ($value === $marker || str_contains($value, $marker)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * تبدیل مقدار رابطه خانوادگی
      */
     protected function mapRelationshipValue(string $value): string
@@ -715,7 +829,7 @@ class FamiliesImport implements ToCollection
     }
 
     /**
-     * پارس کردن تاریخ شمسی
+     * پارس کردن تاریخ شمسی - پشتیبانی از فرمت 1404/01/04
      */
     protected function parseDate(string $date): ?string
     {
@@ -727,20 +841,37 @@ class FamiliesImport implements ToCollection
             // حذف space اضافی
             $date = trim($date);
 
-            // فرمت‌های مختلف تاریخ
-            // 1. فرمت استاندارد: 1370/1/1
+            // فرمت‌های مختلف تاریخ شمسی
+            // 1. فرمت استاندارد: 1404/01/04 یا 1370/1/1
             if (preg_match('/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
                 $year = intval($matches[1]);
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
 
-                // اعتبارسنجی محدوده
-                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                // اعتبارسنجی محدوده تاریخ شمسی
+                if ($year < 1300 || $year > 1500) {
+                    Log::warning("سال خارج از محدوده مجاز: {$year}");
+                    return null;
+                }
+                if ($month < 1 || $month > 12) {
+                    Log::warning("ماه نامعتبر: {$month}");
+                    return null;
+                }
+                if ($day < 1 || $day > 31) {
+                    Log::warning("روز نامعتبر: {$day}");
                     return null;
                 }
 
+                // تبدیل تاریخ شمسی به میلادی
                 $jalalian = new \Morilog\Jalali\Jalalian($year, $month, $day);
-                return $jalalian->toCarbon()->format('Y-m-d');
+                $gregorianDate = $jalalian->toCarbon()->format('Y-m-d');
+                
+                Log::info("تبدیل تاریخ موفق", [
+                    'persian_date' => $date,
+                    'gregorian_date' => $gregorianDate
+                ]);
+                
+                return $gregorianDate;
             }
 
             // 2. فرمت با slash اضافی: 1356//04/21
@@ -749,7 +880,7 @@ class FamiliesImport implements ToCollection
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
 
-                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                if ($year < 1300 || $year > 1500 || $month < 1 || $month > 12 || $day < 1 || $day > 31) {
                     return null;
                 }
 
@@ -757,21 +888,24 @@ class FamiliesImport implements ToCollection
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
 
-            // 3. فقط سال: 1360
+            // 3. فقط سال: 1404
             if (preg_match('/^(\d{4})$/', $date, $matches)) {
                 $year = intval($matches[1]);
+                if ($year < 1300 || $year > 1500) {
+                    return null;
+                }
                 // فرض می‌کنیم اول فروردین
                 $jalalian = new \Morilog\Jalali\Jalalian($year, 1, 1);
                 return $jalalian->toCarbon()->format('Y-m-d');
             }
 
-            // 4. فرمت با صفر اضافی در ماه: 1314/080/1
-            if (preg_match('/^(\d{4})\/0?(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
+            // 4. فرمت با صفر اضافی در ماه: 1404/001/04
+            if (preg_match('/^(\d{4})\/0*(\d{1,2})\/(\d{1,2})$/', $date, $matches)) {
                 $year = intval($matches[1]);
                 $month = intval($matches[2]);
                 $day = intval($matches[3]);
 
-                if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+                if ($year < 1300 || $year > 1500 || $month < 1 || $month > 12 || $day < 1 || $day > 31) {
                     return null;
                 }
 
@@ -780,8 +914,13 @@ class FamiliesImport implements ToCollection
             }
 
         } catch (\Exception $e) {
+            Log::error("خطا در پارس تاریخ", [
+                'date' => $date,
+                'error' => $e->getMessage()
+            ]);
         }
 
+        Log::warning("فرمت تاریخ نامعتبر", ['date' => $date]);
         return null;
     }
 

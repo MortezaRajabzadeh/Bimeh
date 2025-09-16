@@ -526,43 +526,23 @@
 
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
-                                // شمارش مشکلات تجمیعی خانواده
-                                $familyProblems = [];
-                                foreach ($family->members as $member) {
-                                    if (is_array($member->problem_type)) {
-                                        foreach ($member->problem_type as $problem) {
-                                            if (!isset($familyProblems[$problem])) {
-                                                $familyProblems[$problem] = 0;
-                                            }
-                                            $familyProblems[$problem]++;
-                                        }
-                                    }
+                                // نمایش معیارهای پذیرش خانواده
+                                $acceptanceCriteria = $family->acceptance_criteria ?? [];
+                                if (is_string($acceptanceCriteria)) {
+                                    $acceptanceCriteria = json_decode($acceptanceCriteria, true) ?? [];
                                 }
-
-
-                                $problemLabels = [
-                                    'addiction' => ['label' => 'اعتیاد', 'color' => 'bg-purple-100 text-purple-800'],
-                                    'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-orange-100 text-orange-800'],
-                                    'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-red-100 text-red-800'],
-                                    'work_disability' => ['label' => 'از کار افتادگی', 'color' => 'bg-yellow-100 text-yellow-800'],
-                                ];
                             @endphp
 
-                            <div class="flex flex-wrap gap-1">
-                                @if(count($familyProblems) > 0)
-                                    @foreach($familyProblems as $problem => $count)
-                                        @if(isset($problemLabels[$problem]))
-                                            <span class="px-2 py-0.5 rounded-md text-xs {{ $problemLabels[$problem]['color'] }}">
-                                                {{ $problemLabels[$problem]['label'] }}
-                                                @if($count > 1)
-                                                    <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
-                                                @endif
-                                            </span>
-                                        @endif
+                            <div class="flex flex-wrap gap-1 justify-center">
+                                @if(!empty($acceptanceCriteria) && is_array($acceptanceCriteria))
+                                    @foreach($acceptanceCriteria as $criteria)
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
+                                            {{ $criteria }}
+                                        </span>
                                     @endforeach
                                 @else
                                     <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                        بدون مشکل خاص
+                                        بدون معیار
                                     </span>
                                 @endif
                             </div>
@@ -1076,24 +1056,18 @@
                                                     </div>
                                                 @else
                                                     @php
-                                                        // نمایش مقادیر فارسی با ترجمه کلیدهای انگلیسی
-                                                        $memberProblems = [];
-                                                        if (is_array($member->problem_type)) {
-                                                            $memberProblems = array_map(function($problem) use ($problemTypeTranslations) {
-                                                                $trimmed = trim($problem);
-                                                                // برگرداندن ترجمه فارسی اگر وجود دارد، ورنه مقدار اصلی
-                                                                return $problemTypeTranslations[$trimmed] ?? $trimmed;
-                                                            }, array_filter($member->problem_type, function($problem) {
-                                                                return !empty(trim($problem));
-                                                            }));
+                                                        // نمایش معیارهای پذیرش خانواده (نه مشکلات فردی عضو)
+                                                        $familyAcceptanceCriteria = $family->acceptance_criteria ?? [];
+                                                        if (is_string($familyAcceptanceCriteria)) {
+                                                            $familyAcceptanceCriteria = json_decode($familyAcceptanceCriteria, true) ?? [];
                                                         }
                                                     @endphp
 
                                                     <div class="flex flex-wrap gap-1 justify-center">
-                                                        @if(count($memberProblems) > 0)
-                                                            @foreach($memberProblems as $problem)
+                                                        @if(!empty($familyAcceptanceCriteria) && is_array($familyAcceptanceCriteria))
+                                                            @foreach($familyAcceptanceCriteria as $criteria)
                                                                 <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
-                                                                    {{ $problem }}
+                                                                    {{ $criteria }}
                                                                 </span>
                                                             @endforeach
                                                         @else
