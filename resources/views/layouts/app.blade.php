@@ -39,7 +39,7 @@
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
                 transition: all 0.3s ease;
                 z-index: 40;
-                margin-right: 16rem;
+                margin-right: 4rem; /* تنظیم برای حالت collapsed */
             }
             
             @media (max-width: 768px) {
@@ -49,7 +49,13 @@
                 }
             }
             
+            /* حالت منوی باز - بدون مارجین اضافی */
+            #main-wrapper.sidebar-expanded .back-button {
+                margin-right: 0;
+            }
+            
             /* حالت منوی بسته */
+            #main-wrapper.sidebar-collapsed .back-button,
             .sidebar-collapsed .back-button {
                 margin-right: 4rem;
             }
@@ -77,13 +83,50 @@
             
             @media (min-width: 1024px) {
                 #main-wrapper {
-                    margin-right: 16rem; /* برابر عرض سایدبار */
-                    transition: none; /* حذف انتقال در حالت عادی */
+                    margin-right: 4rem; /* برابر عرض سایدبار collapsed */
+                    transition: margin-right 0.3s ease-in-out;
+                }
+                
+                #main-wrapper.sidebar-expanded {
+                    margin-right: 16rem; /* برابر عرض سایدبار expanded */
                 }
                 
                 #main-wrapper.sidebar-collapsed {
-                    margin-right: 4rem; /* برابر عرض سایدبار جمع شده */
-                    transition: all 0.3s ease-in-out; /* فقط انتقال در حالت جمع شده */
+                    margin-right: 4rem; /* برابر عرض سایدبار collapsed */
+                }
+            }
+            
+            /* تنظیمات ویژه برای HD resolution (1366x768 و مشابه) */
+            @media (min-width: 769px) and (max-width: 1600px) {
+                #main-wrapper {
+                    margin-right: 4rem !important;
+                    transition: margin-right 0.3s ease-in-out !important;
+                }
+                
+                #main-wrapper.sidebar-expanded {
+                    margin-right: 16rem !important;
+                }
+                
+                #main-wrapper.sidebar-collapsed {
+                    margin-right: 4rem !important;
+                }
+                
+                /* جلوگیری از overflow محتوا */
+                main {
+                    max-width: calc(100vw - 4rem - 2rem);
+                }
+                
+                #main-wrapper.sidebar-expanded main {
+                    max-width: calc(100vw - 16rem - 2rem);
+                }
+                
+                /* تنظیم عرض جداول و محتوای scrollable */
+                .w-full.overflow-x-auto {
+                    max-width: calc(100vw - 4rem - 3rem);
+                }
+                
+                #main-wrapper.sidebar-expanded .w-full.overflow-x-auto {
+                    max-width: calc(100vw - 16rem - 3rem);
                 }
             }
         </style>
@@ -120,6 +163,7 @@
                 const mainWrapper = document.getElementById('main-wrapper');
                 const sidebarToggle = document.getElementById('sidebar-toggle');
                 const sidebarOverlay = document.getElementById('sidebar-overlay');
+                const backButton = document.querySelector('.back-button');
                 
                 // رویداد سفارشی برای باز/بسته کردن سایدبار
                 document.addEventListener('sidebarToggle', function(event) {
@@ -127,13 +171,34 @@
                         if (event.detail.collapsed) {
                             mainWrapper.classList.add('sidebar-collapsed');
                             mainWrapper.classList.remove('sidebar-expanded');
-                            // فقط در حالت بسته شدن، انتقال فعال می‌شود
-                            mainWrapper.style.transition = 'margin-right 0.3s ease-in-out';
+                            if (backButton) {
+                                backButton.style.marginRight = '4rem';
+                            }
                         } else {
-                            // برای باز شدن، انتقال را حذف می‌کنیم تا بدون انیمیشن باشد
-                            mainWrapper.style.transition = 'none';
                             mainWrapper.classList.remove('sidebar-collapsed');
                             mainWrapper.classList.add('sidebar-expanded');
+                            if (backButton) {
+                                backButton.style.marginRight = '0';
+                            }
+                        }
+                    }
+                });
+                
+                // رویداد سفارشی برای sidebar-toggle از sidebar.blade.php
+                document.addEventListener('sidebar-toggle', function(event) {
+                    if (event.detail && mainWrapper) {
+                        if (event.detail.collapsed) {
+                            mainWrapper.classList.add('sidebar-collapsed');
+                            mainWrapper.classList.remove('sidebar-expanded');
+                            if (backButton) {
+                                backButton.style.marginRight = '4rem';
+                            }
+                        } else {
+                            mainWrapper.classList.remove('sidebar-collapsed');
+                            mainWrapper.classList.add('sidebar-expanded');
+                            if (backButton) {
+                                backButton.style.marginRight = '0';
+                            }
                         }
                     }
                 });
@@ -183,16 +248,19 @@
                 // تنظیم حالت اولیه سایدبار
                 const storedState = localStorage.getItem('sidebarState');
                 if (mainWrapper) {
-                    if (storedState === 'collapsed') {
-                        mainWrapper.classList.add('sidebar-collapsed');
-                        mainWrapper.classList.remove('sidebar-expanded');
-                        // تنظیم انتقال برای حالت بسته
-                        mainWrapper.style.transition = 'margin-right 0.3s ease-in-out';
-                    } else {
-                        // حالت پیش‌فرض: منو باز است
-                        mainWrapper.style.transition = 'none'; // بدون انیمیشن برای حالت باز
+                    if (storedState === 'expanded') {
                         mainWrapper.classList.remove('sidebar-collapsed');
                         mainWrapper.classList.add('sidebar-expanded');
+                        if (backButton) {
+                            backButton.style.marginRight = '0';
+                        }
+                    } else {
+                        // حالت پیش‌فرض: منو بسته است (collapsed)
+                        mainWrapper.classList.add('sidebar-collapsed');
+                        mainWrapper.classList.remove('sidebar-expanded');
+                        if (backButton) {
+                            backButton.style.marginRight = '4rem';
+                        }
                     }
                 }
             });

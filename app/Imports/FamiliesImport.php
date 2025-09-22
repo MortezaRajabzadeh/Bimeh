@@ -108,7 +108,10 @@ class FamiliesImport implements ToCollection
         'نوع عضو خانواده' => 'نوع عضو خانواده',
         'نام' => 'نام',
         'نام خانوادگی' => 'نام خانوادگی',
+        'شماره تلفن سرپرست' => 'شماره تلفن سرپرست',
+        'شماره شبا سرپرست' => 'شماره شبا سرپرست',
         'شغل' => 'شغل',
+        'نوع بیمه درخواستی' => 'نوع بیمه درخواستی',
         '*کد ملی' => 'کد ملی',
         'کد ملی' => 'کد ملی',
         'تاریخ تولد' => 'تاریخ تولد',
@@ -117,7 +120,7 @@ class FamiliesImport implements ToCollection
         'بیماری خاص' => 'بیماری خاص',
         'از کار افتادگی' => 'ازکارافتادگی',
         'ازکارافتادگی' => 'ازکارافتادگی',
-        'توضیحات بیشتر' => 'توضیحات بیشتر',
+        'توضیحات بیشتر کمک‌ کننده' => 'توضیحات بیشتر',
     ];
 
     /**
@@ -133,7 +136,10 @@ class FamiliesImport implements ToCollection
         'نوع عضو خانواده' => 'نوع عضو خانواده',
         'نام' => 'نام',
         'نام خانوادگی' => 'نام خانوادگی',
+        'شماره تلفن سرپرست' => 'شماره تلفن سرپرست',
+        'شماره شبا سرپرست' => 'شماره شبا سرپرست',
         'شغل' => 'شغل',
+        'نوع بیمه درخواستی' => 'نوع بیمه درخواستی',
         '*کد ملی' => 'کد ملی',
         'کد ملی' => 'کد ملی',
         'تاریخ تولد' => 'تاریخ تولد',
@@ -142,7 +148,7 @@ class FamiliesImport implements ToCollection
         'بیماری خاص' => 'بیماری خاص',
         'از کار افتادگی' => 'ازکارافتادگی',
         'ازکارافتادگی' => 'ازکارافتادگی',
-        'توضیحات بیشتر' => 'توضیحات بیشتر',
+        'توضیحات بیشتر کمک‌ کننده' => 'توضیحات بیشتر',
     ];
 
     public function __construct(User $user, int $districtId)
@@ -374,16 +380,24 @@ class FamiliesImport implements ToCollection
             'نوع عضو خانواده' => 'relationship_fa',
             'نام' => 'first_name',
             'نام خانوادگی' => 'last_name',
+            'شماره تلفن سرپرست' => 'head_phone', // ستون جدید
+            'شماره شبا سرپرست' => 'head_sheba', // ستون جدید
             'شغل' => 'occupation',
+            'نوع بیمه درخواستی' => 'requested_insurance_type', // ستون جدید
             '*کد ملی' => 'national_code',
             'کد ملی' => 'national_code', // fallback
             'تاریخ تولد' => 'birth_date',
-            'اعتیاد' => 'addiction',
-            'بیکار' => 'unemployed',
-            'بیماری خاص' => 'special_disease',
-            'از کار افتادگی' => 'disability',
+            'نوع مشکل: اعتیاد' => 'addiction', // تغییر نام کلید
+            'اعتیاد' => 'addiction', // fallback برای سازگاری
+            'نوع مشکل: بیکار' => 'unemployed', // تغییر نام کلید
+            'بیکار' => 'unemployed', // fallback برای سازگاری
+            'نوع مشکل: بیماری خاص' => 'special_disease', // تغییر نام کلید
+            'بیماری خاص' => 'special_disease', // fallback برای سازگاری
+            'نوع مشکل: از کارافتادگی' => 'disability', // تغییر نام کلید
+            'از کار افتادگی' => 'disability', // fallback برای سازگاری
             'ازکارافتادگی' => 'disability',
-            'توضیحات بیشتر' => 'additional_details',
+            'توضیحات بیشتر کمک‌کننده' => 'additional_details', // تغییر نام
+            'توضیحات بیشتر' => 'additional_details', // fallback برای سازگاری
             // سازگاری با فرمت قدیمی
             'شناسه خانواده' => 'family_count', // برای سازگاری
             'نام روستا' => 'village_name',
@@ -392,7 +406,6 @@ class FamiliesImport implements ToCollection
             'موبایل' => 'mobile',
             'تلفن' => 'phone',
             'شماره شبا' => 'sheba',
-            'توضیحات بیشتر کمک‌کننده' => 'additional_details',
         ];
 
         // تطبیق کلیدها
@@ -617,6 +630,23 @@ class FamiliesImport implements ToCollection
             $this->addMemberToFamily($family, $memberData);
         }
 
+        // بروزرسانی اطلاعات خانواده با نوع بیمه درخواستی
+        $requestedInsuranceType = $firstMember['requested_insurance_type'] ?? null;
+        if (!empty($requestedInsuranceType) && $requestedInsuranceType !== '-') {
+            // ذخیره نوع بیمه درخواستی در فیلد additional_info به صورت JSON
+            $additionalInfo = $family->additional_info ?? '{}';
+            $familyInfo = json_decode($additionalInfo, true) ?? [];
+            $familyInfo['requested_insurance_type'] = trim($requestedInsuranceType);
+            
+            $family->additional_info = json_encode($familyInfo, JSON_UNESCAPED_UNICODE);
+            $family->save();
+            
+            Log::info('نوع بیمه درخواستی ذخیره شد', [
+                'family_id' => $family->id,
+                'requested_insurance_type' => $requestedInsuranceType
+            ]);
+        }
+
         // بروزرسانی معیارهای پذیرش و محاسبه رتبه خانواده
         $this->updateAcceptanceCriteriaAndRank($family);
         
@@ -752,6 +782,7 @@ class FamiliesImport implements ToCollection
             $problemTypes[] = 'از کار افتادگی';
         }
 
+        // اطلاعات عضو با فیلدهای جدید
         $memberUpdateData = [
             'family_id' => $family->id,
             'charity_id' => $family->charity_id,
@@ -763,12 +794,22 @@ class FamiliesImport implements ToCollection
             'relationship_fa' => $memberData['relationship_fa'],
             'is_head' => $isHead,
             'occupation' => $memberData['occupation'] ?? '',
-            'mobile' => $memberData['mobile'] ?? null,
-            'phone' => $memberData['phone'] ?? null,
-            'sheba' => $memberData['sheba'] ?? null,
             'problem_type' => $problemTypes,
             'special_conditions' => $memberData['additional_details'] ?? '',
         ];
+
+        // اضافه کردن فیلدهای جدید برای سرپرست خانواده
+        if ($isHead) {
+            // برای سرپرست خانواده، از فیلدهای head_phone و head_sheba استفاده می‌کنیم
+            $memberUpdateData['mobile'] = $memberData['head_phone'] ?? null;
+            $memberUpdateData['phone'] = $memberData['head_phone'] ?? null; // استفاده هم برای mobile هم برای phone
+            $memberUpdateData['sheba'] = $memberData['head_sheba'] ?? null;
+        } else {
+            // برای سایر اعضا، فیلدهای قدیمی را نگه می‌داریم
+            $memberUpdateData['mobile'] = $memberData['mobile'] ?? null;
+            $memberUpdateData['phone'] = $memberData['phone'] ?? null;
+            $memberUpdateData['sheba'] = $memberData['sheba'] ?? null;
+        }
 
         // استفاده از updateOrCreate برای جلوگیری از تکراری یا آپدیت کردن
         $member = Member::updateOrCreate(

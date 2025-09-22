@@ -84,7 +84,86 @@
     }
 }
 
-/* استایل‌های کارت‌های داشبورد */
+/* Additional fixes for table and content overflow */
+.overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+}
+
+/* Ensure proper spacing for content */
+main {
+    min-height: calc(100vh - 4rem);
+    box-sizing: border-box;
+}
+
+/* Fix for buttons and controls positioning */
+.flex.gap-3.items-center {
+    flex-wrap: wrap;
+}
+
+/* Prevent horizontal scroll on body */
+body {
+    overflow-x: hidden;
+}
+
+/* Additional responsive fixes for navigation and controls */
+@media (max-width: 1366px) {
+    /* Stack navigation elements on smaller screens */
+    .flex.items-center.justify-between.gap-4 {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .flex.items-center.justify-between.gap-4 > div {
+        justify-content: center;
+    }
+    
+    /* Fix search bar width */
+    .relative.flex-grow {
+        min-width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Pagination controls responsive */
+    .flex.flex-wrap.items-center.justify-between {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .flex.flex-wrap.items-center.justify-between > * {
+        order: 0;
+    }
+    
+    /* Ensure action buttons are accessible */
+    .inline-flex.items-center.px-4.py-2 {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Fix modal positioning on small screens */
+    .fixed.inset-0.z-50 {
+        padding: 1rem;
+    }
+}
 .dashboard-card {
     @apply bg-white p-6 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg;
 }
@@ -332,7 +411,7 @@
     border: 1px solid #F59E0B;
 }
 
-/* Remove existing sidebar positioning styles and replace with overlay approach */
+/* Sidebar positioning with proper responsive design */
 #sidebar {
     position: fixed !important;
     top: 0;
@@ -353,19 +432,34 @@
     width: 4rem;
 }
 
-/* Remove margin adjustments from main wrapper */
+/* Main wrapper with proper margin for sidebar - only when collapsed */
 #main-wrapper {
-    margin-right: 0 !important;
-    transition: none !important;
+    margin-right: 4rem !important;
+    transition: margin-right 0.3s ease !important;
 }
 
-.main-with-normal-sidebar,
+/* When sidebar is expanded - no margin needed */
+#main-wrapper.sidebar-expanded {
+    margin-right: 0 !important;
+}
+
+/* When sidebar is collapsed - maintain margin */
+#main-wrapper.sidebar-collapsed {
+    margin-right: 4rem !important;
+}
+
+/* Legacy classes for compatibility */
+.main-with-normal-sidebar {
+    margin-right: 0 !important;
+    transition: margin-right 0.3s ease-in-out !important;
+}
+
 .main-with-collapsed-sidebar {
-    margin-right: 0 !important;
-    transition: none !important;
+    margin-right: 4rem !important;
+    transition: margin-right 0.3s ease-in-out !important;
 }
 
-/* Mobile responsiveness */
+/* Mobile responsiveness and HD resolution fixes */
 @media (max-width: 768px) {
     body {
         padding-right: 0;
@@ -373,10 +467,87 @@
     
     #sidebar {
         transform: translateX(100%);
+        width: 16rem !important;
     }
     
     #sidebar.sidebar-expanded {
         transform: translateX(0);
+    }
+    
+    #main-wrapper {
+        margin-right: 0 !important;
+    }
+    
+    #main-wrapper.sidebar-expanded,
+    #main-wrapper.sidebar-collapsed {
+        margin-right: 0 !important;
+    }
+}
+
+/* HD Resolution specific table and content fixes */
+@media (min-width: 769px) and (max-width: 1600px) {
+    /* Fix for main table containers - only when sidebar is collapsed */
+    .w-full.overflow-x-auto.overflow-y-auto {
+        max-width: calc(100vw - 4rem - 3rem) !important;
+    }
+    
+    /* When sidebar is expanded - tables can use full width */
+    #main-wrapper.sidebar-expanded .w-full.overflow-x-auto.overflow-y-auto {
+        max-width: calc(100vw - 3rem) !important;
+    }
+    
+    /* Fix for table headers and search controls */
+    .flex.items-center.justify-between {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Ensure buttons don't overflow */
+    .flex.gap-3.items-center button,
+    .flex.gap-3.items-center select {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    /* Fix for pagination controls */
+    .flex.flex-wrap.items-center.justify-between {
+        gap: 1rem;
+    }
+    
+    /* Specific fix for families-approval table */
+    .max-h-\[70vh\] {
+        max-height: 60vh !important;
+    }
+    
+    /* Ensure table wrapper doesn't exceed viewport - only when sidebar is collapsed */
+    .w-full.overflow-hidden.shadow-sm.border.border-gray-200.rounded-lg {
+        max-width: calc(100vw - 4rem - 2rem);
+        margin-right: 0;
+    }
+    
+    /* When sidebar is expanded - tables can use more space */
+    #main-wrapper.sidebar-expanded .w-full.overflow-hidden.shadow-sm.border.border-gray-200.rounded-lg {
+        max-width: calc(100vw - 2rem);
+    }
+}
+
+/* Large screens */
+@media (min-width: 1601px) {
+    #sidebar {
+        transform: translateX(0) !important;
+    }
+    
+    #main-wrapper {
+        margin-right: 4rem !important;
+    }
+    
+    /* When sidebar is expanded - no margin needed */
+    #main-wrapper.sidebar-expanded {
+        margin-right: 0 !important;
+    }
+    
+    #main-wrapper.sidebar-collapsed {
+        margin-right: 4rem !important;
     }
 }
 

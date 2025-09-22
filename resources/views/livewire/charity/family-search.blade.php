@@ -381,7 +381,7 @@
                             <div class="flex items-center justify-center">
                                 <span>تاریخ شروع</span>
 
-                        
+
                             </div>
                         </th>
 
@@ -670,8 +670,8 @@
                                         <div class="flex items-center gap-2">
                                             {{-- For now, we don't have logo field in funding_sources table --}}
                                             {{-- @if($summary['source'] && $summary['source']->logo)
-                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
-                                                     alt="{{ $summary['source']->name }}" 
+                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}"
+                                                     alt="{{ $summary['source']->name }}"
                                                      class="w-6 h-6 rounded-full object-cover">
                                             @endif --}}
                                             <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
@@ -764,8 +764,8 @@
                                         <div class="flex items-center gap-2">
                                             {{-- For now, we don't have logo field in funding_sources table --}}
                                             {{-- @if($summary['source'] && $summary['source']->logo)
-                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
-                                                     alt="{{ $summary['source']->name }}" 
+                                                <img src="{{ asset('storage/' . $summary['source']->logo) }}"
+                                                     alt="{{ $summary['source']->name }}"
                                                      class="w-6 h-6 rounded-full object-cover">
                                             @endif --}}
                                             <span class="px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-800 font-medium">
@@ -883,12 +883,14 @@
                                             {{-- نسبت --}}
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @if($editingMemberId === $member->id)
-                                                    <select wire:model="editingMemberData.relationship" class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
-                                                        <option value="">انتخاب کنید...</option>
-                                                        @foreach($this->getRelationshipOptions() as $value => $label)
-                                                            <option value="{{ $value }}">{{ $label }}</option>
-                                                        @endforeach
-                                                    </select>
+                                                    <div class="rtl-select-wrapper">
+                                                        <select wire:model="editingMemberData.relationship" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
+                                                            <option value="">انتخاب کنید...</option>
+                                                            @foreach($this->getRelationshipOptions() as $value => $label)
+                                                                <option value="{{ $value }}">{{ $label }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
                                                 @else
                                                     {{ $member->relationship_fa ?? '-' }}
                                                 @endif
@@ -925,12 +927,14 @@
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @if($editingMemberId === $member->id)
                                                     <div class="space-y-1">
-                                                        <select wire:model="editingMemberData.occupation" class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
-                                                            <option value="">انتخاب کنید...</option>
-                                                            @foreach($this->getOccupationOptions() as $value => $label)
-                                                                <option value="{{ $value }}">{{ $label }}</option>
-                                                            @endforeach
-                                                        </select>
+                                                        <div class="rtl-select-wrapper">
+                                                            <select wire:model="editingMemberData.occupation" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
+                                                                <option value="">انتخاب کنید...</option>
+                                                                @foreach($this->getOccupationOptions() as $value => $label)
+                                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
                                                         @if($editingMemberData['occupation'] === 'شاغل')
                                                             <input type="text" wire:model="editingMemberData.job_type"
                                                                    placeholder="نوع شغل را وارد کنید"
@@ -996,8 +1000,8 @@
                                                             <div class="flex items-center gap-1 text-xs">
                                                                 {{-- For now, we don't have logo field in funding_sources table --}}
                                                                 {{-- @if($summary['source'] && $summary['source']->logo)
-                                                                    <img src="{{ asset('storage/' . $summary['source']->logo) }}" 
-                                                                         alt="{{ $summary['source']->name }}" 
+                                                                    <img src="{{ asset('storage/' . $summary['source']->logo) }}"
+                                                                         alt="{{ $summary['source']->name }}"
                                                                          class="w-4 h-4 rounded-full object-cover">
                                                                 @endif --}}
                                                                 <span class="font-medium text-green-700">
@@ -1213,8 +1217,8 @@
             <div class="flex items-center order-1">
                 <span class="text-sm text-gray-600 ml-2">تعداد نمایش:</span>
                 <select wire:model.live="perPage"
-                        class="h-9 w-16 border border-gray-300 rounded-md px-2 py-1 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
-                        style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                        class="h-9 w-16 border border-gray-300 rounded-md py-1 pr-2 pl-6 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+                        style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"%3E%3Cpath stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19 9l-7 7-7-7\" /%3E%3C/svg%3E') !important; background-repeat: no-repeat !important; background-position: left 4px center !important; background-size: 12px !important;">
                     <option value="10">10</option>
                     <option value="15">15</option>
                     <option value="30">30</option>
