@@ -873,10 +873,15 @@ class FamilySearch extends Component
                 'user_id' => Auth::id()
             ]);
             
-            // اعمال فیلترهای AND
+            // **بررسی و پردازش فیلترهای special_disease چندگانه با AND logic**
+            $queryBuilder = $this->applySpecialDiseaseAndLogic($queryBuilder, $andFilters);
+            
+            // اعمال فیلترهای AND غیر special_disease
             foreach ($andFilters as $filter) {
-                Log::debug('🔧 Applying AND filter', ['filter' => $filter]);
-                $queryBuilder = $this->applySingleFilter($queryBuilder, $filter, 'and');
+                if (!in_array($filter['type'], ['special_disease', 'معیار پذیرش'])) {
+                    Log::debug('🔧 Applying AND filter', ['filter' => $filter]);
+                    $queryBuilder = $this->applySingleFilter($queryBuilder, $filter, 'and');
+                }
             }
 
             // اعمال فیلترهای OR در یک گروه
@@ -914,6 +919,93 @@ class FamilySearch extends Component
         }
     }
 
+    /**
+     * پردازش فیلترهای special_disease چندگانه با منطق AND
+     * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
+     * @param array $andFilters
+     * @return \Spatie\QueryBuilder\QueryBuilder
+     */
+    protected function applySpecialDiseaseAndLogic($queryBuilder, $andFilters)
+    {
+        try {
+            // فیلتر فیلترهای special_disease
+            $specialDiseaseFilters = array_filter($andFilters, function($filter) {
+                return in_array($filter['type'], ['special_disease', 'معیار پذیرش']) && !empty($filter['value']);
+            });
+            
+            if (empty($specialDiseaseFilters)) {
+                return $queryBuilder;
+            }
+            
+            Log::debug('📊 Processing special_disease filters with AND logic', [
+                'filters_count' => count($specialDiseaseFilters),
+                'filters' => $specialDiseaseFilters
+            ]);
+            
+            // **پردازش رشته comma-separated و تبدیل به آرایه**
+            $allSelectedValues = [];
+            foreach ($specialDiseaseFilters as $filter) {
+                $filterValue = $filter['value'];
+                
+                // اگر رشته حاوی ویرگول باشد، تقسیم کن
+                if (str_contains($filterValue, ',')) {
+                    $values = array_map('trim', explode(',', $filterValue));
+                    foreach ($values as $value) {
+                        if (!empty($value) && !in_array($value, $allSelectedValues)) {
+                            $allSelectedValues[] = $value;
+                        }
+                    }
+                } else {
+                    if (!empty($filterValue) && !in_array($filterValue, $allSelectedValues)) {
+                        $allSelectedValues[] = $filterValue;
+                    }
+                }
+            }
+            
+            if (empty($allSelectedValues)) {
+                return $queryBuilder;
+            }
+            
+            Log::debug('🔎 Parsed special_disease values for AND logic', [
+                'values' => $allSelectedValues,
+                'count' => count($allSelectedValues)
+            ]);
+            
+            // برای هر مقدار جداگانه، یک whereHas اعمال کن (منطق AND)
+            foreach ($allSelectedValues as $value) {
+                Log::debug('🔎 Applying AND whereHas for special_disease value', ['value' => $value]);
+                
+                $queryBuilder = $queryBuilder->whereHas('members', function($memberQuery) use ($value) {
+                    // تبدیل به مقادیر مختلف (فارسی و انگلیسی)
+                    $persianValue = \App\Helpers\ProblemTypeHelper::englishToPersian($value);
+                    $englishValue = \App\Helpers\ProblemTypeHelper::persianToEnglish($value);
+                    
+                    $memberQuery->where(function($q) use ($value, $persianValue, $englishValue) {
+                        $q->whereJsonContains('problem_type', $value)
+                          ->orWhereJsonContains('problem_type', $persianValue)
+                          ->orWhereJsonContains('problem_type', $englishValue);
+                    });
+                });
+            }
+            
+            Log::info('✅ Special_disease AND logic applied successfully', [
+                'values_applied' => $allSelectedValues,
+                'filters_processed' => count($specialDiseaseFilters)
+            ]);
+            
+            return $queryBuilder;
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error applying special_disease AND logic', [
+                'error' => $e->getMessage(),
+                'filters' => $specialDiseaseFilters ?? [],
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return $queryBuilder;
+        }
+    }
+    
     /**
      * اعمال یک فیلتر منفرد
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder

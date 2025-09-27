@@ -19,14 +19,30 @@
     class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4"
     style="display: none;">
 
-    <div @click.away="{{ $showModal }} = false"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform scale-95"
-         x-transition:enter-end="opacity-100 transform scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform scale-100"
-         x-transition:leave-end="opacity-0 transform scale-95"
-         class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div @click.away="
+        // بررسی اینکه آیا کلیک روی JalaliDatePicker بوده یا نه
+        const target = $event.target;
+        const isDatePickerClick = target.closest('.jdp-container') || 
+                                target.closest('[class*=\"jdp-\"]') ||
+                                target.classList.contains('jdp-day') ||
+                                target.classList.contains('jdp-month') ||
+                                target.classList.contains('jdp-year') ||
+                                target.classList.contains('jdp-btn-today') ||
+                                target.classList.contains('jdp-btn-empty') ||
+                                target.hasAttribute('data-jdp');
+        
+        if (!isDatePickerClick) {
+            {{ $showModal }} = false;
+        }
+    "
+         x-transition:enter="transition-all ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition-all ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden transform"
+         style="isolation: isolate; will-change: transform, opacity;">
 
         <!-- هدر مودال -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
@@ -68,8 +84,8 @@
                                 <td class="px-6 py-5">
                                     <div class="relative">
                                         <select x-model="filter.type" @change="updateFilterLabel(index)"
-                                                class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white py-2 pr-4 pl-8 appearance-none cursor-pointer transition-all duration-200"
+                                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"%3E%3Cpath stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19 9l-7 7-7-7\" /%3E%3C/svg%3E') !important; background-repeat: no-repeat !important; background-position: left 8px center !important; background-size: 16px !important;">
                                             <option value="province">استان</option>
                                             <option value="city">شهر</option>
                                             @if($organizations)
@@ -161,21 +177,95 @@
                                     </div>
                                     @endif
 
-                                    <!-- Special Disease Filter -->
-                                    <div x-show="filter.type === 'special_disease'" class="relative">
-                                        <select x-model="filter.value"
-                                                class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                            <option value="">انتخاب معیار پذیرش...</option>
-                                            <option value="بیماری های خاص">بیماری های خاص</option>
-                                            <option value="اعتیاد">اعتیاد</option>
-                                            <option value="از کار افتادگی">از کار افتادگی</option>
-                                            <option value="بیکاری">بیکاری</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <!-- Special Disease Filter - Multi-select with checkboxes -->
+                                    <div x-show="filter.type === 'special_disease'" x-data="{
+                                        showDropdown: false,
+                                        availableOptions: [
+                                            'بیماری های خاص',
+                                            'اعتیاد',
+                                            'از کار افتادگی',
+                                            'بیکاری'
+                                        ],
+                                        selectedOptions: [],
+                                        
+                                        init() {
+                                            // مقداردهی اولیه از filter.value
+                                            if (filter.value && typeof filter.value === 'string') {
+                                                this.selectedOptions = filter.value.split(',').filter(v => v.trim());
+                                            } else if (Array.isArray(filter.value)) {
+                                                this.selectedOptions = [...filter.value];
+                                            }
+                                        },
+                                        
+                                        toggleOption(option) {
+                                            const index = this.selectedOptions.indexOf(option);
+                                            if (index > -1) {
+                                                this.selectedOptions.splice(index, 1);
+                                            } else {
+                                                this.selectedOptions.push(option);
+                                            }
+                                            // بروزرسانی filter.value
+                                            filter.value = this.selectedOptions.join(',');
+                                        },
+                                        
+                                        isSelected(option) {
+                                            return this.selectedOptions.includes(option);
+                                        },
+                                        
+                                        getDisplayText() {
+                                            if (this.selectedOptions.length === 0) {
+                                                return 'انتخاب معیار پذیرش...';
+                                            } else if (this.selectedOptions.length === 1) {
+                                                return this.selectedOptions[0];
+                                            } else {
+                                                return this.selectedOptions.length + ' معیار انتخاب شده';
+                                            }
+                                        }
+                                    }" class="relative">
+                                        <!-- باکس اصلی نمایش -->
+                                        <div @click="showDropdown = !showDropdown" 
+                                             class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 cursor-pointer transition-all duration-200 flex items-center justify-between"
+                                             :class="{'border-blue-500 ring-2 ring-blue-200': showDropdown}">
+                                            <span class="text-gray-700" x-text="getDisplayText()"></span>
+                                            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" 
+                                                 :class="{'rotate-180': showDropdown}" 
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
+                                        </div>
+                                        
+                                        <!-- دراپ داون با چک باکس ها -->
+                                        <div x-show="showDropdown" 
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-150"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             @click.away="showDropdown = false"
+                                             class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                            
+                                            <!-- هدر با دکمه انتخاب همه / هیچ کدام -->
+                                            <div class="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                                <span class="text-xs font-medium text-gray-600">معیارهای پذیرش</span>
+                                                <div class="flex gap-1">
+                                                    <button @click="selectedOptions = [...availableOptions]; filter.value = selectedOptions.join(',')" 
+                                                            class="text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors">همه</button>
+                                                    <button @click="selectedOptions = []; filter.value = ''" 
+                                                            class="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors">هیچ کدام</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- لیست گزینه ها -->
+                                            <template x-for="option in availableOptions" :key="option">
+                                                <label class="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0">
+                                                    <input type="checkbox" 
+                                                           :checked="isSelected(option)"
+                                                           @change="toggleOption(option)"
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors">
+                                                    <span class="mr-3 text-sm text-gray-700" x-text="option"></span>
+                                                </label>
+                                            </template>
                                         </div>
                                     </div>
 
@@ -229,41 +319,25 @@
                                     </div>
 
                                     <div x-show="filter.type === 'membership_date'" class="flex space-x-4 rtl:space-x-reverse">
-                                        <div class="w-1/2">
-                                            <div class="relative">
-                                                <input
-                                                    type="text"
-                                                    x-model="filter.start_date"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 transition-all duration-200 jalali-datepicker"
-                                                    placeholder="از تاریخ"
-                                                    autocomplete="off"
-                                                    data-jdp
-                                                    readonly
-                                                >
-                                                <div class="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                            </div>
+                                        <div class="w-2/5">
+                                            <input
+                                                type="text"
+                                                x-model="filter.start_date"
+                                                data-jdp
+                                                placeholder="از تاریخ"
+                                                class="w-full border border-gray-300 rounded-lg px-2 py-1 text-center bg-white cursor-pointer"
+                                            />
                                         </div>
-                                        <div class="w-1/2">
-                                            <div class="relative">
-                                                <input
-                                                    type="text"
-                                                    x-model="filter.end_date"
-                                                    class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 transition-all duration-200 jalali-datepicker"
-                                                    placeholder="تا تاریخ"
-                                                    autocomplete="off"
-                                                    data-jdp
-                                                    readonly
-                                                >
-                                                <div class="absolute inset-y-0 left-2 flex items-center text-gray-400 pointer-events-none">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                            </div>
+                                        <div class="w-2/5">
+                                            <input
+                                                type="text"
+                                                      data-jdp-only-date
+
+                                                x-model="filter.end_date"
+                                                data-jdp
+                                                placeholder="تا تاریخ"
+                                                class="w-full border border-gray-300 rounded-lg px-2 py-1 text-center bg-white cursor-pointer"
+                                            />
                                         </div>
                                     </div>
 
@@ -538,3 +612,48 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script src="/vendor/jalalidatepicker/jalalidatepicker.min.js"></script>
+<script>
+    function initJalaliDatepicker() {
+        try {
+            if (typeof jalaliDatepicker !== 'undefined') {
+                jalaliDatepicker.startWatch({
+                    minDate: "attr",
+                    maxDate: "attr",
+                    time: false
+                });
+            } else {
+            }
+        } catch (error) {
+            console.error('Error initializing JalaliDatePicker:', error);
+        }
+    }
+    
+    document.addEventListener('livewire:load', function () {
+        initJalaliDatepicker();
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        initJalaliDatepicker();
+    });
+    
+    // برای بروزرسانی‌های Livewire
+    document.addEventListener('livewire:init', function () {
+        setTimeout(initJalaliDatepicker, 100);
+    });
+    
+    window.addEventListener('livewire:navigated', function () {
+        setTimeout(initJalaliDatepicker, 200);
+    });
+    
+    document.addEventListener('livewire:update', function () {
+        setTimeout(initJalaliDatepicker, 300);
+    });
+    
+    window.addEventListener('refreshJalali', function () {
+        initJalaliDatepicker();
+    });
+</script>
+@endpush

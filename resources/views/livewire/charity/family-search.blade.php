@@ -68,14 +68,20 @@
                     break;
             }
 
-            if (this.filters[index].operator === 'equals' || this.filters[index].operator === 'and') label += ' برابر با';
-            else if (this.filters[index].operator === 'not_equals') label += ' مخالف';
-            else if (this.filters[index].operator === 'greater_than') label += ' بیشتر از';
-            else if (this.filters[index].operator === 'less_than') label += ' کمتر از';
-            else if (this.filters[index].operator === 'contains') label += ' شامل';
-            else if (this.filters[index].operator === 'exists') label += ' باشد';
-            else if (this.filters[index].operator === 'not_exists') label += ' نباشد';
-            else if (this.filters[index].operator === 'or') label += ' یا';
+            // اضافه کردن متن عملگر به برچسب (استثنا: فیلترهای تاریخی)
+            // فیلترهای created_at که تاریخ هستند را نادیده بگیر
+            const isDateFilter = this.filters[index].type === 'created_at';
+            
+            if (!isDateFilter) {
+                if (this.filters[index].operator === 'equals' || this.filters[index].operator === 'and') label += ' برابر با';
+                else if (this.filters[index].operator === 'not_equals') label += ' مخالف';
+                else if (this.filters[index].operator === 'greater_than') label += ' بیشتر از';
+                else if (this.filters[index].operator === 'less_than') label += ' کمتر از';
+                else if (this.filters[index].operator === 'contains') label += ' شامل';
+                else if (this.filters[index].operator === 'exists') label += ' باشد';
+                else if (this.filters[index].operator === 'not_exists') label += ' نباشد';
+                else if (this.filters[index].operator === 'or') label += ' یا';
+            }
 
             this.filters[index].label = label;
         }
@@ -376,6 +382,7 @@
                             </div>
                         </th>
 
+                        
                         <!-- تاریخ شروع -->
                         <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">

@@ -109,9 +109,11 @@
         }
 
         // برای فیلترهایی که قبلاً دارای برچسب متنی نیستند، عملگر را اضافه کن
-        if (!label.includes(':') && !label.includes('تا') && !label.includes('حداقل') && !label.includes('حداکثر')) {
+        // استثنا: فیلترهای تاریخ عضویت را نادیده بگیر
+        if (!label.includes(':') && !label.includes('تا') && !label.includes('حداقل') && !label.includes('حداکثر') && filter.type !== 'membership_date') {
             if (filter.operator === 'and') label += ' و';
             else if (filter.operator === 'or') label += ' یا';
+            else if (filter.operator === 'equals') label += ' برابر با';
         }
 
         filter.label = label;
