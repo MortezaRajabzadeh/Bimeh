@@ -108,16 +108,11 @@ class FamiliesApproval extends Component
     public $sortByProblemType = ''; // برای ذخیره نوع مشکل انتخاب شده برای مرتب‌سازی
 
 
-    // لیست انواع مشکلات برای منوی کشویی
-    public $problemTypes = [
-        'addiction' => 'اعتیاد',
-        'unemployment' => 'بیکاری',
-        'disability' => 'معلولیت',
-        'chronic_illness' => 'بیماری مزمن',
-        'single_parent' => 'سرپرست خانوار زن',
-        'elderly' => 'سالمندی',
-        'other' => 'سایر'
-    ];
+    // لیست انواع مشکلات برای منوی کشویی - از ProblemTypeHelper
+    public function getProblemTypes(): array
+    {
+        return ProblemTypeHelper::getAllProblemTypes();
+    }
 
     // متغیرهای تمدید بیمه
     public $renewalPeriod = 12;
@@ -313,17 +308,7 @@ class FamiliesApproval extends Component
 
     private function getCriteriaMapping(): array
     {
-        return [
-            'addiction' => 'اعتیاد',
-            'unemployment' => 'بیکاری',
-            'special_disease' => 'بیماری خاص',
-            'disability' => 'معلولیت',
-            'single_parent' => 'سرپرست خانوار زن',
-            'elderly' => 'سالمندی',
-            'chronic_illness' => 'بیماری مزمن',
-            'work_disability' => 'ازکارافتادگی',
-            'other' => 'سایر'
-        ];
+        return ProblemTypeHelper::getAllProblemTypes();
     }
 
     public function onSharesAllocated(array $data)
@@ -408,18 +393,28 @@ private function getCriteriaWeights(): array
             return $rankSettings;
         }
 
-        // fallback به مقادیر ثابت
-        return [
-            'اعتیاد' => 10,
-            'بیماری خاص' => 6,
-            'بیکاری' => 5,
-            'معلولیت' => 8,
-            'سرپرست خانوار زن' => 7,
-            'سالمندی' => 4,
-            'بیماری مزمن' => 6,
-            'ازکارافتادگی' => 9,
-            'سایر' => 2
-        ];
+        // fallback به مقادیر ثابت بر اساس ProblemTypeHelper
+        $defaultTypes = ProblemTypeHelper::getAllProblemTypes();
+        $defaultWeights = [];
+        
+        foreach ($defaultTypes as $key => $persianName) {
+            // وزن‌های پیش‌فرض بر اساس اهمیت
+            $defaultWeights[$persianName] = match($key) {
+                'addiction' => 10,
+                'special_disease' => 9,
+                'work_disability' => 9,
+                'disability' => 8,
+                'single_parent' => 7,
+                'chronic_illness' => 6,
+                'unemployment' => 5,
+                'elderly' => 4,
+                'dropout' => 3,
+                'other' => 2,
+                default => 5
+            };
+        }
+        
+        return $defaultWeights;
     } catch (\Exception $e) {
         Log::error('Error getting criteria weights', ['error' => $e->getMessage()]);
 
@@ -3407,10 +3402,13 @@ protected function buildFamiliesQuery()
         // ایجاد query اولیه
         $baseQuery = Family::query()->select(['families.*']);
 
+        // بارگذاری روابط مورد نیاز برای eager loading
+        $baseQuery->with([
+            'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'
+        ])->withCount('members');
+
         // اعمال فیلتر wizard_status بر اساس تب انتخاب شده
         $this->applyTabStatusFilter($baseQuery);
-
-        // بارگذاری روابط مورد نیاز
 
         // ساختن query parameters برای spatie QueryBuilder
         $queryParams = [];
@@ -3506,7 +3504,32 @@ protected function buildFamiliesQuery()
         // استفاده از QueryBuilder با فیلترهای مجاز
         $queryBuilder = QueryBuilder::for($baseQuery)
             ->allowedFilters([
-                AllowedFilter::partial('search'),
+                AllowedFilter::callback('search', function ($query, $value) {
+                    if (!empty($value)) {
+                        return $query->where(function ($q) use ($value) {
+                            $searchTerm = '%' . $value . '%';
+                            $q->where('family_code', 'like', $searchTerm)
+                              ->orWhere('address', 'like', $searchTerm)
+                              ->orWhere('additional_info', 'like', $searchTerm)
+                              ->orWhereHas('members', function ($memberQuery) use ($searchTerm) {
+                                  $memberQuery->where('first_name', 'like', $searchTerm)
+                                             ->orWhere('last_name', 'like', $searchTerm)
+                                             ->orWhere('national_code', 'like', $searchTerm)
+                                             ->orWhere('occupation', 'like', $searchTerm);
+                              })
+                              ->orWhereHas('province', function ($provinceQuery) use ($searchTerm) {
+                                  $provinceQuery->where('name', 'like', $searchTerm);
+                              })
+                              ->orWhereHas('city', function ($cityQuery) use ($searchTerm) {
+                                  $cityQuery->where('name', 'like', $searchTerm);
+                              })
+                              ->orWhereHas('charity', function ($charityQuery) use ($searchTerm) {
+                                  $charityQuery->where('name', 'like', $searchTerm);
+                              });
+                        });
+                    }
+                    return $query;
+                }),
                 AllowedFilter::exact('province_id'),
                 AllowedFilter::exact('city_id'),
                 AllowedFilter::exact('district_id'),
@@ -4890,9 +4913,8 @@ public function clearCriteriaFilter()
     protected function applyTabStatusFilter($query)
     {
         try {
-            // اضافه کردن withCount و groupBy برای پشتیبانی از HAVING
-            $query->withCount('members')
-                  ->groupBy('families.id');
+            // اضافه کردن groupBy برای پشتیبانی از HAVING - withCount قبلاً اضافه شده است
+            $query->groupBy('families.id');
                   
             switch ($this->tab) {
                 case 'pending':
@@ -6120,43 +6142,29 @@ public function clearCriteriaFilter()
      */
     private function checkDocumentRequirement($problemType)
     {
-        // معیارهایی که نیاز به مدرک دارند
+        // معیارهایی که نیاز به مدرک دارند (انگلیسی)
         $requiresDocumentation = [
             'disability' => true,
-            'معلولیت' => true,
             'special_disease' => true,
-            'بیماری خاص' => true,
-            'بیماری های خاص' => true,
             'work_disability' => true,
-            'از کار افتادگی' => true,
-            'ازکارافتادگی' => true,
             'chronic_illness' => true,
-            'بیماری مزمن' => true,
         ];
 
-        return isset($requiresDocumentation[trim($problemType)]) && $requiresDocumentation[trim($problemType)];
+        // تبدیل به انگلیسی اگر فارسی باشد
+        $englishType = ProblemTypeHelper::persianToEnglish(trim($problemType));
+        
+        return isset($requiresDocumentation[$englishType]) && $requiresDocumentation[$englishType];
     }
 
     /**
-     * ترجمه انواع مشکلات
+     * دریافت ترجمه انواع مشکلات با استفاده از ProblemTypeHelper
      *
-     * @var array
+     * @return array
      */
-    private $problemTypeTranslations = [
-        'addiction' => 'اعتیاد',
-        'unemployment' => 'بیکاری',
-        'disability' => 'معلولیت',
-        'special_disease' => 'بیماری خاص',
-        'work_disability' => 'ازکارافتادگی',
-        'single_parent' => 'سرپرست خانوار زن',
-        'elderly' => 'سالمندی',
-        'chronic_illness' => 'بیماری مزمن',
-        'other' => 'سایر',
-        // Persian to Persian normalization
-        'بیماری های خاص' => 'بیماری خاص',
-        'از کار افتادگی' => 'ازکارافتادگی',
-        'کهولت سن' => 'سالمندی'
-    ];
+    private function getProblemTypeTranslations(): array
+    {
+        return ProblemTypeHelper::getAllProblemTypes();
+    }
 
     /**
      * تبدیل کد جنسیت به فارسی
@@ -6206,7 +6214,7 @@ public function clearCriteriaFilter()
 
         $translatedTypes = [];
         foreach ($problemTypes as $type) {
-            $translatedType = $this->problemTypeTranslations[trim($type)] ?? trim($type);
+            $translatedType = ProblemTypeHelper::englishToPersian(trim($type));
             if (!in_array($translatedType, $translatedTypes)) {
                 $translatedTypes[] = $translatedType;
             }
@@ -6237,7 +6245,9 @@ public function clearCriteriaFilter()
 
         $hasDocumentRequirement = false;
         foreach ($problemTypes as $type) {
-            if ($this->checkDocumentRequirement($type)) {
+            // تبدیل نام به انگلیسی برای بررسی نیاز به مدرک
+            $englishType = ProblemTypeHelper::persianToEnglish(trim($type));
+            if ($this->checkDocumentRequirement($englishType)) {
                 $hasDocumentRequirement = true;
                 break;
             }

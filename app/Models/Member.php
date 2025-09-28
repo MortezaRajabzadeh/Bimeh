@@ -285,6 +285,72 @@ class Member extends Model implements HasMedia
         return $this->incomplete_data_details ?? [];
     }
 
+    /**
+     * دریافت فهرست معیارهای پذیرش (مشکلات) به صورت آرایه
+     * @param bool $displayFormat اگر true باشد، به فارسی تبدیل می‌شود
+     */
+    public function getProblemTypesArray($displayFormat = false): array
+    {
+        $problemType = $this->problem_type;
+        
+        // اگر null یا خالی باشد
+        if (empty($problemType)) {
+            return [];
+        }
+        
+        $rawArray = [];
+        
+        // اگر قبلاً آرایه باشد
+        if (is_array($problemType)) {
+            $rawArray = array_filter($problemType, function($item) {
+                return !empty(trim($item));
+            });
+        }
+        // اگر رشته JSON باشد
+        elseif (is_string($problemType)) {
+            $decoded = json_decode($problemType, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $rawArray = array_filter($decoded, function($item) {
+                    return !empty(trim($item));
+                });
+            } else {
+                // اگر رشته عادی باشد (با کاما جدا شده)
+                $rawArray = array_filter(
+                    array_map('trim', explode(',', $problemType)), 
+                    function($item) {
+                        return !empty($item);
+                    }
+                );
+            }
+        }
+        
+        // اگر درخواست نمایش به فارسی باشد
+        if ($displayFormat) {
+            return \App\Helpers\ProblemTypeHelper::convertArrayToPersian($rawArray);
+        }
+        
+        return array_values($rawArray);
+    }
+
+    /**
+     * دریافت معیارهای پذیرش به صورت رشته (با کاما جدا شده)
+     * @param bool $displayFormat اگر true باشد، به فارسی تبدیل می‌شود
+     */
+    public function getProblemTypesString($displayFormat = false): string
+    {
+        $problemTypes = $this->getProblemTypesArray($displayFormat);
+        return empty($problemTypes) ? '' : implode(', ', $problemTypes);
+    }
+
+    /**
+     * بررسی اینکه آیا عضو دارای معیار مشخصی است
+     */
+    public function hasProblemType(string $problemType): bool
+    {
+        $problemTypes = $this->getProblemTypesArray();
+        return in_array(trim($problemType), array_map('trim', $problemTypes));
+    }
+
     // در Observer یا متدهای مربوطه
     protected static function booted()
     {

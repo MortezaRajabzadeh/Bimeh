@@ -1293,6 +1293,67 @@ class Family extends Model implements HasMedia
     }
 
     /**
+     * همگام‌سازی معیارهای پذیرش خانواده بر اساس problem_type اعضا
+     */
+    public function syncAcceptanceCriteriaFromMembers()
+    {
+        // جمع‌آوری تمام معیارهای فردی اعضا (به فارسی)
+        $allMemberCriteria = [];
+        
+        foreach ($this->members as $member) {
+            // دریافت معیارها به فارسی برای نمایش یکدست
+            $memberProblemTypes = $member->getProblemTypesArray(true); // true = Persian format
+            foreach ($memberProblemTypes as $problemType) {
+                if (!in_array($problemType, $allMemberCriteria)) {
+                    $allMemberCriteria[] = $problemType;
+                }
+            }
+        }
+        
+        // دریافت معیارهای فعلی خانواده
+        $currentCriteria = $this->acceptance_criteria ?? [];
+        if (is_string($currentCriteria)) {
+            $currentCriteria = json_decode($currentCriteria, true) ?? [];
+        }
+        
+        // لیست معیارهای فردی معتبر (از ProblemTypeHelper)
+        $validProblemTypes = \App\Helpers\ProblemTypeHelper::getPersianValues();
+        
+        // حفظ معیارهای دستی (آنهایی که معیار فردی نیستند - مثل "سرپرست خانوار زن")
+        $manualCriteria = array_filter($currentCriteria, function($criteria) use ($validProblemTypes) {
+            return !in_array($criteria, $validProblemTypes);
+        });
+        
+        // ترکیب معیارهای دستی با معیارهای اعضا
+        $newCriteria = array_merge($manualCriteria, $allMemberCriteria);
+        
+        // حذف تکراری و مرتب‌سازی
+        $newCriteria = array_unique($newCriteria);
+        sort($newCriteria);
+        
+        // به‌روزرسانی فقط در صورت تغییر
+        if (array_diff($currentCriteria, $newCriteria) || array_diff($newCriteria, $currentCriteria)) {
+            $this->acceptance_criteria = array_values($newCriteria);
+            $this->save();
+            
+            \Log::info('Family acceptance_criteria synced from members', [
+                'family_id' => $this->id,
+                'family_code' => $this->family_code,
+                'old_criteria' => $currentCriteria,
+                'new_criteria' => $newCriteria,
+                'member_criteria' => $allMemberCriteria,
+                'manual_criteria' => $manualCriteria,
+                'valid_problem_types' => $validProblemTypes
+            ]);
+            
+            // محاسبه مجدد رتبه
+            $this->calculateRank();
+        }
+        
+        return $this;
+    }
+
+    /**
      * بررسی و اعمال معیار سرپرست خانوار زن
      */
     public function checkAndApplySingleParentCriteria()

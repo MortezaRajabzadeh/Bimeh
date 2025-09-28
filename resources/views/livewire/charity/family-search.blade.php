@@ -1,20 +1,7 @@
-@php
-    $problemTypeTranslations = [
-        'اعتیاد' => 'اعتیاد',
-        'بیماری خاص' => 'بیماری خاص',
-        'بیماری های خاص' => 'بیماری خاص',
-        'از کار افتادگی' => 'از کار افتادگی',
-        'بیکاری' => 'بیکاری',
-        // برای سازگاری با مقادیر قدیمی
-        'addiction' => 'اعتیاد',
-        'special_disease' => 'بیماری خاص',
-        'work_disability' => 'از کار افتادگی',
-        'unemployment' => 'بیکاری',
-        'old_age' => 'کهولت سن',
-        'disability' => 'معلولیت',
-        'single_parent' => 'سرپرست خانوار'
-    ];
-@endphp
+{{-- 
+    Translation mapping moved to ProblemTypeHelper class for better maintainability
+    Now all problem type translations are handled centrally
+--}}
 
 <div x-data="{
         showFilterModal: false,
@@ -185,7 +172,7 @@
                                 }
                             @endphp
                             {{ $filter['label'] ?? '' }} {{ $displayValue }}
-                            <button @click="removeFilter({{ $index }})" class="mr-1 text-yellow-600 hover:text-yellow-800">×</button>
+                            <button wire:click="removeFilter({{ $index }})" class="mr-1 text-yellow-600 hover:text-yellow-800">×</button>
                         </span>
                     @endforeach
                 @endif
@@ -533,22 +520,35 @@
 
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
-                                // نمایش معیارهای پذیرش خانواده
-                                $acceptanceCriteria = $family->acceptance_criteria ?? [];
-                                if (is_string($acceptanceCriteria)) {
-                                    $acceptanceCriteria = json_decode($acceptanceCriteria, true) ?? [];
+                                // نمایش معیارهای پذیرش خانواده - با refresh از دیتابیس برای اطمینان از دقت
+                                try {
+                                    // اگر خانواده در حال ویرایش است، داده‌های جدید را از دیتابیس بخوان
+                                    if ($expandedFamily === $family->id) {
+                                        $family->refresh(); // Force refresh from database
+                                    }
+                                    
+                                    $acceptanceCriteria = $family->acceptance_criteria ?? [];
+                                    if (is_string($acceptanceCriteria)) {
+                                        $acceptanceCriteria = json_decode($acceptanceCriteria, true) ?? [];
+                                    }
+                                } catch (\Exception $e) {
+                                    \Log::warning('Error loading family acceptance criteria', [
+                                        'family_id' => $family->id,
+                                        'error' => $e->getMessage()
+                                    ]);
+                                    $acceptanceCriteria = [];
                                 }
                             @endphp
 
                             <div class="flex flex-wrap gap-1 justify-center">
                                 @if(!empty($acceptanceCriteria) && is_array($acceptanceCriteria))
                                     @foreach($acceptanceCriteria as $criteria)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
+                                        <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800" title="معیار خانواده: {{ $criteria }}">
                                             {{ $criteria }}
                                         </span>
                                     @endforeach
                                 @else
-                                    <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
+                                    <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800" title="این خانواده هیچ معیار پذیرشی ندارد">
                                         بدون معیار
                                     </span>
                                 @endif
@@ -1059,31 +1059,107 @@
                                             {{-- معیار پذیرش --}}
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @if($editingMemberId === $member->id)
-                                                    <div class="space-y-1">
-                                                        <input type="text" wire:model="editingMemberData.problem_type"
-                                                               placeholder="معیارهای پذیرش را وارد کنید (با کاما جدا کنید)"
-                                                               class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
-                                                        <div class="text-xs text-gray-500">مثال: بیماری خاص، از کار افتادگی</div>
+                                                    <div class="space-y-2">
+                                                        {{-- Multi-select dropdown for problem types --}}
+                                                        <div class="relative" x-data="{ 
+                                                                open: false, 
+                                                                search: '',
+                                                                selectedCount: @entangle('editingMemberData.problem_type').live.length || 0
+                                                            }" @click.away="open = false">
+                                                            <button type="button" 
+                                                                    @click="open = !open"
+                                                                    class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500 bg-white text-right flex justify-between items-center">
+                                                                <span class="text-gray-700" x-text="selectedCount > 0 ? selectedCount + ' معیار انتخاب شده' : 'انتخاب معیارهای پذیرش'">
+                                                                </span>
+                                                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </button>
+                                                            
+                                                            <div x-show="open" 
+                                                                 x-transition:enter="transition ease-out duration-100"
+                                                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                                                 x-transition:leave="transition ease-in duration-75"
+                                                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                                                 class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                                                
+                                                                {{-- Search box --}}
+                                                                <div class="p-2 border-b border-gray-200">
+                                                                    <input type="text" 
+                                                                           x-model="search"
+                                                                           placeholder="جستجو در معیارها..."
+                                                                           class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                                                                </div>
+                                                                
+                                                                {{-- Options list --}}
+                                                                <div class="py-1">
+                                                                    @php
+                                                                        $allProblemTypes = \App\Helpers\ProblemTypeHelper::getAllProblemTypes();
+                                                                    @endphp
+                                                                    @foreach($allProblemTypes as $key => $label)
+                                                                        <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs transition-colors duration-150"
+                                                                               x-show="search === '' || '{{ $label }}'.toLowerCase().includes(search.toLowerCase())">
+                                                                            <input type="checkbox" 
+                                                                                   wire:model.live="editingMemberData.problem_type"
+                                                                                   value="{{ $key }}"
+                                                                                   class="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                                                   @change="selectedCount = $wire.editingMemberData.problem_type ? $wire.editingMemberData.problem_type.length : 0">
+                                                                            <span class="text-gray-900">{{ $label }}</span>
+                                                                        </label>
+                                                                    @endforeach
+                                                                </div>
+                                                                
+                                                                {{-- Clear all button --}}
+                                                                <div class="p-2 border-t border-gray-200">
+                                                                    <button type="button" 
+                                                                            wire:click="$set('editingMemberData.problem_type', [])"
+                                                                            class="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 rounded hover:bg-red-50">
+                                                                        پاک کردن همه
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {{-- Selected items display - Live updating --}}
+                                                        <div class="flex flex-wrap gap-1" x-data="{ problemTypes: @entangle('editingMemberData.problem_type').live }">
+                                                            <template x-for="(selectedKey, index) in problemTypes" :key="selectedKey">
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 animate-fadeIn">
+                                                                    <span x-text="{
+                                                                        @foreach($allProblemTypes as $key => $label)
+                                                                            '{{ $key }}': '{{ $label }}',
+                                                                        @endforeach
+                                                                    }[selectedKey] || selectedKey"></span>
+                                                                    <button type="button" 
+                                                                            @click="$wire.removeProblemType(selectedKey); selectedCount--;"
+                                                                            class="mr-1 text-blue-600 hover:text-blue-800 transition-colors duration-150">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </span>
+                                                            </template>
+                                                        </div>
+                                                        
+                                                        <div class="text-xs text-gray-500">می‌توانید چندین معیار انتخاب کنید</div>
                                                     </div>
                                                 @else
                                                     @php
-                                                        // نمایش معیارهای پذیرش خانواده (نه مشکلات فردی عضو)
-                                                        $familyAcceptanceCriteria = $family->acceptance_criteria ?? [];
-                                                        if (is_string($familyAcceptanceCriteria)) {
-                                                            $familyAcceptanceCriteria = json_decode($familyAcceptanceCriteria, true) ?? [];
-                                                        }
+                                                        // استفاده از متد جدید برای نمایش بهتر معیارهای پذیرش به فارسی
+                                                        $memberProblemTypes = $member->getProblemTypesArray(true); // true = Persian display format
                                                     @endphp
 
                                                     <div class="flex flex-wrap gap-1 justify-center">
-                                                        @if(!empty($familyAcceptanceCriteria) && is_array($familyAcceptanceCriteria))
-                                                            @foreach($familyAcceptanceCriteria as $criteria)
-                                                                <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800">
+                                                        @if(!empty($memberProblemTypes))
+                                                            @foreach($memberProblemTypes as $criteria)
+                                                                <span class="px-2 py-0.5 rounded-md text-xs bg-orange-100 text-orange-800" title="معیار فردی: {{ $criteria }}">
                                                                     {{ $criteria }}
                                                                 </span>
                                                             @endforeach
                                                         @else
-                                                            <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800">
-                                                                بدون معیار
+                                                            <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800" title="این عضو فعلاً هیچ معیار پذیرشی ندارد">
+                                                                بدون معیار فردی
                                                             </span>
                                                         @endif
                                                     </div>

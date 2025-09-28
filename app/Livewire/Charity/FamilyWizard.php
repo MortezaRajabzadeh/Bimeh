@@ -236,10 +236,6 @@ class FamilyWizard extends Component
                             throw new \Exception("شماره موبایل سرپرست خانوار باید با ۰۹ شروع شود و ۱۱ رقم باشد");
                         }
 
-                        // بررسی شماره تماس ثابت (اختیاری)
-                        if (!empty($member['phone']) && !preg_match('/^0[0-9]{10}$/', $member['phone'])) {
-                            throw new \Exception("شماره تماس ثابت باید با ۰ شروع شود و ۱۱ رقم باشد");
-                        }
 
                                             // بررسی شماره شبا (اختیاری - اگر خالی باشد مقدار پیش‌فرض ثبت می‌شود)
                     if (!empty($member['sheba']) && !preg_match('/^IR[0-9]{24}$/', $member['sheba'])) {
@@ -594,7 +590,6 @@ class FamilyWizard extends Component
                     'marital_status' => $member['marital_status'] ?? null,
                     'education' => $member['education'] ?? null,
                     'mobile' => $mobile,
-                    'phone' => $member['phone'] ?? null,
                     'sheba' => $sheba,
                 ]);
 

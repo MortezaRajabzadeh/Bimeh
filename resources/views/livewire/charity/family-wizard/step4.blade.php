@@ -51,7 +51,6 @@
             </div>
             <div><span class="font-medium">شغل:</span> {{ $head['occupation'] ?? '-' }}</div>
             <div><span class="font-medium">موبایل:</span> {{ isset($head['mobile']) ? $head['mobile'] : '-' }}</div>
-            <div><span class="font-medium">شماره تماس:</span> {{ $head['phone'] ?? '-' }}</div>
             <div><span class="font-medium">شماره شبا:</span> {{ $head['sheba'] ?? '-' }}</div>
             <div>
                 <span class="font-medium">شرایط خاص:</span>
@@ -92,12 +91,16 @@
                                     <td class="py-2 px-3 border-b">{{ $member['national_code'] }}</td>
                                     <td class="py-2 px-3 border-b">
                                         @switch($member['relationship'])
-                                            @case('spouse') همسر @break
-                                            @case('child') فرزند @break
-                                            @case('parent') والدین @break
-                                            @case('sibling') خواهر/برادر @break
-                                            @case('other') سایر @break
-                                            @default -
+                                            @case('مادر') مادر @break
+                                            @case('پدر') پدر @break
+                                            @case('زن') زن @break
+                                            @case('مرد') مرد @break
+                                            @case('پسر') پسر @break
+                                            @case('دختر') دختر @break
+                                            @case('مادربزرگ') مادربزرگ @break
+                                            @case('پدربزرگ') پدربزرگ @break
+                                            @case('سایر') سایر @break
+                                            @default {{ $member['relationship'] ?? '-' }}
                                         @endswitch
                                     </td>
                                     <td class="py-2 px-3 border-b">{{ $member['birth_date'] ?? '-' }}</td>

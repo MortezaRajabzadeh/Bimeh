@@ -1,20 +1,7 @@
-@php
-    $problemTypeTranslations = [
-        'اعتیاد' => 'اعتیاد',
-        'بیماری خاص' => 'بیماری خاص',
-        'بیماری های خاص' => 'بیماری خاص',
-        'از کار افتادگی' => 'از کار افتادگی',
-        'بیکاری' => 'بیکاری',
-        // برای سازگاری با مقادیر قدیمی
-        'addiction' => 'اعتیاد',
-        'special_disease' => 'بیماری خاص',
-        'work_disability' => 'از کار افتادگی',
-        'unemployment' => 'بیکاری',
-        'old_age' => 'کهولت سن',
-        'disability' => 'معلولیت',
-        'single_parent' => 'سرپرست خانوار'
-    ];
-@endphp
+{{--
+    Translation mapping moved to ProblemTypeHelper class for better maintainability
+    Now all problem type translations are handled centrally via \App\Helpers\ProblemTypeHelper
+--}}
 
 <div x-data="{
     downloading: false,
@@ -1213,17 +1200,18 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                     <!-- 5. معیار پذیرش -->
                                     <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                                         @php
-                                            // شمارش مشکلات تجمیعی خانواده
+                                            // شمارش مشکلات تجمیعی خانواده - به‌روزرسانی شده
                                             $familyProblems = [];
                                             foreach ($family->members as $member) {
-                                                if (is_array($member->problem_type)) {
-                                                    foreach ($member->problem_type as $problem) {
-                                                        // ترجمه مشکل به فارسی
-                                                        $translatedProblem = $problemTypeTranslations[trim($problem)] ?? trim($problem);
-                                                        if (!isset($familyProblems[$translatedProblem])) {
-                                                            $familyProblems[$translatedProblem] = 0;
+                                                // استفاده از متد جدید برای دریافت معیارها به فارسی
+                                                $memberProblems = $member->getProblemTypesArray(true); // true = Persian display format
+                                                foreach ($memberProblems as $problem) {
+                                                    $problem = trim($problem);
+                                                    if (!empty($problem)) {
+                                                        if (!isset($familyProblems[$problem])) {
+                                                            $familyProblems[$problem] = 0;
                                                         }
-                                                        $familyProblems[$translatedProblem]++;
+                                                        $familyProblems[$problem]++;
                                                     }
                                                 }
                                             }
@@ -1381,14 +1369,14 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">کد ملی</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">تاریخ تولد</th>
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">شغل</th>
-                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">نوع مشکل</th>
+                                            <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">معیار پذیرش</th>
                                             @if(!auth()->user()->isActiveAs('admin'))
                                             <th class="px-3 py-3 text-sm font-medium text-gray-700 text-center">اعتبارسنجی</th>
                                             @endif
                                         </tr>
                                                         </thead>
                                                         <tbody>
-                                                                @forelse($familyMembers ?? $family->members ?? [] as $member)
+                                                                @forelse($family->members ?? [] as $member)
                                                                     <tr class="bg-green-100 border-b border-green-200 hover:bg-green-200" wire:key="member-{{ $member->id }}">
                                                                     <td class="px-5 py-3 text-sm text-gray-800 text-center sticky left-0 bg-green-100">
                                                                             {{-- کاربر بیمه نباید بتواند سرپرست را تغییر دهد --}}
@@ -1430,27 +1418,29 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                                                     <td class="px-3 py-3 text-sm text-gray-800 text-center">{{ $member->occupation ?? 'بیکار' }}</td>
                                                                     <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                                         @php
-                                                                            $problemLabels = [
-                                                                                'unemployment' => ['label' => 'بیکاری', 'color' => 'bg-yellow-100 text-yellow-800'],
-                                                                                'special_disease' => ['label' => 'بیماری خاص', 'color' => 'bg-red-100 text-red-800'],
-                                                                                'disability' => ['label' => 'معلولیت', 'color' => 'bg-blue-100 text-blue-800'],
-                                                                                'no_guardian' => ['label' => 'بی سرپرست', 'color' => 'bg-purple-100 text-purple-800'],
-                                                                                'other' => ['label' => 'سایر', 'color' => 'bg-gray-100 text-gray-800'],
+                                                                            // استفاده از متد جدید برای دریافت معیارهای پذیرش به فارسی
+                                                                            $memberProblemTypes = $member->getProblemTypesArray(true); // true = Persian display format
+                                                                            
+                                                                            // رنگ‌های معیارها
+                                                                            $problemColors = [
+                                                                                'اعتیاد' => 'bg-purple-100 text-purple-800',
+                                                                                'بیکاری' => 'bg-orange-100 text-orange-800',
+                                                                                'بیماری خاص' => 'bg-red-100 text-red-800',
+                                                                                'از کار افتادگی' => 'bg-yellow-100 text-yellow-800',
                                                                             ];
-                                                                            $problems = is_array($member->problems) ? $member->problems : json_decode($member->problems, true) ?? [];
                                                                         @endphp
-                                                                        @if(!empty($problems))
+                                                                        @if(!empty($memberProblemTypes))
                                                                             <div class="flex flex-wrap gap-1 justify-center">
-                                                                                @foreach($problems as $problem)
-                                                                                    @if(isset($problemLabels[$problem]))
-                                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $problemLabels[$problem]['color'] }}">
-                                                                                            {{ $problemLabels[$problem]['label'] }}
-                                                                                        </span>
-                                                                                    @endif
+                                                                                @foreach($memberProblemTypes as $problemType)
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $problemColors[$problemType] ?? 'bg-gray-100 text-gray-800' }}" title="معیار فردی: {{ $problemType }}">
+                                                                                        {{ $problemType }}
+                                                                                    </span>
                                                                                 @endforeach
                                                                             </div>
                                                                         @else
-                                                                            -
+                                                                            <span class="px-2 py-0.5 rounded-md text-xs bg-gray-100 text-gray-800" title="این عضو هیچ معیار پذیرشی ندارد">
+                                                                                بدون معیار فردی
+                                                                            </span>
                                                                         @endif
                                                                     </td>
 

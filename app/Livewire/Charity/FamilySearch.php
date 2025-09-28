@@ -2888,17 +2888,14 @@ class FamilySearch extends Component
 
             $this->editingMemberId = $memberId;
 
-            // تبدیل آرایه problem_type به رشته برای نمایش در فرم
-            $problemTypeString = '';
-            if (is_array($member->problem_type) && !empty($member->problem_type)) {
-                $problemTypeString = implode(', ', $member->problem_type);
-            }
+            // دریافت آرایه معیارهای پذیرش برای dropdown
+            $problemTypesArray = $member->getProblemTypesArray(); // English keys for the dropdown
 
             $this->editingMemberData = [
                 'relationship' => $member->relationship ?? '',
                 'occupation' => $member->occupation ?? '',
                 'job_type' => $member->job_type ?? '',
-                'problem_type' => $problemTypeString
+                'problem_type' => $problemTypesArray
             ];
         } catch (\Exception $e) {
             Log::error('Error starting member edit:', [
@@ -2924,7 +2921,7 @@ class FamilySearch extends Component
                 'editingMemberData.relationship' => 'required|string|max:255',
                 'editingMemberData.occupation' => 'required|string|max:255',
                 'editingMemberData.job_type' => 'nullable|string|max:255',
-                'editingMemberData.problem_type' => 'nullable|string|max:1000'
+                'editingMemberData.problem_type' => 'nullable|array'
             ], [
                 'editingMemberData.relationship.required' => 'نسبت الزامی است',
                 'editingMemberData.occupation.required' => 'شغل الزامی است',
@@ -2953,47 +2950,167 @@ class FamilySearch extends Component
                 $updateData['job_type'] = null;
             }
 
-            // مدیریت معیار پذیرش (problem_type)
+            // مدیریت معیار پذیرش (problem_type) - پیشرفته و بهبود یافته
             $problemTypeArray = null;
             $problemTypeInput = $this->editingMemberData['problem_type'] ?? '';
 
-            // تبدیل آرایه به رشته اگر لازم باشد
-            if (is_array($problemTypeInput)) {
-                $problemTypeString = implode(', ', array_filter($problemTypeInput, function($item) {
-                    return !empty(trim($item));
-                }));
-            } else {
-                $problemTypeString = (string) $problemTypeInput;
-            }
+            Log::info('Processing problem_type input', [
+                'member_id' => $this->editingMemberId,
+                'input_type' => gettype($problemTypeInput),
+                'input_value_persian' => $problemTypeInput
+            ]);
 
-            if (!empty($problemTypeString) && trim($problemTypeString) !== '') {
-                $problemTypeString = trim($problemTypeString);
-                // تقسیم رشته با کاما و حذف فضاهای اضافی
+            // پردازش مستقیم آرایه از dropdown
+            if (is_array($problemTypeInput)) {
+                // فیلتر کردن مقادیر خالی و null
+                $problemTypesForStorage = array_filter($problemTypeInput, function($item) {
+                    return !is_null($item) && trim((string)$item) !== '';
+                });
+                
+                // حذف مقادیر تکراری و مرتب‌سازی
+                $problemTypesForStorage = array_unique(array_values($problemTypesForStorage));
+                sort($problemTypesForStorage);
+
+                if (!empty($problemTypesForStorage)) {
+                    $problemTypeArray = $problemTypesForStorage;
+                } else {
+                    // آرایه خالی است یا هیچ مقدار معتبری ندارد
+                    $problemTypeArray = null;
+                }
+            } else if (!empty($problemTypeInput) && trim($problemTypeInput) !== '') {
+                // اگر رشته باشد (برای سازگاری با روش قبلی)
+                $problemTypeString = trim((string) $problemTypeInput);
+                
+                // تقسیم رشته با کاما
                 $problemTypes = array_map('trim', explode(',', $problemTypeString));
+                
+                // فیلتر کردن مقادیر خالی
                 $problemTypes = array_filter($problemTypes, function($item) {
                     return !empty(trim($item));
                 });
+                
+                // تبدیل فارسی به انگلیسی
+                $problemTypesForStorage = [];
+                foreach ($problemTypes as $problemType) {
+                    $englishValue = \App\Helpers\ProblemTypeHelper::persianToEnglish(trim($problemType));
+                    if (!in_array($englishValue, $problemTypesForStorage)) {
+                        $problemTypesForStorage[] = $englishValue;
+                    }
+                }
+                
+                // حذف مقادیر تکراری و مرتب‌سازی
+                $problemTypesForStorage = array_unique($problemTypesForStorage);
+                sort($problemTypesForStorage);
 
-                if (!empty($problemTypes)) {
-                    $problemTypeArray = array_values($problemTypes); // reset array keys
+                if (!empty($problemTypesForStorage)) {
+                    $problemTypeArray = array_values($problemTypesForStorage);
                 }
             }
 
-            $updateData['problem_type'] = $problemTypeArray;
-
-            // لاگ برای دیباگ
-            Log::info('Updating member data:', [
+            // اگر آرایه خالی باشد، null ذخیره کن (نه آرایه خالی)
+            $updateData['problem_type'] = empty($problemTypeArray) ? null : $problemTypeArray;
+            
+            // لاگ نتیجه تبدیل (همیشه لاگ کن)
+            Log::info('Problem_type conversion completed', [
                 'member_id' => $this->editingMemberId,
-                'original_problem_type' => $this->editingMemberData['problem_type'],
-                'processed_problem_type' => $problemTypeArray,
-                'job_type' => $updateData['job_type'],
-                'occupation' => $updateData['occupation']
+                'input_raw' => $problemTypeInput,
+                'input_type' => gettype($problemTypeInput),
+                'input_is_empty' => empty($problemTypeInput),
+                'input_is_empty_array' => is_array($problemTypeInput) && empty($problemTypeInput),
+                'processed_array' => $problemTypeArray,
+                'will_store_in_db' => $updateData['problem_type']
+            ]);
+
+            // لاگ کامل برای دیباگ و ردیابی مشکلات
+            Log::info('Updating member data - BEFORE UPDATE:', [
+                'member_id' => $this->editingMemberId,
+                'family_id' => $member->family_id,
+                'member_name' => $member->first_name . ' ' . $member->last_name,
+                'original_data' => [
+                    'relationship' => $member->relationship,
+                    'occupation' => $member->occupation,
+                    'job_type' => $member->job_type,
+                    'problem_type_original' => $member->problem_type
+                ],
+                'input_data' => [
+                    'relationship' => $this->editingMemberData['relationship'],
+                    'occupation' => $this->editingMemberData['occupation'],
+                    'job_type' => $this->editingMemberData['job_type'],
+                    'problem_type_input' => $this->editingMemberData['problem_type']
+                ],
+                'processed_update_data' => $updateData
             ]);
 
             $member->update($updateData);
+            
+            // لاگ بعد از آپدیت برای تأیید تغییرات
+            Log::info('Member data updated successfully - AFTER UPDATE:', [
+                'member_id' => $member->id,
+                'updated_data' => $updateData,
+                'fresh_data_from_db' => [
+                    'relationship' => $member->fresh()->relationship,
+                    'occupation' => $member->fresh()->occupation,
+                    'job_type' => $member->fresh()->job_type,
+                    'problem_type' => $member->fresh()->problem_type
+                ]
+            ]);
 
-            // پاک کردن کش برای به‌روزرسانی داده‌ها
+            // همگام‌سازی معیارهای پذیرش خانواده بر اساس معیارهای اعضا
+            $family = $member->family;
+            $family->load('members'); // اطمینان از بارگیری اعضای به‌روزرسانی شده
+            $family->syncAcceptanceCriteriaFromMembers();
+
+            // به‌روزرسانی فوری داده‌های محلی برای نمایش بلافاصله
+            if ($this->expandedFamily === $member->family_id && !empty($this->familyMembers)) {
+                foreach ($this->familyMembers as $key => $familyMember) {
+                    if ($familyMember->id == $member->id) {
+                        // به‌روزرسانی داده‌های عضو
+                        $this->familyMembers[$key]->relationship = $updateData['relationship'];
+                        $this->familyMembers[$key]->occupation = $updateData['occupation'];
+                        $this->familyMembers[$key]->job_type = $updateData['job_type'];
+                        $this->familyMembers[$key]->problem_type = $updateData['problem_type'];
+                        $this->familyMembers[$key]->relationship_fa = $updateData['relationship'];
+                        
+                        Log::info('Member data updated locally for immediate display', [
+                            'member_id' => $member->id,
+                            'updated_fields' => array_keys($updateData)
+                        ]);
+                        break;
+                    }
+                }
+                
+                // به‌روزرسانی اطلاعات خانواده در familyMembers برای نمایش فوری
+                // برای نمایش فوری، خانواده را به‌روزرسانی می‌کنیم
+                $freshFamily = $family->fresh(['members']); // بارگیری مجدد خانوادع به‌روزرسانی شده
+                $this->familyMembers = $this->familyMembers->map(function($familyMember) use ($freshFamily) {
+                    if ($familyMember->family_id === $freshFamily->id) {
+                        $familyMember->family = $freshFamily; // به‌روزرسانی اطلاعات خانواده
+                    }
+                    return $familyMember;
+                });
+                
+                Log::info('Family acceptance_criteria updated locally for immediate display', [
+                    'family_id' => $freshFamily->id,
+                    'updated_acceptance_criteria' => $freshFamily->acceptance_criteria
+                ]);
+            }
+
+            // پاک کردن کش‌های مختلف برای اطمینان از نمایش داده‌های جدید
             $this->clearFamiliesCache();
+            
+            // پاک کردن کش رتبه‌بندی خانواده
+            \Cache::forget('family_rank_' . $family->id);
+            
+            // اجبار به ریفرش کامپوننت برای نمایش تغییرات
+            $this->refreshFamilyInList($family->id);
+            
+            // به‌روزرسانی لیست اصلی خانواده‌ها برای نمایش فوری تغییرات
+            $this->updateFamilyInMainList($family->id);
+            
+            $this->dispatch('family-data-updated', [
+                'family_id' => $family->id,
+                'acceptance_criteria' => $family->acceptance_criteria
+            ]);
 
             // بستن حالت ویرایش
             $this->cancelMemberEdit();
@@ -3012,6 +3129,100 @@ class FamilySearch extends Component
             $this->dispatch('notify', [
                 'message' => 'خطا در ذخیره اطلاعات: ' . $e->getMessage(),
                 'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * بهروزرسانی خانواده مشخص در لیست families برای نمایش فوری تغییرات
+     * @param int $familyId
+     * @return void
+     */
+    protected function refreshFamilyInList($familyId)
+    {
+        // اگر لیست families در کامپوننت وجود دارد، آن خانواده را به‌روزرسانی کن
+        try {
+            // این method برای refresh کردن داده‌های کش شده کامپوننت است
+            $this->clearCache();
+            
+            Log::info('Family refreshed in component list', [
+                'family_id' => $familyId,
+                'component' => 'FamilySearch'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error refreshing family in list', [
+                'family_id' => $familyId,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * به‌روزرسانی خانواده خاص در لیست اصلی خانواده‌ها
+     * @param int $familyId
+     * @return void
+     */
+    protected function updateFamilyInMainList($familyId)
+    {
+        try {
+            // بازیابی داده‌های جدید خانواده با تمام روابط
+            $updatedFamily = Family::with([
+                'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'
+            ])->find($familyId);
+            
+            if (!$updatedFamily) {
+                Log::warning('Family not found for update', ['family_id' => $familyId]);
+                return;
+            }
+            
+            // وادار کردن خانواده به refresh از دیتابیس تا داده‌های جدید بارگیری شوند
+            $updatedFamily->refresh();
+            $updatedFamily->load(['members', 'head', 'province', 'city', 'district', 'region', 'charity', 'organization']);
+            
+            // اگر property families وجود دارد، آن را به‌روزرسانی کن
+            if (property_exists($this, 'families') && !empty($this->families)) {
+                $this->families = $this->families->map(function($family) use ($updatedFamily) {
+                    if ($family->id === $updatedFamily->id) {
+                        Log::info('Replacing family in collection', [
+                            'family_id' => $updatedFamily->id,
+                            'old_acceptance_criteria' => $family->acceptance_criteria ?? 'NULL',
+                            'new_acceptance_criteria' => $updatedFamily->acceptance_criteria ?? 'NULL'
+                        ]);
+                        return $updatedFamily;
+                    }
+                    return $family;
+                });
+            }
+            
+            // به‌روزرسانی familyMembers اگر خانواده باز است
+            if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
+                $this->familyMembers = $updatedFamily->members;
+                Log::info('Family members updated in expanded view', [
+                    'family_id' => $familyId,
+                    'members_count' => $this->familyMembers->count()
+                ]);
+            }
+            
+            // اجبار به ریرندر مجدد کامپوننت برای نمایش تغییرات
+            $this->dispatch('family-updated', [
+                'familyId' => $familyId,
+                'acceptanceCriteria' => $updatedFamily->acceptance_criteria
+            ]);
+            
+            // ریفرش مجدد کامپوننت برای نمایش تغییرات
+            $this->skipRender = false; // اطمینان از ریرندر مجدد
+            
+            Log::info('Family updated in main list', [
+                'family_id' => $familyId,
+                'updated_acceptance_criteria' => $updatedFamily->acceptance_criteria,
+                'forced_refresh' => true
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating family in main list', [
+                'family_id' => $familyId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
@@ -3603,6 +3814,41 @@ class FamilySearch extends Component
             $this->dispatch('notify', [
                 'message' => 'خطا در کپی کردن فیلتر: ' . $e->getMessage(),
                 'type' => 'error'
+            ]);
+        }
+    }
+
+    /**
+     * حذف یک معیار پذیرش از لیست آرایه
+     * برای استفاده در multi-select dropdown
+     */
+    public function removeProblemType($key)
+    {
+        Log::info('Removing problem type', [
+            'key_to_remove' => $key,
+            'current_array' => $this->editingMemberData['problem_type'] ?? 'not_set',
+            'member_id' => $this->editingMemberId
+        ]);
+        
+        if (isset($this->editingMemberData['problem_type']) && is_array($this->editingMemberData['problem_type'])) {
+            // حذف کلید مشخص
+            $this->editingMemberData['problem_type'] = array_filter(
+                $this->editingMemberData['problem_type'], 
+                function($item) use ($key) {
+                    return (string)$item !== (string)$key; // اطمینان از مقایسه رشته‌ای
+                }
+            );
+            
+            // بازنشانی کلیدهای آرایه
+            $this->editingMemberData['problem_type'] = array_values($this->editingMemberData['problem_type']);
+            
+            Log::info('Problem type removed successfully', [
+                'remaining_array' => $this->editingMemberData['problem_type'],
+                'count' => count($this->editingMemberData['problem_type'])
+            ]);
+        } else {
+            Log::warning('Cannot remove problem type - array not found or invalid', [
+                'editingMemberData' => $this->editingMemberData ?? 'not_set'
             ]);
         }
     }
