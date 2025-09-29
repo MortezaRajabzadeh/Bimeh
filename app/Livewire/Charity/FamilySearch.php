@@ -1018,16 +1018,31 @@ class FamilySearch extends Component
         try {
             $filterType = $filter['type'];
             $filterValue = $filter['value'];
-            // اگر operator برای شرط منطقی است (و یا یا) تو equals تبدیلش میکنیم
-            $operator = $filter['operator'] ?? 'equals';
-            if ($operator === 'and' || $operator === 'or') {
+            
+            // پردازش operators جدید
+            $logicalOperator = $filter['logical_operator'] ?? 'and';
+            $existenceOperator = $filter['existence_operator'] ?? 'equals';
+            
+            // تعیین operator نهایی بر اساس شرط‌های جدید
+            $operator = $existenceOperator;
+            if ($existenceOperator === 'equals') {
+                // اگر مقدار خاص است، از logical operator استفاده کن
                 $operator = 'equals';
             }
+            
+            // سازگاری با operator قدیمی
+            if (isset($filter['operator']) && in_array($filter['operator'], ['exists', 'not_exists', 'equals', 'and', 'or'])) {
+                $operator = $filter['operator'];
+                if ($operator === 'and' || $operator === 'or') {
+                    $operator = 'equals';
+                }
+            }
 
-            // تعیین نوع متد بر اساس عملگر منطقی
-            $whereMethod = $method === 'or' ? 'orWhere' : 'where';
-            $whereHasMethod = $method === 'or' ? 'orWhereHas' : 'whereHas';
-            $whereDoesntHaveMethod = $method === 'or' ? 'orWhereDoesntHave' : 'whereDoesntHave';
+            // تعیین نوع متد بر اساس عملگر منطقی نهایی
+            $finalLogicalMethod = ($logicalOperator === 'or' || $method === 'or') ? 'or' : 'and';
+            $whereMethod = $finalLogicalMethod === 'or' ? 'orWhere' : 'where';
+            $whereHasMethod = $finalLogicalMethod === 'or' ? 'orWhereHas' : 'whereHas';
+            $whereDoesntHaveMethod = $finalLogicalMethod === 'or' ? 'orWhereDoesntHave' : 'whereDoesntHave';
 
             switch ($filterType) {
                 case 'status':
@@ -1048,9 +1063,21 @@ class FamilySearch extends Component
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای استان خاص: families با province_id برابر با مقدار انتخابی
+                            $queryBuilder = $queryBuilder->$whereMethod('families.province_id', $filterValue);
+                        } else {
+                            // فیلتر برای وجود هر استان: families که province_id دارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', null);
+                        }
                     } elseif ($operator === 'not_exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.province_id', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای عدم انتخاب استان خاص: families که province_id آن‌ها برابر با مقدار انتخابی نباشد
+                            $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
+                        } else {
+                            // فیلتر برای عدم وجود استان: families که province_id ندارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.province_id', null);
+                        }
                     }
                     break;
 
@@ -1060,9 +1087,21 @@ class FamilySearch extends Component
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای شهر خاص: families با city_id برابر با مقدار انتخابی
+                            $queryBuilder = $queryBuilder->$whereMethod('families.city_id', $filterValue);
+                        } else {
+                            // فیلتر برای وجود هر شهر: families که city_id دارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', null);
+                        }
                     } elseif ($operator === 'not_exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.city_id', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای عدم انتخاب شهر خاص: families که city_id آن‌ها برابر با مقدار انتخابی نباشد
+                            $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
+                        } else {
+                            // فیلتر برای عدم وجود شهر: families که city_id ندارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.city_id', null);
+                        }
                     }
                     break;
 
@@ -1072,9 +1111,21 @@ class FamilySearch extends Component
                     } elseif ($operator === 'not_equals') {
                         $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای خیریه خاص: families با charity_id برابر با مقدار انتخابی
+                            $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', $filterValue);
+                        } else {
+                            // فیلتر برای وجود هر خیریه: families که charity_id دارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', null);
+                        }
                     } elseif ($operator === 'not_exists') {
-                        $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', null);
+                        if (!empty($filterValue)) {
+                            // فیلتر برای عدم انتخاب خیریه خاص: families که charity_id آن‌ها برابر با مقدار انتخابی نباشد
+                            $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
+                        } else {
+                            // فیلتر برای عدم وجود خیریه: families که charity_id ندارند
+                            $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', null);
+                        }
                     }
                     break;
 
@@ -2890,12 +2941,18 @@ class FamilySearch extends Component
 
             // دریافت آرایه معیارهای پذیرش برای dropdown
             $problemTypesArray = $member->getProblemTypesArray(); // English keys for the dropdown
+            
+            // حذف تکراری‌ها و مرتب‌سازی
+            if (is_array($problemTypesArray)) {
+                $problemTypesArray = array_unique($problemTypesArray);
+                sort($problemTypesArray);
+            }
 
             $this->editingMemberData = [
                 'relationship' => $member->relationship ?? '',
                 'occupation' => $member->occupation ?? '',
                 'job_type' => $member->job_type ?? '',
-                'problem_type' => $problemTypesArray
+                'problem_type' => $problemTypesArray ?? []
             ];
         } catch (\Exception $e) {
             Log::error('Error starting member edit:', [
@@ -2962,7 +3019,7 @@ class FamilySearch extends Component
 
             // پردازش مستقیم آرایه از dropdown
             if (is_array($problemTypeInput)) {
-                // فیلتر کردن مقادیر خالی و null
+                // فیلتر کردن مقادیر خالی و null و تکراری‌ها
                 $problemTypesForStorage = array_filter($problemTypeInput, function($item) {
                     return !is_null($item) && trim((string)$item) !== '';
                 });
@@ -2970,9 +3027,18 @@ class FamilySearch extends Component
                 // حذف مقادیر تکراری و مرتب‌سازی
                 $problemTypesForStorage = array_unique(array_values($problemTypesForStorage));
                 sort($problemTypesForStorage);
+                
+                // بررسی اضافی برای حذف مقادیر مشابه
+                $finalArray = [];
+                foreach ($problemTypesForStorage as $item) {
+                    $trimmedItem = trim((string)$item);
+                    if (!empty($trimmedItem) && !in_array($trimmedItem, $finalArray)) {
+                        $finalArray[] = $trimmedItem;
+                    }
+                }
 
-                if (!empty($problemTypesForStorage)) {
-                    $problemTypeArray = $problemTypesForStorage;
+                if (!empty($finalArray)) {
+                    $problemTypeArray = $finalArray;
                 } else {
                     // آرایه خالی است یا هیچ مقدار معتبری ندارد
                     $problemTypeArray = null;
@@ -3839,8 +3905,8 @@ class FamilySearch extends Component
                 }
             );
             
-            // بازنشانی کلیدهای آرایه
-            $this->editingMemberData['problem_type'] = array_values($this->editingMemberData['problem_type']);
+            // بازنشانی کلیدهای آرایه و حذف تکراری‌ها
+            $this->editingMemberData['problem_type'] = array_unique(array_values($this->editingMemberData['problem_type']));
             
             Log::info('Problem type removed successfully', [
                 'remaining_array' => $this->editingMemberData['problem_type'],
@@ -3850,6 +3916,62 @@ class FamilySearch extends Component
             Log::warning('Cannot remove problem type - array not found or invalid', [
                 'editingMemberData' => $this->editingMemberData ?? 'not_set'
             ]);
+        }
+    }
+
+    /**
+     * اضافه کردن معیار پذیرش جدید با بررسی تکرار
+     * @param string $key
+     * @return void
+     */
+    public function addProblemType($key)
+    {
+        if (!isset($this->editingMemberData['problem_type'])) {
+            $this->editingMemberData['problem_type'] = [];
+        }
+        
+        // بررسی تکرار قبل از اضافه کردن
+        if (!in_array($key, $this->editingMemberData['problem_type'])) {
+            $this->editingMemberData['problem_type'][] = $key;
+            
+            // مرتب‌سازی و حذف احتمالی تکراری‌ها
+            $this->editingMemberData['problem_type'] = array_unique($this->editingMemberData['problem_type']);
+            sort($this->editingMemberData['problem_type']);
+            
+            Log::info('Problem type added successfully', [
+                'added_key' => $key,
+                'current_array' => $this->editingMemberData['problem_type'],
+                'member_id' => $this->editingMemberId
+            ]);
+        }
+    }
+
+    /**
+     * به‌روزرسانی خودکار problem_type برای حذف تکراری‌ها در زمان واقعی
+     * @param mixed $value
+     * @return void
+     */
+    public function updatedEditingMemberDataProblemType($value)
+    {
+        if (is_array($value)) {
+            // حذف مقادیر خالی و تکراری
+            $cleanedArray = array_filter($value, function($item) {
+                return !is_null($item) && trim((string)$item) !== '';
+            });
+            
+            $cleanedArray = array_unique($cleanedArray);
+            sort($cleanedArray);
+            
+            // فقط اگر تغییری وجود داشته باشد، به‌روزرسانی کن
+            if ($cleanedArray !== $value) {
+                $this->editingMemberData['problem_type'] = array_values($cleanedArray);
+                
+                Log::info('Problem type array cleaned automatically', [
+                    'original_count' => count($value),
+                    'cleaned_count' => count($cleanedArray),
+                    'member_id' => $this->editingMemberId
+                ]);
+            }
         }
     }
 

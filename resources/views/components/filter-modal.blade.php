@@ -79,7 +79,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <template x-for="(filter, index) in filters" :key="index">
-                            <tr class="hover:bg-blue-50 transition-colors duration-200">
+                            <tr class="hover:bg-blue-50 transition-colors duration-200" x-init="$nextTick(() => { if (!filter.type) { filter.type = 'province'; } if (!filter.operator) { filter.operator = 'and'; } setTimeout(() => updateFilterLabel(index), 50); });">
                                 <!-- نوع فیلتر -->
                                 <td class="px-6 py-5">
                                     <div class="relative">
@@ -105,24 +105,6 @@
 
                                 <!-- جزئیات فیلتر -->
                                 <td class="px-6 py-5">
-                                    <div x-show="filter.type === 'status'" class="relative">
-                                        <select x-model="filter.value"
-                                                class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                            <option value="">انتخاب وضعیت...</option>
-                                            <option value="insured">بیمه شده</option>
-                                            <option value="uninsured">بدون بیمه</option>
-                                            <option value="pending">در انتظار بررسی</option>
-                                            <option value="approved">تایید شده</option>
-                                            <option value="rejected">رد شده</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-
                                     <div x-show="filter.type === 'province'" class="relative">
                                         <select x-model="filter.value"
                                                 class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
@@ -365,19 +347,37 @@
 
                                 <!-- شرط -->
                                 <td class="px-6 py-5">
-                                    <div class="relative">
-                                        <select x-model="filter.operator" @change="updateFilterLabel(index)"
-                                                class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 appearance-none cursor-pointer transition-all duration-200"
-                                                style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
-                                            <option value="and">و</option>
-                                            <option value="or">یا</option>
-                                            <option value="exists">باشد</option>
-                                            <option value="not_exists">نباشد</option>
-                                        </select>
-                                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
+                                    <div class="space-y-2">
+                                        <!-- شرط وجودی (باشد/نباشد) -->
+                                        <div class="relative">
+                                            <select x-model="filter.existence_operator" @change="updateFilterLabel(index)"
+                                                    x-init="if (!filter.existence_operator) { filter.existence_operator = 'exists'; }"
+                                                    class="w-full h-10 border-2 border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-3 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="exists">باشد</option>
+                                                <option value="not_exists">نباشد</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <!-- شرط منطقی (و/یا) -->
+                                        <div class="relative">
+                                            <select x-model="filter.logical_operator" @change="updateFilterLabel(index)"
+                                                    x-init="if (!filter.logical_operator) { filter.logical_operator = 'and'; }"
+                                                    class="w-full h-10 border-2 border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-3 appearance-none cursor-pointer transition-all duration-200"
+                                                    style="appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background-image: none !important;">
+                                                <option value="and">و</option>
+                                                <option value="or">یا</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>

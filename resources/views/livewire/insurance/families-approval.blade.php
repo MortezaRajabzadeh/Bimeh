@@ -935,12 +935,11 @@ total items: {{ $families->count() ?? 0 }}</pre>
                     </div>
                 </div>
             @else
-                <div class="w-full overflow-x-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr class="text-xs text-gray-700">
                                 <!-- ستون چک‌باکس -->
-                                <th scope="col" class="px-3 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-3 py-3 text-center font-medium">
                                     <input type="checkbox" id="select-all"
                                            wire:model.live="selectAll"
                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
@@ -949,12 +948,12 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 @php $sf = $sortField ?? ''; $sd = $sortDirection ?? ''; @endphp
 
                                 <!-- 0. رتبه -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     رتبه
                                 </th>
 
                                 <!-- 1. شناسه خانواده -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('family_code')" class="flex items-center justify-center w-full">
                                         شناسه خانواده
                                         @if($sf === 'family_code')
@@ -974,7 +973,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 </th>
 
                                 <!-- 2. استان -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('province_id')" class="flex items-center justify-center w-full">
                                         استان
                                         @if($sf === 'province_id')
@@ -996,7 +995,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 </th>
 
                                 <!-- 3. شهر/روستا -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('city_id')" class="flex items-center justify-center w-full">
                                         شهر/روستا
                                         @if($sf === 'city_id')
@@ -1019,7 +1018,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
                                 @if($activeTab === 'renewal')
                                 <!-- 4. تعداد بیمه‌ها -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('final_insurances_count')" class="flex items-center justify-center w-full">
                                         تعداد بیمه‌ها
                                         @if($sf === 'final_insurances_count')
@@ -1042,18 +1041,18 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 @endif
 
                                 <!-- 5. معیار پذیرش -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     معیار پذیرش
                                 </th>
 
 
 
                                 <!-- 7. تعداد اعضا -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     {{ $activeTab === 'pending' ? 'تعداد اعضای خانواده' : 'تعداد اعضا' }}
                                 </th>
                                 <!-- 8. سرپرست خانوار -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('head_name')" class="flex items-center justify-center w-full">
                                         سرپرست خانوار
                                         @if($sf === 'head_name')
@@ -1073,14 +1072,14 @@ total items: {{ $families->count() ?? 0 }}</pre>
                                 </th>
 
                                 <!-- 7. خیریه معرف -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                         خیریه معرف
                                 </th>
 
 
 
                                 <!-- 9. تاریخ عضویت -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <button wire:click="sortBy('created_at')" class="flex items-center justify-center w-full">
                                         تاریخ عضویت
                                         @if($sf === 'created_at')
@@ -1103,18 +1102,18 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
                                 <!-- 10. تاریخ پایان بیمه -->
                                 @if($this->showInsuranceEndDate())
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     تاریخ پایان بیمه
                                 </th>
                                 @endif
 
                                 <!-- 11. آیکون‌های اعتبارسنجی -->
-                                <th scope="col" class="px-5 py-3 text-center font-medium">
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">
                                     <span class="text-gray-600">اعتبارسنجی</span>
                                 </th>
 
 
-                                <th scope="col" class="px-5 py-3 text-center font-medium">جزئیات</th>
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center font-medium">جزئیات</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -1499,7 +1498,6 @@ total items: {{ $families->count() ?? 0 }}</pre>
                             @endforelse
                         </tbody>
                     </table>
-                </div>
                 @endif
             </div>
 

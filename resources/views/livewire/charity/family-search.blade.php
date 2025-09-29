@@ -12,8 +12,10 @@
                 this.filters = [];
             }
             this.filters.push({
-                type: 'status',
-                operator: 'equals',
+                type: 'province',
+                logical_operator: 'and',
+                existence_operator: 'exists',
+                operator: 'exists', // حفظ برای سازگاری با کد قدیمی
                 value: '',
                 label: ''
             });
@@ -46,6 +48,12 @@
                 case 'members_count':
                     label = 'تعداد اعضا';
                     break;
+                case 'special_disease':
+                    label = 'معیار پذیرش';
+                    break;
+                case 'membership_date':
+                    label = 'تاریخ عضویت';
+                    break;
                 case 'created_at':
                     if (this.filters && this.filters.find(f => f.type === 'status' && f.value === 'insured')) {
                         label = 'تاریخ پایان بیمه';
@@ -55,19 +63,23 @@
                     break;
             }
 
-            // اضافه کردن متن عملگر به برچسب (استثنا: فیلترهای تاریخی)
-            // فیلترهای created_at که تاریخ هستند را نادیده بگیر
-            const isDateFilter = this.filters[index].type === 'created_at';
+            // به‌روزرسانی operator برای سازگاری با backend
+            const logicalOp = this.filters[index].logical_operator || 'and';
+            const existenceOp = this.filters[index].existence_operator || 'exists';
+            
+            // تنظیم operator بر اساس شرط‌های جدید
+            this.filters[index].operator = existenceOp;
+
+            // اضافه کردن متن عملگر به برچسب
+            const isDateFilter = this.filters[index].type === 'created_at' || this.filters[index].type === 'membership_date';
             
             if (!isDateFilter) {
-                if (this.filters[index].operator === 'equals' || this.filters[index].operator === 'and') label += ' برابر با';
-                else if (this.filters[index].operator === 'not_equals') label += ' مخالف';
-                else if (this.filters[index].operator === 'greater_than') label += ' بیشتر از';
-                else if (this.filters[index].operator === 'less_than') label += ' کمتر از';
-                else if (this.filters[index].operator === 'contains') label += ' شامل';
-                else if (this.filters[index].operator === 'exists') label += ' باشد';
-                else if (this.filters[index].operator === 'not_exists') label += ' نباشد';
-                else if (this.filters[index].operator === 'or') label += ' یا';
+                // شرط‌های وجودی
+                if (existenceOp === 'exists') {
+                    label += ' باشد';
+                } else if (existenceOp === 'not_exists') {
+                    label += ' نباشد';
+                }
             }
 
             this.filters[index].label = label;
@@ -229,7 +241,7 @@
             <table class="w-full divide-y divide-gray-200">
                 <thead>
                     <tr class="bg-gray-50 text-xs text-gray-700">
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('family_code')" class="flex items-center justify-center w-full">
                                 شناسه خانواده
                                 @php $sf = $sortField ?? ''; $sd = $sortDirection ?? ''; @endphp
@@ -250,7 +262,7 @@
                                 @endif
                             </button>
                         </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('province_id')" class="flex items-center justify-center w-full">
                                 استان
                                 @if($sf === 'province_id')
@@ -270,7 +282,7 @@
                                 @endif
                             </button>
                         </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <button wire:click="sortBy('city_id')" class="flex items-center justify-center w-full">
                                 شهر
                                 @if($sf === 'city_id')
@@ -291,7 +303,7 @@
                             </button>
                         </th>
 
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium min-w-[180px]">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium min-w-[180px]">
                             <div class="flex items-center justify-center">
                                 <span>سرپرست خانوار</span>
                             </div>
@@ -299,7 +311,7 @@
 
                         <!-- تعداد اعضا - برای کاربران خیریه و بیمه -->
                         @if(auth()->user()->isCharity() || auth()->user()->isInsurance())
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
                             <div class="flex items-center justify-center space-s-1">
                                 <span>تعداد اعضا</span>
                                 @if($sf === 'members_count')
@@ -319,7 +331,7 @@
                         </th>
                         @endif
 
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium w-32">
                             <div class="flex items-center justify-center">
                                 <span>معیار پذیرش</span>
                             </div>
@@ -328,42 +340,42 @@
                         @if($status === 'insured' && auth()->user()->isInsurance())
 
                         <!-- تعداد بیمه‌ها -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium w-24">
                             <div class="flex items-center justify-center">
                                 <span>تعداد بیمه‌ها</span>
                             </div>
                         </th>
 
                         <!-- نوع بیمه -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>نوع بیمه</span>
                             </div>
                         </th>
 
                         <!-- تاریخ شروع و پایان بیمه -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>تاریخ شروع و پایان بیمه</span>
                             </div>
                         </th>
 
                         <!-- تاریخ عضویت -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>تاریخ عضویت</span>
                             </div>
                         </th>
 
                         <!-- پرداخت کننده حق بیمه -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>پرداخت کننده حق بیمه</span>
                             </div>
                         </th>
                         @elseif($status === 'insured')
                         <!-- نوع بیمه برای کاربران غیر بیمه -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>نوع بیمه</span>
                             </div>
@@ -371,7 +383,7 @@
 
                         
                         <!-- تاریخ شروع -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>تاریخ شروع</span>
 
@@ -380,7 +392,7 @@
                         </th>
 
                         <!-- پرداخت کننده حق بیمه -->
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>پرداخت کننده حق بیمه</span>
                             </div>
@@ -389,7 +401,7 @@
 
 
                         @if(auth()->user()->isActiveAs('admin'))
-                            <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                                 <button wire:click="sortBy('total_paid_premium')" class="flex items-center justify-center w-full">
                                     مجموع حق بیمه پرداختی
                                     @if($sf === 'total_paid_premium')
@@ -409,7 +421,7 @@
                                     @endif
                                 </button>
                             </th>
-                            <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                                 <button wire:click="sortBy('total_paid_claims')" class="flex items-center justify-center w-full">
                                     مجموع خسارات پرداخت شده
                                     @if($sf === 'total_paid_claims')
@@ -432,10 +444,10 @@
                         @endif
                         @if(!auth()->user()->isActiveAs('admin'))
 
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             اعتبارسنجی
                         </th>
-                        <th scope="col" class="px-5 py-3 text-center border-b border-gray-200 font-medium">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             جزئیات
                         </th>
                         @endif
