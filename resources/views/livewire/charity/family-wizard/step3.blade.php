@@ -104,10 +104,7 @@
                 @endif
                 @if(!empty($head['mobile']))
                 <div><span class="font-medium">موبایل:</span> {{ $head['mobile'] }}</div>
-                @else
-                <div><span class="font-medium">موبایل:</span> بدون شماره</div>
                 @endif
-                <div><span class="font-medium">شماره تماس:</span> {{ $head['phone'] ?? 'بدون شماره' }}</div>
                 <div><span class="font-medium">شماره شبا:</span> {{ $head['sheba'] ?? 'بدون شماره شبا' }}</div>
                 
                 @php
@@ -166,16 +163,34 @@
                                         <td class="py-2 px-3 border-b">{{ $member['first_name'] }} {{ $member['last_name'] }}</td>
                                         <td class="py-2 px-3 border-b">{{ $member['national_code'] }}</td>
                                         <td class="py-2 px-3 border-b">
-                                            @switch($member['relationship'])
-                                                @case('mother') مادر @break
-                                                @case('father') پدر @break
-                                                @case('son') پسر @break
-                                                @case('daughter') دختر @break
-                                                @case('grandmother') مادربزرگ @break
-                                                @case('grandfather') پدربزرگ @break
-                                                @case('other') سایر @break
-                                                @default -
-                                            @endswitch
+                                            @if(isset($member['relationship']) && !empty($member['relationship']))
+                                                @switch($member['relationship'])
+                                                    @case('spouse') همسر @break
+                                                    @case('mother') مادر @break
+                                                    @case('father') پدر @break
+                                                    @case('son') پسر @break
+                                                    @case('daughter') دختر @break
+                                                    @case('brother') برادر @break
+                                                    @case('sister') خواهر @break
+                                                    @case('grandmother') مادربزرگ @break
+                                                    @case('grandfather') پدربزرگ @break
+                                                    @case('grandson') نوه پسر @break
+                                                    @case('granddaughter') نوه دختر @break
+                                                    @case('uncle') عمو/دایی @break
+                                                    @case('aunt') عمه/خاله @break
+                                                    @case('nephew') برادرزاده @break
+                                                    @case('niece') خواهرزاده @break
+                                                    @case('cousin') پسرعمو/دخترعمو @break
+                                                    @case('son_in_law') داماد @break
+                                                    @case('daughter_in_law') عروس @break
+                                                    @case('mother_in_law') مادرشوهر/مادرزن @break
+                                                    @case('father_in_law') پدرشوهر/پدرزن @break
+                                                    @case('other') سایر @break
+                                                    @default {{ $member['relationship'] }}
+                                                @endswitch
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="py-2 px-3 border-b">
                                             @if(!empty($member['birth_date']) && preg_match('/^1[34][0-9]{2}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$/', $member['birth_date']))
