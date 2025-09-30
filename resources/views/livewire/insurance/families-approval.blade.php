@@ -70,6 +70,9 @@
             case 'special_disease':
                 label = 'معیار پذیرش';
                 break;
+            case 'rank':
+                label = 'رتبه';
+                break;
             case 'membership_date':
                 if (filter.start_date && filter.end_date) {
                     label = `تاریخ عضویت: ${filter.start_date} تا ${filter.end_date}`;
@@ -1723,6 +1726,7 @@ total items: {{ $families->count() ?? 0 }}</pre>
         :provinces="$provinces ?? null"
         :cities="$cities ?? null"
         :organizations="auth()->user()->isInsurance() ? \App\Models\Organization::all() : null"
+        :availableRankSettings="$availableRankSettings ?? null"
     />
     <!-- کامپوننت تنظیمات رتبه -->
     <x-rank-settings-modal

@@ -93,6 +93,9 @@
                                             @endif
                                             <option value="members_count">تعداد اعضا</option>
                                             <option value="special_disease">معیار پذیرش</option>
+                                            @if(auth()->user()->isActiveAs('insurance') && $availableRankSettings)
+                                                <option value="rank">رتبه</option>
+                                            @endif
                                             <option value="membership_date">تاریخ عضویت</option>
                                         </select>
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -250,6 +253,91 @@
                                             </template>
                                         </div>
                                     </div>
+
+                                    <!-- Rank Filter - Multi-select with checkboxes -->
+                                    @if($availableRankSettings)
+                                    <div x-show="filter.type === 'rank'" x-data="{
+                                            showDropdown: false,
+                                            availableOptions: @json($availableRankSettings->map(fn($r) => ['id' => $r->id, 'name' => $r->name])->values()),
+                                            selectedOptions: [],
+                                            init() {
+                                                if (filter.value && typeof filter.value === 'string') {
+                                                    this.selectedOptions = filter.value.split(',').filter(v => v.trim()).map(v => parseInt(v));
+                                                } else if (Array.isArray(filter.value)) {
+                                                    this.selectedOptions = [...filter.value].map(v => parseInt(v));
+                                                }
+                                            },
+                                            toggleOption(optionId) {
+                                                const index = this.selectedOptions.indexOf(optionId);
+                                                if (index > -1) {
+                                                    this.selectedOptions.splice(index, 1);
+                                                } else {
+                                                    this.selectedOptions.push(optionId);
+                                                }
+                                                filter.value = this.selectedOptions.join(',');
+                                            },
+                                            isSelected(optionId) {
+                                                return this.selectedOptions.includes(optionId);
+                                            },
+                                            getDisplayText() {
+                                                if (this.selectedOptions.length === 0) {
+                                                    return 'انتخاب رتبه...';
+                                                } else if (this.selectedOptions.length === 1) {
+                                                    const selected = this.availableOptions.find(opt => opt.id === this.selectedOptions[0]);
+                                                    return selected ? selected.name : 'انتخاب شده';
+                                                } else {
+                                                    return this.selectedOptions.length + ' رتبه انتخاب شده';
+                                                }
+                                            }
+                                        }" 
+                                         class="relative">
+                                        <!-- باکس اصلی نمایش -->
+                                        <div @click="showDropdown = !showDropdown" 
+                                             class="w-full h-12 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white px-4 cursor-pointer transition-all duration-200 flex items-center justify-between"
+                                             :class="{'border-blue-500 ring-2 ring-blue-200': showDropdown}">
+                                            <span class="text-gray-700" x-text="getDisplayText()"></span>
+                                            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" 
+                                                 :class="{'rotate-180': showDropdown}" 
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                        
+                                        <!-- دراپ داون با چک باکس ها -->
+                                        <div x-show="showDropdown" 
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-150"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             @click.away="showDropdown = false"
+                                             class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                            
+                                            <!-- هدر با دکمه انتخاب همه / هیچ کدام -->
+                                            <div class="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                                <span class="text-xs font-medium text-gray-600">رتبه‌ها</span>
+                                                <div class="flex gap-1">
+                                                    <button @click="selectedOptions = availableOptions.map(opt => opt.id); filter.value = selectedOptions.join(',')" 
+                                                            class="text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors">همه</button>
+                                                    <button @click="selectedOptions = []; filter.value = ''" 
+                                                            class="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors">هیچ کدام</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- لیست گزینه ها -->
+                                            <template x-for="option in availableOptions" :key="option.id">
+                                                <label class="flex items-center p-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0">
+                                                    <input type="checkbox" 
+                                                           :checked="isSelected(option.id)"
+                                                           @change="toggleOption(option.id)"
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors">
+                                                    <span class="mr-3 text-sm text-gray-700" x-text="option.name"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    @endif
 
                                     <div x-show="filter.type === 'members_count'" x-data="{
                                         rangeMode: false,
