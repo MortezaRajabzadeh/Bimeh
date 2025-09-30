@@ -4155,12 +4155,29 @@ public function clearCriteriaFilter()
         return \App\Models\Member::whereIn('family_id', $this->selected)->count();
     }
 
+    /**
+     * دریافت تعداد کل اعضای خانواده‌های صفحه فعلی
+     *
+     * @return int
+     */
+    public function getTotalMembersInCurrentPageProperty()
+    {
+        $families = $this->getFamiliesProperty();
+        
+        if (!$families || $families->isEmpty()) {
+            return 0;
+        }
+
+        return $families->sum('members_count');
+    }
+
     public function render()
     {
         $families = $this->getFamiliesProperty();
         return view('livewire.insurance.families-approval', [
             'families' => $families,
-            'totalMembers' => $this->getTotalMembersProperty()
+            'totalMembers' => $this->getTotalMembersProperty(),
+            'totalMembersInCurrentPage' => $this->getTotalMembersInCurrentPageProperty()
         ]);
     }
 
@@ -6436,9 +6453,10 @@ public function clearCriteriaFilter()
 
     /**
      * بارگذاری فیلترهای ذخیره شده کاربر
+     * @param string $filterType نوع فیلتر - 'families_approval'، 'rank_modal' یا 'filter_modal'
      * @return array
      */
-    public function loadSavedFilters()
+    public function loadSavedFilters($filterType = 'families_approval')
     {
         try {
             $user = Auth::user();
@@ -6446,13 +6464,45 @@ public function clearCriteriaFilter()
                 return [];
             }
 
+            // تعیین نوع فیلتر بر اساس پارامتر ورودی
+            $actualFilterType = $filterType;
+            
+            // تبدیل نام‌های متداول به نوع فیلتر واقعی
+            switch ($filterType) {
+                case 'rank_modal':
+                    $actualFilterType = 'rank_settings';
+                    break;
+                case 'filter_modal':
+                    $actualFilterType = 'families_approval';
+                    break;
+                case 'families_approval':
+                case 'rank_settings':
+                    $actualFilterType = $filterType;
+                    break;
+                default:
+                    $actualFilterType = 'families_approval';
+                    break;
+            }
+
+            // لاگ اطلاعات برای دیباگ
+            Log::debug('loadSavedFilters called', [
+                'requested_type' => $filterType,
+                'actual_type' => $actualFilterType,
+                'user_id' => Auth::id()
+            ]);
+
             // فیلترهای قابل دسترس برای کاربر
-            $query = SavedFilter::where('filter_type', 'families_approval')
+            $query = SavedFilter::where('filter_type', $actualFilterType)
                 ->where(function ($q) use ($user) {
                     // فیلترهای خود کاربر
-                    $q->where('user_id', $user->id)
-                      // یا فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
-                      ->orWhere('organization_id', $user->organization_id);
+                    $q->where('user_id', $user->id);
+                    
+                    // اگر کاربر بیمه است، می‌تواند همه فیلترهای کاربران سازمانش را ببیند
+                    if ($user->isInsurance() && $user->organization_id) {
+                        $q->orWhereHas('user', function($userQuery) use ($user) {
+                            $userQuery->where('organization_id', $user->organization_id);
+                        });
+                    }
                 })
                 ->orderBy('usage_count', 'desc')
                 ->orderBy('name')
@@ -6462,16 +6512,25 @@ public function clearCriteriaFilter()
                         'id' => $filter->id,
                         'name' => $filter->name,
                         'description' => $filter->description,
+                        'visibility' => $filter->visibility ?? 'private',
                         'usage_count' => $filter->usage_count,
                         'created_at' => DateHelper::toJalali($filter->created_at, 'Y/m/d'),
                         'is_owner' => $filter->user_id === Auth::id()
                     ];
                 });
 
+            Log::debug('Loaded saved filters', [
+                'requested_type' => $filterType,
+                'actual_type' => $actualFilterType,
+                'count' => count($query),
+                'user_id' => Auth::id()
+            ]);
+
             return $query->toArray();
 
         } catch (\Exception $e) {
             Log::error('Error loading saved filters', [
+                'filter_type' => $filterType,
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id()
             ]);

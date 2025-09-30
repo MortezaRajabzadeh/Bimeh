@@ -349,6 +349,7 @@ class FamilySearch extends Component
             
             return view('livewire.charity.family-search', [
                 'families' => $families,
+                'totalMembersInCurrentPage' => $this->getTotalMembersInCurrentPageProperty()
             ]);
 
         } catch (\Exception $e) {
@@ -374,7 +375,38 @@ class FamilySearch extends Component
             
             return view('livewire.charity.family-search', [
                 'families' => $emptyPaginator,
+                'totalMembersInCurrentPage' => 0
             ]);
+        }
+    }
+
+    /**
+     * دریافت تعداد کل اعضای خانواده‌های صفحه فعلی
+     *
+     * @return int
+     */
+    public function getTotalMembersInCurrentPageProperty()
+    {
+        try {
+            $cacheKey = $this->getCacheKey();
+            $families = Cache::get($cacheKey);
+            
+            if (!$families) {
+                $queryBuilder = $this->buildFamiliesQuery();
+                $families = $queryBuilder->paginate($this->perPage);
+            }
+            
+            if (!$families || $families->isEmpty()) {
+                return 0;
+            }
+
+            return $families->sum('members_count');
+        } catch (\Exception $e) {
+            Log::error('❌ Error calculating total members in current page', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+            return 0;
         }
     }
 

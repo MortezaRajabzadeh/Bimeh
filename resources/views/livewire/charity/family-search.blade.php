@@ -1397,7 +1397,7 @@
 
             <!-- شمارنده - سمت چپ -->
             <div class="text-sm text-gray-600 order-3">
-                نمایش {{ $families->firstItem() ?? 0 }} تا {{ $families->lastItem() ?? 0 }} از {{ $families->total() ?? 0 }} خانواده
+                نمایش {{ $families->firstItem() ?? 0 }} تا {{ $families->lastItem() ?? 0 }} از {{ $families->total() ?? 0 }} خانواده ({{ $totalMembersInCurrentPage ?? 0 }} نفر)
             </div>
         </div>
     </div>
