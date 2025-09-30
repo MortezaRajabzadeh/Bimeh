@@ -4074,10 +4074,19 @@ protected function applySingleAdvancedFilter($query, $filter, $method = 'and')
             case 'created_at':
                 return $query->{$queryMethod}('families.created_at', $this->getOperatorQuery($operator), $filterValue);
 
+            case 'rank':
+                // فیلتر رتبه - مرتب‌سازی صعودی/نزولی
+                if ($filterValue === 'asc') {
+                    return $query->orderBy('families.calculated_rank', 'asc');
+                } elseif ($filterValue === 'desc') {
+                    return $query->orderBy('families.calculated_rank', 'desc');
+                }
+                break;
+
             default:
                 Log::warning('⚠️ Unknown filter type', [
                     'filter_type' => $filterType,
-                    'available_types' => ['province', 'city', 'charity', 'members_count', 'special_disease', 'acceptance_criteria', 'membership_date', 'weighted_score', 'insurance_end_date', 'created_at']
+                    'available_types' => ['province', 'city', 'charity', 'members_count', 'special_disease', 'acceptance_criteria', 'membership_date', 'weighted_score', 'insurance_end_date', 'created_at', 'rank']
                 ]);
                 break;
         }
