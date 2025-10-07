@@ -1073,11 +1073,16 @@
                                                 @if($editingMemberId === $member->id)
                                                     <div class="space-y-2">
                                                         {{-- Multi-select dropdown for problem types --}}
-                                                        <div class="relative" x-data="{ 
-                                                                open: false, 
-                                                                search: '',
-                                                                selectedCount: @entangle('editingMemberData.problem_type').live.length || 0
-                                                            }" @click.away="open = false">
+                                                        <div class="relative" 
+                                                             wire:key="member-{{ $editingMemberId }}-problem-types"
+                                                             x-data="{ 
+                                                                 open: false, 
+                                                                 search: '',
+                                                                 selectedCount: 0
+                                                             }" 
+                                                             @click.away="open = false">
+                                                            {{-- x-effect: Reactive count update based on Livewire state --}}
+                                                            <div x-effect="selectedCount = Array.isArray($wire.editingMemberData.problem_type) ? $wire.editingMemberData.problem_type.length : 0" style="display: none;"></div>
                                                             <button type="button" 
                                                                     @click="open = !open"
                                                                     class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500 bg-white text-right flex justify-between items-center">
@@ -1113,11 +1118,16 @@
                                                                     @foreach($allProblemTypes as $key => $label)
                                                                         <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs transition-colors duration-150"
                                                                                x-show="search === '' || '{{ $label }}'.toLowerCase().includes(search.toLowerCase())">
+                                                                            {{-- 
+                                                                                Note: Livewire's wire:model.live handles checkbox state automatically.
+                                                                                Server-side method updatedEditingMemberDataProblemType() handles de-duplication.
+                                                                                @checked directive ensures checkboxes are pre-selected on first dropdown open.
+                                                                            --}}
                                                                             <input type="checkbox" 
                                                                                    wire:model.live="editingMemberData.problem_type"
                                                                                    value="{{ $key }}"
-                                                                                   class="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                                                   @change="selectedCount = $wire.editingMemberData.problem_type ? $wire.editingMemberData.problem_type.length : 0">
+                                                                                   @checked(in_array($key, $editingMemberData['problem_type'] ?? []))
+                                                                                   class="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                                                             <span class="text-gray-900">{{ $label }}</span>
                                                                         </label>
                                                                     @endforeach
@@ -1135,26 +1145,30 @@
                                                         </div>
                                                         
                                                         {{-- Selected items display - Live updating --}}
-                                                        <div class="flex flex-wrap gap-1" x-data="{ problemTypes: @entangle('editingMemberData.problem_type').live }">
-                                                            <template x-for="(selectedKey, index) in problemTypes" :key="selectedKey">
-                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 animate-fadeIn">
-                                                                    <span x-text="{
-                                                                        @foreach($allProblemTypes as $key => $label)
-                                                                            '{{ $key }}': '{{ $label }}',
-                                                                        @endforeach
-                                                                    }[selectedKey] || selectedKey"></span>
-                                                                    <button type="button" 
-                                                                            @click="$wire.removeProblemType(selectedKey); selectedCount--;"
-                                                                            class="mr-1 text-blue-600 hover:text-blue-800 transition-colors duration-150">
-                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                        </svg>
-                                                                    </button>
-                                                                </span>
-                                                            </template>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @if(isset($editingMemberData['problem_type']) && is_array($editingMemberData['problem_type']))
+                                                                @foreach($editingMemberData['problem_type'] as $index => $selectedKey)
+                                                                    <span wire:key="selected-{{ $editingMemberId }}-{{ $selectedKey }}-{{ $index }}" 
+                                                                          class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                                                        {{ \App\Helpers\ProblemTypeHelper::englishToPersian($selectedKey) }}
+                                                                        <button type="button" 
+                                                                                wire:click="removeProblemType('{{ $selectedKey }}')"
+                                                                                class="mr-1 text-blue-600 hover:text-blue-800 transition-colors duration-150">
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </span>
+                                                                @endforeach
+                                                            @endif
                                                         </div>
                                                         
                                                         <div class="text-xs text-gray-500">می‌توانید چندین معیار انتخاب کنید</div>
+                                                        
+                                                        {{-- 
+                                                            Note: Event listener removed as x-effect handles count updates automatically.
+                                                            x-effect is more reliable than $watch for Livewire state changes.
+                                                        --}}
                                                     </div>
                                                 @else
                                                     @php

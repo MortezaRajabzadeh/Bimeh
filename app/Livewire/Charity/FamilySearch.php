@@ -133,15 +133,15 @@ class FamilySearch extends Component
             ]);
 
             $this->resetPage();
-            
+
             // Reset any custom filters if needed
             if (method_exists($this, 'resetFilters')) {
                 $this->resetFilters();
             }
-            
+
             // Dispatch event to update any client-side components
             $this->dispatch('filters-reset');
-            
+
         } catch (\Exception $e) {
             Log::error('Error resetting filters: ' . $e->getMessage());
             $this->dispatch('error', 'خطا در بازنشانی فیلترها');
@@ -167,10 +167,10 @@ class FamilySearch extends Component
             unset($this->tempFilters[$index]);
             // بازنویسی ایندکس‌ها برای حفظ ترتیب
             $this->tempFilters = array_values($this->tempFilters);
-            
+
             // پاک کردن کش برای بارگیری مجدد نتایج
             $this->clearFamiliesCache();
-            
+
             Log::info('🗑️ Filter removed', [
                 'index' => $index,
                 'remaining_filters_count' => count($this->tempFilters),
@@ -301,7 +301,7 @@ class FamilySearch extends Component
 
             $families = Cache::remember($cacheKey, 300, function () {
                 $queryBuilder = $this->buildFamiliesQuery();
-                
+
                 // لاگ SQL نهایی درست قبل از paginate
                 $finalSql = $queryBuilder->toSql();
                 $finalBindings = $queryBuilder->getBindings();
@@ -310,9 +310,9 @@ class FamilySearch extends Component
                     'bindings' => $finalBindings,
                     'count_query' => str_replace('select `families`.*', 'select count(*) as aggregate', $finalSql)
                 ]);
-                
+
                 // اطمینان از paginate فقط روی QueryBuilder/Eloquent
-                if ($queryBuilder instanceof \Illuminate\Database\Eloquent\Builder || 
+                if ($queryBuilder instanceof \Illuminate\Database\Eloquent\Builder ||
                     $queryBuilder instanceof \Illuminate\Database\Eloquent\Relations\Relation ||
                     $queryBuilder instanceof \Spatie\QueryBuilder\QueryBuilder) {
                     // تعداد رکوردها را بررسی کن
@@ -322,7 +322,7 @@ class FamilySearch extends Component
                         'with_filters' => $this->hasActiveFilters(),
                         'filters' => $this->activeFilters
                     ]);
-                    
+
                     return $queryBuilder->paginate($this->perPage);
                 } else {
                     // ایجاد paginator خالی برای Collection ها
@@ -347,7 +347,7 @@ class FamilySearch extends Component
                 'has_filters' => $this->hasActiveFilters(),
                 'cache_key' => $this->getCacheKey()
             ]);
-            
+
             return view('livewire.charity.family-search', [
                 'families' => $families,
                 'totalMembersInCurrentPage' => $this->getTotalMembersInCurrentPageProperty()
@@ -373,7 +373,7 @@ class FamilySearch extends Component
                     'pageName' => 'page',
                 ]
             );
-            
+
             return view('livewire.charity.family-search', [
                 'families' => $emptyPaginator,
                 'totalMembersInCurrentPage' => 0
@@ -391,12 +391,12 @@ class FamilySearch extends Component
         try {
             $cacheKey = $this->getCacheKey();
             $families = Cache::get($cacheKey);
-            
+
             if (!$families) {
                 $queryBuilder = $this->buildFamiliesQuery();
                 $families = $queryBuilder->paginate($this->perPage);
             }
-            
+
             if (!$families || $families->isEmpty()) {
                 return 0;
             }
@@ -614,7 +614,7 @@ class FamilySearch extends Component
             // لاگ SQL برای debug
             $sql = $queryBuilder->toSql();
             $bindings = $queryBuilder->getBindings();
-            
+
             Log::info('\ud83d\udd0d FamilySearch QueryBuilder initialized successfully', [
                 'search' => $this->search,
                 'status' => $this->status,
@@ -884,9 +884,9 @@ class FamilySearch extends Component
                 if (empty($filter['type'])) {
                     continue;
                 }
-                
+
                 $operator = $filter['operator'] ?? 'and';
-                
+
                 // برای exists و not_exists نیازی به value نداریم
                 if ($operator !== 'exists' && $operator !== 'not_exists' && empty($filter['value'])) {
                     continue;
@@ -905,10 +905,10 @@ class FamilySearch extends Component
                 'or_filters' => $orFilters,
                 'user_id' => Auth::id()
             ]);
-            
+
             // **بررسی و پردازش فیلترهای special_disease چندگانه با AND logic**
             $queryBuilder = $this->applySpecialDiseaseAndLogic($queryBuilder, $andFilters);
-            
+
             // اعمال فیلترهای AND غیر special_disease
             foreach ($andFilters as $filter) {
                 if (!in_array($filter['type'], ['special_disease', 'معیار پذیرش'])) {
@@ -965,21 +965,21 @@ class FamilySearch extends Component
             $specialDiseaseFilters = array_filter($andFilters, function($filter) {
                 return in_array($filter['type'], ['special_disease', 'معیار پذیرش']) && !empty($filter['value']);
             });
-            
+
             if (empty($specialDiseaseFilters)) {
                 return $queryBuilder;
             }
-            
+
             Log::debug('📊 Processing special_disease filters with AND logic', [
                 'filters_count' => count($specialDiseaseFilters),
                 'filters' => $specialDiseaseFilters
             ]);
-            
+
             // **پردازش رشته comma-separated و تبدیل به آرایه**
             $allSelectedValues = [];
             foreach ($specialDiseaseFilters as $filter) {
                 $filterValue = $filter['value'];
-                
+
                 // اگر رشته حاوی ویرگول باشد، تقسیم کن
                 if (str_contains($filterValue, ',')) {
                     $values = array_map('trim', explode(',', $filterValue));
@@ -994,25 +994,25 @@ class FamilySearch extends Component
                     }
                 }
             }
-            
+
             if (empty($allSelectedValues)) {
                 return $queryBuilder;
             }
-            
+
             Log::debug('🔎 Parsed special_disease values for AND logic', [
                 'values' => $allSelectedValues,
                 'count' => count($allSelectedValues)
             ]);
-            
+
             // برای هر مقدار جداگانه، یک whereHas اعمال کن (منطق AND)
             foreach ($allSelectedValues as $value) {
                 Log::debug('🔎 Applying AND whereHas for special_disease value', ['value' => $value]);
-                
+
                 $queryBuilder = $queryBuilder->whereHas('members', function($memberQuery) use ($value) {
                     // تبدیل به مقادیر مختلف (فارسی و انگلیسی)
                     $persianValue = \App\Helpers\ProblemTypeHelper::englishToPersian($value);
                     $englishValue = \App\Helpers\ProblemTypeHelper::persianToEnglish($value);
-                    
+
                     $memberQuery->where(function($q) use ($value, $persianValue, $englishValue) {
                         $q->whereJsonContains('problem_type', $value)
                           ->orWhereJsonContains('problem_type', $persianValue)
@@ -1020,25 +1020,25 @@ class FamilySearch extends Component
                     });
                 });
             }
-            
+
             Log::info('✅ Special_disease AND logic applied successfully', [
                 'values_applied' => $allSelectedValues,
                 'filters_processed' => count($specialDiseaseFilters)
             ]);
-            
+
             return $queryBuilder;
-            
+
         } catch (\Exception $e) {
             Log::error('❌ Error applying special_disease AND logic', [
                 'error' => $e->getMessage(),
                 'filters' => $specialDiseaseFilters ?? [],
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return $queryBuilder;
         }
     }
-    
+
     /**
      * اعمال یک فیلتر منفرد
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
@@ -1051,18 +1051,18 @@ class FamilySearch extends Component
         try {
             $filterType = $filter['type'];
             $filterValue = $filter['value'];
-            
+
             // پردازش operators جدید
             $logicalOperator = $filter['logical_operator'] ?? 'and';
             $existenceOperator = $filter['existence_operator'] ?? 'equals';
-            
+
             // تعیین operator نهایی بر اساس شرط‌های جدید
             $operator = $existenceOperator;
             if ($existenceOperator === 'equals') {
                 // اگر مقدار خاص است، از logical operator استفاده کن
                 $operator = 'equals';
             }
-            
+
             // سازگاری با operator قدیمی
             if (isset($filter['operator']) && in_array($filter['operator'], ['exists', 'not_exists', 'equals', 'and', 'or'])) {
                 $operator = $filter['operator'];
@@ -1232,7 +1232,7 @@ class FamilySearch extends Component
                                 // تبدیل به مقادیر مختلف
                                 $persianValue = ProblemTypeHelper::englishToPersian($filterValue);
                                 $englishValue = ProblemTypeHelper::persianToEnglish($filterValue);
-                                
+
                                 $memberQuery->whereJsonContains('problem_type', $filterValue)
                                           ->orWhereJsonContains('problem_type', $persianValue)
                                           ->orWhereJsonContains('problem_type', $englishValue);
@@ -1301,7 +1301,7 @@ class FamilySearch extends Component
                 'value' => $value,
                 'method' => $method
             ]);
-            
+
             switch ($operator) {
                 case 'exists':
                     Log::debug('✅ Applying whereHas for members_count exists', ['value' => $value, 'filter' => $filter]);
@@ -1361,7 +1361,7 @@ class FamilySearch extends Component
 
         return $queryBuilder;
     }
-    
+
     /**
      * اعمال فیلتر تعداد اعضا با پشتیبانی از بازه
      *
@@ -1375,12 +1375,12 @@ class FamilySearch extends Component
     protected function applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, $isNegative = false)
     {
         $whereDoesntHaveMethod = str_replace('whereHas', 'whereDoesntHave', $whereHasMethod);
-        
+
         // بررسی بازه
         if (!empty($filter['min_members']) || !empty($filter['max_members'])) {
             $minMembers = !empty($filter['min_members']) ? (int)$filter['min_members'] : null;
             $maxMembers = !empty($filter['max_members']) ? (int)$filter['max_members'] : null;
-            
+
             if ($minMembers && $maxMembers) {
                 // بازه کامل: مین تا مکس
                 if ($isNegative) {
@@ -1398,7 +1398,7 @@ class FamilySearch extends Component
                 return $queryBuilder->$havingMethod('members_count', $isNegative ? '>' : '<=', $maxMembers);
             }
         }
-        
+
         // تک عدد یا شرط عمومی
         if (!empty($filter['value'])) {
             $value = (int)$filter['value'];
@@ -1488,7 +1488,7 @@ class FamilySearch extends Component
 
                 session()->flash('message', "فیلترها با موفقیت اعمال شدند ({$filterCount} فیلتر فعال)");
                 session()->flash('type', 'success');
-                
+
                 // اجبار به refresh کامپوننت
                 $this->dispatch('refresh-component');
             } else {
@@ -1650,9 +1650,9 @@ class FamilySearch extends Component
         if (!empty($this->tempFilters)) {
             // شمارش فیلترهای فعال در tempFilters
             foreach ($this->tempFilters as $filter) {
-                if (!empty($filter['type']) && 
-                    (!empty($filter['value']) || !empty($filter['min_members']) || 
-                     !empty($filter['max_members']) || !empty($filter['start_date']) || 
+                if (!empty($filter['type']) &&
+                    (!empty($filter['value']) || !empty($filter['min_members']) ||
+                     !empty($filter['max_members']) || !empty($filter['start_date']) ||
                      !empty($filter['end_date']))) {
                     $count++;
                 }
@@ -2553,7 +2553,7 @@ class FamilySearch extends Component
     {
         try {
             $user = auth()->user();
-            
+
             // فقط فیلترهای رتبه‌بندی را جستجو کن
             $filter = SavedFilter::where('filter_type', 'rank_settings')
                 ->where(function ($q) use ($user) {
@@ -2563,7 +2563,7 @@ class FamilySearch extends Component
                       ->orWhere('organization_id', $user->organization_id);
                 })
                 ->find($filterId);
-            
+
             if (!$filter) {
                 $this->dispatch('notify', [
                     'message' => 'فیلتر رتبه‌بندی یافت نشد یا مخصوص این بخش نیست',
@@ -2571,29 +2571,29 @@ class FamilySearch extends Component
                 ]);
                 return false;
             }
-            
+
             // اعمال تنظیمات فیلتر
             $config = $filter->filters_config;
-            
+
             $this->selectedCriteria = $config['selectedCriteria'] ?? [];
             $this->family_rank_range = $config['family_rank_range'] ?? '';
             $this->specific_criteria = $config['specific_criteria'] ?? '';
-            
+
             // بازنشانی صفحه‌بندی
             $this->resetPage();
-            
+
             // افزایش تعداد استفاده و به‌روزرسانی آخرین زمان استفاده
             $filter->increment('usage_count');
             $filter->update(['last_used_at' => now()]);
-            
+
             // پاک کردن کش
             $this->clearFamiliesCache();
-            
+
             $this->dispatch('notify', [
                 'message' => 'فیلتر تنظیمات رتبه "' . $filter->name . '" با موفقیت بارگذاری شد',
                 'type' => 'success'
             ]);
-            
+
             return true;
         } catch (\Exception $e) {
             Log::error('Error loading rank filter: ' . $e->getMessage());
@@ -2623,7 +2623,7 @@ class FamilySearch extends Component
                 ]);
                 return false;
             }
-            
+
             // تهیه پیکربندی فیلتر فعلی برای تنظیمات رتبه
             $filtersConfig = [
                 'selectedCriteria' => $this->selectedCriteria,
@@ -2631,13 +2631,13 @@ class FamilySearch extends Component
                 'specific_criteria' => $this->specific_criteria,
                 // می‌توانید فیلدهای دیگر مربوط به رتبه‌بندی را اضافه کنید
             ];
-            
+
             // بررسی اینکه فیلتری با همین نام برای این کاربر و نوع فیلتر وجود ندارد
             $existingFilter = SavedFilter::where('user_id', auth()->id())
                                         ->where('name', trim($name))
                                         ->where('filter_type', 'rank_settings')
                                         ->first();
-            
+
             if ($existingFilter) {
                 $this->dispatch('notify', [
                     'message' => 'فیلتری با این نام قبلاً ذخیره شده است',
@@ -2645,7 +2645,7 @@ class FamilySearch extends Component
                 ]);
                 return false;
             }
-            
+
             // ایجاد فیلتر جدید
             SavedFilter::create([
                 'name' => trim($name),
@@ -2656,12 +2656,12 @@ class FamilySearch extends Component
                 'filters_config' => $filtersConfig,
                 'usage_count' => 0
             ]);
-            
+
             $this->dispatch('notify', [
                 'message' => 'فیلتر تنظیمات رتبه "' . $name . '" با موفقیت ذخیره شد',
                 'type' => 'success'
             ]);
-            
+
             return true;
         } catch (\Exception $e) {
             Log::error('Error saving rank filter: ' . $e->getMessage());
@@ -2793,7 +2793,7 @@ class FamilySearch extends Component
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // در صورت خطا، سورت بر اساس تاریخ ایجاد
             $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
         }
@@ -2814,13 +2814,13 @@ class FamilySearch extends Component
 
             // دریافت معیارهای انتخاب شده
             $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
-            
+
             Log::info('📊 STEP 5.1: Selected criteria analysis', [
                 'selectedCriteriaIds' => $selectedCriteriaIds,
                 'selectedCriteriaIds_count' => count($selectedCriteriaIds),
                 'user_id' => Auth::id()
             ]);
-            
+
             if (empty($selectedCriteriaIds)) {
                 Log::warning('❌ STEP 5 FAILED: No criteria selected for weighted sort', [
                     'user_id' => Auth::id()
@@ -2837,10 +2837,10 @@ class FamilySearch extends Component
                     SELECT COALESCE(SUM(
                         rs.weight * (
                             -- شمارش موارد معیار در acceptance_criteria (0 یا 1)
-                            CASE 
-                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON)) 
-                                THEN 1 
-                                ELSE 0 
+                            CASE
+                                WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON))
+                                THEN 1
+                                ELSE 0
                             END +
                             -- شمارش تعداد اعضای دارای این معیار در problem_type
                             (
@@ -2882,7 +2882,7 @@ class FamilySearch extends Component
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // در صورت خطا، سورت بر اساس تاریخ ایجاد
             $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
         }
@@ -2955,6 +2955,7 @@ class FamilySearch extends Component
 
     /**
      * شروع ویرایش عضو خانواده
+     * Loads member data for editing. The problem_type array is passed to the MultiSelect component via wire:model binding.
      * @param int $memberId
      * @return void
      */
@@ -2969,7 +2970,7 @@ class FamilySearch extends Component
                 ]);
                 return;
             }
-            
+
             // بررسی مجوز ویرایش
             $family = $member->family;
             try {
@@ -2977,19 +2978,19 @@ class FamilySearch extends Component
             } catch (AuthorizationException $e) {
                 // ساخت پیام خطا بر اساس وضعیت wizard_status
                 $statusMessage = $this->getAuthorizationErrorMessage($family);
-                
+
                 $this->dispatch('notify', [
                     'message' => $statusMessage,
                     'type' => 'error'
                 ]);
-                
+
                 Log::warning('Unauthorized member edit attempt', [
                     'user_id' => Auth::id(),
                     'member_id' => $memberId,
                     'family_id' => $family->id,
                     'wizard_status' => $family->wizard_status
                 ]);
-                
+
                 return;
             }
 
@@ -2997,19 +2998,25 @@ class FamilySearch extends Component
 
             // دریافت آرایه معیارهای پذیرش برای dropdown
             $problemTypesArray = $member->getProblemTypesArray(); // English keys for the dropdown
-            
-            // حذف تکراری‌ها و مرتب‌سازی
+
+            // حذف تکراری‌ها (بدون sort برای حفظ ترتیب insertion order)
             if (is_array($problemTypesArray)) {
                 $problemTypesArray = array_unique($problemTypesArray);
-                sort($problemTypesArray);
+                // sort() حذف شد: ترتیب insertion order حفظ می‌شود
             }
 
             $this->editingMemberData = [
                 'relationship' => $member->relationship ?? '',
                 'occupation' => $member->occupation ?? '',
                 'job_type' => $member->job_type ?? '',
-                'problem_type' => $problemTypesArray ?? []
+                'problem_type' => is_array($problemTypesArray) ? array_values($problemTypesArray) : []
             ];
+
+            Log::info('Member edit started', [
+                'member_id' => $memberId,
+                'problem_types_count' => count($this->editingMemberData['problem_type']),
+                'problem_types' => $this->editingMemberData['problem_type']
+            ]);
         } catch (\Exception $e) {
             Log::error('Error starting member edit:', [
                 'member_id' => $memberId,
@@ -3038,26 +3045,26 @@ class FamilySearch extends Component
                 ]);
                 return;
             }
-            
+
             // بررسی مجوز ویرایش قبل از validation
             $family = $member->family;
             try {
                 Gate::authorize('updateMembers', $family);
             } catch (AuthorizationException $e) {
                 $statusMessage = $this->getAuthorizationErrorMessage($family);
-                
+
                 $this->dispatch('notify', [
                     'message' => $statusMessage,
                     'type' => 'error'
                 ]);
-                
+
                 Log::warning('Unauthorized member save attempt', [
                     'user_id' => Auth::id(),
                     'member_id' => $this->editingMemberId,
                     'family_id' => $family->id,
                     'wizard_status' => $family->wizard_status
                 ]);
-                
+
                 // لغو حالت ویرایش
                 $this->editingMemberId = null;
                 $this->editingMemberData = [
@@ -3066,10 +3073,10 @@ class FamilySearch extends Component
                     'job_type' => '',
                     'problem_type' => []
                 ];
-                
+
                 return;
             }
-            
+
             $this->validate([
                 'editingMemberData.relationship' => 'required|string|max:255',
                 'editingMemberData.occupation' => 'required|string|max:255',
@@ -3084,6 +3091,7 @@ class FamilySearch extends Component
             // آماده‌سازی داده‌ها برای ذخیره
             $updateData = [
                 'relationship' => $this->editingMemberData['relationship'],
+                'relationship_fa' => $this->editingMemberData['relationship'], // ذخیره مقدار فارسی برای relationship_fa
                 'occupation' => $this->editingMemberData['occupation'],
             ];
 
@@ -3095,6 +3103,7 @@ class FamilySearch extends Component
             }
 
             // مدیریت معیار پذیرش (problem_type) - پیشرفته و بهبود یافته
+            // The problem_type array comes from the MultiSelect component via wire:model.live binding. It contains English keys.
             $problemTypeArray = null;
             $problemTypeInput = $this->editingMemberData['problem_type'] ?? '';
 
@@ -3110,11 +3119,11 @@ class FamilySearch extends Component
                 $problemTypesForStorage = array_filter($problemTypeInput, function($item) {
                     return !is_null($item) && trim((string)$item) !== '';
                 });
-                
-                // حذف مقادیر تکراری و مرتب‌سازی
+
+                // حذف مقادیر تکراری (بدون sort برای حفظ insertion order)
                 $problemTypesForStorage = array_unique(array_values($problemTypesForStorage));
-                sort($problemTypesForStorage);
-                
+                // sort() حذف شد: chip‌ها به ترتیب اضافه شدن نمایش داده می‌شوند
+
                 // بررسی اضافی برای حذف مقادیر مشابه
                 $finalArray = [];
                 foreach ($problemTypesForStorage as $item) {
@@ -3133,15 +3142,15 @@ class FamilySearch extends Component
             } else if (!empty($problemTypeInput) && trim($problemTypeInput) !== '') {
                 // اگر رشته باشد (برای سازگاری با روش قبلی)
                 $problemTypeString = trim((string) $problemTypeInput);
-                
+
                 // تقسیم رشته با کاما
                 $problemTypes = array_map('trim', explode(',', $problemTypeString));
-                
+
                 // فیلتر کردن مقادیر خالی
                 $problemTypes = array_filter($problemTypes, function($item) {
                     return !empty(trim($item));
                 });
-                
+
                 // تبدیل فارسی به انگلیسی
                 $problemTypesForStorage = [];
                 foreach ($problemTypes as $problemType) {
@@ -3150,7 +3159,7 @@ class FamilySearch extends Component
                         $problemTypesForStorage[] = $englishValue;
                     }
                 }
-                
+
                 // حذف مقادیر تکراری و مرتب‌سازی
                 $problemTypesForStorage = array_unique($problemTypesForStorage);
                 sort($problemTypesForStorage);
@@ -3162,7 +3171,7 @@ class FamilySearch extends Component
 
             // اگر آرایه خالی باشد، null ذخیره کن (نه آرایه خالی)
             $updateData['problem_type'] = empty($problemTypeArray) ? null : $problemTypeArray;
-            
+
             // لاگ نتیجه تبدیل (همیشه لاگ کن)
             Log::info('Problem_type conversion completed', [
                 'member_id' => $this->editingMemberId,
@@ -3194,8 +3203,15 @@ class FamilySearch extends Component
                 'processed_update_data' => $updateData
             ]);
 
+            // لاگ داده‌های relationship برای debug
+            Log::info('Relationship data being saved', [
+                'member_id' => $this->editingMemberId,
+                'relationship' => $updateData['relationship'],
+                'relationship_fa' => $updateData['relationship_fa']
+            ]);
+
             $member->update($updateData);
-            
+
             // لاگ بعد از آپدیت برای تأیید تغییرات
             Log::info('Member data updated successfully - AFTER UPDATE:', [
                 'member_id' => $member->id,
@@ -3222,8 +3238,8 @@ class FamilySearch extends Component
                         $this->familyMembers[$key]->occupation = $updateData['occupation'];
                         $this->familyMembers[$key]->job_type = $updateData['job_type'];
                         $this->familyMembers[$key]->problem_type = $updateData['problem_type'];
-                        $this->familyMembers[$key]->relationship_fa = $updateData['relationship'];
-                        
+                        $this->familyMembers[$key]->relationship_fa = $updateData['relationship_fa']; // اصلاح: استفاده از relationship_fa نه relationship
+
                         Log::info('Member data updated locally for immediate display', [
                             'member_id' => $member->id,
                             'updated_fields' => array_keys($updateData)
@@ -3231,7 +3247,7 @@ class FamilySearch extends Component
                         break;
                     }
                 }
-                
+
                 // به‌روزرسانی اطلاعات خانواده در familyMembers برای نمایش فوری
                 // برای نمایش فوری، خانواده را به‌روزرسانی می‌کنیم
                 $freshFamily = $family->fresh(['members']); // بارگیری مجدد خانوادع به‌روزرسانی شده
@@ -3241,7 +3257,7 @@ class FamilySearch extends Component
                     }
                     return $familyMember;
                 });
-                
+
                 Log::info('Family acceptance_criteria updated locally for immediate display', [
                     'family_id' => $freshFamily->id,
                     'updated_acceptance_criteria' => $freshFamily->acceptance_criteria
@@ -3250,16 +3266,16 @@ class FamilySearch extends Component
 
             // پاک کردن کش‌های مختلف برای اطمینان از نمایش داده‌های جدید
             $this->clearFamiliesCache();
-            
+
             // پاک کردن کش رتبه‌بندی خانواده
             \Cache::forget('family_rank_' . $family->id);
-            
+
             // اجبار به ریفرش کامپوننت برای نمایش تغییرات
             $this->refreshFamilyInList($family->id);
-            
+
             // به‌روزرسانی لیست اصلی خانواده‌ها برای نمایش فوری تغییرات
             $this->updateFamilyInMainList($family->id);
-            
+
             $this->dispatch('family-data-updated', [
                 'family_id' => $family->id,
                 'acceptance_criteria' => $family->acceptance_criteria
@@ -3297,7 +3313,7 @@ class FamilySearch extends Component
         try {
             // این method برای refresh کردن داده‌های کش شده کامپوننت است
             $this->clearCache();
-            
+
             Log::info('Family refreshed in component list', [
                 'family_id' => $familyId,
                 'component' => 'FamilySearch'
@@ -3309,7 +3325,7 @@ class FamilySearch extends Component
             ]);
         }
     }
-    
+
     /**
      * دریافت پیام خطای Authorization بر اساس wizard_status خانواده
      * @param Family $family
@@ -3318,13 +3334,13 @@ class FamilySearch extends Component
     protected function getAuthorizationErrorMessage($family)
     {
         $wizardStatus = $family->wizard_status;
-        
+
         // استفاده از enum برای دریافت برچسب فارسی
         try {
             if ($wizardStatus) {
                 $statusEnum = \App\Enums\InsuranceWizardStep::from($wizardStatus);
                 $statusLabel = $statusEnum->label();
-                
+
                 // پیام‌های مختلف بر اساس وضعیت
                 return match($wizardStatus) {
                     'pending' => 'خطای غیرمنتظره: شما باید بتوانید این خانواده را ویرایش کنید',
@@ -3344,11 +3360,11 @@ class FamilySearch extends Component
                 'error' => $e->getMessage()
             ]);
         }
-        
+
         // پیام پیش‌فرض اگر wizard_status خالی یا نامعتبر باشد
         return 'شما مجوز ویرایش این خانواده را ندارید. فقط ادمین می‌تواند ویرایش کند';
     }
-    
+
     /**
      * بهروزرسانی خانواده خاص در لیست اصلی خانواده‌ها
      * @param int $familyId
@@ -3361,16 +3377,16 @@ class FamilySearch extends Component
             $updatedFamily = Family::with([
                 'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'
             ])->find($familyId);
-            
+
             if (!$updatedFamily) {
                 Log::warning('Family not found for update', ['family_id' => $familyId]);
                 return;
             }
-            
+
             // وادار کردن خانواده به refresh از دیتابیس تا داده‌های جدید بارگیری شوند
             $updatedFamily->refresh();
             $updatedFamily->load(['members', 'head', 'province', 'city', 'district', 'region', 'charity', 'organization']);
-            
+
             // اگر property families وجود دارد، آن را به‌روزرسانی کن
             if (property_exists($this, 'families') && !empty($this->families)) {
                 $this->families = $this->families->map(function($family) use ($updatedFamily) {
@@ -3385,7 +3401,7 @@ class FamilySearch extends Component
                     return $family;
                 });
             }
-            
+
             // به‌روزرسانی familyMembers اگر خانواده باز است
             if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
                 $this->familyMembers = $updatedFamily->members;
@@ -3394,22 +3410,22 @@ class FamilySearch extends Component
                     'members_count' => $this->familyMembers->count()
                 ]);
             }
-            
+
             // اجبار به ریرندر مجدد کامپوننت برای نمایش تغییرات
             $this->dispatch('family-updated', [
                 'familyId' => $familyId,
                 'acceptanceCriteria' => $updatedFamily->acceptance_criteria
             ]);
-            
+
             // ریفرش مجدد کامپوننت برای نمایش تغییرات
             $this->skipRender = false; // اطمینان از ریرندر مجدد
-            
+
             Log::info('Family updated in main list', [
                 'family_id' => $familyId,
                 'updated_acceptance_criteria' => $updatedFamily->acceptance_criteria,
                 'forced_refresh' => true
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error updating family in main list', [
                 'family_id' => $familyId,
@@ -3487,7 +3503,7 @@ class FamilySearch extends Component
             $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
             $hasModalFilters = !empty($currentFilters);
             $hasSelectedCriteria = !empty($this->selectedCriteria) && count(array_filter($this->selectedCriteria)) > 0;
-            
+
             if (!$hasModalFilters && !$hasSelectedCriteria) {
                 $this->dispatch('notify', [
                     'message' => 'هیچ فیلتر یا معیاری برای ذخیره وجود ندارد',
@@ -3624,7 +3640,7 @@ class FamilySearch extends Component
 
             // تعیین نوع فیلتر بر اساس پارامتر ورودی
             $actualFilterType = $filterType;
-            
+
             // تبدیل نام‌های متداول به نوع فیلتر واقعی
             switch ($filterType) {
                 case 'rank_modal':
@@ -3644,7 +3660,7 @@ class FamilySearch extends Component
                 ->where(function ($q) use ($user) {
                     // فیلترهای خود کاربر
                     $q->where('user_id', $user->id);
-                    
+
                     // اگر کاربر بیمه است، می‌تواند همه فیلترهای کاربران سازمانش را ببیند
                     if ($user->isInsurance() && $user->organization_id) {
                         $q->orWhereHas('user', function($userQuery) use ($user) {
@@ -3748,7 +3764,7 @@ class FamilySearch extends Component
                 $this->specific_criteria = $componentFilters['specific_criteria'] ?? '';
                 $this->charity = $componentFilters['charity'] ?? '';
             }
-            
+
             // اعمال تنظیمات رتبه‌بندی
             if (isset($filterData['rank_settings'])) {
                 $rankSettings = $filterData['rank_settings'];
@@ -3880,7 +3896,7 @@ class FamilySearch extends Component
 
             // به‌روزرسانی داده‌های فیلتر با فیلترهای فعلی
             $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
-            
+
             $savedFilter->update([
                 'name' => trim($name),
                 'description' => $description ? trim($description) : null,
@@ -3957,7 +3973,7 @@ class FamilySearch extends Component
 
             if ($originalFilter->visibility === 'private' && $originalFilter->user_id === $user->id) {
                 $hasAccess = true;
-            } elseif ($originalFilter->visibility === 'organization' && 
+            } elseif ($originalFilter->visibility === 'organization' &&
                      $originalFilter->organization_id === $user->organization_id) {
                 $hasAccess = true;
             } elseif ($originalFilter->visibility === 'public') {
@@ -4013,6 +4029,9 @@ class FamilySearch extends Component
     /**
      * حذف یک معیار پذیرش از لیست آرایه
      * برای استفاده در multi-select dropdown
+     *
+     * @deprecated This method is no longer used after refactoring to MultiSelect component.
+     *             The component handles toggling internally. Kept for backward compatibility.
      */
     public function removeProblemType($key)
     {
@@ -4021,19 +4040,19 @@ class FamilySearch extends Component
             'current_array' => $this->editingMemberData['problem_type'] ?? 'not_set',
             'member_id' => $this->editingMemberId
         ]);
-        
+
         if (isset($this->editingMemberData['problem_type']) && is_array($this->editingMemberData['problem_type'])) {
             // حذف کلید مشخص
             $this->editingMemberData['problem_type'] = array_filter(
-                $this->editingMemberData['problem_type'], 
+                $this->editingMemberData['problem_type'],
                 function($item) use ($key) {
                     return (string)$item !== (string)$key; // اطمینان از مقایسه رشته‌ای
                 }
             );
-            
+
             // بازنشانی کلیدهای آرایه و حذف تکراری‌ها
             $this->editingMemberData['problem_type'] = array_unique(array_values($this->editingMemberData['problem_type']));
-            
+
             Log::info('Problem type removed successfully', [
                 'remaining_array' => $this->editingMemberData['problem_type'],
                 'count' => count($this->editingMemberData['problem_type'])
@@ -4047,6 +4066,9 @@ class FamilySearch extends Component
 
     /**
      * اضافه کردن معیار پذیرش جدید با بررسی تکرار
+     *
+     * @deprecated This method is no longer used after refactoring to MultiSelect component.
+     *             The component handles toggling internally. Kept for backward compatibility.
      * @param string $key
      * @return void
      */
@@ -4055,15 +4077,15 @@ class FamilySearch extends Component
         if (!isset($this->editingMemberData['problem_type'])) {
             $this->editingMemberData['problem_type'] = [];
         }
-        
+
         // بررسی تکرار قبل از اضافه کردن
         if (!in_array($key, $this->editingMemberData['problem_type'])) {
             $this->editingMemberData['problem_type'][] = $key;
-            
-            // مرتب‌سازی و حذف احتمالی تکراری‌ها
+
+            // حذف احتمالی تکراری‌ها (بدون sort برای حفظ insertion order)
             $this->editingMemberData['problem_type'] = array_unique($this->editingMemberData['problem_type']);
-            sort($this->editingMemberData['problem_type']);
-            
+            // sort() حذف شد: ترتیب اضافه شدن حفظ می‌شود
+
             Log::info('Problem type added successfully', [
                 'added_key' => $key,
                 'current_array' => $this->editingMemberData['problem_type'],
@@ -4074,6 +4096,8 @@ class FamilySearch extends Component
 
     /**
      * به‌روزرسانی خودکار problem_type برای حذف تکراری‌ها در زمان واقعی
+     * This hook fires when the MultiSelect component updates the parent's editingMemberData.problem_type via wire:model.
+     * Provides automatic deduplication.
      * @param mixed $value
      * @return void
      */
@@ -4084,20 +4108,29 @@ class FamilySearch extends Component
             $cleanedArray = array_filter($value, function($item) {
                 return !is_null($item) && trim((string)$item) !== '';
             });
-            
+
             $cleanedArray = array_unique($cleanedArray);
-            sort($cleanedArray);
-            
-            // فقط اگر تغییری وجود داشته باشد، به‌روزرسانی کن
-            if ($cleanedArray !== $value) {
-                $this->editingMemberData['problem_type'] = array_values($cleanedArray);
-                
+            $cleanedArray = array_values($cleanedArray);
+            // sort() حذف شد: ترتیب insertion order حفظ می‌شود (به جای comparison sorted)
+
+            // Comparison بدون sort - بررسی count و مقادیر
+            $reindexedOriginal = array_values($value);
+
+            if ($cleanedArray !== $reindexedOriginal) {
+                $this->editingMemberData['problem_type'] = $cleanedArray;
+
                 Log::info('Problem type array cleaned automatically', [
                     'original_count' => count($value),
                     'cleaned_count' => count($cleanedArray),
+                    'removed_duplicates' => count($value) - count($cleanedArray),
                     'member_id' => $this->editingMemberId
                 ]);
             }
+
+            // Dispatch event برای Alpine.js
+            $this->dispatch('problem-types-updated', [
+                'count' => count($this->editingMemberData['problem_type'])
+            ]);
         }
     }
 

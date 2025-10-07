@@ -227,8 +227,8 @@ class FamiliesApproval extends Component
             return;
         }
 
-        // 5. انتقال خانواده‌ها به مرحله بعد
-        $this->moveSelectedToNextWizardStep();
+        // 5. انتقال خانواده‌ها به مرحله تایید شده (پرش از SHARE_ALLOCATION)
+        $this->moveSelectedToSpecificStep(InsuranceWizardStep::APPROVED);
 
         // 6. هدایت کاربر به تب بعدی (approved)
         $this->setTab('approved');
@@ -915,6 +915,90 @@ private function getCriteriaWeights(): array
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('خطا در انتقال خانواده‌ها به مرحله بعد: ' . $e->getMessage());
+            session()->flash('error', 'خطا در انتقال خانواده‌ها: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * انتقال خانواده‌های انتخاب‌شده به یک مرحله مشخص از ویزارد
+     */
+    public function moveSelectedToSpecificStep(InsuranceWizardStep $targetStep)
+    {
+        if (empty($this->selected)) {
+            session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید.');
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $batchId = 'batch_to_' . $targetStep->value . '_' . time() . '_' . uniqid();
+            $count = 0;
+
+            foreach ($this->selected as $familyId) {
+                $family = Family::find($familyId);
+                if (!$family) continue;
+
+                // اطمینان از همگام بودن وضعیت اولیه ویزارد
+                if (!$family->wizard_status) {
+                    $family->syncWizardStatus();
+                }
+
+                $currentStep = $family->wizard_status;
+                if (is_string($currentStep)) {
+                    $currentStep = InsuranceWizardStep::from($currentStep);
+                }
+
+                // تنظیم مرحله هدف
+                $family->setAttribute('wizard_status', $targetStep->value);
+
+                // نگاشت وضعیت legacy
+                switch ($targetStep->value) {
+                    case InsuranceWizardStep::REVIEWING:
+                        $family->setAttribute('status', 'reviewing');
+                        break;
+                    case InsuranceWizardStep::SHARE_ALLOCATION:
+                    case InsuranceWizardStep::APPROVED:
+                    case InsuranceWizardStep::EXCEL_UPLOAD:
+                        $family->setAttribute('status', 'approved');
+                        break;
+                    case InsuranceWizardStep::INSURED:
+                        $family->setAttribute('status', 'insured');
+                        $family->setAttribute('is_insured', true);
+                        break;
+                    case InsuranceWizardStep::RENEWAL:
+                        $family->setAttribute('status', 'renewal');
+                        break;
+                }
+
+                $family->save();
+
+                // ثبت لاگ انتقال
+                FamilyStatusLog::logTransition(
+                    $family,
+                    $currentStep,
+                    $targetStep,
+                    "انتقال مستقیم به مرحله {$targetStep->label()} توسط کاربر",
+                    ['batch_id' => $batchId]
+                );
+
+                $count++;
+            }
+
+            DB::commit();
+
+            session()->flash('message', "{$count} خانواده با موفقیت به مرحله '{$targetStep->label()}' منتقل شدند.");
+
+            // به‌روزرسانی UI
+            $this->selected = [];
+            $this->selectAll = false;
+            $this->resetPage();
+            $this->dispatch('reset-checkboxes');
+
+            // پاکسازی کش برای تازه‌سازی لیست
+            $this->clearFamiliesCache();
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('خطا در انتقال مستقیم خانواده‌ها: ' . $e->getMessage());
             session()->flash('error', 'خطا در انتقال خانواده‌ها: ' . $e->getMessage());
         }
     }
@@ -2338,7 +2422,15 @@ private function getCriteriaWeights(): array
      */
     public function moveToExcelUploadStage()
     {
+        Log::info('🚀 moveToExcelUploadStage method called', [
+            'selected_count' => count($this->selected),
+            'selected_ids' => $this->selected,
+            'user_id' => Auth::id(),
+            'current_active_tab' => $this->activeTab
+        ]);
+
         if (empty($this->selected)) {
+            Log::warning('⚠️ No families selected for moveToExcelUploadStage');
             session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید');
             return;
         }
@@ -2349,11 +2441,37 @@ private function getCriteriaWeights(): array
             $count = 0;
 
             foreach ($this->selected as $familyId) {
+                Log::info('🔍 Processing family for moveToExcelUploadStage', [
+                    'family_id' => $familyId,
+                    'family_id_type' => gettype($familyId)
+                ]);
+                
                 $family = Family::find($familyId);
-                if (!$family) continue;
+                if (!$family) {
+                    Log::warning('⚠️ Family not found', ['family_id' => $familyId]);
+                    continue;
+                }
+
+                Log::info('👥 Family found', [
+                    'family_id' => $family->id,
+                    'family_name' => $family->last_name,
+                    'current_wizard_status' => $family->wizard_status,
+                    'current_wizard_status_value' => $family->wizard_status->value ?? 'null',
+                    'current_wizard_status_type' => gettype($family->wizard_status),
+                    'current_status' => $family->status,
+                    'expected_wizard_status' => InsuranceWizardStep::APPROVED,
+                    'expected_wizard_status_value' => InsuranceWizardStep::APPROVED->value
+                ]);
 
                 // فقط خانواده‌هایی که در مرحله APPROVED هستند را منتقل کن
-                if ($family->wizard_status !== InsuranceWizardStep::APPROVED->value) {
+                if ($family->wizard_status !== InsuranceWizardStep::APPROVED) {
+                    Log::info('⚠️ Family skipped - not in APPROVED status', [
+                        'family_id' => $family->id,
+                        'current_status' => $family->wizard_status,
+                        'current_status_value' => $family->wizard_status->value ?? 'null',
+                        'expected_status' => InsuranceWizardStep::APPROVED,
+                        'expected_status_value' => InsuranceWizardStep::APPROVED->value
+                    ]);
                     continue;
                 }
 
@@ -2364,6 +2482,13 @@ private function getCriteriaWeights(): array
                 $family->setAttribute('wizard_status', $nextStep->value);
                 $family->setAttribute('status', 'approved'); // status قدیمی را approved نگه می‌داریم
                 $family->save();
+                
+                Log::info('✅ Family status updated successfully', [
+                    'family_id' => $family->id,
+                    'from_status' => $currentStep->value,
+                    'to_status' => $nextStep->value,
+                    'new_wizard_status' => $family->fresh()->wizard_status
+                ]);
 
                 // ثبت لاگ تغییر وضعیت
                 FamilyStatusLog::create([
@@ -2374,15 +2499,27 @@ private function getCriteriaWeights(): array
                     'comments' => 'انتقال به مرحله در انتظار صدور توسط کاربر: ' . Auth::user()?->name,
                     'batch_id' => $batchId,
                 ]);
+                
+                Log::info('📝 Family status log created', [
+                    'family_id' => $family->id,
+                    'batch_id' => $batchId
+                ]);
 
                 $count++;
             }
 
             DB::commit();
+            
+            Log::info('✅ Transaction committed successfully', [
+                'families_moved' => $count,
+                'batch_id' => $batchId
+            ]);
 
             if ($count > 0) {
+                Log::info('🎉 Success message will be displayed', ['count' => $count]);
                 session()->flash('message', "{$count} خانواده با موفقیت به مرحله 'در انتظار صدور' منتقل شدند.");
             } else {
+                Log::warning('⚠️ No families were moved - showing error message');
                 session()->flash('error', 'هیچ خانواده‌ای برای انتقال یافت نشد.');
             }
 
@@ -2391,6 +2528,9 @@ private function getCriteriaWeights(): array
             $this->selected = [];
             $this->selectAll = false;
             $this->dispatch('reset-checkboxes');
+            
+            // انتقال خودکار به تب صدور اکسل
+            $this->changeTab('excel', false);
 
             Log::info('FamiliesApproval::moveToExcelUploadStage - انتقال موفق', [
                 'moved_count' => $count,
