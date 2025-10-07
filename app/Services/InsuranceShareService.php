@@ -276,6 +276,21 @@ class InsuranceShareService
                 ]);
             }
             
+            /**
+             * ساختار فایل اکسل:
+             * 
+             * فایل بدون مشارکت (19 ستون): A-S
+             * - A-K (0-10): کد خانوار، کد ملی سرپرست، سرپرست، نام عضو، کد ملی عضو، نسبت، تاریخ تولد، جنسیت، معیار پذیرش، مدرک، تاریخ عضویت
+             * - L-O (11-14): استان، شهرستان، دهستان، سازمان
+             * - P-S (15-18): نوع بیمه، مبلغ بیمه، تاریخ شروع، تاریخ پایان
+             * 
+             * فایل با مشارکت (21 ستون): A-U
+             * - A-K (0-10): اطلاعات خانواده و اعضا
+             * - L-M (11-12): درصد مشارکت، نام مشارکت کننده
+             * - N-Q (13-16): استان، شهرستان، دهستان، سازمان
+             * - R-U (17-20): نوع بیمه، مبلغ بیمه، تاریخ شروع، تاریخ پایان
+             */
+            
             // تعیین موقعیت ستون‌ها بر اساس نوع فایل
             $familyCodeIndex = 0;        // A: کد خانوار
             $headNationalCodeIndex = 1;  // B: کد ملی سرپرست
@@ -283,16 +298,20 @@ class InsuranceShareService
             if ($hasParticipationColumns) {
                 // فایل دارای ستون‌های مشارکت (21 ستون)
                 // بر اساس لاگ: 17=نوعبیمه, 18=مبلغ, 19=شروع, 20=پایان
-                $insuranceTypeIndex = 17;   // نوع بیمه
-                $insuranceAmountIndex = 18; // مبلغ بیمه
-                $startDateIndex = 19;       // تاریخ شروع
-                $endDateIndex = 20;         // تاریخ پایان
+                $insuranceTypeIndex = 17;   // R: نوع بیمه
+                $insuranceAmountIndex = 18; // S: مبلغ بیمه
+                $startDateIndex = 19;       // T: تاریخ شروع
+                $endDateIndex = 20;         // U: تاریخ پایان
             } else {
-                // فایل بدون ستون‌های مشارکت (17 ستون)
-                $insuranceTypeIndex = 13;    // N: نوع بیمه
-                $insuranceAmountIndex = 14;  // O: مبلغ بیمه
-                $startDateIndex = 15;        // P: تاریخ شروع
-                $endDateIndex = 16;          // Q: تاریخ پایان
+                // فایل بدون ستون‌های مشارکت (19 ستون)
+                // ساختار فایل:
+                // A-K (0-10): اطلاعات خانواده و اعضا (11 ستون)
+                // L-O (11-14): استان، شهرستان، دهستان، سازمان (4 ستون)
+                // P-S (15-18): نوع بیمه، مبلغ بیمه، تاریخ شروع، تاریخ پایان (4 ستون)
+                $insuranceTypeIndex = 15;    // P: نوع بیمه (تغییر از 13 به 15)
+                $insuranceAmountIndex = 16;  // Q: مبلغ بیمه (تغییر از 14 به 16)
+                $startDateIndex = 17;        // R: تاریخ شروع (تغییر از 15 به 17)
+                $endDateIndex = 18;          // S: تاریخ پایان (تغییر از 16 به 18)
             }
 
             // پردازش ردیف‌های اکسل (شروع از ردیف دوم - ردیف اول هدر است)
@@ -310,16 +329,21 @@ class InsuranceShareService
                 $policyNumber = '';  // شماره بیمه‌نامه در ساختار جدید نداریم
                 $noteText = '';     // توضیحات در ساختار جدید نداریم
 
-                // لاگ‌گذاری برای دیباگ
-                Log::debug("پردازش ردیف {$rowNumber}", [
+                // لاگ‌گذاری دقیق برای دیباگ
+                Log::debug("📋 پردازش ردیف {$rowNumber}", [
+                    'row_number' => $rowNumber,
                     'family_code' => $familyCode,
                     'head_national_code' => $headNationalCode,
                     'insurance_type' => $insuranceType,
+                    'insurance_type_index' => $insuranceTypeIndex,
                     'insurance_amount' => $insuranceAmount,
+                    'insurance_amount_index' => $insuranceAmountIndex,
                     'start_date' => $startDate,
+                    'start_date_index' => $startDateIndex,
                     'end_date' => $endDate,
+                    'end_date_index' => $endDateIndex,
                     'has_participation_columns' => $hasParticipationColumns ? 'yes' : 'no',
-                    'insurance_type_index' => $insuranceTypeIndex
+                    'total_columns_in_row' => count($row)
                 ]);
 
                 // بررسی خالی بودن سطر کامل (اگر همه فیلدهای اصلی خالی باشند، سطر را رد کن)
@@ -330,31 +354,52 @@ class InsuranceShareService
 
                 // بررسی خالی بودن فیلدهای ضروری
                 if (empty($familyCode)) {
-                    $errors[] = "ردیف {$rowNumber}: کد خانوار خالی است";
+                    $errors[] = "ردیف {$rowNumber}: کد خانوار خالی است (ستون A)";
+                    Log::warning("⚠️ ردیف {$rowNumber}: کد خانوار خالی", ['row_data' => $row]);
                     continue;
                 }
 
                 if (empty($insuranceType)) {
-                    $errors[] = "ردیف {$rowNumber}: نوع بیمه خالی است";
+                    $errors[] = "ردیف {$rowNumber}: نوع بیمه خالی است (ستون " . chr(65 + $insuranceTypeIndex) . ", ایندکس {$insuranceTypeIndex})";
+                    Log::warning("⚠️ ردیف {$rowNumber}: نوع بیمه خالی", [
+                        'expected_column' => chr(65 + $insuranceTypeIndex),
+                        'index' => $insuranceTypeIndex,
+                        'value_found' => $row[$insuranceTypeIndex] ?? 'NULL'
+                    ]);
                     continue;
                 }
 
                 if (empty($insuranceAmount)) {
-                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه خالی است";
+                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه خالی است (ستون " . chr(65 + $insuranceAmountIndex) . ", ایندکس {$insuranceAmountIndex})";
+                    Log::warning("⚠️ ردیف {$rowNumber}: مبلغ بیمه خالی", [
+                        'expected_column' => chr(65 + $insuranceAmountIndex),
+                        'index' => $insuranceAmountIndex,
+                        'value_found' => $row[$insuranceAmountIndex] ?? 'NULL'
+                    ]);
                     continue;
                 }
 
                 // تشخیص نوع بیمه
                 $normalizedInsuranceType = $this->normalizeInsuranceType($insuranceType);
                 if (!$normalizedInsuranceType) {
-                    $errors[] = "ردیف {$rowNumber}: نوع بیمه نامعتبر است: {$insuranceType}";
+                    $errors[] = "ردیف {$rowNumber}: نوع بیمه نامعتبر است: '{$insuranceType}' (ستون " . chr(65 + $insuranceTypeIndex) . "). مقادیر معتبر: 'تکمیلی' یا 'تامین اجتماعی'";
+                    Log::warning("⚠️ ردیف {$rowNumber}: نوع بیمه نامعتبر", [
+                        'value' => $insuranceType,
+                        'column' => chr(65 + $insuranceTypeIndex),
+                        'valid_values' => ['تکمیلی', 'تامین اجتماعی']
+                    ]);
                     continue;
                 }
 
                 // تمیز کردن مبلغ بیمه
                 $cleanAmount = $this->cleanInsuranceAmount($insuranceAmount);
                 if ($cleanAmount === null) {
-                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه نامعتبر است: {$insuranceAmount}";
+                    $errors[] = "ردیف {$rowNumber}: مبلغ بیمه نامعتبر است: '{$insuranceAmount}' (ستون " . chr(65 + $insuranceAmountIndex) . "). مبلغ باید بین 1,000 تا 100,000,000 ریال باشد";
+                    Log::warning("⚠️ ردیف {$rowNumber}: مبلغ بیمه نامعتبر", [
+                        'value' => $insuranceAmount,
+                        'column' => chr(65 + $insuranceAmountIndex),
+                        'valid_range' => '1,000 - 100,000,000 ریال'
+                    ]);
                     continue;
                 }
 
@@ -392,6 +437,26 @@ class InsuranceShareService
 
         } catch (\Exception $e) {
             $errors[] = "خطا در خواندن فایل اکسل: " . $e->getMessage();
+        }
+
+        // لاگ خلاصه نتایج اعتبارسنجی
+        Log::info('✅ اعتبارسنجی فایل اکسل تکمیل شد', [
+            'total_rows_processed' => count($rows) - 1, // منهای ردیف هدر
+            'valid_families' => count(array_unique($familyCodes)),
+            'errors_count' => count($errors),
+            'has_participation_columns' => $hasParticipationColumns ?? false,
+            'column_indices' => [
+                'insurance_type' => $insuranceTypeIndex ?? 'N/A',
+                'insurance_amount' => $insuranceAmountIndex ?? 'N/A',
+                'start_date' => $startDateIndex ?? 'N/A',
+                'end_date' => $endDateIndex ?? 'N/A'
+            ]
+        ]);
+
+        if (!empty($errors)) {
+            Log::warning('⚠️ خطاهای اعتبارسنجی یافت شد', [
+                'errors' => $errors
+            ]);
         }
 
         return [
@@ -802,25 +867,67 @@ class InsuranceShareService
 
     /**
      * تشخیص و تبدیل نوع بیمه
+     * 
+     * این متد کاراکترهای نامعتبر را پاکسازی می‌کند و نوع بیمه را تشخیص می‌دهد.
+     * مقاوم در برابر خطاهای تایپی مانند: "ـکمیلی" به جای "تکمیلی"
      */
     private function normalizeInsuranceType($insuranceType): ?string
     {
-        $insuranceType = trim(strtolower($insuranceType));
+        $originalValue = $insuranceType;
         
+        // حذف کاراکترهای نامعتبر (فقط حروف فارسی، انگلیسی و فاصله مجاز است)
+        // Pattern: حروف فارسی (\x{0600}-\x{06FF}) + حروف انگلیسی (a-zA-Z) + فاصله (\s)
+        $cleanedValue = preg_replace('/[^\x{0600}-\x{06FF}a-zA-Z\s]/u', '', $insuranceType);
+        
+        // لاگ در صورت وجود کاراکترهای نامعتبر
+        if ($originalValue !== $cleanedValue) {
+            Log::debug('🧹 پاکسازی نوع بیمه', [
+                'original' => $originalValue,
+                'cleaned' => $cleanedValue,
+                'removed_chars' => array_values(array_diff(
+                    mb_str_split($originalValue),
+                    mb_str_split($cleanedValue)
+                ))
+            ]);
+        }
+        
+        // تبدیل به حروف کوچک و حذف فاصله‌های اضافی
+        $normalizedValue = trim(mb_strtolower($cleanedValue));
+        
+        // تعریف کلمات کلیدی
         $socialInsuranceKeywords = ['تامین اجتماعی', 'تامین', 'اجتماعی', 'social'];
-        $supplementaryInsuranceKeywords = ['تکمیلی', 'supplementary', 'درمان', 'medical'];
+        $supplementaryInsuranceKeywords = ['تکمیلی', 'کمیلی', 'supplementary', 'درمان', 'medical'];
         
+        // بررسی تامین اجتماعی
         foreach ($socialInsuranceKeywords as $keyword) {
-            if (strpos($insuranceType, $keyword) !== false) {
+            if (mb_strpos($normalizedValue, mb_strtolower($keyword)) !== false) {
+                Log::debug('✅ نوع بیمه تشخیص داده شد', [
+                    'input' => $originalValue,
+                    'detected' => 'تامین اجتماعی',
+                    'matched_keyword' => $keyword
+                ]);
                 return 'تامین اجتماعی';
             }
         }
         
+        // بررسی تکمیلی
         foreach ($supplementaryInsuranceKeywords as $keyword) {
-            if (strpos($insuranceType, $keyword) !== false) {
+            if (mb_strpos($normalizedValue, mb_strtolower($keyword)) !== false) {
+                Log::debug('✅ نوع بیمه تشخیص داده شد', [
+                    'input' => $originalValue,
+                    'detected' => 'تکمیلی',
+                    'matched_keyword' => $keyword
+                ]);
                 return 'تکمیلی';
             }
         }
+        
+        // اگر هیچ کدام تشخیص داده نشد
+        Log::warning('❌ نوع بیمه قابل تشخیص نیست', [
+            'original' => $originalValue,
+            'cleaned' => $cleanedValue,
+            'normalized' => $normalizedValue
+        ]);
         
         return null;
     }
