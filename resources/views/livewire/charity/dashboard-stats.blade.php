@@ -381,10 +381,10 @@
         </div>
 
         <!-- Scripts -->
+        <!-- Load Chart.js first from CDN -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="{{ asset('js/dashboard-charts.js') }}"></script>
 
-        <!-- داده‌های چارت برای JavaScript -->
+        <!-- Then inject JSON data into DOM -->
         <script type="application/json" id="chart-data">
             {!! json_encode([
                 'geoLabels' => $provinceNames ?? [],
@@ -399,5 +399,20 @@
                 'insuredMembers' => $insuredMembers,
                 'uninsuredMembers' => $uninsuredMembers
             ]) !!}
+        </script>
+
+        <!-- Finally load dashboard-charts.js -->
+        <script src="{{ asset('js/dashboard-charts.js') }}"></script>
+
+        <!-- Add fallback initialization with delay -->
+        <script>
+            // Fallback: ensure charts initialize even if DOMContentLoaded fired too early
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    if (window.dashboardCharts && typeof window.dashboardCharts.initChartsWithRetry === 'function') {
+                        window.dashboardCharts.initChartsWithRetry();
+                    }
+                }, 500);
+            });
         </script>
     </div>
