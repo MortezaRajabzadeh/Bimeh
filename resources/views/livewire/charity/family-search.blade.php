@@ -532,31 +532,39 @@
 
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
-                                // نمایش معیارهای پذیرش خانواده - با refresh از دیتابیس برای اطمینان از دقت
-                                try {
-                                    // اگر خانواده در حال ویرایش است، داده‌های جدید را از دیتابیس بخوان
-                                    if ($expandedFamily === $family->id) {
-                                        $family->refresh(); // Force refresh from database
+                                // جمع‌آوری معیارها از تمام اعضای خانواده
+                                $familyProblems = [];
+                                foreach ($family->members as $member) {
+                                    $memberProblems = $member->getProblemTypesArray(true); // فرمت فارسی
+                                    foreach ($memberProblems as $problem) {
+                                        if (isset($familyProblems[$problem])) {
+                                            $familyProblems[$problem]++;
+                                        } else {
+                                            $familyProblems[$problem] = 1;
+                                        }
                                     }
-                                    
-                                    $acceptanceCriteria = $family->acceptance_criteria ?? [];
-                                    if (is_string($acceptanceCriteria)) {
-                                        $acceptanceCriteria = json_decode($acceptanceCriteria, true) ?? [];
-                                    }
-                                } catch (\Exception $e) {
-                                    \Log::warning('Error loading family acceptance criteria', [
-                                        'family_id' => $family->id,
-                                        'error' => $e->getMessage()
-                                    ]);
-                                    $acceptanceCriteria = [];
                                 }
+                                
+                                // تعریف رنگ‌های معیارها
+                                $problemColors = [
+                                    'اعتیاد' => 'bg-purple-100 text-purple-800',
+                                    'بیکاری' => 'bg-orange-100 text-orange-800',
+                                    'بیماری خاص' => 'bg-red-100 text-red-800',
+                                    'از کار افتادگی' => 'bg-yellow-100 text-yellow-800',
+                                    'معلولیت' => 'bg-blue-100 text-blue-800',
+                                    'کهولت سن' => 'bg-gray-100 text-gray-800',
+                                    'سرپرست خانوار' => 'bg-green-100 text-green-800',
+                                ];
                             @endphp
 
                             <div class="flex flex-wrap gap-1 justify-center">
-                                @if(!empty($acceptanceCriteria) && is_array($acceptanceCriteria))
-                                    @foreach($acceptanceCriteria as $criteria)
-                                        <span class="px-2 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800" title="معیار خانواده: {{ $criteria }}">
-                                            {{ $criteria }}
+                                @if(count($familyProblems) > 0)
+                                    @foreach($familyProblems as $problem => $count)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs {{ $problemColors[$problem] ?? 'bg-gray-100 text-gray-800' }}" title="معیار: {{ $problem }}">
+                                            {{ $problem }}
+                                            @if($count > 1)
+                                                <span class="mr-1 bg-white bg-opacity-50 rounded-full px-1 text-xs">×{{ $count }}</span>
+                                            @endif
                                         </span>
                                     @endforeach
                                 @else
