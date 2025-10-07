@@ -65,7 +65,7 @@
         </div>
 
         <!-- محتوای مودال -->
-        <div class="p-6 overflow-y-auto max-h-[70vh]">
+        <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 180px);">
             <!-- جدول فیلترها -->
             <div class="overflow-x-auto bg-white rounded-lg border border-gray-200">
                 <table class="w-full border-collapse">
@@ -430,10 +430,9 @@
                     </tbody>
                 </table>
             </div>
-        </div>
 
         <!-- بخش ذخیره سازی و بارگذاری فیلترها -->
-        <div class="p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50" 
+        <div class="p-6 mt-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50"
              x-data="{
                  showSaveForm: false,
                  filterName: '',
@@ -609,6 +608,7 @@
                     </button>
                 </div>
             </div>
+        </div>
         </div>
 
         <!-- فوتر مودال -->
