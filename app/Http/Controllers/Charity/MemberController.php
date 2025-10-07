@@ -77,12 +77,7 @@ class MemberController extends Controller
      */
     public function edit(Family $family, Member $member)
     {
-        Gate::authorize('edit member');
-        
-        // اطمینان از اینکه خانواده متعلق به سازمان کاربر جاری است
-        if ($family->charity_id !== request()->user()->organization_id) {
-            abort(403, 'شما به این خانواده دسترسی ندارید.');
-        }
+        Gate::authorize('updateMembers', $family);
         
         // اطمینان از اینکه عضو متعلق به همین خانواده است
         if ($member->family_id !== $family->id) {
@@ -97,12 +92,7 @@ class MemberController extends Controller
      */
     public function update(MemberRequest $request, Family $family, Member $member)
     {
-        Gate::authorize('edit member');
-        
-        // اطمینان از اینکه خانواده متعلق به سازمان کاربر جاری است
-        if ($family->charity_id !== $request->user()->organization_id) {
-            abort(403, 'شما به این خانواده دسترسی ندارید.');
-        }
+        Gate::authorize('updateMembers', $family);
         
         // اطمینان از اینکه عضو متعلق به همین خانواده است
         if ($member->family_id !== $family->id) {

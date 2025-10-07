@@ -79,4 +79,84 @@ public function legacyStatus(): string
         self::REJECTED => 'rejected',
     };
 }
+
+    /**
+     * بررسی آیا مرحله فعلی نیاز به بررسی شرایط خاصی دارد
+     *
+     * @return bool
+     */
+    public function requiresConditionCheck(): bool
+    {
+        return match($this) {
+            self::SHARE_ALLOCATION => true, // نیاز به بررسی وجود سهم‌بندی
+            self::EXCEL_UPLOAD => true,     // نیاز به بررسی آپلود فایل اکسل
+            default => false
+        };
+    }
+
+    /**
+     * دریافت همه مراحل wizard به ترتیب
+     *
+     * @return array
+     */
+    public static function orderedSteps(): array
+    {
+        return [
+            self::PENDING,
+            self::REVIEWING,
+            self::SHARE_ALLOCATION,
+            self::APPROVED,
+            self::EXCEL_UPLOAD,
+            self::INSURED,
+            self::RENEWAL,
+        ];
+    }
+
+    /**
+     * أیا مرحله فعلی قبل از مرحله داده شده است؟
+     * 
+     * @param self $step
+     * @return bool
+     */
+    public function isBefore(self $step): bool
+    {
+        $allSteps = [
+            self::PENDING,
+            self::REVIEWING,
+            self::SHARE_ALLOCATION,
+            self::APPROVED, 
+            self::EXCEL_UPLOAD,
+            self::INSURED,
+            self::RENEWAL
+        ];
+        
+        $currentIndex = array_search($this, $allSteps);
+        $targetIndex = array_search($step, $allSteps);
+        
+        return $currentIndex < $targetIndex;
+    }
+
+    /**
+     * آیا مرحله فعلی بعد از مرحله داده شده است؟
+     * 
+     * @param self $step
+     * @return bool
+     */
+    public function isAfter(self $step): bool
+    {
+        $allSteps = [
+            self::PENDING,
+            self::REVIEWING,
+            self::SHARE_ALLOCATION,
+            self::APPROVED, 
+            self::EXCEL_UPLOAD,
+            self::INSURED,
+            self::RENEWAL
+        ];
+        
+        $currentIndex = array_search($this, $allSteps);
+        $targetIndex = array_search($step, $allSteps);
+        
+        return $currentIndex > $targetIndex;
+    }
 }

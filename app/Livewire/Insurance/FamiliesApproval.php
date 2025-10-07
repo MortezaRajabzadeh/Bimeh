@@ -2334,6 +2334,82 @@ private function getCriteriaWeights(): array
     }
 
     /**
+     * انتقال خانواده‌های انتخاب شده به مرحله در انتظار صدور
+     */
+    public function moveToExcelUploadStage()
+    {
+        if (empty($this->selected)) {
+            session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید');
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $batchId = 'move_to_excel_upload_' . time() . '_' . uniqid();
+            $count = 0;
+
+            foreach ($this->selected as $familyId) {
+                $family = Family::find($familyId);
+                if (!$family) continue;
+
+                // فقط خانواده‌هایی که در مرحله APPROVED هستند را منتقل کن
+                if ($family->wizard_status !== InsuranceWizardStep::APPROVED->value) {
+                    continue;
+                }
+
+                $currentStep = InsuranceWizardStep::APPROVED;
+                $nextStep = InsuranceWizardStep::EXCEL_UPLOAD;
+
+                // تغییر وضعیت به EXCEL_UPLOAD
+                $family->setAttribute('wizard_status', $nextStep->value);
+                $family->setAttribute('status', 'approved'); // status قدیمی را approved نگه می‌داریم
+                $family->save();
+
+                // ثبت لاگ تغییر وضعیت
+                FamilyStatusLog::create([
+                    'family_id' => $family->id,
+                    'user_id' => Auth::id(),
+                    'from_status' => $currentStep->value,
+                    'to_status' => $nextStep->value,
+                    'comments' => 'انتقال به مرحله در انتظار صدور توسط کاربر: ' . Auth::user()?->name,
+                    'batch_id' => $batchId,
+                ]);
+
+                $count++;
+            }
+
+            DB::commit();
+
+            if ($count > 0) {
+                session()->flash('message', "{$count} خانواده با موفقیت به مرحله 'در انتظار صدور' منتقل شدند.");
+            } else {
+                session()->flash('error', 'هیچ خانواده‌ای برای انتقال یافت نشد.');
+            }
+
+            // پاکسازی کش و به‌روزرسانی UI
+            $this->clearFamiliesCache();
+            $this->selected = [];
+            $this->selectAll = false;
+            $this->dispatch('reset-checkboxes');
+
+            Log::info('FamiliesApproval::moveToExcelUploadStage - انتقال موفق', [
+                'moved_count' => $count,
+                'batch_id' => $batchId,
+                'user_id' => Auth::id()
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('FamiliesApproval::moveToExcelUploadStage - خطا در انتقال', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+            session()->flash('error', 'خطا در انتقال خانواده‌ها: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * مرتب‌سازی لیست خانواده‌ها بر اساس فیلد انتخابی
      *
      * @param string $field
@@ -4934,6 +5010,46 @@ public function clearCriteriaFilter()
     }
 
     /**
+     * متد wrapper برای دانلود فایل نمونه از داخل مودال
+     * این متد بررسی‌های اولیه را انجام می‌دهد و سپس متد اصلی را فراخوانی می‌کند
+     * 
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|null
+     */
+    public function downloadSampleTemplateFromModal()
+    {
+        try {
+            // بررسی اینکه آیا خانواده‌ای انتخاب شده یا نه
+            if (count($this->selected) === 0) {
+                session()->flash('error', 'لطفاً حداقل یک خانواده را انتخاب کنید');
+                Log::warning('تلاش برای دانلود فایل نمونه بدون انتخاب خانواده', [
+                    'user_id' => Auth::id(),
+                    'tab' => $this->activeTab
+                ]);
+                return null;
+            }
+
+            Log::info('شروع دانلود فایل نمونه از مودال', [
+                'user_id' => Auth::id(),
+                'selected_count' => count($this->selected),
+                'tab' => $this->activeTab
+            ]);
+
+            // فراخوانی متد اصلی دانلود
+            return $this->downloadSampleTemplate();
+
+        } catch (\Exception $e) {
+            Log::error('خطا در دانلود فایل نمونه از مودال: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            session()->flash('error', 'خطا در دانلود فایل نمونه: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * اعمال فیلتر wizard_status بر اساس تب انتخاب شده
      */
     protected function applyTabStatusFilter($query)
@@ -4952,10 +5068,8 @@ public function clearCriteriaFilter()
                     break;
 
                 case 'approved':
-                    $query->where(function($q) {
-                        $q->where('wizard_status', 'approved')
-                          ->orWhere('wizard_status', 'excel_upload');
-                    })->where('status', '!=', 'deleted');
+                    $query->where('wizard_status', InsuranceWizardStep::APPROVED->value)
+                          ->where('status', '!=', 'deleted');
                     break;
 
                 case 'rejected':

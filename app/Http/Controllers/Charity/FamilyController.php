@@ -144,12 +144,7 @@ class FamilyController extends Controller
      */
     public function edit(Family $family)
     {
-        Gate::authorize('edit family');
-        
-        // اطمینان از اینکه خانواده متعلق به سازمان کاربر جاری است
-        if ($family->charity_id !== request()->user()->organization_id) {
-            abort(403, 'شما به این خانواده دسترسی ندارید.');
-        }
+        Gate::authorize('update', $family);
         
         $regions = Region::active()->get();
         
@@ -161,12 +156,7 @@ class FamilyController extends Controller
      */
     public function update(FamilyRequest $request, Family $family)
     {
-        Gate::authorize('edit family');
-        
-        // اطمینان از اینکه خانواده متعلق به سازمان کاربر جاری است
-        if ($family->charity_id !== request()->user()->organization_id) {
-            abort(403, 'شما به این خانواده دسترسی ندارید.');
-        }
+        Gate::authorize('update', $family);
         
         $validated = $request->validated();
         

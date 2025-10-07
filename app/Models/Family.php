@@ -12,6 +12,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Support\Facades\Dispatch;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Enums\InsuranceWizardStep;
 
 class Family extends Model implements HasMedia
 {
@@ -1111,7 +1112,7 @@ class Family extends Model implements HasMedia
      * دریافت wizard_status به صورت enum اگر مقدار موجود باشد
      *
      * @param mixed $value
-     * @return \App\InsuranceWizardStep|null
+     * @return InsuranceWizardStep|null
      */
     public function getWizardStatusAttribute($value)
     {
@@ -1120,7 +1121,7 @@ class Family extends Model implements HasMedia
         }
 
         try {
-            return \App\InsuranceWizardStep::from($value);
+            return InsuranceWizardStep::from($value);
         } catch (\ValueError $e) {
             return null;
         }
@@ -1129,10 +1130,10 @@ class Family extends Model implements HasMedia
     /**
      * بررسی اینکه آیا مرحله wizard تکمیل شده است
      *
-     * @param \App\InsuranceWizardStep $step
+     * @param InsuranceWizardStep $step
      * @return bool
      */
-    public function isStepCompleted(\App\InsuranceWizardStep $step): bool
+    public function isStepCompleted(InsuranceWizardStep $step): bool
     {
         if (!$this->last_step_at) {
             return false;
@@ -1145,12 +1146,12 @@ class Family extends Model implements HasMedia
     /**
      * تکمیل یک مرحله از wizard
      *
-     * @param \App\InsuranceWizardStep $step
+     * @param InsuranceWizardStep $step
      * @param string|null $comment
      * @param array $extraData
      * @return void
      */
-    public function completeStep(\App\InsuranceWizardStep $step, ?string $comment = null, array $extraData = []): void
+    public function completeStep(InsuranceWizardStep $step, ?string $comment = null, array $extraData = []): void
     {
         $lastStepAt = $this->last_step_at ?? [];
         if (is_string($lastStepAt)) {
@@ -1169,7 +1170,7 @@ class Family extends Model implements HasMedia
 
         // ثبت لاگ تکمیل مرحله
         $fromStatus = $this->wizard_status && $this->wizard_status !== $step->value ?
-            \App\InsuranceWizardStep::from($this->wizard_status) : null;
+            InsuranceWizardStep::from($this->wizard_status) : null;
 
         // Log::info('Wizard step completed', [
         //     'family' => $this,
@@ -1185,19 +1186,19 @@ class Family extends Model implements HasMedia
      *
      * @param string|null $comment
      * @param array $extraData
-     * @return \App\InsuranceWizardStep|null
+     * @return InsuranceWizardStep|null
      */
-    public function moveToNextStep(?string $comment = null, array $extraData = []): ?\App\InsuranceWizardStep
+    public function moveToNextStep(?string $comment = null, array $extraData = []): ?InsuranceWizardStep
     {
         if (!$this->wizard_status) {
-            $initialStep = \App\InsuranceWizardStep::PENDING;
+            $initialStep = InsuranceWizardStep::PENDING;
             $this->wizard_status = $initialStep->value;
             $this->completeStep($initialStep, $comment, $extraData);
             $this->save();
             return $initialStep;
         }
 
-        $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
+        $currentStep = InsuranceWizardStep::from($this->wizard_status);
         $nextStep = $currentStep->nextStep();
 
         if ($nextStep) {
@@ -1230,15 +1231,15 @@ class Family extends Model implements HasMedia
      *
      * @param string|null $comment
      * @param array $extraData
-     * @return \App\InsuranceWizardStep|null
+     * @return InsuranceWizardStep|null
      */
-    public function moveToPreviousStep(?string $comment = null, array $extraData = []): ?\App\InsuranceWizardStep
+    public function moveToPreviousStep(?string $comment = null, array $extraData = []): ?InsuranceWizardStep
     {
         if (!$this->wizard_status) {
             return null;
         }
 
-        $currentStep = \App\InsuranceWizardStep::from($this->wizard_status);
+        $currentStep = InsuranceWizardStep::from($this->wizard_status);
         $prevStep = $currentStep->previousStep();
 
         if ($prevStep) {
@@ -1264,7 +1265,7 @@ class Family extends Model implements HasMedia
     /**
      * همگام‌سازی وضعیت قدیمی با wizard جدید
      *
-     * @return \App\InsuranceWizardStep
+     * @return InsuranceWizardStep
      */
     public function syncWizardStatus()
     {
@@ -1272,17 +1273,17 @@ class Family extends Model implements HasMedia
 
         // تبدیل وضعیت قدیمی به wizard جدید
         $wizardStatus = match($oldStatus) {
-            'pending' => \App\InsuranceWizardStep::PENDING,
-            'reviewing' => \App\InsuranceWizardStep::REVIEWING,
-            'approved' => \App\InsuranceWizardStep::APPROVED,
-            'insured' => \App\InsuranceWizardStep::INSURED,
-            'renewal' => \App\InsuranceWizardStep::RENEWAL,
-            default => \App\InsuranceWizardStep::PENDING
+            'pending' => InsuranceWizardStep::PENDING,
+            'reviewing' => InsuranceWizardStep::REVIEWING,
+            'approved' => InsuranceWizardStep::APPROVED,
+            'insured' => InsuranceWizardStep::INSURED,
+            'renewal' => InsuranceWizardStep::RENEWAL,
+            default => InsuranceWizardStep::PENDING
         };
 
         // بررسی وضعیت بیمه شدن
         if ($oldStatus === 'approved' && $this->is_insured) {
-            $wizardStatus = \App\InsuranceWizardStep::INSURED;
+            $wizardStatus = InsuranceWizardStep::INSURED;
         }
 
         // ذخیره وضعیت wizard

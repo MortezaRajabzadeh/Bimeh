@@ -19,6 +19,7 @@ use App\Livewire\Charity\FamilySearch;
 use App\Livewire\SidebarToggle;
 use App\Livewire\Insurance\DashboardStats as InsuranceDashboardStats;
 use Illuminate\Support\Facades\Session;
+use App\Observers\FamilyObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ثبت Observer برای Family
+        Family::observe(FamilyObserver::class);
+        
         // ثبت کامپوننت‌های Blade
         Blade::component('notification-popup', \App\View\Components\NotificationPopup::class);
 

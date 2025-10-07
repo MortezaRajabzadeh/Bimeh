@@ -50,7 +50,7 @@ class DynamicDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             }
             
             // اضافه کردن پشتیبانی از Enum
-            if ($value instanceof \App\InsuranceWizardStep) {
+            if ($value instanceof \App\Enums\InsuranceWizardStep) {
                 $value = $value->label();
             }
             

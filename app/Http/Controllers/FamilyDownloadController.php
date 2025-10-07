@@ -7,7 +7,7 @@ use App\Models\Family;
 use App\Exports\DynamicDataExport;
 use App\Exports\FamilyInsuranceExport;
 use Maatwebsite\Excel\Facades\Excel;
-use App\InsuranceWizardStep;
+use App\Enums\InsuranceWizardStep;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;

@@ -1202,6 +1202,7 @@
                                             {{-- عملیات - فقط برای خانواده‌های تأیید نشده و غیر بیمه --}}
                                             @if(!$family->verified_at && $status !== 'insured')
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
+                                                @can('updateMembers', $family)
                                                 @if($editingMemberId === $member->id)
                                                     {{-- دکمه‌های ذخیره و لغو --}}
                                                     <div class="flex items-center justify-center space-x-1 space-x-reverse">
@@ -1230,6 +1231,15 @@
                                                         ویرایش
                                                     </button>
                                                 @endif
+                                                @else
+                                                {{-- پیام محدودیت ویرایش --}}
+                                                <div class="inline-flex items-center px-2 py-1 rounded-md text-xs bg-yellow-50 border border-yellow-200 text-yellow-800" title="وضعیت: {{ $family->wizard_status ? \App\Enums\InsuranceWizardStep::from($family->wizard_status)->label() : 'در انتظار تایید' }}">
+                                                    <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    <span>فقط ادمین</span>
+                                                </div>
+                                                @endcan
                                             </td>
                                             @endif
                                         </tr>

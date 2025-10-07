@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
@@ -2968,6 +2969,29 @@ class FamilySearch extends Component
                 ]);
                 return;
             }
+            
+            // بررسی مجوز ویرایش
+            $family = $member->family;
+            try {
+                Gate::authorize('updateMembers', $family);
+            } catch (AuthorizationException $e) {
+                // ساخت پیام خطا بر اساس وضعیت wizard_status
+                $statusMessage = $this->getAuthorizationErrorMessage($family);
+                
+                $this->dispatch('notify', [
+                    'message' => $statusMessage,
+                    'type' => 'error'
+                ]);
+                
+                Log::warning('Unauthorized member edit attempt', [
+                    'user_id' => Auth::id(),
+                    'member_id' => $memberId,
+                    'family_id' => $family->id,
+                    'wizard_status' => $family->wizard_status
+                ]);
+                
+                return;
+            }
 
             $this->editingMemberId = $memberId;
 
@@ -3006,6 +3030,46 @@ class FamilySearch extends Component
     public function saveMember()
     {
         try {
+            $member = Member::find($this->editingMemberId);
+            if (!$member) {
+                $this->dispatch('notify', [
+                    'message' => 'عضو خانواده یافت نشد',
+                    'type' => 'error'
+                ]);
+                return;
+            }
+            
+            // بررسی مجوز ویرایش قبل از validation
+            $family = $member->family;
+            try {
+                Gate::authorize('updateMembers', $family);
+            } catch (AuthorizationException $e) {
+                $statusMessage = $this->getAuthorizationErrorMessage($family);
+                
+                $this->dispatch('notify', [
+                    'message' => $statusMessage,
+                    'type' => 'error'
+                ]);
+                
+                Log::warning('Unauthorized member save attempt', [
+                    'user_id' => Auth::id(),
+                    'member_id' => $this->editingMemberId,
+                    'family_id' => $family->id,
+                    'wizard_status' => $family->wizard_status
+                ]);
+                
+                // لغو حالت ویرایش
+                $this->editingMemberId = null;
+                $this->editingMemberData = [
+                    'relationship' => '',
+                    'occupation' => '',
+                    'job_type' => '',
+                    'problem_type' => []
+                ];
+                
+                return;
+            }
+            
             $this->validate([
                 'editingMemberData.relationship' => 'required|string|max:255',
                 'editingMemberData.occupation' => 'required|string|max:255',
@@ -3016,15 +3080,6 @@ class FamilySearch extends Component
                 'editingMemberData.occupation.required' => 'شغل الزامی است',
                 'editingMemberData.problem_type.max' => 'معیار پذیرش نمی‌تواند بیش از 1000 کاراکتر باشد',
             ]);
-
-            $member = Member::find($this->editingMemberId);
-            if (!$member) {
-                $this->dispatch('notify', [
-                    'message' => 'عضو خانواده یافت نشد',
-                    'type' => 'error'
-                ]);
-                return;
-            }
 
             // آماده‌سازی داده‌ها برای ذخیره
             $updateData = [
@@ -3256,7 +3311,46 @@ class FamilySearch extends Component
     }
     
     /**
-     * به‌روزرسانی خانواده خاص در لیست اصلی خانواده‌ها
+     * دریافت پیام خطای Authorization بر اساس wizard_status خانواده
+     * @param Family $family
+     * @return string
+     */
+    protected function getAuthorizationErrorMessage($family)
+    {
+        $wizardStatus = $family->wizard_status;
+        
+        // استفاده از enum برای دریافت برچسب فارسی
+        try {
+            if ($wizardStatus) {
+                $statusEnum = \App\Enums\InsuranceWizardStep::from($wizardStatus);
+                $statusLabel = $statusEnum->label();
+                
+                // پیام‌های مختلف بر اساس وضعیت
+                return match($wizardStatus) {
+                    'pending' => 'خطای غیرمنتظره: شما باید بتوانید این خانواده را ویرایش کنید',
+                    'reviewing' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
+                    'share_allocation' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
+                    'approved' => "این خانواده تایید شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
+                    'excel_upload' => "این خانواده در انتظار صدور بیمه ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
+                    'insured' => "این خانواده بیمه شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
+                    'renewal' => "این خانواده در مرحله تمدید ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
+                    'rejected' => "این خانواده رد شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
+                    default => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند"
+                };
+            }
+        } catch (\Exception $e) {
+            Log::error('Error getting wizard status label', [
+                'wizard_status' => $wizardStatus,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // پیام پیش‌فرض اگر wizard_status خالی یا نامعتبر باشد
+        return 'شما مجوز ویرایش این خانواده را ندارید. فقط ادمین می‌تواند ویرایش کند';
+    }
+    
+    /**
+     * بهروزرسانی خانواده خاص در لیست اصلی خانواده‌ها
      * @param int $familyId
      * @return void
      */
