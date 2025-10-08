@@ -1306,12 +1306,47 @@
                                                     </button>
                                                 @endif
                                                 @else
-                                                {{-- پیام محدودیت ویرایش --}}
-                                                <div class="inline-flex items-center px-2 py-1 rounded-md text-xs bg-yellow-50 border border-yellow-200 text-yellow-800" title="وضعیت: {{ $family->wizard_status ? \App\Enums\InsuranceWizardStep::from($family->wizard_status)->label() : 'در انتظار تایید' }}">
+                                                {{-- پیام محدودیت ویرایش با نمایش وضعیت واقعی wizard --}}
+                                                @php
+                                                    $wizardStatus = $family->wizard_status;
+                                                    $statusLabel = 'در انتظار تایید';
+                                                    $wizardStatusValue = null;
+                                                    
+                                                    if ($wizardStatus) {
+                                                        try {
+                                                            // بررسی اینکه آیا قبلاً یک enum instance است یا خیر
+                                                            if ($wizardStatus instanceof \App\Enums\InsuranceWizardStep) {
+                                                                $statusEnum = $wizardStatus;
+                                                                $wizardStatusValue = $wizardStatus->value;
+                                                            } else {
+                                                                $statusEnum = \App\Enums\InsuranceWizardStep::from($wizardStatus);
+                                                                $wizardStatusValue = $wizardStatus;
+                                                            }
+                                                            $statusLabel = $statusEnum->label();
+                                                        } catch (\ValueError $e) {
+                                                            $statusLabel = 'وضعیت نامعتبر';
+                                                            $wizardStatusValue = null;
+                                                        }
+                                                    }
+                                                    
+                                                    // تعیین کلاس‌های رنگ بر اساس wizard_status
+                                                    $colorClasses = match($wizardStatusValue) {
+                                                        'pending' => 'bg-blue-50 border-blue-200 text-blue-800',
+                                                        'reviewing' => 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                                                        'share_allocation' => 'bg-purple-50 border-purple-200 text-purple-800',
+                                                        'approved' => 'bg-green-50 border-green-200 text-green-800',
+                                                        'excel_upload' => 'bg-teal-50 border-teal-200 text-teal-800',
+                                                        'insured' => 'bg-indigo-50 border-indigo-200 text-indigo-800',
+                                                        'renewal' => 'bg-cyan-50 border-cyan-200 text-cyan-800',
+                                                        'rejected' => 'bg-red-50 border-red-200 text-red-800',
+                                                        default => 'bg-gray-50 border-gray-200 text-gray-800',
+                                                    };
+                                                @endphp
+                                                <div class="inline-flex items-center px-2 py-1 rounded-md text-xs border {{ $colorClasses }}" title="وضعیت: {{ $statusLabel }}">
                                                     <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
                                                     </svg>
-                                                    <span>فقط ادمین</span>
+                                                    <span>{{ $statusLabel }}</span>
                                                 </div>
                                                 @endcan
                                             </td>

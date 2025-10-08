@@ -3338,11 +3338,18 @@ class FamilySearch extends Component
         // استفاده از enum برای دریافت برچسب فارسی
         try {
             if ($wizardStatus) {
-                $statusEnum = \App\Enums\InsuranceWizardStep::from($wizardStatus);
+                // بررسی اینکه آیا قبلاً یک enum instance است یا خیر
+                if ($wizardStatus instanceof \App\Enums\InsuranceWizardStep) {
+                    $statusEnum = $wizardStatus;
+                    $wizardStatusValue = $wizardStatus->value;
+                } else {
+                    $statusEnum = \App\Enums\InsuranceWizardStep::from($wizardStatus);
+                    $wizardStatusValue = $wizardStatus;
+                }
                 $statusLabel = $statusEnum->label();
 
                 // پیام‌های مختلف بر اساس وضعیت
-                return match($wizardStatus) {
+                return match($wizardStatusValue) {
                     'pending' => 'خطای غیرمنتظره: شما باید بتوانید این خانواده را ویرایش کنید',
                     'reviewing' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
                     'share_allocation' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
