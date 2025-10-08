@@ -1,4 +1,4 @@
-{{-- 
+{{--
     Translation mapping moved to ProblemTypeHelper class for better maintainability
     Now all problem type translations are handled centrally
 --}}
@@ -66,13 +66,13 @@
             // به‌روزرسانی operator برای سازگاری با backend
             const logicalOp = this.filters[index].logical_operator || 'and';
             const existenceOp = this.filters[index].existence_operator || 'exists';
-            
+
             // تنظیم operator بر اساس شرط‌های جدید
             this.filters[index].operator = existenceOp;
 
             // اضافه کردن متن عملگر به برچسب
             const isDateFilter = this.filters[index].type === 'created_at' || this.filters[index].type === 'membership_date';
-            
+
             if (!isDateFilter) {
                 // شرط‌های وجودی
                 if (existenceOp === 'exists') {
@@ -303,7 +303,7 @@
                             </button>
                         </th>
 
-                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium min-w-[180px]">
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>سرپرست خانوار</span>
                             </div>
@@ -336,6 +336,15 @@
                                 <span>معیار پذیرش</span>
                             </div>
                         </th>
+
+                        @if($status !== 'insured')
+                        <!-- تاریخ عضویت برای خانواده‌های بدون پوشش -->
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>تاریخ عضویت</span>
+                            </div>
+                        </th>
+                        @endif
 
                         @if($status === 'insured' && auth()->user()->isInsurance())
 
@@ -381,13 +390,20 @@
                             </div>
                         </th>
 
-                        
+
                         <!-- تاریخ شروع -->
                         <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
                             <div class="flex items-center justify-center">
                                 <span>تاریخ شروع</span>
 
 
+                            </div>
+                        </th>
+
+                        <!-- تاریخ عضویت -->
+                        <th scope="col" class="sticky top-0 z-20 bg-gray-50 px-5 py-3 text-center border-b border-gray-200 font-medium">
+                            <div class="flex items-center justify-center">
+                                <span>تاریخ عضویت</span>
                             </div>
                         </th>
 
@@ -544,7 +560,7 @@
                                         }
                                     }
                                 }
-                                
+
                                 // تعریف رنگ‌های معیارها
                                 $problemColors = [
                                     'اعتیاد' => 'bg-purple-100 text-purple-800',
@@ -574,6 +590,25 @@
                                 @endif
                             </div>
                         </td>
+
+                        @if($status !== 'insured')
+                        <!-- تاریخ عضویت برای خانواده‌های بدون پوشش -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @if($family->created_at)
+                                <div class="text-blue-700 font-medium">
+                                    @php
+                                        try {
+                                            echo jdate($family->created_at)->format('Y/m/d');
+                                        } catch (\Exception $e) {
+                                            echo $family->created_at->format('Y/m/d');
+                                        }
+                                    @endphp
+                                </div>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        @endif
 
                         @if($status === 'insured' && auth()->user()->isInsurance())
 
@@ -768,6 +803,23 @@
                             @endif
                         </td>
 
+                        <!-- تاریخ عضویت -->
+                        <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
+                            @if($family->created_at)
+                                <div class="text-blue-700 font-medium">
+                                    @php
+                                        try {
+                                            echo jdate($family->created_at)->format('Y/m/d');
+                                        } catch (\Exception $e) {
+                                            echo $family->created_at->format('Y/m/d');
+                                        }
+                                    @endphp
+                                </div>
+                            @else
+                                -
+                            @endif
+                        </td>
+
                         <!-- پرداخت کننده حق بیمه -->
                         <td class="px-5 py-4 text-sm text-gray-900 border-b border-gray-200 text-center">
                             @php
@@ -850,7 +902,7 @@
 
                     @if($expandedFamily === $family->id && !auth()->user()->isActiveAs('admin'))
                     <tr class="bg-green-50">
-                        <td colspan="{{ auth()->user()->isActiveAs('admin') ? ($status === 'insured' ? 17 : 14) : ($status === 'insured' ? 20 : 17) }}" class="p-0">
+                        <td colspan="{{ auth()->user()->isActiveAs('admin') ? ($status === 'insured' ? 17 : 14) : ($status === 'insured' ? 21 : 18) }}" class="p-0">
                             <div class="overflow-hidden shadow-inner rounded-lg bg-green-50 p-2">
                                 <div class="overflow-x-auto w-full max-h-96 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                                     <table class="min-w-full table-auto bg-green-50 border border-green-100 rounded-lg family-members-table" wire:key="family-{{ $family->id }}">
@@ -1081,17 +1133,17 @@
                                                 @if($editingMemberId === $member->id)
                                                     <div class="space-y-2">
                                                         {{-- Multi-select dropdown for problem types --}}
-                                                        <div class="relative" 
+                                                        <div class="relative"
                                                              wire:key="member-{{ $editingMemberId }}-problem-types"
-                                                             x-data="{ 
-                                                                 open: false, 
+                                                             x-data="{
+                                                                 open: false,
                                                                  search: '',
                                                                  selectedCount: 0
-                                                             }" 
+                                                             }"
                                                              @click.away="open = false">
                                                             {{-- x-effect: Reactive count update based on Livewire state --}}
                                                             <div x-effect="selectedCount = Array.isArray($wire.editingMemberData.problem_type) ? $wire.editingMemberData.problem_type.length : 0" style="display: none;"></div>
-                                                            <button type="button" 
+                                                            <button type="button"
                                                                     @click="open = !open"
                                                                     class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500 bg-white text-right flex justify-between items-center">
                                                                 <span class="text-gray-700" x-text="selectedCount > 0 ? selectedCount + ' معیار انتخاب شده' : 'انتخاب معیارهای پذیرش'">
@@ -1100,8 +1152,8 @@
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                                 </svg>
                                                             </button>
-                                                            
-                                                            <div x-show="open" 
+
+                                                            <div x-show="open"
                                                                  x-transition:enter="transition ease-out duration-100"
                                                                  x-transition:enter-start="transform opacity-0 scale-95"
                                                                  x-transition:enter-end="transform opacity-100 scale-100"
@@ -1109,15 +1161,15 @@
                                                                  x-transition:leave-start="transform opacity-100 scale-100"
                                                                  x-transition:leave-end="transform opacity-0 scale-95"
                                                                  class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                                
+
                                                                 {{-- Search box --}}
                                                                 <div class="p-2 border-b border-gray-200">
-                                                                    <input type="text" 
+                                                                    <input type="text"
                                                                            x-model="search"
                                                                            placeholder="جستجو در معیارها..."
                                                                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500">
                                                                 </div>
-                                                                
+
                                                                 {{-- Options list --}}
                                                                 <div class="py-1">
                                                                     @php
@@ -1126,12 +1178,12 @@
                                                                     @foreach($allProblemTypes as $key => $label)
                                                                         <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs transition-colors duration-150"
                                                                                x-show="search === '' || '{{ $label }}'.toLowerCase().includes(search.toLowerCase())">
-                                                                            {{-- 
+                                                                            {{--
                                                                                 Note: Livewire's wire:model.live handles checkbox state automatically.
                                                                                 Server-side method updatedEditingMemberDataProblemType() handles de-duplication.
                                                                                 @checked directive ensures checkboxes are pre-selected on first dropdown open.
                                                                             --}}
-                                                                            <input type="checkbox" 
+                                                                            <input type="checkbox"
                                                                                    wire:model.live="editingMemberData.problem_type"
                                                                                    value="{{ $key }}"
                                                                                    @checked(in_array($key, $editingMemberData['problem_type'] ?? []))
@@ -1140,10 +1192,10 @@
                                                                         </label>
                                                                     @endforeach
                                                                 </div>
-                                                                
+
                                                                 {{-- Clear all button --}}
                                                                 <div class="p-2 border-t border-gray-200">
-                                                                    <button type="button" 
+                                                                    <button type="button"
                                                                             wire:click="$set('editingMemberData.problem_type', [])"
                                                                             class="w-full px-2 py-1 text-xs text-gray-600 hover:text-red-600 rounded hover:bg-red-50">
                                                                         پاک کردن همه
@@ -1151,15 +1203,15 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {{-- Selected items display - Live updating --}}
                                                         <div class="flex flex-wrap gap-1">
                                                             @if(isset($editingMemberData['problem_type']) && is_array($editingMemberData['problem_type']))
                                                                 @foreach($editingMemberData['problem_type'] as $index => $selectedKey)
-                                                                    <span wire:key="selected-{{ $editingMemberId }}-{{ $selectedKey }}-{{ $index }}" 
+                                                                    <span wire:key="selected-{{ $editingMemberId }}-{{ $selectedKey }}-{{ $index }}"
                                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                                                                         {{ \App\Helpers\ProblemTypeHelper::englishToPersian($selectedKey) }}
-                                                                        <button type="button" 
+                                                                        <button type="button"
                                                                                 wire:click="removeProblemType('{{ $selectedKey }}')"
                                                                                 class="mr-1 text-blue-600 hover:text-blue-800 transition-colors duration-150">
                                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1170,10 +1222,10 @@
                                                                 @endforeach
                                                             @endif
                                                         </div>
-                                                        
+
                                                         <div class="text-xs text-gray-500">می‌توانید چندین معیار انتخاب کنید</div>
-                                                        
-                                                        {{-- 
+
+                                                        {{--
                                                             Note: Event listener removed as x-effect handles count updates automatically.
                                                             x-effect is more reliable than $watch for Livewire state changes.
                                                         --}}
