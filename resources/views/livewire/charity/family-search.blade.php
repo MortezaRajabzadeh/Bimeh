@@ -963,7 +963,7 @@
                                             <td class="px-3 py-3 text-sm text-gray-800 text-center">
                                                 @if($editingMemberId === $member->id)
                                                     <div class="rtl-select-wrapper">
-                                                        <select wire:model="editingMemberData.relationship" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
+                                                        <select wire:model.live="editingMemberData.relationship" wire:key="relationship-{{ $editingMemberId }}" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
                                                             <option value="">انتخاب کنید...</option>
                                                             @foreach($this->getRelationshipOptions() as $value => $label)
                                                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -1007,7 +1007,7 @@
                                                 @if($editingMemberId === $member->id)
                                                     <div class="space-y-1">
                                                         <div class="rtl-select-wrapper">
-                                                            <select wire:model="editingMemberData.occupation" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
+                                                            <select wire:model.live="editingMemberData.occupation" wire:key="occupation-{{ $editingMemberId }}" class="rtl-select w-full py-1 text-xs border border-gray-300 rounded focus:border-blue-500 focus:ring-blue-500">
                                                                 <option value="">انتخاب کنید...</option>
                                                                 @foreach($this->getOccupationOptions() as $value => $label)
                                                                     <option value="{{ $value }}">{{ $label }}</option>
