@@ -15,13 +15,22 @@ class RankSettingsSeeder extends Seeder
     {
         $rankSettings = [
             [
+                'name' => 'زن سرپرست خانواده',
+                'key' => 'female_head',
+                'description' => 'خانواده با سرپرست زن (تک‌سرپرست)',
+                'weight' => 30,
+                'category' => 'social',
+                'is_active' => true,
+                'sort_order' => 1,
+            ],
+            [
                 'name' => 'اعتیاد',
                 'key' => 'addiction',
                 'description' => 'وجود فرد معتاد در خانواده',
                 'weight' => 20,
                 'category' => 'addiction',
                 'is_active' => true,
-                'sort_order' => 1,
+                'sort_order' => 2,
             ],
             [
                 'name' => 'ازکارافتادگی',
@@ -30,7 +39,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 25,
                 'category' => 'disability',
                 'is_active' => true,
-                'sort_order' => 2,
+                'sort_order' => 3,
             ],
             [
                 'name' => 'بیماری خاص',
@@ -39,7 +48,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 15,
                 'category' => 'disease',
                 'is_active' => true,
-                'sort_order' => 3,
+                'sort_order' => 4,
             ],
             [
                 'name' => 'بیکاری سرپرست',
@@ -48,7 +57,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 18,
                 'category' => 'economic',
                 'is_active' => true,
-                'sort_order' => 4,
+                'sort_order' => 5,
             ],
             [
                 'name' => 'خانواده تک‌سرپرست',
@@ -57,7 +66,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 12,
                 'category' => 'social',
                 'is_active' => true,
-                'sort_order' => 5,
+                'sort_order' => 6,
             ],
             [
                 'name' => 'تعداد فرزندان زیاد',
@@ -66,7 +75,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 8,
                 'category' => 'social',
                 'is_active' => true,
-                'sort_order' => 6,
+                'sort_order' => 7,
             ],
             [
                 'name' => 'مسکن نامناسب',
@@ -75,7 +84,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 10,
                 'category' => 'economic',
                 'is_active' => true,
-                'sort_order' => 7,
+                'sort_order' => 8,
             ],
             [
                 'name' => 'درآمد پایین',
@@ -84,7 +93,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 22,
                 'category' => 'economic',
                 'is_active' => true,
-                'sort_order' => 8,
+                'sort_order' => 9,
             ],
             [
                 'name' => 'عدم تحصیلات',
@@ -93,7 +102,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 5,
                 'category' => 'social',
                 'is_active' => true,
-                'sort_order' => 9,
+                'sort_order' => 10,
             ],
             [
                 'name' => 'سالمند نیازمند مراقبت',
@@ -102,7 +111,7 @@ class RankSettingsSeeder extends Seeder
                 'weight' => 14,
                 'category' => 'social',
                 'is_active' => true,
-                'sort_order' => 10,
+                'sort_order' => 11,
             ],
         ];
 

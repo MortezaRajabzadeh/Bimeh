@@ -23,8 +23,10 @@ class ProblemTypeHelper
             // مقادیر فارسی به فارسی (نرمالیزه سازی)
             'ترک تحصیل' => 'ترک تحصیل',
             'بیماری خاص' => 'بیماری خاص',
-            'بیماری های خاص' => 'بیماری خاص', // یکسان سازی
-            'سرپرست خانوار' => 'سرپرست خانوار زن',
+            'بیماری های خاص' => 'بیماری خاص',
+            'سرپرست خانوار' => 'زن سرپرست خانواده',
+            'سرپرست خانوار زن' => 'زن سرپرست خانواده',
+            'زن سرپرست خانوار' => 'زن سرپرست خانواده',
             'سالمندی' => 'کهولت سن'
         ];
 
@@ -43,8 +45,10 @@ class ProblemTypeHelper
             'بیماری های خاص' => 'special_disease',
             'بیماریهای خاص' => 'special_disease',
             'بیماریهایخاص' => 'special_disease',
-            'سرپرست خانوار' => 'single_parent',
-            'زن سرپرست خانوار' => 'single_parent',
+            'سرپرست خانوار' => 'female_head',
+            'زن سرپرست خانوار' => 'female_head',
+            'سرپرست خانوار زن' => 'female_head',
+            'زن سرپرست خانواده' => 'female_head',
             'سالمندی' => 'old_age',
             'ازکارافتادگی' => 'work_disability'
         ];
@@ -62,6 +66,7 @@ class ProblemTypeHelper
             'بیماری خاص',
             'از کار افتادگی',
             'بیکاری',
+            'زن سرپرست خانواده',
         ];
     }
 
@@ -74,7 +79,8 @@ class ProblemTypeHelper
             'addiction',
             'special_disease',
             'work_disability',
-            'unemployment'
+            'unemployment',
+            'female_head'
         ];
     }
 
@@ -141,7 +147,8 @@ class ProblemTypeHelper
             'addiction' => 'اعتیاد',
             'special_disease' => 'بیماری خاص',
             'work_disability' => 'از کار افتادگی',
-            'unemployment' => 'بیکاری'
+            'unemployment' => 'بیکاری',
+            'female_head' => 'زن سرپرست خانواده'
         ];
     }
 

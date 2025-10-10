@@ -283,7 +283,7 @@ class Family extends Model implements HasMedia
             $member->update(['is_head' => true]);
             $this->update(['head_id' => $memberId]);
 
-            // بررسی و اعمال معیار سرپرست خانوار زن
+            // بررسی و اعمال معیار زن سرپرست خانواده
             $this->checkAndApplySingleParentCriteria();
 
             return true;
@@ -1355,7 +1355,7 @@ class Family extends Model implements HasMedia
     }
 
     /**
-     * بررسی و اعمال معیار سرپرست خانوار زن
+     * بررسی و اعمال معیار زن سرپرست خانواده
      */
     public function checkAndApplySingleParentCriteria()
     {
@@ -1377,8 +1377,8 @@ class Family extends Model implements HasMedia
             if ($isFemaleHead && $isSingleParent) {
                 $acceptanceCriteria = $this->acceptance_criteria ?? [];
 
-                if (!in_array('سرپرست خانوار زن', $acceptanceCriteria)) {
-                    $acceptanceCriteria[] = 'سرپرست خانوار زن';
+                if (!in_array('زن سرپرست خانواده', $acceptanceCriteria)) {
+                    $acceptanceCriteria[] = 'زن سرپرست خانواده';
                     $this->acceptance_criteria = $acceptanceCriteria;
                     $this->save();
 
@@ -1388,7 +1388,7 @@ class Family extends Model implements HasMedia
             } else {
                 // حذف معیار اگر شرایط برقرار نباشد
                 $acceptanceCriteria = $this->acceptance_criteria ?? [];
-                $key = array_search('سرپرست خانوار زن', $acceptanceCriteria);
+                $key = array_search('زن سرپرست خانواده', $acceptanceCriteria);
 
                 if ($key !== false) {
                     unset($acceptanceCriteria[$key]);

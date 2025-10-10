@@ -57,3 +57,23 @@ if (!function_exists('is_valid_problem_type')) {
         return ProblemTypeHelper::isValidValue($value);
     }
 } 
+
+if (!function_exists('format_currency')) {
+    /**
+     * فرمت کردن مبلغ با جداکننده فارسی و واحد تومان
+     *
+     * @param int|float|string $amount
+     * @return string
+     */
+    function format_currency($amount)
+    {
+        if (!$amount || $amount == 0) {
+            return '۰ تومان';
+        }
+
+        // فرمت‌بندی با جداکننده فارسی
+        $formatted = number_format($amount, 0, '.', '٬');
+
+        return $formatted . ' تومان';
+    }
+}

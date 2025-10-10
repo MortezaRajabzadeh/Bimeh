@@ -42,7 +42,9 @@
                             <th class="px-3 py-3 text-right">معیار پذیرش</th>
                             <th class="px-3 py-3 text-center">وزن (0-10)</th>
                             <th class="px-3 py-3 text-center">شرح</th>
-                            <th class="px-3 py-3 text-center">نیاز به مدرک؟</th>
+                            @if($availableRankSettings && $availableRankSettings->contains('key', 'special_disease'))
+                                <th class="px-3 py-3 text-center">نیاز به مدرک؟</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -77,18 +79,24 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3 py-3 text-center">
-                                        @if($criterion->requires_document)
-                                            <span class="text-green-500">✓</span>
-                                        @else
-                                            <span class="text-red-500">✗</span>
-                                        @endif
-                                    </td>
+                                    @if($availableRankSettings && $availableRankSettings->contains('key', 'special_disease'))
+                                        <td class="px-3 py-3 text-center">
+                                            @if($criterion->key === 'special_disease' || $criterion->name === 'بیماری خاص')
+                                                @if($criterion->requires_document)
+                                                    <span class="text-green-500">✓</span>
+                                                @else
+                                                    <span class="text-red-500">✗</span>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-500">
+                                <td colspan="{{ $availableRankSettings && $availableRankSettings->contains('key', 'special_disease') ? '5' : '4' }}" class="py-4 text-center text-gray-500">
                                     معیار رتبه‌بندی تعریف نشده است
                                 </td>
                             </tr>

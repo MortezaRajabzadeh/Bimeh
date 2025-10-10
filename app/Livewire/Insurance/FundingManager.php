@@ -203,12 +203,18 @@ class FundingManager extends Component
             $this->source_edit_type = $src->type;
             $this->source_edit_description = $src->description;
             $this->showSourceEditModal = true;
+            
+            Log::info('Edit source form opened', [
+                'source_id' => $id,
+                'user_id' => auth()->id(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Error showing edit source form', [
                 'error' => $e->getMessage(),
-                'source_id' => $id
+                'source_id' => $id,
+                'user_id' => auth()->id(),
             ]);
-            session()->flash('error', 'خطا در نمایش فرم ویرایش منبع رخ داد.');
+            session()->flash('error', 'خطا در نمایش فرم ویرایش منبع رخ داد ❌');
         }
     }
 
@@ -222,16 +228,54 @@ class FundingManager extends Component
             ]);
             
             $src = FundingSource::findOrFail($this->source_edit_id);
+            
+            // ثبت لاگ قبل از ویرایش
+            Log::info('Updating funding source', [
+                'source_id' => $this->source_edit_id,
+                'old_data' => [
+                    'name' => $src->name,
+                    'type' => $src->type,
+                    'description' => $src->description,
+                ],
+                'new_data' => [
+                    'name' => $validated['source_edit_name'],
+                    'type' => $validated['source_edit_type'],
+                    'description' => $validated['source_edit_description'] ?? null,
+                ],
+                'user_id' => auth()->id(),
+            ]);
+            
             $src->update([
                 'name' => $validated['source_edit_name'],
                 'type' => $validated['source_edit_type'],
                 'description' => $validated['source_edit_description'] ?? null,
             ]);
+            
+            // ثبت لاگ بعد از ویرایش موفق
+            Log::info('Funding source updated successfully', [
+                'source_id' => $this->source_edit_id,
+                'user_id' => auth()->id(),
+            ]);
+            
             $this->showSourceEditModal = false;
             $this->sources = FundingSource::where('is_active', true)->get();
-            session()->flash('success', 'منبع بودجه ویرایش شد.');
+            session()->flash('success', 'منبع بودجه با موفقیت ویرایش شد ✅');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // در صورت خطای validation، پیام خطا را نمایش دهید
+            Log::warning('Validation error in updateSource', [
+                'errors' => $e->errors(),
+                'source_id' => $this->source_edit_id,
+                'user_id' => auth()->id(),
+            ]);
+            session()->flash('error', 'لطفا اطلاعات را به درستی وارد کنید ❌');
         } catch (\Throwable $e) {
-            session()->flash('error', 'خطا در ویرایش منبع بودجه رخ داد.');
+            Log::error('Error updating funding source', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'source_id' => $this->source_edit_id,
+                'user_id' => auth()->id(),
+            ]);
+            session()->flash('error', 'خطا در ویرایش منبع بودجه رخ داد ❌');
         }
     }
 

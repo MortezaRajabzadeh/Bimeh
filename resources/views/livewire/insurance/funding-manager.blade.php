@@ -2,7 +2,21 @@
     <div class="max-w-5xl mx-auto mb-8">
         <h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b pb-2">افزودن بودجه جدید</h2>
         @if (session()->has('success'))
-            <div class="bg-green-100 text-green-800 rounded px-4 py-2 mb-4">{{ session('success') }}</div>
+            <div class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        
+        @if (session()->has('error'))
+            <div class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('error') }}</span>
+            </div>
         @endif
         <form wire:submit.prevent="addTransaction" wire:key="add-transaction-form-{{ $formKey }}" class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div class="w-full">
@@ -20,7 +34,14 @@
             </div>
             <div>
                 <label class="block mb-1 font-bold">مبلغ (تومان)</label>
-                <input type="number" wire:model="amount" class="border rounded px-3 py-2 w-full" min="1000" />
+                <input type="number" wire:model.live="amount" class="border rounded px-3 py-2 w-full" min="1000" placeholder="۱۰۰۰" />
+                @if($amount && $amount > 0)
+                    <div class="text-sm text-green-600 font-medium mt-1">
+                        مبلغ وارد شده: {{ number_format($amount, 0, '.', '٬') }} تومان
+                    </div>
+                @else
+                    <div class="text-sm text-gray-400 mt-1">مبلغی وارد نشده است</div>
+                @endif
                 @error('amount') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
             <div class="md:col-span-2">
@@ -44,6 +65,23 @@
 
     <div class="max-w-5xl mx-auto mb-8">
         <h3 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-2">مدیریت منابع بودجه</h3>
+        @if (session()->has('success'))
+            <div class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        
+        @if (session()->has('error'))
+            <div class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
         <div class="bg-white rounded-xl shadow p-6 mb-8">
             <form wire:submit.prevent="addSource" class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6 items-end">
                 <input type="text" wire:model="source_name" placeholder="نام منبع" class="border rounded px-3 py-2 w-full text-right" />
@@ -91,6 +129,7 @@
                         <tr class="text-center hover:bg-blue-50 transition">
                             <td class="py-2 px-4">@if($showSourceEditModal && $source_edit_id == $src->id)
                                 <input type="text" wire:model.defer="source_edit_name" class="border rounded px-2 py-1 w-full" />
+                                @error('source_edit_name') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                             @else
                                 {{ $src->name }}
                             @endif</td>
@@ -103,11 +142,13 @@
                                     <option value="government">دولت</option>
                                     <option value="other">سایر</option>
                                 </select>
+                                @error('source_edit_type') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                             @else
                                 {{ $typeLabels[$src->type] ?? $src->type }}
                             @endif</td>
                             <td class="py-2 px-4">@if($showSourceEditModal && $source_edit_id == $src->id)
                                 <input type="text" wire:model.defer="source_edit_description" class="border rounded px-2 py-1 w-full" />
+                                @error('source_edit_description') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                             @else
                                 {{ $src->description }}
                             @endif</td>
@@ -149,7 +190,7 @@
                     @forelse($transactions as $trx)
                         <tr class="text-center hover:bg-green-50 transition">
                             <td class="py-2 px-4">{{ $trx->source->name ?? '-' }}</td>
-                            <td class="py-2 px-4 font-bold text-green-700">{{ number_format($trx->amount) }}</td>
+                            <td class="py-2 px-4 font-bold text-green-700">{{ format_currency($trx->amount) }}</td>
                             <td class="py-2 px-4">{{ $trx->description }}</td>
                             <td class="py-2 px-4">{{ $trx->reference_no }}</td>
                             <td class="py-2 px-4">{{ jdate($trx->created_at)->format('Y/m/d H:i') }}</td>
@@ -191,30 +232,3 @@
     </div>
 </div>
 
-@push('scripts')
-<script>
-    function formatNumber(num) {
-        if (!num) return '';
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
-    }
-    document.addEventListener('livewire:load', function () {
-        const display = document.getElementById('amount_display');
-        const hidden = document.getElementById('amount');
-        if (display && hidden) {
-            // مقدار اولیه
-            if (hidden.value) display.value = formatNumber(hidden.value);
-            display.addEventListener('input', function () {
-                let raw = display.value.replace(/[^\d]/g, '');
-                display.value = formatNumber(raw);
-                hidden.value = raw;
-                // تریگر Livewire
-                hidden.dispatchEvent(new Event('input', { bubbles: true }));
-            });
-            // اگر Livewire مقدار را ریست کرد
-            window.Livewire && Livewire.hook && Livewire.hook('element.updated', (el, comp) => {
-                if (el === hidden) display.value = formatNumber(hidden.value);
-            });
-        }
-    });
-</script>
-@endpush

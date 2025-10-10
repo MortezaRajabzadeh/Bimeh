@@ -3701,7 +3701,7 @@ protected function buildFamiliesQuery()
 
                 $weightedScoreSubquery .= implode(' + ', $scoreParts) . ", 0) as weighted_score";
 
-                $baseQuery->selectRaw('families.*, ' . $weightedScoreSubquery);
+                $baseQuery->addSelect(DB::raw($weightedScoreSubquery));
 
                 Log::info('📊 STEP 3.1: Weighted ranking subquery added', [
                     'criteria_count' => count($criteriaArray),
@@ -5565,15 +5565,37 @@ public function clearCriteriaFilter()
                 )
             ";
 
-            Log::info('⚙️ STEP 5.2: Weighted score subquery created', [
+            Log::info('⚩️ STEP 5.2: Weighted score subquery created', [
                 'criteriaIds' => $criteriaIds,
                 'weightedScoreSubquery_length' => strlen($weightedScoreSubquery),
                 'user_id' => Auth::id()
             ]);
 
-            // اضافه کردن امتیاز محاسبه شده به select
+            // بررسی اینکه آیا weighted_score قبلاً در buildFamiliesQuery اضافه شده است
+            $alreadyHasWeightedScore = !empty($this->specific_criteria);
+
+            Log::info('🔍 STEP 5.3: Checking if weighted_score already added', [
+                'alreadyHasWeightedScore' => $alreadyHasWeightedScore,
+                'specific_criteria' => $this->specific_criteria,
+                'user_id' => Auth::id()
+            ]);
+
+            // فقط اگر weighted_score قبلاً اضافه نشده باشد، اضافه کنیم
+            if (!$alreadyHasWeightedScore) {
+                $queryBuilder->getEloquentBuilder()
+                    ->addSelect(DB::raw("({$weightedScoreSubquery}) as weighted_score"));
+                
+                Log::info('✅ STEP 5.4: Added weighted_score to query', [
+                    'user_id' => Auth::id()
+                ]);
+            } else {
+                Log::info('ℹ️ STEP 5.4: Skipped adding weighted_score (already exists)', [
+                    'user_id' => Auth::id()
+                ]);
+            }
+
+            // اعمال ordering (همیشه انجام می‌شود)
             $queryBuilder->getEloquentBuilder()
-                ->addSelect(DB::raw("({$weightedScoreSubquery}) as weighted_score"))
                 ->orderBy('weighted_score', $sortDirection)
                 ->orderBy('families.created_at', 'desc'); // سورت ثانویه
 

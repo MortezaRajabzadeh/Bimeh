@@ -169,11 +169,15 @@ class Member extends Model implements HasMedia
             // در غیر این صورت، از فیلد relationship ترجمه کن
             $relationships = [
                 'head' => 'سرپرست',
-                'spouse' => 'همسر',
+                'spouse' => $this->gender === 'male' ? 'شوهر' : ($this->gender === 'female' ? 'زن' : 'همسر'),
+                'husband' => 'شوهر',
+                'wife' => 'زن',
                 'child' => $this->gender === 'male' ? 'پسر' : ($this->gender === 'female' ? 'دختر' : 'فرزند'),
                 'parent' => $this->gender === 'male' ? 'پدر' : ($this->gender === 'female' ? 'مادر' : 'والدین'),
                 'father' => 'پدر',
                 'mother' => 'مادر',
+                'son' => 'پسر',
+                'daughter' => 'دختر',
                 'brother' => 'برادر',
                 'sister' => 'خواهر',
                 'grandfather' => 'پدربزرگ',
@@ -186,6 +190,10 @@ class Member extends Model implements HasMedia
                 'son_in_law' => 'داماد',
                 'daughter_in_law' => 'عروس',
                 'other' => 'سایر',
+                // mapping برای حالات فارسی که ممکن است در دیتابیس باشند
+                'همسر' => $this->gender === 'male' ? 'شوهر' : ($this->gender === 'female' ? 'زن' : 'همسر'),
+                'زن' => 'زن',
+                'شوهر' => 'شوهر',
             ];
             
             $relationshipFa = $relationships[$this->relationship] ?? 'سایر';
@@ -193,7 +201,7 @@ class Member extends Model implements HasMedia
         
         // فقط نسبت‌های مجاز را برگردان
         $allowedRelationships = [
-            'مادر', 'پدر', 'زن', 'مرد', 'پسر', 'دختر', 'مادربزرگ', 'پدربزرگ', 'سایر'
+            'مادر', 'پدر', 'زن', 'شوهر', 'همسر', 'پسر', 'دختر', 'مادربزرگ', 'پدربزرگ', 'سایر'
         ];
         
         // اگر نسبت در لیست مجاز نباشد، 'سایر' برگردان
