@@ -759,14 +759,7 @@ class InsuranceShareService
             $batchId = 'excel_upload_' . time() . '_' . uniqid();
             $fileName = isset($results['file_name']) ? $results['file_name'] : 'excel_upload_' . date('Y-m-d_H-i-s') . '.xlsx';
             
-            // محاسبه file_hash
-            $fileHash = hash('sha256', $fileName . $results['total_insurance_amount'] . implode(',', $results['family_codes']));
-            
-            // بررسی تکراری بودن
-            if (ShareAllocationLog::isDuplicateByFileHash($fileHash)) {
-                Log::warning('⚠️ فایل تکراری شناسایی شد', ['file_hash' => $fileHash]);
-                throw new \Exception('این فایل قبلاً پردازش شده است. لطفاً از تکرار آپلود خودداری کنید.');
-            }
+            // Note: file_hash قابلیت حذف شد چون در جدول وجود ندارد
         
             // گام ۱: ایجاد لاگ در جدول ShareAllocationLog برای حفظ سازگاری با کد قبلی
             $logData = [
@@ -775,7 +768,6 @@ class InsuranceShareService
                 'description' => 'ثبت نهایی بیمه از طریق آپلود فایل اکسل - ' . count($familyIds) . ' خانواده',
                 'families_count' => count($familyIds),
                 'family_ids' => $familyIds,
-                'file_hash' => $fileHash,
                 'shares_data' => [
                     'upload_method' => 'excel',
                     'processed_families' => count($familyIds),
