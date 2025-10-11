@@ -60,6 +60,7 @@ class FamilySearch extends Component
     public $district_id = null;
     public $region_id = null;
     public $charity_id = null;
+    public $organization_id = null;
 
     public $deprivation_rank = '';
     public $family_rank_range = '';
@@ -123,6 +124,7 @@ class FamilySearch extends Component
                 'district_id',
                 'region_id',
                 'charity_id',
+                'organization_id',
                 'deprivation_rank',
                 'family_rank_range',
                 'specific_criteria',
@@ -228,6 +230,7 @@ class FamilySearch extends Component
         'deprivation_rank' => ['except' => ''],
         'page' => ['except' => 1],
         'perPage' => ['except' => 15],
+        'organization_id' => ['except' => null],
     ];
 
     public function mount()
