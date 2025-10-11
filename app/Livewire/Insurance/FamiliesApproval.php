@@ -248,7 +248,9 @@ class FamiliesApproval extends Component
     {
         try {
             // یافتن خانواده‌هایی که در وضعیت share_allocation گیر کرده‌اند
-            $stuckFamilies = Family::where('wizard_status', InsuranceWizardStep::SHARE_ALLOCATION->value)->get();
+            $stuckFamilies = Family::where('wizard_status', InsuranceWizardStep::SHARE_ALLOCATION->value)
+                ->select(['id', 'wizard_status', 'status', 'head_id'])
+                ->get();
 
             $count = 0;
             $batchId = 'fix_stuck_families_' . time();
@@ -335,6 +337,7 @@ class FamiliesApproval extends Component
                                           InsuranceWizardStep::REVIEWING->value,
                                           InsuranceWizardStep::SHARE_ALLOCATION->value
                                       ])
+                                      ->select(['id', 'wizard_status', 'status'])
                                       ->get();
 
             foreach ($familiesToUpdate as $family) {
@@ -588,8 +591,11 @@ private function getCriteriaWeights(): array
             $count = 0;
             $nextStep = null;
 
+            // Bulk load families با eager loading
+            $families = Family::with(['members'])->whereIn('id', $this->selected)->get()->keyBy('id');
+
             foreach ($this->selected as $familyId) {
-                $family = Family::find($familyId);
+                $family = $families->get($familyId);
                 if (!$family) {
                     Log::warning('⚠️ Family not found with ID: ' . $familyId);
                     continue;
@@ -736,7 +742,7 @@ private function getCriteriaWeights(): array
         DB::beginTransaction();
         try {
             $batchId = 'delete_' . time();
-            $families = Family::whereIn('id', $familyIds)->get();
+            $families = Family::with(['members'])->whereIn('id', $familyIds)->get();
 
             if ($families->isEmpty()) {
                 $this->dispatch('toast', message: 'خانواده‌های انتخاب شده یافت نشدند.', type: 'error');
@@ -1392,70 +1398,59 @@ private function getCriteriaWeights(): array
      */
     public function export()
     {
-        // اگر خانواده‌ای انتخاب شده باشد، فقط آنها را دانلود کن، وگرنه همه خانواده‌های صفحه را دانلود کن
-        if (!empty($this->selected)) {
-            // دانلود خانواده‌های انتخاب شده
-            $families = Family::whereIn('id', $this->selected)
-                ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members', 'finalInsurances'])
-                ->get();
+        // افزایش حد مجاز حافظه برای پردازش فایل‌های بزرگ
+        ini_set('memory_limit', '1536M');
 
-            if ($families->isEmpty()) {
-                $this->dispatch('toast', ['message' => 'خانواده‌های انتخاب شده یافت نشدند.', 'type' => 'error']);
-                return null;
+        // ثبت وضعیت حافظه قبل از پردازش
+        Log::info('شروع export خانواده‌ها', [
+            'memory_usage_mb' => round(memory_get_usage(true) / 1024 / 1024, 2),
+            'memory_peak_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+            'active_tab' => $this->activeTab,
+            'has_selection' => !empty($this->selected),
+            'selected_count' => count($this->selected ?? [])
+        ]);
+
+        try {
+            // اگر خانواده‌ای انتخاب شده باشد، فقط آنها را دانلود کن، وگرنه همه خانواده‌های صفحه را دانلود کن
+            if (!empty($this->selected)) {
+                // دانلود خانواده‌های انتخاب شده
+                $families = Family::whereIn('id', $this->selected)
+                    ->with(['head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members', 'finalInsurances'])
+                    ->get();
+
+                if ($families->isEmpty()) {
+                    $this->dispatch('toast', ['message' => 'خانواده‌های انتخاب شده یافت نشدند.', 'type' => 'error']);
+                    return null;
+                }
+
+                $downloadType = 'انتخاب-شده';
+            } else {
+                // دانلود همه خانواده‌های صفحه فعلی
+                $families = $this->getFamiliesProperty();
+
+                if ($families->isEmpty()) {
+                    $this->dispatch('toast', ['message' => 'داده‌ای برای دانلود وجود ندارد.', 'type' => 'error']);
+                    return null;
+                }
+
+                $downloadType = $this->activeTab;
             }
 
-            $downloadType = 'انتخاب-شده';
-        } else {
-            // دانلود همه خانواده‌های صفحه فعلی
-            $families = $this->getFamiliesProperty();
+            // ایجاد کالکشن برای داده‌های اکسل
+            $excelData = collect();
 
-            if ($families->isEmpty()) {
-                $this->dispatch('toast', ['message' => 'داده‌ای برای دانلود وجود ندارد.', 'type' => 'error']);
-                return null;
-            }
-
-            $downloadType = $this->activeTab;
-        }
-
-        // ایجاد کالکشن برای داده‌های اکسل
-        $excelData = collect();
-
-        foreach ($families as $family) {
-            // اضافه کردن سرپرست خانواده به عنوان یک ردیف
-            $excelData->push([
-                'family_code' => $family->family_code,
-                'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
-                'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
-                'is_head' => 'بله',
-                'member_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
-                'member_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
-                'member_relationship' => $family->head && $family->head->relationship ? $family->head->relationship : 'سرپرست خانوار',
-                'member_birth_date' => $family->head && $family->head->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->head->birth_date))->format('Y/m/d') : null,
-                'member_gender' => $this->translateGender($family->head ? $family->head->gender : null),
-                'province' => $family->province ? $family->province->name : 'نامشخص',
-                'city' => $family->city ? $family->city->name : 'نامشخص',
-                'district' => $family->district ? $family->district->name : 'نامشخص',
-                'region' => $family->region ? $family->region->name : 'نامشخص',
-                'organization' => $family->organization ? $family->organization->name : 'نامشخص',
-                'insurance_type' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_type : 'نامشخص',
-                'insurance_amount' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_amount : 0,
-                'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->start_date))->format('Y/m/d') : null,
-                'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->end_date))->format('Y/m/d') : null,
-            ]);
-
-            // اضافه کردن اعضای خانواده (غیر از سرپرست)
-            $nonHeadMembers = $family->members->where('is_head', false);
-            foreach ($nonHeadMembers as $member) {
+            foreach ($families as $family) {
+                // اضافه کردن سرپرست خانواده به عنوان یک ردیف
                 $excelData->push([
                     'family_code' => $family->family_code,
                     'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
                     'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
-                    'is_head' => 'خیر',
-                    'member_name' => $member->first_name . ' ' . $member->last_name,
-                    'member_national_id' => $member->national_code,
-                    'member_relationship' => $member->relationship ? $member->relationship : 'نامشخص',
-                    'member_birth_date' => $member->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($member->birth_date))->format('Y/m/d') : null,
-                    'member_gender' => $this->translateGender($member->gender),
+                    'is_head' => 'بله',
+                    'member_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                    'member_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                    'member_relationship' => $family->head && $family->head->relationship ? $family->head->relationship : 'سرپرست خانوار',
+                    'member_birth_date' => $family->head && $family->head->birth_date ? $this->safeJalaliFormat($family->head->birth_date) : null,
+                    'member_gender' => $this->translateGender($family->head ? $family->head->gender : null),
                     'province' => $family->province ? $family->province->name : 'نامشخص',
                     'city' => $family->city ? $family->city->name : 'نامشخص',
                     'district' => $family->district ? $family->district->name : 'نامشخص',
@@ -1463,59 +1458,112 @@ private function getCriteriaWeights(): array
                     'organization' => $family->organization ? $family->organization->name : 'نامشخص',
                     'insurance_type' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_type : 'نامشخص',
                     'insurance_amount' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_amount : 0,
-                    'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->start_date))->format('Y/m/d') : null,
-                    'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->finalInsurances->first()->end_date))->format('Y/m/d') : null,
+                    'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? $this->safeJalaliFormat($family->finalInsurances->first()->start_date) : null,
+                    'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? $this->safeJalaliFormat($family->finalInsurances->first()->end_date) : null,
                 ]);
+
+                // اضافه کردن اعضای خانواده (غیر از سرپرست)
+                $nonHeadMembers = $family->members->where('is_head', false);
+                foreach ($nonHeadMembers as $member) {
+                    $excelData->push([
+                        'family_code' => $family->family_code,
+                        'head_name' => $family->head ? $family->head->first_name . ' ' . $family->head->last_name : 'نامشخص',
+                        'head_national_id' => $family->head ? $family->head->national_code : 'نامشخص',
+                        'is_head' => 'خیر',
+                        'member_name' => $member->first_name . ' ' . $member->last_name,
+                        'member_national_id' => $member->national_code,
+                        'member_relationship' => $member->relationship ? $member->relationship : 'نامشخص',
+                        'member_birth_date' => $member->birth_date ? $this->safeJalaliFormat($member->birth_date) : null,
+                        'member_gender' => $this->translateGender($member->gender),
+                        'province' => $family->province ? $family->province->name : 'نامشخص',
+                        'city' => $family->city ? $family->city->name : 'نامشخص',
+                        'district' => $family->district ? $family->district->name : 'نامشخص',
+                        'region' => $family->region ? $family->region->name : 'نامشخص',
+                        'organization' => $family->organization ? $family->organization->name : 'نامشخص',
+                        'insurance_type' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_type : 'نامشخص',
+                        'insurance_amount' => $family->finalInsurances->first() ? $family->finalInsurances->first()->insurance_amount : 0,
+                        'start_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->start_date ? $this->safeJalaliFormat($family->finalInsurances->first()->start_date) : null,
+                        'end_date' => $family->finalInsurances->first() && $family->finalInsurances->first()->end_date ? $this->safeJalaliFormat($family->finalInsurances->first()->end_date) : null,
+                    ]);
+                }
             }
+
+            // تعریف هدرهای جدید (بدون ستون‌های اضافی)
+            $headings = [
+                'کد خانوار',
+                'کد ملی سرپرست',
+                'سرپرست',
+                'نام عضو',
+                'کد ملی عضو',
+                'نسبت',
+                'تاریخ تولد',
+                'جنسیت',
+                'استان',
+                'شهرستان',
+                'منطقه',
+                'ناحیه',
+                'سازمان',
+                'نوع بیمه',
+                'مبلغ بیمه',
+                'تاریخ شروع',
+                'تاریخ پایان',
+            ];
+
+            // کلیدهای داده جدید (هماهنگ با داده‌های واقعی)
+            $dataKeys = [
+                'family_code',
+                'head_national_id',
+                'is_head',
+                'member_name',
+                'member_national_id',
+                'member_relationship',
+                'member_birth_date',
+                'member_gender',
+                'province',
+                'city',
+                'district',
+                'region',
+                'organization',
+                'insurance_type',
+                'insurance_amount',
+                'start_date',
+                'end_date',
+            ];
+
+            // ایجاد نام فایل
+            $fileName = 'families-' . $this->activeTab . '-' . now()->format('Y-m-d') . '.xlsx';
+
+            // ثبت وضعیت حافظه بعد از پردازش
+            Log::info('export خانواده‌ها با موفقیت تکمیل شد', [
+                'memory_usage_mb' => round(memory_get_usage(true) / 1024 / 1024, 2),
+                'memory_peak_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
+                'file_name' => $fileName,
+                'records_count' => $excelData->count()
+            ]);
+
+            // استفاده از Excel::download برای ارسال مستقیم فایل به مرورگر
+            return Excel::download(new DynamicDataExport($excelData, $headings, $dataKeys), $fileName);
+
+        } catch (\Exception $e) {
+            // ثبت خطا در لاگ با جزئیات کامل
+            Log::error('خطا در export خانواده‌ها به اکسل', [
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'stack_trace' => $e->getTraceAsString(),
+                'active_tab' => $this->activeTab,
+                'selected_count' => count($this->selected ?? [])
+            ]);
+
+            // نمایش پیام خطای دوستانه به کاربر
+            $this->dispatch('toast', [
+                'message' => 'خطا در دانلود فایل اکسل. لطفاً دوباره تلاش کنید.',
+                'type' => 'error',
+                'duration' => 5000
+            ]);
+
+            return null;
         }
-
-        // تعریف هدرهای جدید (بدون ستون‌های اضافی)
-        $headings = [
-            'کد خانوار',
-            'کد ملی سرپرست',
-            'سرپرست',
-            'نام عضو',
-            'کد ملی عضو',
-            'نسبت',
-            'تاریخ تولد',
-            'جنسیت',
-            'استان',
-            'شهرستان',
-            'منطقه',
-            'ناحیه',
-            'سازمان',
-            'نوع بیمه',
-            'مبلغ بیمه',
-            'تاریخ شروع',
-            'تاریخ پایان',
-        ];
-
-        // کلیدهای داده جدید (هماهنگ با داده‌های واقعی)
-        $dataKeys = [
-            'family_code',
-            'head_national_id',
-            'is_head',
-            'member_name',
-            'member_national_id',
-            'member_relationship',
-            'member_birth_date',
-            'member_gender',
-            'province',
-            'city',
-            'district',
-            'region',
-            'organization',
-            'insurance_type',
-            'insurance_amount',
-            'start_date',
-            'end_date',
-        ];
-
-        // ایجاد نام فایل
-        $fileName = 'families-' . $this->activeTab . '-' . now()->format('Y-m-d') . '.xlsx';
-
-        // استفاده از Excel::download برای ارسال مستقیم فایل به مرورگر
-        return Excel::download(new DynamicDataExport($excelData, $headings, $dataKeys), $fileName);
     }
 
     /**
@@ -3178,7 +3226,7 @@ private function getCriteriaWeights(): array
     //         // استفاده از تراکنش
     //         DB::transaction(function () use ($familyIds, $criteriaIds) {
     //             $updatedCount = 0;
-    //             $families = Family::whereIn('id', $familyIds)->get();
+    //             $families = Family::with(['members'])->whereIn('id', $familyIds)->get();
     //             foreach ($families as $family) {
     //                 $family->criteria()->sync($criteriaIds);
     //                 $family->calculateRank();
@@ -3620,8 +3668,11 @@ protected function buildFamiliesQuery()
 
         // بارگذاری روابط مورد نیاز برای eager loading
         $baseQuery->with([
-            'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'
-        ])->withCount('members');
+            'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members',
+            'finalInsurances' => fn($q) => $q->latest('end_date')
+        ])
+        ->withCount('members')
+        ->withCount(['insurances as final_insurances_count' => fn($q) => $q->where('status', 'insured')]);
 
         // اعمال فیلتر wizard_status بر اساس تب انتخاب شده
         $this->applyTabStatusFilter($baseQuery);
@@ -3915,6 +3966,26 @@ protected function buildFamiliesQuery()
         );
     }
 }
+
+    /**
+     * دریافت لیست eager loads پیش‌فرض برای استفاده در تمام queries
+     *
+     * @return array
+     */
+    protected function getDefaultEagerLoads(): array
+    {
+        return [
+            'head',
+            'province',
+            'city',
+            'district',
+            'region',
+            'charity',
+            'organization',
+            'members',
+            'finalInsurances' => fn($q) => $q->latest('end_date')
+        ];
+    }
 
 /**
  * محاسبه امتیاز کامل خانواده با در نظر گیری تعداد اعضای متأثر
@@ -4901,7 +4972,7 @@ public function clearCriteriaFilter()
             foreach ($families as $family) {
                 // محاسبه تاریخ عضویت
                 $membershipDate = $family->created_at ?
-                    \Morilog\Jalali\Jalalian::fromCarbon($family->created_at)->format('Y/m/d') :
+                    $this->safeJalaliFormat($family->created_at) :
                     'نامشخص';
 
                 // محاسبه درصد مشارکت و نام مشارکت کننده (اصلاح شده)
@@ -5002,7 +5073,7 @@ public function clearCriteriaFilter()
                         'member_name' => $family->head->first_name . ' ' . $family->head->last_name,
                         'member_national_id' => $family->head->national_code,
                         'member_relationship' => $family->head->relationship_fa ?? 'سرپرست خانوار',
-                        'member_birth_date' => $family->head->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($family->head->birth_date))->format('Y/m/d') : null,
+                        'member_birth_date' => $family->head->birth_date ? $this->safeJalaliFormat($family->head->birth_date) : null,
                         'member_gender' => $this->translateGender($family->head->gender),
                         'acceptance_criteria' => $headAcceptanceCriteria,
                         'has_documents' => $headHasDocuments,
@@ -5034,7 +5105,7 @@ public function clearCriteriaFilter()
                         'member_name' => $member->first_name . ' ' . $member->last_name,
                         'member_national_id' => $member->national_code,
                         'member_relationship' => $member->relationship_fa ?? 'نامشخص',
-                        'member_birth_date' => $member->birth_date ? \Morilog\Jalali\Jalalian::fromCarbon(\Carbon\Carbon::parse($member->birth_date))->format('Y/m/d') : null,
+                        'member_birth_date' => $member->birth_date ? $this->safeJalaliFormat($member->birth_date) : null,
                         'member_gender' => $this->translateGender($member->gender),
                         'acceptance_criteria' => $memberAcceptanceCriteria,
                         'has_documents' => $memberHasDocuments,
@@ -5198,7 +5269,7 @@ public function clearCriteriaFilter()
             // اضافه کردن groupBy برای پشتیبانی از HAVING - withCount قبلاً اضافه شده است
             $query->groupBy('families.id');
                   
-            switch ($this->tab) {
+            switch ($this->activeTab) {
                 case 'pending':
                     $query->where('wizard_status', InsuranceWizardStep::PENDING->value);
                     break;
@@ -5235,13 +5306,13 @@ public function clearCriteriaFilter()
             }
 
             Log::debug('📋 Tab status filter applied', [
-                'tab' => $this->tab,
-                'wizard_status_filter' => $this->tab
+                'tab' => $this->activeTab,
+                'wizard_status_filter' => $this->activeTab
             ]);
 
         } catch (\Exception $e) {
             Log::error('❌ Error applying tab status filter', [
-                'tab' => $this->tab,
+                'tab' => $this->activeTab,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -6492,6 +6563,42 @@ public function clearCriteriaFilter()
         ];
 
         return $genderMap[strtolower($gender)] ?? $gender;
+    }
+
+    /**
+     * تبدیل امن تاریخ به تاریخ جلالی با مدیریت تاریخ‌های نامعتبر
+     *
+     * @param string|null $date
+     * @return string|null
+     */
+    private function safeJalaliFormat($date)
+    {
+        if (empty($date)) {
+            return null;
+        }
+
+        try {
+            $carbonDate = \Carbon\Carbon::parse($date);
+            
+            // بررسی اینکه سال تاریخ در محدوده معتبر باشد (1000 تا 3000 میلادی)
+            if ($carbonDate->year < 1000 || $carbonDate->year > 3000) {
+                // لاگ تاریخ نامعتبر
+                \Log::warning('تاریخ نامعتبر در export', [
+                    'date' => $date,
+                    'year' => $carbonDate->year
+                ]);
+                return 'تاریخ نامعتبر';
+            }
+
+            return \Morilog\Jalali\Jalalian::fromCarbon($carbonDate)->format('Y/m/d');
+        } catch (\Exception $e) {
+            // در صورت هر گونه خطا، مقدار null برگردان
+            \Log::error('خطا در تبدیل تاریخ به جلالی', [
+                'date' => $date,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 
     /**
