@@ -8,25 +8,18 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use App\Models\FundingTransaction;
-use App\Models\InsuranceAllocation;
-use App\Models\InsuranceImportLog;
-use App\Models\InsurancePayment;
-use App\Models\ShareAllocationLog;
-use App\Models\Family;
+use App\Services\FinancialReportService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
  * کلاس صدور گزارش مالی اکسل
  *
- * مطابق با اصول SOLID و استانداردهای PSR-4
- * امکان صدور گزارش کامل تراکنش‌های مالی بیمه
+ * استفاده از FinancialReportService برای دریافت داده‌ها
  */
 class FinancialReportExport implements
     FromArray,
@@ -39,6 +32,7 @@ class FinancialReportExport implements
     private array $filters;
     private Collection $transactions;
     private array $summary;
+    private FinancialReportService $financialReportService;
 
     /**
      * سازنده کلاس با Dependency Injection
@@ -46,201 +40,19 @@ class FinancialReportExport implements
     public function __construct(array $filters = [])
     {
         $this->filters = $filters;
+        $this->financialReportService = app(FinancialReportService::class);
         $this->prepareData();
     }
 
     /**
-     * تهیه داده‌ها با بهینه‌سازی Eloquent
+     * تهیه داده‌ها با استفاده از Service
      */
     private function prepareData(): void
     {
-        $this->transactions = $this->collectAllTransactions();
-        $this->summary = $this->calculateSummary();
+        $this->transactions = $this->financialReportService->getAllTransactions($this->filters);
+        $this->summary = $this->financialReportService->calculateSummary($this->transactions);
     }
 
-    /**
-     * جمع‌آوری تمام تراکنش‌ها با بهینه‌سازی کوئری
-     */
-    private function collectAllTransactions(): Collection
-    {
-        $allTransactions = collect();
-
-        // 1. تراکنش‌های بودجه با eager loading
-        $fundingTransactions = FundingTransaction::with('source')->get();
-        foreach ($fundingTransactions as $trx) {
-            $isAllocation = $trx->allocated ?? false;
-            $title = $isAllocation ? 'تخصیص بودجه' : 'واریز بودجه';
-            $type = $isAllocation ? 'debit' : 'credit';
-
-            $allTransactions->push($this->formatTransaction([
-                'id' => $trx->id,
-                'title' => $title,
-                'amount' => $trx->amount,
-                'type' => $type,
-                'date' => $trx->created_at,
-                'description' => $trx->description ?? 'تراکنش مالی',
-                'source' => $trx->source->name ?? 'نامشخص',
-                'reference_no' => 'FUND-' . $trx->id,
-            ]));
-        }
-
-        // 2. تخصیص‌های بودجه خانواده‌ها
-        $familyAllocations = \App\Models\FamilyFundingAllocation::with(['family.members', 'fundingSource'])
-            ->where('status', '!=', \App\Models\FamilyFundingAllocation::STATUS_PENDING)
-            ->whereNull('transaction_id')
-            ->get();
-
-        foreach ($familyAllocations as $alloc) {
-            $membersCount = $alloc->family ? $alloc->family->members->count() : 0;
-
-            $allTransactions->push($this->formatTransaction([
-                'id' => $alloc->id,
-                'title' => 'تخصیص بودجه خانواده',
-                'amount' => $alloc->amount,
-                'type' => 'debit',
-                'date' => $alloc->approved_at ?? $alloc->created_at,
-                'description' => $alloc->description ?: 'تخصیص ' . $alloc->percentage . '% از حق بیمه',
-                'source' => $alloc->fundingSource ? $alloc->fundingSource->name : 'منبع مالی نامشخص',
-                'reference_no' => 'ALLOC-' . $alloc->id,
-                'family_count' => 1,
-                'members_count' => $membersCount,
-            ]));
-        }
-
-        // 3. پرداخت‌های بیمه منفرد
-        $insuranceAllocations = InsuranceAllocation::with(['family.members'])->get();
-        foreach ($insuranceAllocations as $alloc) {
-            $membersCount = $alloc->family ? $alloc->family->members->count() : 0;
-
-            $allTransactions->push($this->formatTransaction([
-                'id' => $alloc->id,
-                'title' => 'پرداخت حق بیمه منفرد',
-                'amount' => $alloc->amount,
-                'type' => 'debit',
-                'date' => $alloc->created_at,
-                'description' => $alloc->description,
-                'source' => 'پرداخت مستقیم',
-                'reference_no' => 'INS-' . $alloc->id,
-                'family_count' => 1,
-                'members_count' => $membersCount,
-            ]));
-        }
-
-        // 4. پرداخت‌های اکسل ایمپورت
-        $importLogs = InsuranceImportLog::get();
-        foreach ($importLogs as $log) {
-            $allCodes = array_merge(
-                is_array($log->created_family_codes) ? $log->created_family_codes : [],
-                is_array($log->updated_family_codes) ? $log->updated_family_codes : []
-            );
-            $familyCount = count($allCodes);
-
-            $membersCount = 0;
-            if ($familyCount > 0) {
-                $membersCount = Family::whereIn('family_code', $allCodes)
-                    ->withCount('members')
-                    ->get()
-                    ->sum('members_count');
-            }
-
-            $allTransactions->push($this->formatTransaction([
-                'id' => $log->id,
-                'title' => 'ایمپورت حق بیمه از اکسل',
-                'amount' => $log->total_insurance_amount,
-                'type' => 'debit',
-                'date' => $log->created_at,
-                'description' => 'ایمپورت فایل: ' . ($log->file_name ?? 'نامشخص'),
-                'source' => 'ایمپورت اکسل',
-                'reference_no' => 'IMP-' . $log->id,
-                'family_count' => $familyCount,
-                'members_count' => $membersCount,
-            ]));
-        }
-
-        // 5. پرداخت‌های سیستماتیک
-        $insurancePayments = InsurancePayment::with(['familyInsurance.family', 'details.member'])->get();
-        foreach ($insurancePayments as $payment) {
-            $family = $payment->familyInsurance ? $payment->familyInsurance->family : null;
-            $membersCount = $payment->insured_persons_count ?? ($family ? $family->members->count() : 0);
-
-            $allTransactions->push($this->formatTransaction([
-                'id' => $payment->id,
-                'title' => 'پرداخت حق بیمه سیستماتیک',
-                'amount' => $payment->total_amount,
-                'type' => 'debit',
-                'date' => $payment->payment_date ?? $payment->created_at,
-                'description' => $payment->description,
-                'source' => 'سیستم پرداخت',
-                'reference_no' => $payment->transaction_reference,
-                'family_count' => 1,
-                'members_count' => $membersCount,
-            ]));
-        }
-
-        // 6. تخصیص‌های سهم گروهی
-        $allocationLogs = ShareAllocationLog::where('status', 'completed')
-                                          ->where('total_amount', '>', 0)
-                                          ->get();
-        foreach ($allocationLogs as $log) {
-            $allTransactions->push($this->formatTransaction([
-                'id' => $log->id,
-                'title' => 'تخصیص سهم گروهی',
-                'amount' => $log->total_amount,
-                'type' => 'debit',
-                'date' => $log->updated_at,
-                'description' => $log->description,
-                'source' => 'تخصیص گروهی',
-                'reference_no' => 'BATCH-' . $log->batch_id,
-                'family_count' => $log->families_count,
-                'members_count' => 0,
-            ]));
-        }
-
-        // مرتب‌سازی بر اساس تاریخ (جدیدترین ابتدا)
-        return $allTransactions->sortByDesc(function ($item) {
-            return $item['date']->timestamp;
-        })->values();
-    }
-
-    /**
-     * فرمت‌بندی تراکنش مطابق با اصول SOLID
-     */
-    private function formatTransaction(array $data): array
-    {
-        return [
-            'id' => $data['id'],
-            'title' => $data['title'],
-            'amount' => $data['amount'],
-            'type' => $data['type'],
-            'date' => $data['date'],
-            'description' => $data['description'] ?? '',
-            'source' => $data['source'] ?? '',
-            'reference_no' => $data['reference_no'] ?? '',
-            'family_count' => $data['family_count'] ?? 0,
-            'members_count' => $data['members_count'] ?? 0,
-        ];
-    }
-
-    /**
-     * محاسبه خلاصه مالی
-     */
-    private function calculateSummary(): array
-    {
-        $totalCredit = $this->transactions
-            ->where('type', 'credit')
-            ->sum('amount');
-
-        $totalDebit = $this->transactions
-            ->where('type', 'debit')
-            ->sum('amount');
-
-        return [
-            'total_credit' => $totalCredit,
-            'total_debit' => $totalDebit,
-            'balance' => $totalCredit - $totalDebit,
-            'transactions_count' => $this->transactions->count(),
-        ];
-    }
 
     /**
      * ارائه داده‌ها به عنوان آرایه
@@ -270,10 +82,10 @@ class FinancialReportExport implements
                 jdate($transaction['date'])->format('Y/m/d H:i'),
                 $transaction['type'] === 'credit' ? 'واریز' : 'پرداخت',
                 number_format($transaction['amount']),
-                $transaction['source'],
-                $transaction['reference_no'],
-                $transaction['family_count'],
-                $transaction['members_count'],
+                $transaction['source'] ?? '',
+                $transaction['reference_no'] ?? '',
+                $transaction['family_count'] ?? 0,
+                $transaction['members_count'] ?? 0,
             ];
         }
 

@@ -6,6 +6,7 @@ use App\Models\FundingTransaction;
 use App\Models\InsuranceAllocation;
 use App\Models\InsuranceImportLog;
 use App\Models\InsurancePayment;
+use App\Models\ShareAllocationLog;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +28,8 @@ Route::get('/budget/remaining', function () {
     $totalCredit = FundingTransaction::sum('amount');
     $totalDebit = InsuranceAllocation::sum('amount') +
                   InsuranceImportLog::sum('total_insurance_amount') +
-                  InsurancePayment::sum('total_amount');
+                  InsurancePayment::sum('total_amount') +
+                  ShareAllocationLog::where('status', 'completed')->sum('total_amount');
     $remainingBudget = $totalCredit - $totalDebit;
     
     return response()->json([

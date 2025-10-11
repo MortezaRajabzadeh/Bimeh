@@ -97,11 +97,12 @@ class InsuranceShare extends Model
 
 
         /**
-     * ✅ رابطه با لاگ ایمپورت
+     * ✅ رابطه با لاگ ایمپورت (بهبود یافته)
      */
     public function importLog()
     {
-        return $this->belongsTo(ShareAllocationLog::class, 'import_log_id');
+        return $this->belongsTo(ShareAllocationLog::class, 'import_log_id')
+            ->select(['id', 'batch_id', 'description', 'total_amount', 'status', 'created_at']);
     }
     /**
      * محاسبه مبلغ بر اساس درصد و مبلغ کل حق بیمه
@@ -136,6 +137,42 @@ class InsuranceShare extends Model
         return $query->whereHas('familyInsurance', function($q) use ($familyId) {
             $q->where('family_id', $familyId);
         });
+    }
+    
+    /**
+     * اسکوپ برای سهم‌های manual (ایجاد شده به صورت دستی)
+     * این سهم‌ها import_log_id ندارند
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeManual($query)
+    {
+        return $query->whereNull('import_log_id');
+    }
+    
+    /**
+     * اسکوپ برای سهم‌های bulk (ایجاد شده به صورت گروهی)
+     * این سهم‌ها import_log_id دارند
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeBulkAllocated($query)
+    {
+        return $query->whereNotNull('import_log_id');
+    }
+    
+    /**
+     * اسکوپ برای فیلتر بر اساس import_log_id
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param int $importLogId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeFromImportLog($query, $importLogId)
+    {
+        return $query->where('import_log_id', $importLogId);
     }
     /**
      * دریافت مبلغ فرمت شده
@@ -230,5 +267,25 @@ class InsuranceShare extends Model
     public function getPayerTypeNameAttribute()
     {
         return $this->payerType?->name ?? '';
+    }
+    
+    /**
+     * چک کردن manual بودن سهم
+     * 
+     * @return bool
+     */
+    public function isManual(): bool
+    {
+        return is_null($this->import_log_id);
+    }
+    
+    /**
+     * چک کردن bulk بودن سهم
+     * 
+     * @return bool
+     */
+    public function isBulkAllocated(): bool
+    {
+        return !is_null($this->import_log_id);
     }
 }

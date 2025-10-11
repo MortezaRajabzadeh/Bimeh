@@ -35,8 +35,22 @@ class InsuranceShareService
 
         $createdShares = [];
         $errors = [];
+        $allocationLogId = null;
 
-        DB::transaction(function () use ($families, $shares, &$createdShares, &$errors, $payerType, $fundingSourceId) {
+        DB::transaction(function () use ($families, $shares, &$createdShares, &$errors, $payerType, $fundingSourceId, &$allocationLogId) {
+            // ایجاد ShareAllocationLog برای tracking bulk allocation
+            $allocationLog = ShareAllocationLog::create([
+                'user_id' => Auth::id(),
+                'batch_id' => 'allocation_' . time() . '_' . uniqid(),
+                'description' => 'تخصیص سهم برای ' . count($families) . ' خانواده',
+                'families_count' => count($families),
+                'family_ids' => json_encode($families->pluck('id')->toArray()),
+                'status' => 'pending',
+                'total_amount' => 0, // موقتاً
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $allocationLogId = $allocationLog->id;
             // ✅ Batch Insert برای family insurances
             $familyInsurancesData = [];
             foreach ($families as $family) {
@@ -84,6 +98,7 @@ class InsuranceShareService
                             'family_insurance_id' => $insurance->id,
                             'percentage' => $shareData['percentage'],
                             'amount' => 0,
+                            'import_log_id' => $allocationLogId,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
@@ -147,6 +162,15 @@ class InsuranceShareService
             if (!empty($sharesData)) {
                 InsuranceShare::insert($sharesData);
                 $createdShares = InsuranceShare::whereIn('family_insurance_id', $familyInsurances->pluck('id'))->get();
+                
+                // به‌روزرسانی ShareAllocationLog پس از ایجاد سهم‌ها
+                $totalAmount = $createdShares->sum('amount');
+                ShareAllocationLog::where('id', $allocationLogId)->update([
+                    'status' => 'completed',
+                    'total_amount' => $totalAmount,
+                    'shares_data' => json_encode($createdShares->toArray()),
+                    'updated_at' => now()
+                ]);
             }
 
             if (!empty($errors)) {
@@ -535,8 +559,22 @@ class InsuranceShareService
         $insuranceUpdates = [];
         $shareUpdates = [];
         $newInsurances = [];
+        $allocationLogId = null;
 
-        DB::transaction(function () use ($validData, $families, $insurances, &$results, &$familyUpdates, &$insuranceUpdates, &$shareUpdates, &$newInsurances) {
+        DB::transaction(function () use ($validData, $families, $insurances, &$results, &$familyUpdates, &$insuranceUpdates, &$shareUpdates, &$newInsurances, &$allocationLogId) {
+            // ایجاد ShareAllocationLog برای tracking bulk allocation
+            $allocationLog = ShareAllocationLog::create([
+                'user_id' => Auth::id(),
+                'batch_id' => 'excel_import_' . time() . '_' . uniqid(),
+                'description' => 'به‌روزرسانی سهام از فایل اکسل',
+                'families_count' => count($validData['family_codes']),
+                'family_ids' => json_encode($families->pluck('id')->toArray()),
+                'status' => 'pending',
+                'total_amount' => 0, // موقتاً
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $allocationLogId = $allocationLog->id;
 
             // در متد processBatchData
             foreach ($validData['family_codes'] as $familyCode) {
@@ -572,6 +610,7 @@ class InsuranceShareService
                         $shareUpdates[] = [
                             'id' => $share->id,
                             'amount' => ($premiumAmount * $share->percentage) / 100,
+                            'import_log_id' => $allocationLogId,
                             'updated_at' => now()
                         ];
                     }
@@ -686,6 +725,7 @@ class InsuranceShareService
         foreach ($updates as $update) {
             InsuranceShare::where('id', $update['id'])->update([
                 'amount' => $update['amount'],
+                'import_log_id' => $update['import_log_id'],
                 'updated_at' => $update['updated_at']
             ]);
         }
@@ -716,6 +756,15 @@ class InsuranceShareService
 
             $batchId = 'excel_upload_' . time() . '_' . uniqid();
             $fileName = isset($results['file_name']) ? $results['file_name'] : 'excel_upload_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            // محاسبه file_hash
+            $fileHash = hash('sha256', $fileName . $results['total_insurance_amount'] . implode(',', $results['family_codes']));
+            
+            // بررسی تکراری بودن
+            if (ShareAllocationLog::isDuplicateByFileHash($fileHash)) {
+                Log::warning('⚠️ فایل تکراری شناسایی شد', ['file_hash' => $fileHash]);
+                throw new \Exception('این فایل قبلاً پردازش شده است. لطفاً از تکرار آپلود خودداری کنید.');
+            }
         
             // گام ۱: ایجاد لاگ در جدول ShareAllocationLog برای حفظ سازگاری با کد قبلی
             $logData = [
@@ -724,6 +773,7 @@ class InsuranceShareService
                 'description' => 'ثبت نهایی بیمه از طریق آپلود فایل اکسل - ' . count($familyIds) . ' خانواده',
                 'families_count' => count($familyIds),
                 'family_ids' => json_encode($familyIds),
+                'file_hash' => $fileHash,
                 'shares_data' => json_encode([
                     'upload_method' => 'excel',
                     'processed_families' => count($familyIds),

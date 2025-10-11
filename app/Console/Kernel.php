@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('app:move-expired-insurances-to-renewal')->daily();
         $schedule->command('queue:clean-old --days=7')->daily();
+        $schedule->command('exports:cleanup --days=1')->daily();
     }
 
     /**

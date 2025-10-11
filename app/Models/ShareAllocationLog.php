@@ -136,19 +136,47 @@ class ShareAllocationLog extends Model
     }
 
     /**
-     * ✅ بررسی تکراری بودن بر اساس hash فایل
+    /**
+     * بررسی تکراری بودن فایل بر اساس hash با time window
      */
-    public static function isDuplicateByFileHash($fileHash)
+    public static function isDuplicateByFileHash($fileHash, $hoursWindow = 24)
     {
-        return static::where('file_hash', $fileHash)->exists();
+        return static::where('file_hash', $fileHash)
+            ->where('created_at', '>=', now()->subHours($hoursWindow))
+            ->exists();
     }
-
+    
+    /**
+     * دریافت لاگ تکراری بر اساس file_hash
+     */
+    public static function getDuplicateByFileHash($fileHash, $hoursWindow = 24)
+    {
+        return static::where('file_hash', $fileHash)
+            ->where('created_at', '>=', now()->subHours($hoursWindow))
+            ->latest()
+            ->first();
+    }
     /**
      * ✅ ایجاد لاگ جدید با اطلاعات کامل
-     */
     public static function createAllocationLog(array $data)
     {
-        return static::create([
+        // چک کردن file_hash
+        if (isset($data['file_hash']) && static::isDuplicateByFileHash($data['file_hash'])) {
+            $duplicate = static::getDuplicateByFileHash($data['file_hash']);
+            throw new \Exception(
+                'این فایل قبلاً در تاریخ ' . 
+                jdate($duplicate->created_at)->format('Y/m/d H:i') . 
+                ' پردازش شده است.'
+            );
+        }
+        
+        \Illuminate\Support\Facades\Log::info('✅ بررسی تکراری بودن فایل', [
+            'file_hash' => $data['file_hash'] ?? 'not_provided',
+            'is_duplicate' => false
+        ]);
+        
+        return static::create($data);
+    }
             'user_id' => auth()->id(),
             'batch_id' => $data['batch_id'] ?? 'batch_' . time(),
             'description' => $data['description'] ?? 'تخصیص سهم‌بندی بیمه',

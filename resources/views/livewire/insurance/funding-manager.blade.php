@@ -1,21 +1,21 @@
 <div class="container mx-auto px-6 py-6 max-w-7xl">
     <div class="max-w-5xl mx-auto mb-8">
         <h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b pb-2">افزودن بودجه جدید</h2>
-        @if (session()->has('success'))
-            <div class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+        @if (session()->has('success_add'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
-                <span>{{ session('success') }}</span>
+                <span>{{ session('success_add') }}</span>
             </div>
         @endif
         
-        @if (session()->has('error'))
-            <div class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+        @if (session()->has('error_add'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                 </svg>
-                <span>{{ session('error') }}</span>
+                <span>{{ session('error_add') }}</span>
             </div>
         @endif
         <form wire:submit.prevent="addTransaction" wire:key="add-transaction-form-{{ $formKey }}" class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -55,8 +55,8 @@
                 @error('reference_no') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
             <div class="md:col-span-2 flex justify-end">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-base flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                <button type="submit" class="h-10 px-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md text-sm transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     ثبت بودجه
                 </button>
             </div>
@@ -65,21 +65,20 @@
 
     <div class="max-w-5xl mx-auto mb-8">
         <h3 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-2">مدیریت منابع بودجه</h3>
-        @if (session()->has('success'))
-            <div class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+        @if (session()->has('success_source'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                 </svg>
-                <span>{{ session('success') }}</span>
+                <span>{{ session('success_source') }}</span>
             </div>
         @endif
-        
-        @if (session()->has('error'))
-            <div class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+        @if (session()->has('error_source'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                 </svg>
-                <span>{{ session('error') }}</span>
+                <span>{{ session('error_source') }}</span>
             </div>
         @endif
         <div class="bg-white rounded-xl shadow p-6 mb-8">
@@ -100,8 +99,8 @@
                     </div>
                 </div>
                 <input type="text" wire:model="source_description" placeholder="توضیحات" class="border rounded px-3 py-2 w-full text-right" />
-                <button type="submit" class="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded text-sm min-w-[120px] transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                <button type="submit" class="h-10 px-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md text-sm min-w-[120px] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     افزودن منبع
                 </button>
             </form>
@@ -174,6 +173,22 @@
 
     <div class="max-w-5xl mx-auto">
         <h3 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-2">آخرین تراکنش‌های بودجه</h3>
+        @if (session()->has('success_trx'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-green-100 border border-green-400 text-green-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('success_trx') }}</span>
+            </div>
+        @endif
+        @if (session()->has('error_trx'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" class="bg-red-100 border border-red-400 text-red-800 rounded-lg px-4 py-3 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ session('error_trx') }}</span>
+            </div>
+        @endif
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white rounded-xl shadow-sm border border-gray-100">
                 <thead class="bg-gray-50">

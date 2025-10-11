@@ -15,32 +15,116 @@
                     </div>
                     <div x-data="{
                         downloading: false,
-                        async downloadReport() {
+                        exportJobId: null,
+                        exportStatus: null,
+                        progress: 0,
+                        pollInterval: null,
+                        
+                        async startExport() {
                             this.downloading = true;
-
+                            this.progress = 0;
+                            
                             try {
-                                // ایجاد لینک دانلود
-                                const link = document.createElement('a');
-                                link.href = '{{ route("insurance.financial-report.export") }}';
-                                link.download = '';
-
-                                // شروع دانلود
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-
+                                // ارسال درخواست export
+                                const response = await fetch('{{ route("insurance.financial-report.export") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: JSON.stringify({
+                                        format: 'xlsx'
+                                    })
+                                });
+                                
+                                if (!response.ok) {
+                                    const errorText = await response.text();
+                                    throw new Error('خطا در سرور: ' + response.status);
+                                }
+                                
+                                // بررسی Content-Type
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('text/html')) {
+                                    // احتمالاً redirect شده یا HTML برگردانده
+                                    window.location.reload();
+                                    return;
+                                }
+                                
+                                const data = await response.json();
+                                
+                                if (data.export_job_id) {
+                                    this.exportJobId = data.export_job_id;
+                                    this.startPolling();
+                                } else {
+                                    throw new Error('Job ID دریافت نشد');
+                                }
+                                
                             } catch (error) {
-                                console.error('خطا در دانلود:', error);
-                            } finally {
-                                // توقف loading بعد از 3 ثانیه
-                                setTimeout(() => {
-                                    this.downloading = false;
-                                }, 3000);
+                                console.error('خطا در شروع export:', error);
+                                this.downloading = false;
+                                alert('خطا در شروع export: ' + error.message);
                             }
+                        },
+                        
+                        startPolling() {
+                            this.pollInterval = setInterval(() => {
+                                this.checkStatus();
+                            }, 2000); // هر 2 ثانیه
+                        },
+                        
+                        async checkStatus() {
+                            try {
+                                const response = await fetch(
+                                    `{{ route("insurance.financial-report.export.status") }}?job_id=${this.exportJobId}`
+                                );
+                                
+                                if (!response.ok) {
+                                    throw new Error('خطا در بررسی وضعیت: ' + response.status);
+                                }
+                                
+                                const status = await response.json();
+                                this.exportStatus = status.status;
+                                this.progress = status.progress;
+                                
+                                if (status.status === 'completed') {
+                                    clearInterval(this.pollInterval);
+                                    this.downloading = false;
+                                    this.downloadFile();
+                                } else if (status.status === 'failed') {
+                                    clearInterval(this.pollInterval);
+                                    this.downloading = false;
+                                    alert('خطا در تولید گزارش: ' + (status.error || 'خطای نامشخص'));
+                                }
+                                
+                            } catch (error) {
+                                console.error('خطا در بررسی وضعیت:', error);
+                                // در صورت خطا، polling را متوقف نکنیم تا شانس بهبودی داشته باشد
+                            }
+                        },
+                        
+                        downloadFile() {
+                            const downloadUrl = `{{ route("insurance.financial-report.export.download", ['jobId' => '__JOB_ID__']) }}`.replace('__JOB_ID__', this.exportJobId);
+                            
+                            const link = document.createElement('a');
+                            link.href = downloadUrl;
+                            link.download = '';
+                            link.target = '_blank'; // باز کردن در تب جدید برای debugging
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // پاک کردن وضعیت
+                            this.exportJobId = null;
+                            this.exportStatus = null;
+                            this.progress = 0;
+                            
+                            // فایل دانلود شد
                         }
                     }">
                         <!-- دکمه دانلود اکسل -->
-                        <button @click="downloadReport()"
+                        <button @click="startExport()"
                         :disabled="downloading"
                         :class="downloading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200">
@@ -56,8 +140,21 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
 
-                    <span x-text="downloading ? 'در حال دانلود...' : '{{ __('financial.actions.export_excel') }}'"></span>
+                    <span x-text="downloading ? (exportStatus === 'queued' ? 'در صف...' : exportStatus === 'processing' ? 'پردازش... ' + progress + '%' : 'در حال آماده‌سازی...') : '{{ __('financial.actions.export_excel') }}'"></span>
                 </button>
+                        
+                        <!-- Progress Bar -->
+                        <div x-show="downloading" x-cloak class="mt-3 w-full max-w-md">
+                            <div class="bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                                     :style="`width: ${progress}%`"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-1 text-center">
+                                <span x-text="exportStatus === 'queued' ? 'در صف انتظار...' : 
+                                              exportStatus === 'processing' ? `در حال پردازش... ${progress}%` : 
+                                              'در حال آماده‌سازی...'"></span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

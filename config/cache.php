@@ -16,6 +16,18 @@ return [
     */
 
     'default' => env('CACHE_STORE', 'database'),
+    
+    /*
+     * نکته: برای استفاده از Cache Tags، باید از Redis یا Memcached استفاده کنید.
+     * Database و File driver از tags پشتیبانی نمی‌کنند.
+     * 
+     * برای فعال کردن Redis:
+     * 1. در .env: CACHE_STORE=redis
+     * 2. نصب Redis: composer require predis/predis
+     * 3. تنظیم Redis در config/database.php
+     * 
+     * پروژه فعلی از prefix pattern استفاده می‌کند که با همه driver‌ها سازگار است.
+     */
 
     /*
     |--------------------------------------------------------------------------

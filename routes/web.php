@@ -294,7 +294,9 @@ Route::middleware(['auth', 'verified', CheckUserType::class.':insurance'])->pref
 
     // گزارش مالی
     Route::middleware('can:view advanced reports')->get('/financial-report', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'index'])->name('financial-report');
-    Route::middleware('can:view advanced reports')->get('/financial-report/export', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'exportExcel'])->name('financial-report.export');
+    Route::middleware('can:view advanced reports')->post('/financial-report/export', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'exportExcel'])->name('financial-report.export');
+    Route::middleware('can:view advanced reports')->get('/financial-report/export/status', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'checkExportStatus'])->name('financial-report.export.status');
+    Route::middleware('can:view advanced reports')->get('/financial-report/export/download/{jobId}', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'downloadExportedFile'])->name('financial-report.export.download');
     Route::middleware('can:view advanced reports')->get('/financial-report/payment/{paymentId}', [\App\Http\Controllers\Insurance\FinancialReportController::class, 'paymentDetails'])->name('financial-report.payment-details');
 
     // مدیریت سهم‌بندی حق بیمه

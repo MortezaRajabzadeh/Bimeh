@@ -4,6 +4,7 @@ use App\Models\FundingTransaction;
 use App\Models\InsuranceAllocation;
 use App\Models\InsuranceImportLog;
 use App\Models\InsurancePayment;
+use App\Models\ShareAllocationLog;
 @endphp
 
 <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30 w-full">
@@ -248,7 +249,8 @@ use App\Models\InsurancePayment;
                         $totalCredit = FundingTransaction::sum('amount');
                         $totalDebit = InsuranceAllocation::sum('amount') +
                                       InsuranceImportLog::sum('total_insurance_amount') +
-                                      InsurancePayment::sum('total_amount');
+                                      InsurancePayment::sum('total_amount') +
+                                      ShareAllocationLog::where('status', 'completed')->sum('total_amount');
                         return $totalCredit - $totalDebit;
                     });
 

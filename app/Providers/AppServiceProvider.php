@@ -21,6 +21,24 @@ use App\Livewire\Insurance\DashboardStats as InsuranceDashboardStats;
 use Illuminate\Support\Facades\Session;
 use App\Observers\FamilyObserver;
 
+// Financial Models
+use App\Models\FundingTransaction;
+use App\Models\InsuranceAllocation;
+use App\Models\InsurancePayment;
+use App\Models\InsuranceShare;
+use App\Models\ShareAllocationLog;
+use App\Models\InsuranceImportLog;
+use App\Models\FamilyFundingAllocation;
+
+// Financial Observers
+use App\Observers\FundingTransactionObserver;
+use App\Observers\InsuranceAllocationObserver;
+use App\Observers\InsurancePaymentObserver;
+use App\Observers\InsuranceShareObserver;
+use App\Observers\ShareAllocationLogObserver;
+use App\Observers\InsuranceImportLogObserver;
+use App\Observers\FamilyFundingAllocationObserver;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -45,6 +63,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(RoleImpersonationService::class, function ($app) {
             return new RoleImpersonationService();
         });
+        
+        // ثبت Repositoryها و Serviceهای گزارش مالی
+        $this->app->bind(\App\Repositories\FundingTransactionRepository::class);
+        $this->app->bind(\App\Repositories\InsuranceTransactionRepository::class);
+        $this->app->bind(\App\Repositories\FamilyFundingAllocationRepository::class);
+        $this->app->bind(\App\Services\FinancialReportService::class);
     }
 
     /**
@@ -54,6 +78,17 @@ class AppServiceProvider extends ServiceProvider
     {
         // ثبت Observer برای Family
         Family::observe(FamilyObserver::class);
+        
+        // ثبت Observer‌های مالی برای auto-invalidation کش
+        // این Observer‌ها به صورت خودکار کش گزارش مالی را هنگام تغییر داده‌ها پاک می‌کنند
+        // TTL کش: 2-3 دقیقه (120-180 ثانیه)
+        FundingTransaction::observe(FundingTransactionObserver::class);
+        InsuranceAllocation::observe(InsuranceAllocationObserver::class);
+        InsurancePayment::observe(InsurancePaymentObserver::class);
+        InsuranceShare::observe(InsuranceShareObserver::class);
+        ShareAllocationLog::observe(ShareAllocationLogObserver::class);
+        InsuranceImportLog::observe(InsuranceImportLogObserver::class);
+        FamilyFundingAllocation::observe(FamilyFundingAllocationObserver::class);
         
         // ثبت کامپوننت‌های Blade
         Blade::component('notification-popup', \App\View\Components\NotificationPopup::class);
