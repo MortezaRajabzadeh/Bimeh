@@ -44,7 +44,8 @@ class InsuranceShareService
                 'batch_id' => 'allocation_' . time() . '_' . uniqid(),
                 'description' => 'تخصیص سهم برای ' . count($families) . ' خانواده',
                 'families_count' => count($families),
-                'family_ids' => json_encode($families->pluck('id')->toArray()),
+                'family_ids' => $families->pluck('id')->toArray(),
+                'shares_data' => [], // مقدار پیش‌فرض
                 'status' => 'pending',
                 'total_amount' => 0, // موقتاً
                 'created_at' => now(),
@@ -168,7 +169,7 @@ class InsuranceShareService
                 ShareAllocationLog::where('id', $allocationLogId)->update([
                     'status' => 'completed',
                     'total_amount' => $totalAmount,
-                    'shares_data' => json_encode($createdShares->toArray()),
+                    'shares_data' => $createdShares->toArray(),
                     'updated_at' => now()
                 ]);
             }
@@ -568,7 +569,8 @@ class InsuranceShareService
                 'batch_id' => 'excel_import_' . time() . '_' . uniqid(),
                 'description' => 'به‌روزرسانی سهام از فایل اکسل',
                 'families_count' => count($validData['family_codes']),
-                'family_ids' => json_encode($families->pluck('id')->toArray()),
+                'family_ids' => $families->pluck('id')->toArray(),
+                'shares_data' => [], // مقدار پیش‌فرض
                 'status' => 'pending',
                 'total_amount' => 0, // موقتاً
                 'created_at' => now(),
@@ -772,9 +774,9 @@ class InsuranceShareService
                 'batch_id' => $batchId,
                 'description' => 'ثبت نهایی بیمه از طریق آپلود فایل اکسل - ' . count($familyIds) . ' خانواده',
                 'families_count' => count($familyIds),
-                'family_ids' => json_encode($familyIds),
+                'family_ids' => $familyIds,
                 'file_hash' => $fileHash,
-                'shares_data' => json_encode([
+                'shares_data' => [
                     'upload_method' => 'excel',
                     'processed_families' => count($familyIds),
                     'created' => $results['created'],
@@ -787,7 +789,7 @@ class InsuranceShareService
                         'successful_operations' => $results['created'] + $results['updated'],
                         'failed_operations' => $results['skipped']
                     ]
-                ]),
+                ],
                 'total_amount' => $results['total_insurance_amount'],
                 'status' => 'completed'
             ];
@@ -837,8 +839,8 @@ class InsuranceShareService
                     'batch_id' => 'fallback_' . time(),
                     'description' => 'لاگ fallback برای آپلود اکسل',
                     'families_count' => $results['processed'] ?? 0,
-                    'family_ids' => json_encode([]),
-                    'shares_data' => json_encode(['error' => 'Failed to create detailed log']),
+                    'family_ids' => [],
+                    'shares_data' => ['error' => 'Failed to create detailed log'],
                     'total_amount' => $results['total_insurance_amount'] ?? 0,
                     'status' => 'completed_with_errors'
                 ]);

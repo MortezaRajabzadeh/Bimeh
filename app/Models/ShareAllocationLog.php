@@ -34,21 +34,24 @@ class ShareAllocationLog extends Model
         'shares_data',
         'total_amount',
         'status',
-        'file_hash', // ✅ اضافه کردن برای جلوگیری از تکرار
-        'created_count', // ✅ تعداد رکوردهای ایجاد شده
-        'updated_count', // ✅ تعداد رکوردهای به‌روزرسانی شده
-        'skipped_count', // ✅ تعداد رکوردهای رد شده
-        'error_count', // ✅ تعداد خطاها
-        'errors', // ✅ لیست خطاها
     ];
 
     protected $casts = [
         'family_ids' => 'array',
         'shares_data' => 'array',
-        'errors' => 'array', // ✅ اضافه کردن
         'total_amount' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+    ];
+
+    /**
+     * مقادیر پیش‌فرض برای فیلدها
+     */
+    protected $attributes = [
+        'shares_data' => '[]',
+        'family_ids' => '[]',
+        'total_amount' => 0,
+        'status' => 'pending',
     ];
 
 
@@ -124,16 +127,6 @@ class ShareAllocationLog extends Model
         return InsuranceShare::where('import_log_id', $this->id)->get();
     }
 
-    /**
-     * ✅ محاسبه درصد موفقیت
-     */
-    public function getSuccessRateAttribute()
-    {
-        $total = $this->created_count + $this->updated_count + $this->error_count;
-        if ($total === 0) return 0;
-
-        return round(($this->created_count + $this->updated_count) / $total * 100, 2);
-    }
 
     /**
     /**
