@@ -222,8 +222,47 @@ class InsuranceShareService
     {
 
         try {
-            // خواندن فایل اکسل
-            $imported = Excel::toCollection(null, $filePath);
+            // تنظیم Custom ValueBinder برای حفظ دقت اعداد طولانی در ستون A
+            \PhpOffice\PhpSpreadsheet\Cell\Cell::setValueBinder(
+                new CustomExcelValueBinder()
+            );
+            
+            // خواندن فایل اکسل با PhpSpreadsheet برای حفظ دقت کد خانوار
+            $spreadsheet = IOFactory::load($filePath);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $highestRow = $worksheet->getHighestRow();
+            $highestColumn = $worksheet->getHighestColumn();
+            
+            $rows = [];
+            for ($row = 1; $row <= $highestRow; $row++) {
+                $rowData = [];
+                for ($col = 'A'; $col <= $highestColumn; $col++) {
+                    $cell = $worksheet->getCell($col . $row);
+                    $value = $cell->getValue();
+                    
+                    // برای ستون A (کد خانوار): لاگ‌گذاری و پاکسازی
+                    if ($col === 'A') {
+                        // لاگ برای دیباگ (فقط برای ردیف‌های داده، نه هدر)
+                        if ($row > 1 && !empty($value)) {
+                            Log::debug("📖 خواندن کد خانوار", [
+                                'row' => $row,
+                                'data_type' => $cell->getDataType(),
+                                'value' => $value,
+                                'value_type' => gettype($value)
+                            ]);
+                        }
+                        
+                        // حذف کاراکترهای غیرعددی (برای پاکسازی)
+                        $value = preg_replace('/[^0-9]/', '', (string)$value);
+                    }
+                    
+                    $rowData[] = $value;
+                }
+                $rows[] = $rowData;
+            }
+            
+            // تبدیل به collection برای سازگاری با کد قبلی
+            $imported = collect([collect($rows)]);
 
             if (!isset($imported[0]) || $imported[0]->isEmpty()) {
                 throw new \Exception('فایل اکسل آپلود شده فاقد داده است یا ساختار آن صحیح نیست.');
@@ -256,6 +295,29 @@ class InsuranceShareService
 
             // ✅ STEP 5: ثبت لاگ
             $this->createInsuranceImportLog($results);
+
+            // 🔄 STEP 6: پاک کردن کش sidebar بعد از به‌روزرسانی موفق
+            if (isset($results['processed']) && $results['processed'] > 0) {
+                try {
+                    Log::info('✅ Clearing sidebar stats cache after processing Excel data', [
+                        'processed_families' => $results['processed']
+                    ]);
+                    
+                    $statsService = app(\App\Services\SidebarStatsService::class);
+                    $clearedCount = $statsService->clearStatsCache(clearAll: true);
+                    
+                    Log::info('✅ Sidebar cache cleared successfully', [
+                        'processed_families' => $results['processed'],
+                        'cleared_cache_keys' => $clearedCount
+                    ]);
+                } catch (\Exception $e) {
+                    // خطای cache clearing نباید مانع از بازگشت نتایج موفق شود
+                    Log::error('❌ Error clearing sidebar cache after Excel processing', [
+                        'error' => $e->getMessage(),
+                        'processed_families' => $results['processed']
+                    ]);
+                }
+            }
 
             Log::info('✅ پردازش فایل اکسل بیمه با موفقیت به پایان رسید', $results);
 
@@ -345,7 +407,7 @@ class InsuranceShareService
                 $rowNumber = $i + 1; // شماره ردیف واقعی در اکسل
                 
                 // خواندن داده‌های ردیف
-                $familyCode = trim($row[$familyCodeIndex] ?? '');
+                $familyCode = $this->normalizeFamilyCode($row[$familyCodeIndex] ?? '');
                 $headNationalCode = trim($row[$headNationalCodeIndex] ?? '');
                 $insuranceType = trim($row[$insuranceTypeIndex] ?? '');
                 $insuranceAmount = trim($row[$insuranceAmountIndex] ?? '');
@@ -996,5 +1058,71 @@ class InsuranceShareService
         }
         
         return $numericAmount;
+    }
+
+    /**
+     * تبدیل کد خانوار با حفظ کامل دقت برای اعداد طولانی
+     * 
+     * @param mixed $value مقدار ورودی (ممکن است string یا number باشد)
+     * @return string کد خانوار به صورت رشته عددی
+     */
+    private function normalizeFamilyCode($value): string
+    {
+        // اگر خالی است، رشته خالی برگردان
+        if (empty($value)) {
+            return '';
+        }
+
+        // تبدیل به string
+        $strValue = (string)$value;
+        
+        // حذف فاصله‌های اضافی
+        $strValue = trim($strValue);
+        
+        // بررسی اگر به صورت Scientific Notation است (مثل 2.0250929012139E+16)
+        if (stripos($strValue, 'e') !== false) {
+            Log::warning('⚠️ کد خانوار به صورت Scientific Notation است - دقت ممکن است از دست برود', [
+                'original' => $strValue
+            ]);
+            
+            // تلاش برای تبدیل ولی با هشدار که دقت ممکن است از دست برود
+            // برای اعداد بیش از 15 رقم، PHP float دقت ندارد
+            return $strValue; // برگرداندن همانطور که هست
+        }
+        
+        // اگر رشته فقط شامل ارقام است (بدون نقطه اعشار)
+        if (preg_match('/^\d+$/', $strValue)) {
+            // برگرداندن مستقیم رشته بدون تبدیل به float
+            Log::debug('✅ کد خانوار به صورت رشته عددی حفظ شد', [
+                'value' => $strValue,
+                'length' => strlen($strValue)
+            ]);
+            return $strValue;
+        }
+        
+        // اگر شامل نقطه اعشار است (مثل "20250929012138721.0")
+        if (preg_match('/^(\d+)\.0+$/', $strValue, $matches)) {
+            // حذف بخش اعشاری بدون تبدیل به float
+            $cleanValue = $matches[1];
+            
+            Log::debug('🧹 حذف اعشار اضافی از کد خانوار', [
+                'original' => $strValue,
+                'cleaned' => $cleanValue,
+                'length' => strlen($cleanValue)
+            ]);
+            
+            return $cleanValue;
+        }
+        
+        // اگر عددی است ولی فرمت دیگری دارد
+        if (is_numeric($strValue)) {
+            Log::warning('⚠️ کد خانوار فرمت غیرمنتظره دارد', [
+                'value' => $strValue,
+                'type' => gettype($value)
+            ]);
+        }
+        
+        // برای سایر موارد، فقط trim کن
+        return trim($strValue);
     }
 }

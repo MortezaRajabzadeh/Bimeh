@@ -152,6 +152,8 @@
                 stopPolling();
                 jobId = null;
                 clearFile();
+                // پاک کردن نتایج آپلود هنگام بسته شدن مودال
+                $wire.clearUploadResult();
             }
         });
     "
@@ -218,6 +220,83 @@
 
         <!-- Content -->
         <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <!-- Upload Result Display -->
+            <div x-show="$wire.showUploadResult" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 -translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 -translate-y-2"
+                 class="rounded-xl p-4 sm:p-5 border-2"
+                 :class="{
+                     'bg-red-50 border-red-300': $wire.uploadResultType === 'error',
+                     'bg-yellow-50 border-yellow-300': $wire.uploadResultType === 'warning', 
+                     'bg-green-50 border-green-300': $wire.uploadResultType === 'success',
+                     'bg-blue-50 border-blue-300': $wire.uploadResultType === 'info'
+                 }">
+                <div class="flex items-start space-x-3 space-x-reverse">
+                    <!-- Icon -->
+                    <div class="flex-shrink-0 mt-1">
+                        <svg x-show="$wire.uploadResultType === 'error'" class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <svg x-show="$wire.uploadResultType === 'warning'" class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <svg x-show="$wire.uploadResultType === 'success'" class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <svg x-show="$wire.uploadResultType === 'info'" class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Message Content -->
+                    <div class="flex-1 min-w-0">
+                        <div class="max-h-40 overflow-y-auto">
+                            <pre class="whitespace-pre-line text-sm sm:text-base font-medium leading-relaxed" 
+                                 :class="{
+                                     'text-red-800': $wire.uploadResultType === 'error',
+                                     'text-yellow-800': $wire.uploadResultType === 'warning',
+                                     'text-green-800': $wire.uploadResultType === 'success', 
+                                     'text-blue-800': $wire.uploadResultType === 'info'
+                                 }"
+                                 x-text="$wire.uploadResultMessage"></pre>
+                        </div>
+                        
+                        <!-- Action Button -->
+                        <div class="mt-4 flex flex-col sm:flex-row gap-3">
+                            <button wire:click="closeExcelUploadModal" 
+                                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                    :class="{
+                                        'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500': $wire.uploadResultType === 'error',
+                                        'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500': $wire.uploadResultType === 'warning',
+                                        'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500': $wire.uploadResultType === 'success',
+                                        'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500': $wire.uploadResultType === 'info'
+                                    }">
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                بستن و ادامه
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visual Separator for Upload Form -->
+            <div x-show="$wire.showUploadResult && ($wire.uploadResultType === 'error' || $wire.uploadResultType === 'warning')"
+                 x-transition
+                 class="relative">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="bg-white px-4 text-gray-500 font-medium">یا فایل اصلاح شده را آپلود کنید</span>
+                </div>
+            </div>
+            
             <!-- Info Box -->
             <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-5 border border-green-200">
                 <div class="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
@@ -293,7 +372,9 @@
                 </div>
             </div>
 
-            <!-- Upload Form -->
+            <!-- Upload Form (conditionally displayed) -->
+            <div x-show="!$wire.showUploadResult || $wire.uploadResultType === 'error' || $wire.uploadResultType === 'warning'"
+                 x-transition>
             <form wire:submit.prevent="{{ $uploadMethod }}" class="space-y-4 sm:space-y-6">
                 <!-- File Requirements -->
                 <div class="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-200">
@@ -433,6 +514,7 @@
                     </button>
                 </div>
             </form>
+            </div> <!-- End of conditional upload form container -->
 
             <!-- Footer -->
             <div class="flex justify-end pt-3 sm:pt-4 border-t border-gray-200">

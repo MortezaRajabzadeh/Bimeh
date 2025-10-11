@@ -86,5 +86,30 @@ class FamilyObserver
             Log::error('❌ Error logging admin edit for family ' . $family->id . ': ' . $e->getMessage());
             // ادامه اجرا حتی اگر لاگ ثبت نشد
         }
+        
+        // 🔄 تشخیص تغییرات فیلد is_insured و پاک کردن کش sidebar
+        if ($family->wasChanged('is_insured')) {
+            try {
+                Log::info('🔄 is_insured field changed, clearing sidebar cache', [
+                    'family_id' => $family->id,
+                    'old_value' => $family->getOriginal('is_insured'),
+                    'new_value' => $family->is_insured
+                ]);
+                
+                $statsService = app(\App\Services\SidebarStatsService::class);
+                $clearedCount = $statsService->clearStatsCache(clearAll: true);
+                
+                Log::info('✅ Sidebar cache cleared after is_insured change', [
+                    'family_id' => $family->id,
+                    'cleared_count' => $clearedCount
+                ]);
+            } catch (\Exception $e) {
+                Log::error('❌ Error clearing sidebar cache after is_insured change', [
+                    'family_id' => $family->id,
+                    'error' => $e->getMessage()
+                ]);
+                // ادامه اجرا حتی اگر کش پاک نشد
+            }
+        }
     }
 }

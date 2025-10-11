@@ -56,6 +56,13 @@ class FamiliesApproval extends Component
     public bool $showDeleteModal = false;
     public bool $showExcelUploadModal = false;
     public ?string $deleteReason = null;
+    public array $deleteReasons = [
+        'اطلاعات ناقص',
+        'تکراری',
+        'عدم احراز شرایط',
+        'مشکل در آدرس سکونت',
+        'سایر موارد'
+    ];
 
     public $cached_tab = null;
     public $is_loading = false;
@@ -1067,9 +1074,9 @@ private function getCriteriaWeights(): array
         if ($tab === 'pending') {
             $this->loadFamiliesByWizardStatus(InsuranceWizardStep::PENDING);
         } elseif ($tab === 'reviewing') {
-            $this->loadFamiliesByWizardStatus(InsuranceWizardStep::REVIEWING);
+            $this->loadFamiliesByWizardStatus([InsuranceWizardStep::REVIEWING, InsuranceWizardStep::SHARE_ALLOCATION]);
         } elseif ($tab === 'approved') {
-            $this->loadFamiliesByWizardStatus([InsuranceWizardStep::SHARE_ALLOCATION, InsuranceWizardStep::APPROVED, InsuranceWizardStep::EXCEL_UPLOAD]);
+            $this->loadFamiliesByWizardStatus(InsuranceWizardStep::APPROVED);
         } elseif ($tab === 'excel') {
             // تب excel باید خانواده‌های در انتظار صدور بیمه را نمایش دهد
             $this->loadFamiliesByWizardStatus(InsuranceWizardStep::EXCEL_UPLOAD);
@@ -1270,15 +1277,14 @@ private function getCriteriaWeights(): array
                     ->where('status', '!=', 'deleted');
                 break;
             case 'reviewing':
-                $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value)
-                    ->where('status', '!=', 'deleted');
+                $query->whereIn('wizard_status', [
+                    InsuranceWizardStep::REVIEWING->value,
+                    InsuranceWizardStep::SHARE_ALLOCATION->value
+                ])->where('status', '!=', 'deleted');
                 break;
             case 'approved':
-                $query->whereIn('wizard_status', [
-                    InsuranceWizardStep::SHARE_ALLOCATION->value,
-                    InsuranceWizardStep::APPROVED->value,
-                    InsuranceWizardStep::EXCEL_UPLOAD->value
-                ])->where('status', '!=', 'deleted');
+                $query->where('wizard_status', InsuranceWizardStep::APPROVED->value)
+                    ->where('status', '!=', 'deleted');
                 break;
             case 'excel':
                 $query->where('wizard_status', InsuranceWizardStep::EXCEL_UPLOAD->value)
@@ -1651,16 +1657,37 @@ private function getCriteriaWeights(): array
             // نمایش پیام موفقیت
             $this->handleSuccessfulUpload($result);
 
+            // 🔄 پاک کردن کش sidebar بعد از آپلود موفق
+            try {
+                Log::info('🔄 Clearing sidebar stats cache after Excel upload', [
+                    'processed_families' => $result['processed'] ?? 0
+                ]);
+                
+                $statsService = app(\App\Services\SidebarStatsService::class);
+                $clearedCount = $statsService->clearStatsCache(clearAll: true);
+                
+                Log::info('✅ Sidebar cache cleared successfully', [
+                    'cleared_count' => $clearedCount
+                ]);
+            } catch (\Exception $e) {
+                // خطای cache clearing نباید مانع از ادامه فرآیند شود
+                Log::warning('⚠️ Error clearing sidebar cache after Excel upload', [
+                    'error' => $e->getMessage()
+                ]);
+            }
+
             // پاک کردن فایل آپلود شده
             $this->reset('insuranceExcelFile');
 
-            // بستن مودال آپلود
-            $this->closeExcelUploadModal();
-
-            // بازگشت به تب excel برای نمایش خانواده‌های باقی‌مانده
-            $this->setTab('excel');
-            $this->clearFamiliesCache();
-            $this->dispatch('refreshFamiliesList');
+            // بستن مودال آپلود فقط اگر خطا وجود نداشته باشد
+            if (empty($result['errors']) || count($result['errors']) == 0) {
+                $this->closeExcelUploadModal();
+                
+                // بازگشت به تب excel برای نمایش خانواده‌های باقی‌مانده
+                $this->setTab('excel');
+                $this->clearFamiliesCache();
+                $this->dispatch('refreshFamiliesList');
+            }
 
             Log::info('🔄 Successfully redirected to excel tab after Excel upload');
 
@@ -1763,7 +1790,9 @@ private function getCriteriaWeights(): array
      */
     private function handleSuccessfulUpload(array $result): void
     {
-        $successMessage = "✅ عملیات ایمپورت با موفقیت انجام شد:\n";
+        // تعیین پیام بر اساس وجود خطا
+        $hasErrors = !empty($result['errors']);
+        $successMessage = $hasErrors ? "⚠️ عملیات ایمپورت با موفقیت جزئی انجام شد:\n" : "✅ عملیات ایمپورت با موفقیت کامل انجام شد:\n";
         $successMessage .= "🆕 رکوردهای جدید: {$result['created']}\n";
         $successMessage .= "🔄 رکوردهای به‌روزرسانی شده: {$result['updated']}\n";
         $successMessage .= "❌ خطاها: {$result['skipped']}\n";
@@ -1779,6 +1808,23 @@ private function getCriteriaWeights(): array
 
             // نمایش خطاها در flash message جداگانه
             session()->flash('warning', "جزئیات خطاها:\n" . implode("\n", array_slice($result['errors'], 0, 10)));
+            
+            // تنظیم خصوصیات نمایش نتیجه برای نمایش در مودال
+            $this->showUploadResult = true;
+            $this->uploadResultType = 'error';
+            
+            $errorMessage = "⚠️ برخی خانواده‌ها پردازش نشدند:\n\n";
+            $errorMessage .= "✅ رکوردهای جدید: {$result['created']}\n";
+            $errorMessage .= "🔄 رکوردهای به‌روزرسانی شده: {$result['updated']}\n";
+            $errorMessage .= "❌ خطاها: {$result['skipped']}\n\n";
+            $errorMessage .= "📋 جزئیات خطاها (تا ۱۰ مورد اول):\n";
+            $errorMessage .= implode("\n", array_slice($result['errors'], 0, 10));
+            if ($errorCount > 10) {
+                $errorMessage .= "\n... و " . ($errorCount - 10) . " خطای دیگر";
+            }
+            $errorMessage .= "\n\n💡 لطفاً فایل اکسل را اصلاح کرده و دوباره آپلود کنید یا این مودال را ببندید.";
+            
+            $this->uploadResultMessage = $errorMessage;
         }
 
         session()->flash('message', $successMessage);
@@ -1792,17 +1838,21 @@ private function getCriteriaWeights(): array
             'errors_count' => count($result['errors'])
         ]);
 
-        // نوتیفیکیشن toast برای نمایش سریع موفقیت
-        $toastMessage = "✅ آپلود موفق: {$result['created']} رکورد جدید، {$result['updated']} به‌روزرسانی";
+        // نوتیفیکیشن toast برای نمایش سریع نتیجه
+        $toastMessage = $hasErrors ? "⚠️ آپلود جزئی:" : "✅ آپلود موفق:";
+        $toastMessage .= " {$result['created']} جدید، {$result['updated']} به‌روزرسانی";
         if ($result['skipped'] > 0) {
             $toastMessage .= "، {$result['skipped']} خطا";
         }
-
-        $this->dispatch('toast', [
-            'message' => $toastMessage,
-            'type' => 'success',
-            'duration' => 12000
-        ]);
+        
+        // اگر خطا وجود دارد، toast مفصل نمایش نده (جزئیات در مودال نمایش داده می‌شود)
+        if (!$hasErrors) {
+            $this->dispatch('toast', [
+                'message' => $toastMessage,
+                'type' => 'success',
+                'duration' => 12000
+            ]);
+        }
 
         Log::info('✅ پیام موفقیت نمایش داده شد', [
             'created' => $result['created'],
@@ -4608,8 +4658,55 @@ public function clearCriteriaFilter()
                     $this->dispatch('refreshFamiliesList');
                 }
 
-                // Refresh the current tab's data
-                $this->setTab($this->activeTab, false); // false to not reset selections here, as we do it next
+                // تشخیص مرحله مقصد و تغییر خودکار به تب مناسب
+                if ($movedCount > 0) {
+                    // گرفتن اولین خانواده منتقل شده برای تشخیص مرحله مقصد
+                    $firstMovedFamily = Family::whereIn('id', $this->selected)->first();
+                    
+                    if ($firstMovedFamily) {
+                        $destinationStep = $firstMovedFamily->wizard_status;
+                        
+                        // تبدیل به enum اگر string باشد
+                        if (is_string($destinationStep)) {
+                            try {
+                                $destinationStep = InsuranceWizardStep::from($destinationStep);
+                            } catch (\ValueError $e) {
+                                $destinationStep = null;
+                            }
+                        }
+                        
+                        if ($destinationStep instanceof InsuranceWizardStep) {
+                            // تعیین تب مناسب بر اساس مرحله مقصد
+                            $targetTab = match($destinationStep) {
+                                InsuranceWizardStep::PENDING => 'pending',
+                                InsuranceWizardStep::REVIEWING, 
+                                InsuranceWizardStep::SHARE_ALLOCATION => 'reviewing',
+                                InsuranceWizardStep::APPROVED => 'approved',
+                                InsuranceWizardStep::EXCEL_UPLOAD => 'excel',
+                                InsuranceWizardStep::INSURED => 'insured',
+                                InsuranceWizardStep::RENEWAL => 'renewal',
+                                default => $this->activeTab
+                            };
+                            
+                            // اگر تب مقصد با تب فعلی متفاوت است، تغییر تب
+                            if ($targetTab !== $this->activeTab) {
+                                $this->changeTab($targetTab, false);
+                            } else {
+                                // فقط refresh تب فعلی
+                                $this->setTab($this->activeTab, false);
+                            }
+                        } else {
+                            // فقط refresh تب فعلی اگر نتوانستیم مرحله را تشخیص دهیم
+                            $this->setTab($this->activeTab, false);
+                        }
+                    } else {
+                        // fallback: refresh تب فعلی
+                        $this->setTab($this->activeTab, false);
+                    }
+                } else {
+                    // اگر هیچ خانواده‌ای منتقل نشد، فقط refresh
+                    $this->setTab($this->activeTab, false);
+                }
 
                 // Reset selections
                 $this->selected = [];
@@ -4649,6 +4746,7 @@ public function clearCriteriaFilter()
      */
     public function openExcelUploadModal()
     {
+        $this->clearUploadResult();  // پاک کردن نتایج قبلی
         $this->showExcelUploadModal = true;
         $this->dispatch('showExcelUploadModal');
         Log::info('✅ Excel upload modal should be shown now, showExcelUploadModal = true');
@@ -4659,6 +4757,7 @@ public function clearCriteriaFilter()
      */
     public function closeExcelUploadModal()
     {
+        $this->clearUploadResult();  // پاک کردن نتایج آپلود
         $this->showExcelUploadModal = false;
         $this->dispatch('closeExcelUploadModal');
         Log::info('🔒 Excel upload modal closed');
@@ -4683,11 +4782,32 @@ public function clearCriteriaFilter()
     public function closeDeleteModal()
     {
         $this->showDeleteModal = false;
+        $this->clearDeleteReason();
 
         // ارسال رویداد به جاوااسکریپت - استفاده از dispatch به جای dispatchBrowserEvent در Livewire 3
         $this->dispatch('closeDeleteModal');
 
         Log::info('🔒 Delete modal closed');
+    }
+
+    /**
+     * پاک کردن دلیل حذف
+     */
+    public function clearDeleteReason()
+    {
+        $this->deleteReason = null;
+        Log::info('🧹 Delete reason cleared');
+    }
+
+    /**
+     * پاک کردن نتیجه آپلود
+     */
+    public function clearUploadResult()
+    {
+        $this->showUploadResult = false;
+        $this->uploadResultMessage = '';
+        $this->uploadResultType = 'info';
+        Log::info('🧹 Upload result cleared');
     }
 
     /**
@@ -5065,6 +5185,15 @@ public function clearCriteriaFilter()
                     $headAcceptanceCriteria = $this->getMemberAcceptanceCriteria($family->head);
                     $headHasDocuments = $this->checkMemberHasDocuments($family->head);
 
+                    // لاگ اختیاری برای بررسی کیفیت داده‌ها (قابل غیرفعال کردن)
+                    Log::debug('📋 Exporting family data', [
+                        'family_id' => $family->id,
+                        'family_code' => $family->family_code,
+                        'family_code_length' => strlen($family->family_code),
+                        'head_national_id' => $family->head ? $family->head->national_code : null,
+                        'members_count' => $family->members->count()
+                    ]);
+
                     $excelData->push([
                         'family_code' => $family->family_code,
                         'head_name' => $family->head->first_name . ' ' . $family->head->last_name,
@@ -5261,6 +5390,71 @@ public function clearCriteriaFilter()
     }
 
     /**
+     * بررسی و تشخیص کدهای خانوار مشکوک در دیتابیس
+     *
+     * @return array
+     */
+    public function verifyFamilyCodes()
+    {
+        try {
+            // بررسی کدهای خانوار که طول آن‌ها کمتر از حد انتظار است (کمتر از 17 رقم برای کدهای timestamp-based)
+            $suspiciousFamilies = \App\Models\Family::where(function ($query) {
+                $query->whereRaw('family_code REGEXP "^[0-9]+$"') // فقط اعداد
+                      ->whereRaw('LENGTH(family_code) < ?', [17]); // طول کمتر از 17 رقم
+            })
+            ->select('id', 'family_code', \DB::raw('LENGTH(family_code) as code_length'))
+            ->limit(50) // محدود کردن نتایج برای جلوگیری از بارگذاری زیاد
+            ->get();
+
+            $report = [
+                'total_suspicious' => $suspiciousFamilies->count(),
+                'families' => $suspiciousFamilies->toArray(),
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ];
+
+            // لاگ کردن نتایج
+            if ($suspiciousFamilies->count() > 0) {
+                Log::warning('⚠️ کدهای خانوار مشکوک پیدا شد', [
+                    'count' => $suspiciousFamilies->count(),
+                    'families' => $suspiciousFamilies->pluck('id', 'family_code')->toArray(),
+                    'user_id' => \Auth::id()
+                ]);
+
+                // لاگ جزئیات هر خانواده
+                foreach ($suspiciousFamilies as $family) {
+                    Log::warning('⚠️ خانواده با کد خانوار مشکوک', [
+                        'family_id' => $family->id,
+                        'family_code' => $family->family_code,
+                        'actual_length' => $family->code_length,
+                        'expected_min_length' => 17
+                    ]);
+                }
+            } else {
+                Log::info('✅ هیچ کد خانوار مشکوکی پیدا نشد', [
+                    'user_id' => \Auth::id(),
+                    'check_timestamp' => now()
+                ]);
+            }
+
+            return $report;
+
+        } catch (\Exception $e) {
+            Log::error('❌ خطا در بررسی کدهای خانوار', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => \Auth::id()
+            ]);
+            
+            return [
+                'error' => $e->getMessage(),
+                'total_suspicious' => 0,
+                'families' => [],
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ];
+        }
+    }
+
+    /**
      * اعمال فیلتر wizard_status بر اساس تب انتخاب شده
      */
     protected function applyTabStatusFilter($query)
@@ -5275,7 +5469,10 @@ public function clearCriteriaFilter()
                     break;
 
                 case 'reviewing':
-                    $query->where('wizard_status', InsuranceWizardStep::REVIEWING->value);
+                    $query->whereIn('wizard_status', [
+                        InsuranceWizardStep::REVIEWING->value,
+                        InsuranceWizardStep::SHARE_ALLOCATION->value
+                    ]);
                     break;
 
                 case 'approved':

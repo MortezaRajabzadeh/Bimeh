@@ -267,7 +267,7 @@
         <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/min/moment.min.js"></script>
         <script type="text/javascript" src="https://unpkg.com/@majidh1/jalalidatepicker/dist/jalalidatepicker.min.js"></script>
-        @livewire('components.toast-notifications')
+        @livewire('components.toast-notifications', [])
         @stack('scripts')
     </body>
 </html>

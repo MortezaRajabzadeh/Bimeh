@@ -7,6 +7,7 @@
     downloading: false,
     showFilterModal: false,
     showRankModal: @entangle('showRankModal'),
+    showDeleteModal: @entangle('showDeleteModal'),
     filters: @entangle('tempFilters'),
     init() {
         // اطمینان از اینکه filters همیشه آرایه است
@@ -1610,101 +1611,90 @@ total items: {{ $families->count() ?? 0 }}</pre>
 
     {{-- مودال‌ها --}}
     <div>
-        <!-- مودال حذف خانواده - نسخه بدون Alpine -->
-        @if($showDeleteModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <!-- پس‌زمینه تاری -->
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true" wire:click="closeDeleteModal">
-                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-    </div>
+        <!-- مودال حذف خانواده با Alpine.js -->
+        <div 
+             x-cloak
+             x-show="showDeleteModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="modal-container fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-black bg-opacity-50"
+             style="backdrop-filter: blur(2px);"
+        >
+            <div 
+                x-cloak
+                x-show="showDeleteModal"
+                @click.away="showDeleteModal = false"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                class="modal-content bg-white rounded-lg p-8 max-w-md w-full mx-auto relative shadow-2xl"
+            >
+                {{-- Header --}}
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">حذف خانواده</h3>
+                    <button @click="showDeleteModal = false" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
 
-                <!-- این المان برای مرکز قرار دادن مودال استفاده می‌شود -->
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                {{-- Warning Message --}}
+                <div class="text-red-700 text-lg font-bold mb-3 flex items-center gap-3" dir="rtl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18M9 6v12M15 6v12M6 18h12" />
+                    </svg>
+                    <span>حذف {{ count($selected) }} خانواده انتخاب شده</span>
+                </div>
 
-                <!-- مودال -->
-                <div class="inline-block align-bottom bg-white rounded-lg text-right overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                {{-- Explanation Text --}}
+                <div class="text-gray-600 text-base leading-7 bg-red-50 p-4 rounded-lg mb-6" dir="rtl">
+                    با حذف خانواده‌ها، تمام اطلاعات بیمه مرتبط به آنها نیز حذف خواهند شد. لطفاً دلیل حذف را مشخص کنید و سپس عملیات حذف را تایید نمایید.
+                </div>
 
-                    <!-- سربرگ مودال -->
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <!-- دکمه بستن در گوشه بالا سمت چپ -->
-                        <button wire:click="closeDeleteModal" type="button" class="absolute top-3 left-3 text-gray-400 hover:text-gray-500">
-                            <span class="sr-only">بستن</span>
-                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
+                {{-- Delete Reason Dropdown --}}
+                <div class="mb-6">
+                    <label for="deleteReason" class="block mb-2 text-gray-700 font-semibold">دلیل حذف خانواده:</label>
+                    <select 
+                        id="deleteReason" 
+                        wire:model.defer="deleteReason"
+                        class="block w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        required
+                    >
+                        <option value="" disabled>انتخاب کنید</option>
+                        @foreach($deleteReasons as $reason)
+                            <option value="{{ $reason }}">{{ $reason }}</option>
+                        @endforeach
+                    </select>
+                    @error('deleteReason') <span class="text-red-600 text-sm mt-1">{{ $message }}</span> @enderror
+                </div>
 
-                        <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">حذف خانواده</h3>
-
-                        <div class="text-center text-xl text-red-500 font-bold mb-6">
-                            @if(count($selected) > 1)
-                                حذف {{ count($selected) }} خانواده ({{ $totalMembers }} نفر) مورد تایید است
-                            @else
-                                حذف این خانواده مورد تایید است
-                            @endif
-                        </div>
-
-                        <div class="text-gray-700 mb-6 leading-relaxed">
-                            حذف این خانواده ها به منزله بررسی و اطمینان از عدم تطابق آنها با معیار های سازمان شماست و
-                            پس از حذف این خانواده ها به قسمت "حذم شده ها" منتقل میشوند.
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                لطفا دلیل عدم تطابق را انتخاب کنید:
-                            </label>
-                            <select wire:model.defer="deleteReason" class="w-full border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 rounded-md shadow-sm py-2 px-3">
-                                <option value="">انتخاب کنید...</option>
-                                <option value="incomplete_info">اطلاعات ناقص</option>
-                                <option value="duplicate">تکراری</option>
-                                <option value="not_eligible">عدم احراز شرایط</option>
-                                <option value="address_problem">مشکل در آدرس سکونت</option>
-                                <option value="other">سایر موارد</option>
-                            </select>
-                            @error('deleteReason') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <!-- دکمه‌های اقدام -->
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse justify-between">
-                        <!-- دکمه حذف -->
-                        <div class="flex items-center gap-3">
-                            <button
-                                wire:click="deleteSelected"
-                                wire:loading.attr="disabled"
-                                wire:target="deleteSelected"
-                                type="button"
-                                class="inline-flex items-center justify-center px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
-
-                                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                                <span class="ml-2">حذف نهایی</span>
-                            </button>
-                            <span class="text-red-500 text-sm" x-show="deleteReason === ''">لطفا دلیل حذف را انتخاب کنید</span>
-                        </div>
-
-                        <!-- دکمه‌های سمت راست -->
-                        <div class="flex items-center gap-3">
-                            <button wire:click="clearDeleteReason" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                <span class="ml-2">پاک کردن</span>
-                            </button>
-                            <button wire:click="closeDeleteModal" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                                <span class="ml-2">بستن</span>
-                            </button>
-                        </div>
-                    </div>
+                {{-- Action Buttons --}}
+                <div class="flex flex-row-reverse gap-3">
+                    <button 
+                        wire:click="deleteSelected" 
+                        wire:loading.attr="disabled" 
+                        wire:target="deleteSelected"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-3 text-lg font-bold flex items-center justify-center gap-2 transition duration-200 ease-in-out"
+                    >
+                        حذف خانواده‌ها
+                        <svg wire:loading wire:target="deleteSelected" xmlns="http://www.w3.org/2000/svg" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                        </svg>
+                    </button>
+                    <button 
+                        @click="showDeleteModal = false" 
+                        class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg py-3 text-lg font-bold transition duration-200 ease-in-out"
+                    >
+                        انصراف
+                    </button>
                 </div>
             </div>
         </div>
-        @endif
     </div>
 
     {{-- مودال تخصیص سهم --}}

@@ -64,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
             return new RoleImpersonationService();
         });
         
+        // ثبت SidebarStatsService به صورت singleton
+        $this->app->singleton(SidebarStatsService::class, function ($app) {
+            return new SidebarStatsService();
+        });
+        
         // ثبت Repositoryها و Serviceهای گزارش مالی
         $this->app->bind(\App\Repositories\FundingTransactionRepository::class);
         $this->app->bind(\App\Repositories\InsuranceTransactionRepository::class);

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Exports;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -6,13 +7,19 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 /**
  * ???? Export ???????? ???? ????? ????
  * 
  * ??? ???? ?? ???? ???????? ??????? ?? ?? ???? ???? ????? ??????
  */
-class DynamicDataExport implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting, WithColumnWidths
+class DynamicDataExport extends DefaultValueBinder implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting, WithColumnWidths, WithStyles, WithCustomValueBinder
 {
     /**
      * ?????? ??????? ???? ?????
@@ -83,6 +90,13 @@ class DynamicDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             if ($value instanceof \App\Enums\InsuranceWizardStep) {
                 $value = $value->label();
             }
+            
+            // تبدیل اجباری به رشته برای ستون‌های کدی
+            if ((str_contains($key, 'national_code') || str_contains($key, 'family_code') || str_contains($key, 'household_code')) && !empty($value)) {
+                // تبدیل به رشته و حفظ تمام ارقام
+                $value = (string) $value;
+            }
+            
             $mappedRow[] = $value;
         }
         return $mappedRow;
@@ -97,11 +111,11 @@ class DynamicDataExport implements FromCollection, WithHeadings, WithMapping, Wi
         $formats = [];
         // ???? ???? ???????? ?? ??? ? ????? ???? ???? ???? ?????
         foreach ($this->dataKeys as $index => $key) {
-            if (str_contains($key, 'national_code')) {
+            if (str_contains($key, 'national_code') || str_contains($key, 'family_code') || str_contains($key, 'household_code')) {
                 // ????? ????? ?? ??? ???? ???? (0 -> A, 1 -> B, ...)
                 $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
                 // ????? ???? ?? ??? ?? ???? ?? ??? ?? ?? ????? ??? ?????
-                $formats[$columnLetter] = NumberFormat::FORMAT_TEXT;
+                $formats[$columnLetter] = '@'; // فرمت @ مستقیم برای TEXT
             }
         }
         return $formats;
@@ -122,5 +136,45 @@ class DynamicDataExport implements FromCollection, WithHeadings, WithMapping, Wi
             $widths[$columnLetter] = 20;
         }
         return $widths;
+    }
+
+    /**
+     * اعمال فرمت TEXT به ستون‌های حاوی اعداد طولانی
+     * این متد از تبدیل به نوتیشن علمی جلوگیری می‌کند
+     */
+    public function styles(Worksheet $sheet)
+    {
+        // اعمال فرمت TEXT به ستون‌های کدی
+        foreach ($this->dataKeys as $index => $key) {
+            if (str_contains($key, 'national_code') || str_contains($key, 'family_code') || str_contains($key, 'household_code')) {
+                $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index + 1);
+                // اعمال مستقیم فرمت TEXT بر کل ستون
+                $sheet->getStyle($columnLetter . ':' . $columnLetter)
+                      ->getNumberFormat()
+                      ->setFormatCode('@');
+            }
+        }
+
+        return [
+            // فرمت ردیف هدر (بولد)
+            1 => ['font' => ['bold' => true]],
+        ];
+    }
+
+    /**
+     * کنترل دستی نحوه ذخیره مقادیر در سلول‌ها
+     * این متد اجازه می‌دهد به صورت صریح نوع داده را تعیین کنیم
+     */
+    public function bindValue(Cell $cell, $value)
+    {
+        // بررسی اینکه آیا مقدار یک کد طولانی عددی است
+        if (is_string($value) && is_numeric($value) && strlen($value) > 10) {
+            // ذخیره به صورت صریح به عنوان STRING
+            $cell->setValueExplicit($value, DataType::TYPE_STRING);
+            return true;
+        }
+
+        // برای بقیه موارد از روش پیش‌فرض استفاده کن
+        return parent::bindValue($cell, $value);
     }
 }

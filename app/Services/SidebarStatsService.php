@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 class SidebarStatsService
 {
@@ -143,5 +144,99 @@ class SidebarStatsService
             'uninsuredMembers' => 0,
             'current_user_type' => null
         ];
+    }
+    
+    /**
+     * پاک کردن کش آمار sidebar
+     * 
+     * @param int|null $userId شناسه کاربر خاص برای پاک کردن کش آن کاربر
+     * @param string|null $userType نوع کاربر ('admin', 'charity', 'insurance') برای پاک کردن کش همه کاربران آن نوع
+     * @param bool $clearAll اگر true باشد، تمام کش‌های sidebar پاک می‌شوند
+     * @return int تعداد کلیدهای پاک شده
+     */
+    public function clearStatsCache(?int $userId = null, ?string $userType = null, bool $clearAll = false): int
+    {
+        try {
+            $clearedCount = 0;
+            $userTypes = ['admin', 'charity', 'insurance'];
+            
+            // سناریو 1: پاک کردن کش یک کاربر خاص
+            if ($userId !== null) {
+                foreach ($userTypes as $type) {
+                    $cacheKey = "sidebar_stats_{$userId}_{$type}";
+                    if (Cache::forget($cacheKey)) {
+                        $clearedCount++;
+                    }
+                }
+                
+                Log::info('Sidebar stats cache cleared', [
+                    'type' => 'user',
+                    'user_id' => $userId,
+                    'cleared_count' => $clearedCount
+                ]);
+                
+                return $clearedCount;
+            }
+            
+            // سناریو 2: پاک کردن کش یک نوع کاربر
+            if ($userType !== null) {
+                if (!in_array($userType, $userTypes)) {
+                    Log::warning('Invalid user type provided for cache clearing', ['user_type' => $userType]);
+                    return 0;
+                }
+                
+                $userIds = DB::table('users')
+                    ->where('user_type', $userType)
+                    ->pluck('id');
+                
+                foreach ($userIds as $id) {
+                    $cacheKey = "sidebar_stats_{$id}_{$userType}";
+                    if (Cache::forget($cacheKey)) {
+                        $clearedCount++;
+                    }
+                }
+                
+                Log::info('Sidebar stats cache cleared', [
+                    'type' => 'user_type',
+                    'user_type' => $userType,
+                    'cleared_count' => $clearedCount
+                ]);
+                
+                return $clearedCount;
+            }
+            
+            // سناریو 3: پاک کردن تمام کش‌های sidebar
+            if ($clearAll) {
+                $cachePrefix = config('cache.prefix', '');
+                $pattern = $cachePrefix ? "{$cachePrefix}:sidebar_stats_%" : "sidebar_stats_%";
+                
+                $clearedCount = DB::table('cache')
+                    ->where('key', 'like', $pattern)
+                    ->delete();
+                
+                Log::info('Sidebar stats cache cleared', [
+                    'type' => 'all',
+                    'cleared_count' => $clearedCount,
+                    'pattern' => $pattern
+                ]);
+                
+                return $clearedCount;
+            }
+            
+            // اگر هیچ پارامتری ارسال نشده، هیچ کاری انجام نمی‌دهیم
+            Log::warning('clearStatsCache called without parameters');
+            return 0;
+            
+        } catch (\Exception $e) {
+            Log::error('Error clearing sidebar stats cache', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $userId,
+                'user_type' => $userType,
+                'clear_all' => $clearAll
+            ]);
+            
+            throw $e;
+        }
     }
 }

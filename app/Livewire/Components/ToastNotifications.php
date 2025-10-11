@@ -93,9 +93,14 @@ class ToastNotifications extends Component
     /**
      * متد اصلی برای نمایش toast
      */
-    public function toast($data)
+    public function toast($data = null)
     {
         try {
+            // اگر داده خالی باشد، هیچ کاری انجام نده
+            if ($data === null) {
+                return;
+            }
+            
             // پردازش داده‌های ورودی
             if (is_string($data)) {
                 $this->addToast($data, 'success', 8000);
