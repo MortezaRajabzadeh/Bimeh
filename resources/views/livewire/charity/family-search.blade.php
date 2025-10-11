@@ -6,6 +6,7 @@
 <div x-data="{
         showFilterModal: false,
         showRankModal: @entangle('showRankModal'),
+        showExcelDropdown: false,
         filters: @entangle('tempFilters'),
         addFilter() {
             if (!this.filters) {
@@ -216,24 +217,83 @@
         <div class="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">لیست خانواده‌ها</h3>
             @if(isset($families) && $families->count() > 0)
-                <button type="button"
-                       wire:click="downloadPageExcel"
-                       wire:loading.attr="disabled"
-                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <div class="relative inline-block">
+                    <!-- دکمه اصلی دانلود اکسل -->
+                    <button type="button"
+                           @click="showExcelDropdown = !showExcelDropdown"
+                           wire:loading.attr="disabled"
+                           wire:target="downloadPageExcel,downloadAllExcel"
+                           class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-white border border-green-600 rounded-md hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
 
-                    <!-- آیکون لودینگ -->
-                    <svg wire:loading wire:target="downloadPageExcel" class="animate-spin -ml-1 mr-2 h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
-                    </svg>
+                        <!-- آیکون اکسل -->
+                        <svg class="h-4 w-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
 
-                    <!-- آیکون دانلود -->
-                    <svg wire:loading.remove wire:target="downloadPageExcel" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                        <span>دانلود اکسل</span>
 
-                    <span>دانلود اکسل</span>
-                </button>
+                        <!-- آیکون Chevron با انیمیشن چرخش -->
+                        <svg class="w-4 h-4 mr-2 transition-transform duration-200" :class="{'rotate-180': showExcelDropdown}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    <!-- منوی کشویی -->
+                    <div x-show="showExcelDropdown"
+                         @click.away="showExcelDropdown = false"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                         style="display: none;">
+                        <div class="py-1">
+                            <!-- گزینه 1: دانلود صفحه فعلی -->
+                            <button type="button"
+                                   wire:click="downloadPageExcel"
+                                   @click="showExcelDropdown = false"
+                                   wire:loading.attr="disabled"
+                                   wire:target="downloadPageExcel"
+                                   class="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>دانلود صفحه فعلی</span>
+                                <div class="flex items-center">
+                                    <!-- آیکون لودینگ برای دانلود صفحه -->
+                                    <svg wire:loading wire:target="downloadPageExcel" class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                                    </svg>
+                                    <!-- آیکون دانلود سند -->
+                                    <svg wire:loading.remove wire:target="downloadPageExcel" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                            </button>
+
+                            <!-- گزینه 2: دانلود همه نتایج -->
+                            <button type="button"
+                                   wire:click="downloadAllExcel"
+                                   @click="showExcelDropdown = false"
+                                   wire:loading.attr="disabled"
+                                   wire:target="downloadAllExcel"
+                                   class="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>دانلود همه نتایج</span>
+                                <div class="flex items-center">
+                                    <!-- آیکون لودینگ برای دانلود همه -->
+                                    <svg wire:loading wire:target="downloadAllExcel" class="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 0.879 5.824 2.339 8.021l2.66-1.73z"></path>
+                                    </svg>
+                                    <!-- آیکون دانلود پایگاه داده -->
+                                    <svg wire:loading.remove wire:target="downloadAllExcel" class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             @endif
         </div>
 

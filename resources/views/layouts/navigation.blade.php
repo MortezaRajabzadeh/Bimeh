@@ -307,49 +307,47 @@ use App\Models\ShareAllocationLog;
 
             <!-- اسکریپت برای به‌روزرسانی بودجه -->
             <script>
-                document.addEventListener('livewire:init', () => {
-                    Livewire.on('budget-updated', () => {
-                        // به‌روزرسانی بودجه با درخواست AJAX
-                        fetch('/api/budget/remaining')
-                            .then(response => response.json())
-                            .then(data => {
-                                const formatBudget = (number) => {
-                                    let result = '';
-                                    const billions = Math.floor(number / 1000000000);
-                                    const millions = Math.floor((number % 1000000000) / 1000000);
+                window.addEventListener('budget-updated', (event) => {
+                    // به‌روزرسانی بودجه با درخواست AJAX
+                    fetch('/api/budget/remaining')
+                        .then(response => response.json())
+                        .then(data => {
+                            const formatBudget = (number) => {
+                                let result = '';
+                                const billions = Math.floor(number / 1000000000);
+                                const millions = Math.floor((number % 1000000000) / 1000000);
 
-                                    if (billions > 0) {
-                                        result += billions.toLocaleString('fa-IR') + ' میلیارد';
-                                        if (millions > 0) {
-                                            result += ' و ' + millions.toLocaleString('fa-IR') + ' میلیون';
-                                        }
-                                    } else if (millions > 0) {
-                                        result = millions.toLocaleString('fa-IR') + ' میلیون';
-                                    } else {
-                                        result = number.toLocaleString('fa-IR');
+                                if (billions > 0) {
+                                    result += billions.toLocaleString('fa-IR') + ' میلیارد';
+                                    if (millions > 0) {
+                                        result += ' و ' + millions.toLocaleString('fa-IR') + ' میلیون';
                                     }
-
-                                    return result;
-                                };
-
-                                const formattedBudget = formatBudget(data.remaining_budget);
-                                
-                                // به‌روزرسانی نمایش دسکتاپ
-                                const desktopElement = document.getElementById('budget-amount-desktop');
-                                if (desktopElement) {
-                                    desktopElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
+                                } else if (millions > 0) {
+                                    result = millions.toLocaleString('fa-IR') + ' میلیون';
+                                } else {
+                                    result = number.toLocaleString('fa-IR');
                                 }
 
-                                // به‌روزرسانی نمایش موبایل
-                                const mobileElement = document.getElementById('budget-amount-mobile');
-                                if (mobileElement) {
-                                    mobileElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
-                                }
-                            })
-                            .catch(error => {
-                                console.error('خطا در به‌روزرسانی بودجه:', error);
-                            });
-                    });
+                                return result;
+                            };
+
+                            const formattedBudget = formatBudget(data.remaining_budget);
+                            
+                            // به‌روزرسانی نمایش دسکتاپ
+                            const desktopElement = document.getElementById('budget-amount-desktop');
+                            if (desktopElement) {
+                                desktopElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
+                            }
+
+                            // به‌روزرسانی نمایش موبایل
+                            const mobileElement = document.getElementById('budget-amount-mobile');
+                            if (mobileElement) {
+                                mobileElement.innerHTML = formattedBudget + ' <span class="text-2xl font-bold text-green-600">تومان</span>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('خطا در به‌روزرسانی بودجه:', error);
+                        });
                 });
             </script>
 

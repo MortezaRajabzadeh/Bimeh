@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use App\Models\FundingTransaction;
 use App\Models\InsuranceAllocation;
 use App\Models\InsuranceImportLog;
@@ -25,6 +26,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // API برای بودجه باقی‌مانده
 Route::get('/budget/remaining', function () {
+    Cache::forget('remaining_budget');
     $totalCredit = FundingTransaction::sum('amount');
     $totalDebit = InsuranceAllocation::sum('amount') +
                   InsuranceImportLog::sum('total_insurance_amount') +

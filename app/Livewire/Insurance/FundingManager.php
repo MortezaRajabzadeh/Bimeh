@@ -88,7 +88,7 @@ class FundingManager extends Component
         Cache::forget('family_allocations_with_relations');
         Cache::forget('insurance_allocations_with_family');
         // ارسال event برای به‌روزرسانی navigation
-        $this->dispatch('budget-updated');
+        $this->js('window.dispatchEvent(new CustomEvent("budget-updated"))');
     }
 
     public function addTransaction()

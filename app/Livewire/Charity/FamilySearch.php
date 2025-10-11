@@ -54,7 +54,7 @@ class FamilySearch extends Component
     public $province = '';
     public $city = '';
 
-    // اضافه کردن property های مورد نیاز برای فیلترهای جغرافیایی
+    // Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  property Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜ÂºÃ˜Â±Ã˜Â§Ã™ÂÃ›Å’Ã˜Â§Ã›Å’Ã›Å’
     public $province_id = null;
     public $city_id = null;
     public $district_id = null;
@@ -66,8 +66,8 @@ class FamilySearch extends Component
     public $family_rank_range = '';
     public $specific_criteria = '';
     public $availableRankSettings = [];
-    public $page = 1; // متغیر مورد نیاز برای پیجینیشن لیوایر
-    public $isEditingMode = false; // متغیر برای کنترل حالت ویرایش فرم
+    public $page = 1; // Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™Â¾Ã›Å’Ã˜Â¬Ã›Å’Ã™â€ Ã›Å’Ã˜Â´Ã™â€  Ã™â€žÃ›Å’Ã™Ë†Ã˜Â§Ã›Å’Ã˜Â±
+    public $isEditingMode = false; // Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ ÃšÂ©Ã™â€ Ã˜ÂªÃ˜Â±Ã™â€ž Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ˜Â±Ã™â€¦
 
     // Properties for editing family members
     public $editingMemberId = null;
@@ -90,18 +90,18 @@ class FamilySearch extends Component
     ];
     public $isCreatingNew = false;
 
-    // اضافه کردن پراپرتی‌های مورد نیاز
+    // Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™Â¾Ã˜Â±Ã˜Â§Ã™Â¾Ã˜Â±Ã˜ÂªÃ›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â²
     public $rankingSchemes = [];
     public $availableCriteria = [];
 
-    // پراپرتی‌های جدید سیستم رتبه‌بندی پویا
+    // Ã™Â¾Ã˜Â±Ã˜Â§Ã™Â¾Ã˜Â±Ã˜ÂªÃ›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â³Ã›Å’Ã˜Â³Ã˜ÂªÃ™â€¦ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Â¾Ã™Ë†Ã›Å’Ã˜Â§
     public $selectedSchemeId = null;
     public array $schemeWeights = [];
     public $newSchemeName = '';
     public $newSchemeDescription = '';
     public $appliedSchemeId = null;
 
-    // مدیریت فیلترهای پیشرفته
+    // Ã™â€¦Ã˜Â¯Ã›Å’Ã˜Â±Ã›Å’Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™Â¾Ã›Å’Ã˜Â´Ã˜Â±Ã™ÂÃ˜ÂªÃ™â€¡
     public $tempFilters = [];
     public $activeFilters = [];
     public $filters = [];
@@ -146,7 +146,7 @@ class FamilySearch extends Component
 
         } catch (\Exception $e) {
             Log::error('Error resetting filters: ' . $e->getMessage());
-            $this->dispatch('error', 'خطا در بازنشانی فیلترها');
+            $this->dispatch('error', 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§');
         }
     }
 
@@ -159,7 +159,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * حذف فیلتر از لیست فیلترهای موقت
+     * Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â§Ã˜Â² Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã™â€šÃ˜Âª
      * @param int $index
      * @return void
      */
@@ -167,13 +167,13 @@ class FamilySearch extends Component
     {
         if (isset($this->tempFilters[$index])) {
             unset($this->tempFilters[$index]);
-            // بازنویسی ایندکس‌ها برای حفظ ترتیب
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã™Ë†Ã›Å’Ã˜Â³Ã›Å’ Ã˜Â§Ã›Å’Ã™â€ Ã˜Â¯ÃšÂ©Ã˜Â³Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨
             $this->tempFilters = array_values($this->tempFilters);
 
-            // پاک کردن کش برای بارگیری مجدد نتایج
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã™â€ Ã˜ÂªÃ˜Â§Ã›Å’Ã˜Â¬
             $this->clearFamiliesCache();
 
-            Log::info('🗑️ Filter removed', [
+            Log::info('Ã°Å¸â€”â€˜Ã¯Â¸Â Filter removed', [
                 'index' => $index,
                 'remaining_filters_count' => count($this->tempFilters),
                 'user_id' => Auth::id()
@@ -185,14 +185,14 @@ class FamilySearch extends Component
     public $showRankModal = false;
     public $rankFilters = [];
 
-    // اضافه کردن متغیرهای فرم معیار جدید
+    // Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â±Ã™â€¦ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
     public $rankSettingName = '';
     public $rankSettingDescription = '';
     public $rankSettingWeight = 5;
     public $rankSettingColor = '#60A5FA';
     public $rankSettingNeedsDoc = true;
 
-    // متغیرهای مورد نیاز برای مودال رتبه‌بندی جدید
+    // Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
     public $selectedCriteria = [];
     public $criteriaRequireDocument = [];
 
@@ -248,40 +248,40 @@ class FamilySearch extends Component
             return Organization::where('type', 'charity')->orderBy('name')->get();
         });
 
-        // بارگذاری معیارهای رتبه‌بندی در ابتدای لود صفحه
+        // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¨Ã˜ÂªÃ˜Â¯Ã˜Â§Ã›Å’ Ã™â€žÃ™Ë†Ã˜Â¯ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡
         $this->loadRankSettings();
 
-        // مقداردهی اولیه متغیرهای رتبه‌بندی
+        // Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã™â€¡Ã›Å’ Ã˜Â§Ã™Ë†Ã™â€žÃ›Å’Ã™â€¡ Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
         $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
         $this->availableCriteria = \App\Models\RankSetting::where('is_active', true)->orderBy('sort_order')->get();
 
-        // مقداردهی اولیه فیلترهای مودالی - حتماً آرایه خالی
+        // Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã™â€¡Ã›Å’ Ã˜Â§Ã™Ë†Ã™â€žÃ›Å’Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€žÃ›Å’ - Ã˜Â­Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¹ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’
         $this->tempFilters = [];
         $this->activeFilters = [];
 
-        // مقداردهی اولیه فرم معیار جدید
+        // Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã™â€¡Ã›Å’ Ã˜Â§Ã™Ë†Ã™â€žÃ›Å’Ã™â€¡ Ã™ÂÃ˜Â±Ã™â€¦ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
         $this->resetRankSettingForm();
 
-        // اگر session موفقیت آپلود وجود دارد، کش را پاک کن
+        // Ã˜Â§ÃšÂ¯Ã˜Â± session Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¢Ã™Â¾Ã™â€žÃ™Ë†Ã˜Â¯ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã˜Å’ ÃšÂ©Ã˜Â´ Ã˜Â±Ã˜Â§ Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã™â€ 
         if (session('success') && session('results')) {
             $this->clearFamiliesCache();
             cache()->forget('families_query_' . Auth::id());
         }
 
-        // تست ارسال نوتیفیکیشن
+        // Ã˜ÂªÃ˜Â³Ã˜Âª Ã˜Â§Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ž Ã™â€ Ã™Ë†Ã˜ÂªÃ›Å’Ã™ÂÃ›Å’ÃšÂ©Ã›Å’Ã˜Â´Ã™â€ 
         $this->dispatch('notify', [
-            'message' => 'صفحه جستجوی خانواده‌ها با موفقیت بارگذاری شد',
+            'message' => 'Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë†Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â´Ã˜Â¯',
             'type' => 'success'
         ]);
     }
 
     /**
-     * پاک کردن کش جستجوی خانواده‌ها
+     * Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë†Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
      */
     public function clearFamiliesCache()
     {
         try {
-            // کش فعلی را پاک می‌کنیم
+            // ÃšÂ©Ã˜Â´ Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’ Ã˜Â±Ã˜Â§ Ã™Â¾Ã˜Â§ÃšÂ© Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã›Å’Ã™â€¦
             cache()->forget($this->getCacheKey());
 
         } catch (\Exception $e) {
@@ -290,7 +290,7 @@ class FamilySearch extends Component
     public function render()
     {
         try {
-            Log::debug('🎬 FamilySearch render started', [
+            Log::debug('Ã°Å¸Å½Â¬ FamilySearch render started', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'page' => $this->page,
@@ -299,28 +299,28 @@ class FamilySearch extends Component
                 'temp_filters' => $this->tempFilters
             ]);
 
-            // استفاده از کش برای بهبود عملکرد
+            // Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â² ÃšÂ©Ã˜Â´ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¨Ã™â€¡Ã˜Â¨Ã™Ë†Ã˜Â¯ Ã˜Â¹Ã™â€¦Ã™â€žÃšÂ©Ã˜Â±Ã˜Â¯
             $cacheKey = $this->getCacheKey();
 
             $families = Cache::remember($cacheKey, 300, function () {
                 $queryBuilder = $this->buildFamiliesQuery();
 
-                // لاگ SQL نهایی درست قبل از paginate
+                // Ã™â€žÃ˜Â§ÃšÂ¯ SQL Ã™â€ Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’ Ã˜Â¯Ã˜Â±Ã˜Â³Ã˜Âª Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã˜Â² paginate
                 $finalSql = $queryBuilder->toSql();
                 $finalBindings = $queryBuilder->getBindings();
-                Log::info('🔥 Final SQL before paginate', [
+                Log::info('Ã°Å¸â€Â¥ Final SQL before paginate', [
                     'sql' => $finalSql,
                     'bindings' => $finalBindings,
                     'count_query' => str_replace('select `families`.*', 'select count(*) as aggregate', $finalSql)
                 ]);
 
-                // اطمینان از paginate فقط روی QueryBuilder/Eloquent
+                // Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² paginate Ã™ÂÃ™â€šÃ˜Â· Ã˜Â±Ã™Ë†Ã›Å’ QueryBuilder/Eloquent
                 if ($queryBuilder instanceof \Illuminate\Database\Eloquent\Builder ||
                     $queryBuilder instanceof \Illuminate\Database\Eloquent\Relations\Relation ||
                     $queryBuilder instanceof \Spatie\QueryBuilder\QueryBuilder) {
-                    // تعداد رکوردها را بررسی کن
+                    // Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â±ÃšÂ©Ã™Ë†Ã˜Â±Ã˜Â¯Ã™â€¡Ã˜Â§ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ ÃšÂ©Ã™â€ 
                     $count = $queryBuilder->count();
-                    Log::info('📊 Total records found', [
+                    Log::info('Ã°Å¸â€œÅ  Total records found', [
                         'count' => $count,
                         'with_filters' => $this->hasActiveFilters(),
                         'filters' => $this->activeFilters
@@ -328,7 +328,7 @@ class FamilySearch extends Component
 
                     return $queryBuilder->paginate($this->perPage);
                 } else {
-                    // ایجاد paginator خالی برای Collection ها
+                    // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ paginator Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Collection Ã™â€¡Ã˜Â§
                     return new LengthAwarePaginator(
                         collect([]),  // items
                         0,           // total
@@ -342,8 +342,8 @@ class FamilySearch extends Component
                 }
             });
 
-            // لاگ برای دیباگ فیلتر
-            Log::info('🎬 Rendering view with families', [
+            // Ã™â€žÃ˜Â§ÃšÂ¯ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¯Ã›Å’Ã˜Â¨Ã˜Â§ÃšÂ¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
+            Log::info('Ã°Å¸Å½Â¬ Rendering view with families', [
                 'total_items' => $families->total(),
                 'current_page' => $families->currentPage(),
                 'per_page' => $families->perPage(),
@@ -357,7 +357,7 @@ class FamilySearch extends Component
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error in FamilySearch render', [
+            Log::error('Ã¢ÂÅ’ Error in FamilySearch render', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'search' => $this->search,
@@ -365,7 +365,7 @@ class FamilySearch extends Component
                 'user_id' => Auth::id()
             ]);
 
-            // بازگشت به نمایش خالی در صورت خطا
+            // Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª Ã˜Â¨Ã™â€¡ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã˜Â¯Ã˜Â± Ã˜ÂµÃ™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â·Ã˜Â§
             $emptyPaginator = new LengthAwarePaginator(
                 collect([]),  // items
                 0,           // total
@@ -385,7 +385,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * دریافت تعداد کل اعضای خانواده‌های صفحه فعلی
+     * Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ ÃšÂ©Ã™â€ž Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’
      *
      * @return int
      */
@@ -406,7 +406,7 @@ class FamilySearch extends Component
 
             return $families->sum('members_count');
         } catch (\Exception $e) {
-            Log::error('❌ Error calculating total members in current page', [
+            Log::error('Ã¢ÂÅ’ Error calculating total members in current page', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id()
             ]);
@@ -417,14 +417,14 @@ class FamilySearch extends Component
     public function updatingSearch()
     {
         $this->resetPage();
-        // پاک کردن کش هنگام تغییر فیلترها
+        // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã™â€¡Ã™â€ ÃšÂ¯Ã˜Â§Ã™â€¦ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§
         $this->clearFamiliesCache();
     }
 
     public function updatingStatus()
     {
         $this->resetPage();
-        // پاک کردن کش هنگام تغییر فیلترها
+        // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã™â€¡Ã™â€ ÃšÂ¯Ã˜Â§Ã™â€¦ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§
         $this->clearFamiliesCache();
     }
 
@@ -470,7 +470,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * رفتن به صفحه بعدی
+     * Ã˜Â±Ã™ÂÃ˜ÂªÃ™â€  Ã˜Â¨Ã™â€¡ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã˜Â¨Ã˜Â¹Ã˜Â¯Ã›Å’
      * @return void
      */
     public function nextPage()
@@ -480,7 +480,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * رفتن به صفحه قبلی
+     * Ã˜Â±Ã™ÂÃ˜ÂªÃ™â€  Ã˜Â¨Ã™â€¡ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã™â€šÃ˜Â¨Ã™â€žÃ›Å’
      * @return void
      */
     public function previousPage()
@@ -490,7 +490,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * رفتن به صفحه مشخص
+     * Ã˜Â±Ã™ÂÃ˜ÂªÃ™â€  Ã˜Â¨Ã™â€¡ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ
      * @param int $page
      * @return void
      */
@@ -501,19 +501,19 @@ class FamilySearch extends Component
     }
 
     /**
-     * ساخت کوئری خانواده‌ها با استفاده از QueryBuilder
+     * Ã˜Â³Ã˜Â§Ã˜Â®Ã˜Âª ÃšÂ©Ã™Ë†Ã˜Â¦Ã˜Â±Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â§ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â² QueryBuilder
      * @return \Spatie\QueryBuilder\QueryBuilder
      */
     protected function buildFamiliesQuery()
     {
         try {
-            Log::debug('🏗️ Building FamilySearch QueryBuilder', [
+            Log::debug('Ã°Å¸Ââ€”Ã¯Â¸Â Building FamilySearch QueryBuilder', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'has_active_filters' => $this->hasActiveFilters()
             ]);
 
-            // ساخت base query با relations مورد نیاز
+            // Ã˜Â³Ã˜Â§Ã˜Â®Ã˜Âª base query Ã˜Â¨Ã˜Â§ relations Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â²
             $baseQuery = Family::query()
                 ->with([
                     'province',
@@ -532,7 +532,7 @@ class FamilySearch extends Component
                 ->withCount('members')
                 ->groupBy('families.id');
 
-            // فیلترهای مجاز برای QueryBuilder
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ QueryBuilder
             $allowedFilters = [
                 AllowedFilter::exact('family_code'),
                 AllowedFilter::exact('status'),
@@ -544,18 +544,18 @@ class FamilySearch extends Component
                 AllowedFilter::exact('charity_id'),
                 AllowedFilter::exact('wizard_status'),
                 AllowedFilter::exact('is_insured'),
-                // فیلتر سفارشی رتبه‌بندی و وزن‌دهی
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â³Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â´Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Ë† Ã™Ë†Ã˜Â²Ã™â€ Ã¢â‚¬Å’Ã˜Â¯Ã™â€¡Ã›Å’
                 AllowedFilter::custom('ranking', new FamilyRankingFilter()),
                 AllowedFilter::exact('ranking_scheme'),
                 AllowedFilter::exact('ranking_weights'),
-                // فیلتر برای جستجوی نام سرپرست
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë†Ã›Å’ Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª
                 AllowedFilter::callback('head_name', function ($query, $value) {
                     $query->whereHas('head', function ($q) use ($value) {
                         $q->where('first_name', 'like', "%{$value}%")
                           ->orWhere('last_name', 'like', "%{$value}%");
                     });
                 }),
-                // فیلتر تعداد اعضا
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§
                 AllowedFilter::callback('members_count', function ($query, $value) {
                     if (str_contains($value, '-')) {
                         [$min, $max] = explode('-', $value);
@@ -564,7 +564,7 @@ class FamilySearch extends Component
                         $query->havingRaw('members_count = ?', [$value]);
                     }
                 }),
-                // فیلتر رتبه محاسبه شده
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
                 AllowedFilter::callback('calculated_rank_range', function ($query, $value) {
                     if (str_contains($value, '-')) {
                         [$min, $max] = explode('-', $value);
@@ -573,7 +573,7 @@ class FamilySearch extends Component
                         $query->where('calculated_rank', '>=', $value);
                     }
                 }),
-                // فیلتر محدوده تاریخ عضویت
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã˜Â­Ã˜Â¯Ã™Ë†Ã˜Â¯Ã™â€¡ Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â® Ã˜Â¹Ã˜Â¶Ã™Ë†Ã›Å’Ã˜Âª
                 AllowedFilter::callback('created_from', function ($query, $value) {
                     $query->where('families.created_at', '>=', $value);
                 }),
@@ -582,7 +582,7 @@ class FamilySearch extends Component
                 }),
             ];
 
-            // سورت‌های مجاز
+            // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜ÂªÃ¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â§Ã˜Â²
             $allowedSorts = [
                 AllowedSort::field('created_at', 'families.created_at'),
                 AllowedSort::field('updated_at', 'families.updated_at'),
@@ -591,9 +591,9 @@ class FamilySearch extends Component
                 AllowedSort::field('wizard_status', 'families.wizard_status'),
                 AllowedSort::field('members_count', 'members_count'),
                 AllowedSort::field('calculated_rank', 'families.calculated_rank'),
-                // سورت سفارشی رتبه‌بندی وزن‌دار
+                // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â³Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â´Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Ë†Ã˜Â²Ã™â€ Ã¢â‚¬Å’Ã˜Â¯Ã˜Â§Ã˜Â±
                 AllowedSort::custom('weighted_rank', new RankingSort()),
-                // سورت بر اساس نام سرپرست خانوار
+                // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â±
                 AllowedSort::callback('head_name', function ($query, $descending) {
                     $direction = $descending ? 'desc' : 'asc';
                     $query->leftJoin('people as head_person', 'families.head_id', '=', 'head_person.id')
@@ -602,19 +602,19 @@ class FamilySearch extends Component
                 }),
             ];
 
-            // ساخت QueryBuilder
+            // Ã˜Â³Ã˜Â§Ã˜Â®Ã˜Âª QueryBuilder
             $queryBuilder = QueryBuilder::for($baseQuery)
                 ->allowedFilters($allowedFilters)
                 ->allowedSorts($allowedSorts);
-                // ->defaultSort('families.created_at'); // حذف چون در applyComponentFilters هم sort اعمال می‌شود
+                // ->defaultSort('families.created_at'); // Ã˜Â­Ã˜Â°Ã™Â Ãšâ€ Ã™Ë†Ã™â€  Ã˜Â¯Ã˜Â± applyComponentFilters Ã™â€¡Ã™â€¦ sort Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â´Ã™Ë†Ã˜Â¯
 
-            // اعمال فیلترهای کامپوننت
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª
             $this->applyComponentFilters($queryBuilder);
 
-            // اعمال فیلترهای مودال
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
             $queryBuilder = $this->convertModalFiltersToQueryBuilder($queryBuilder);
 
-            // لاگ SQL برای debug
+            // Ã™â€žÃ˜Â§ÃšÂ¯ SQL Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ debug
             $sql = $queryBuilder->toSql();
             $bindings = $queryBuilder->getBindings();
 
@@ -630,7 +630,7 @@ class FamilySearch extends Component
             return $queryBuilder;
 
         } catch (\Exception $e) {
-            Log::error('❌ Error in FamilySearch buildFamiliesQuery', [
+            Log::error('Ã¢ÂÅ’ Error in FamilySearch buildFamiliesQuery', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'error' => $e->getMessage(),
@@ -638,7 +638,7 @@ class FamilySearch extends Component
                 'user_id' => Auth::id()
             ]);
 
-            // بازگشت به query ساده در صورت خطا
+            // Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª Ã˜Â¨Ã™â€¡ query Ã˜Â³Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜ÂµÃ™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â·Ã˜Â§
             return Family::query()
                 ->with([
                     'province', 'city', 'district', 'region', 'organization', 'charity',
@@ -651,21 +651,21 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال فیلترهای کامپوننت به QueryBuilder
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã˜Â¨Ã™â€¡ QueryBuilder
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @return void
      */
     protected function applyComponentFilters($queryBuilder)
     {
         try {
-            Log::debug('🎛️ Applying FamilySearch component filters', [
+            Log::debug('Ã°Å¸Å½â€ºÃ¯Â¸Â Applying FamilySearch component filters', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'province' => $this->province,
                 'city' => $this->city
             ]);
 
-            // فیلتر جستجوی عمومی - جستجو در تمام فیلدهای خانواده و اعضا
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë†Ã›Å’ Ã˜Â¹Ã™â€¦Ã™Ë†Ã™â€¦Ã›Å’ - Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë† Ã˜Â¯Ã˜Â± Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã™Ë† Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§
             if (!empty($this->search)) {
                 $queryBuilder->where(function ($query) {
                     $query->where('family_code', 'like', '%' . $this->search . '%')
@@ -705,10 +705,10 @@ class FamilySearch extends Component
                               $charityQuery->where('name', 'like', '%' . $this->search . '%');
                           });
                 });
-                Log::debug('✅ Enhanced search filter applied', ['search' => $this->search]);
+                Log::debug('Ã¢Å“â€¦ Enhanced search filter applied', ['search' => $this->search]);
             }
 
-            // فیلتر وضعیت
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™Ë†Ã˜Â¶Ã˜Â¹Ã›Å’Ã˜Âª
             if (!empty($this->status)) {
                 if ($this->status === 'insured') {
                     $queryBuilder->where(function($q) {
@@ -720,36 +720,36 @@ class FamilySearch extends Component
                                  ->where('status', '!=', 'insured');
                 } elseif ($this->status === 'special_disease') {
                     $queryBuilder->whereHas('members', function($q) {
-                        // جستجو با تمام مقادیر ممکن (فارسی و انگلیسی)
-                        $q->whereJsonContains('problem_type', 'بیماری های خاص')
-                          ->orWhereJsonContains('problem_type', 'بیماری خاص')
+                        // Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë† Ã˜Â¨Ã˜Â§ Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™â€¦Ã™â€¦ÃšÂ©Ã™â€  (Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â³Ã›Å’ Ã™Ë† Ã˜Â§Ã™â€ ÃšÂ¯Ã™â€žÃ›Å’Ã˜Â³Ã›Å’)
+                        $q->whereJsonContains('problem_type', 'Ã˜Â¨Ã›Å’Ã™â€¦Ã˜Â§Ã˜Â±Ã›Å’ Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã˜Âµ')
+                          ->orWhereJsonContains('problem_type', 'Ã˜Â¨Ã›Å’Ã™â€¦Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â®Ã˜Â§Ã˜Âµ')
                           ->orWhereJsonContains('problem_type', 'special_disease')
                           ->orWhereJsonContains('problem_type', 'addiction')
-                          ->orWhereJsonContains('problem_type', 'اعتیاد')
+                          ->orWhereJsonContains('problem_type', 'Ã˜Â§Ã˜Â¹Ã˜ÂªÃ›Å’Ã˜Â§Ã˜Â¯')
                           ->orWhereJsonContains('problem_type', 'work_disability')
-                          ->orWhereJsonContains('problem_type', 'از کار افتادگی')
+                          ->orWhereJsonContains('problem_type', 'Ã˜Â§Ã˜Â² ÃšÂ©Ã˜Â§Ã˜Â± Ã˜Â§Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â¯ÃšÂ¯Ã›Å’')
                           ->orWhereJsonContains('problem_type', 'unemployment')
-                          ->orWhereJsonContains('problem_type', 'بیکاری');
+                          ->orWhereJsonContains('problem_type', 'Ã˜Â¨Ã›Å’ÃšÂ©Ã˜Â§Ã˜Â±Ã›Å’');
                     });
                 } else {
                     $queryBuilder->where('status', $this->status);
                 }
-                Log::debug('✅ Status filter applied', ['status' => $this->status]);
+                Log::debug('Ã¢Å“â€¦ Status filter applied', ['status' => $this->status]);
             }
 
-            // فیلتر استان
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€ 
             if (!empty($this->province)) {
                 $queryBuilder->where('province_id', $this->province);
-                Log::debug('✅ Province filter applied', ['province' => $this->province]);
+                Log::debug('Ã¢Å“â€¦ Province filter applied', ['province' => $this->province]);
             }
 
-            // فیلتر شهر
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â´Ã™â€¡Ã˜Â±
             if (!empty($this->city)) {
                 $queryBuilder->where('city_id', $this->city);
-                Log::debug('✅ City filter applied', ['city' => $this->city]);
+                Log::debug('Ã¢Å“â€¦ City filter applied', ['city' => $this->city]);
             }
 
-            // فیلتر رتبه محرومیت استان
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â­Ã˜Â±Ã™Ë†Ã™â€¦Ã›Å’Ã˜Âª Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€ 
             if (!empty($this->deprivation_rank)) {
                 $queryBuilder->whereHas('province', function ($q) {
                     switch ($this->deprivation_rank) {
@@ -764,10 +764,10 @@ class FamilySearch extends Component
                             break;
                     }
                 });
-                Log::debug('✅ Deprivation rank filter applied', ['deprivation_rank' => $this->deprivation_rank]);
+                Log::debug('Ã¢Å“â€¦ Deprivation rank filter applied', ['deprivation_rank' => $this->deprivation_rank]);
             }
 
-            // فیلتر بازه رتبه محرومیت خانواده
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€¡ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â­Ã˜Â±Ã™Ë†Ã™â€¦Ã›Å’Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
             if (!empty($this->family_rank_range)) {
                 switch ($this->family_rank_range) {
                     case 'very_high':
@@ -791,47 +791,47 @@ class FamilySearch extends Component
                                      ->where('calculated_rank', '<', 20);
                         break;
                 }
-                Log::debug('✅ Family rank range filter applied', ['family_rank_range' => $this->family_rank_range]);
+                Log::debug('Ã¢Å“â€¦ Family rank range filter applied', ['family_rank_range' => $this->family_rank_range]);
             }
 
-            // فیلتر معیار خاص (اصلاح شده مانند FamiliesApproval)
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â®Ã˜Â§Ã˜Âµ (Ã˜Â§Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã™â€¦Ã˜Â§Ã™â€ Ã™â€ Ã˜Â¯ FamiliesApproval)
             if (!empty($this->specific_criteria)) {
                 $criteriaIds = array_map('trim', explode(',', $this->specific_criteria));
-                // اگر مقدار رشته‌ای است (مثلاً نام معیار)، آن را به id تبدیل کن
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡Ã¢â‚¬Å’Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â³Ã˜Âª (Ã™â€¦Ã˜Â«Ã™â€žÃ˜Â§Ã™â€¹ Ã™â€ Ã˜Â§Ã™â€¦ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±)Ã˜Å’ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡ id Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž ÃšÂ©Ã™â€ 
                 if (!is_numeric($criteriaIds[0])) {
                     $criteriaIds = \App\Models\RankSetting::whereIn('name', $criteriaIds)->pluck('id')->toArray();
                 }
                 if (!empty($criteriaIds)) {
                     $rankSettingNames = \App\Models\RankSetting::whereIn('id', $criteriaIds)->pluck('name')->toArray();
                     $queryBuilder->where(function($q) use ($criteriaIds, $rankSettingNames) {
-                        // سیستم جدید: family_criteria
+                        // Ã˜Â³Ã›Å’Ã˜Â³Ã˜ÂªÃ™â€¦ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯: family_criteria
                         $q->whereHas('familyCriteria', function($subquery) use ($criteriaIds) {
                             $subquery->whereIn('rank_setting_id', $criteriaIds)
                                      ->where('has_criteria', true);
                         });
-                        // سیستم قدیمی: rank_criteria
+                        // Ã˜Â³Ã›Å’Ã˜Â³Ã˜ÂªÃ™â€¦ Ã™â€šÃ˜Â¯Ã›Å’Ã™â€¦Ã›Å’: rank_criteria
                         foreach ($rankSettingNames as $name) {
                             $q->orWhere('rank_criteria', 'LIKE', '%' . $name . '%');
                         }
                     });
-                    Log::debug('✅ Specific criteria filter applied (by id)', ['criteria_ids' => $criteriaIds]);
+                    Log::debug('Ã¢Å“â€¦ Specific criteria filter applied (by id)', ['criteria_ids' => $criteriaIds]);
                 }
             }
 
-            // فیلتر خیریه معرف
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡ Ã™â€¦Ã˜Â¹Ã˜Â±Ã™Â
             if (!empty($this->charity)) {
                 $queryBuilder->where('charity_id', $this->charity);
-                Log::debug('✅ Charity filter applied', ['charity' => $this->charity]);
+                Log::debug('Ã¢Å“â€¦ Charity filter applied', ['charity' => $this->charity]);
             }
 
-            // اعمال سورت
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª
             if (!empty($this->sortField) && !empty($this->sortDirection)) {
                 $validSorts = ['created_at', 'updated_at', 'family_code', 'status', 'wizard_status', 'members_count', 'head_name'];
                 if (in_array($this->sortField, $validSorts)) {
                     $direction = in_array($this->sortDirection, ['asc', 'desc']) ? $this->sortDirection : 'desc';
 
                     if ($this->sortField === 'head_name') {
-                        // سورت خاص برای نام سرپرست
+                        // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â§Ã˜Âµ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª
                         $queryBuilder->leftJoin('people as head_person', 'families.head_id', '=', 'head_person.id')
                                      ->orderBy('head_person.first_name', $direction)
                                      ->orderBy('head_person.last_name', $direction);
@@ -840,7 +840,7 @@ class FamilySearch extends Component
                         $queryBuilder->orderBy($fieldName, $direction);
                     }
 
-                    Log::debug('🔧 Component sort applied', [
+                    Log::debug('Ã°Å¸â€Â§ Component sort applied', [
                         'sort_field' => $this->sortField,
                         'sort_direction' => $direction
                     ]);
@@ -848,7 +848,7 @@ class FamilySearch extends Component
             }
 
         } catch (\Exception $e) {
-            Log::error('❌ Error applying FamilySearch component filters', [
+            Log::error('Ã¢ÂÅ’ Error applying FamilySearch component filters', [
                 'search' => $this->search,
                 'status' => $this->status,
                 'error' => $e->getMessage(),
@@ -858,44 +858,44 @@ class FamilySearch extends Component
     }
 
     /**
-     * تبدیل فیلترهای مودال به QueryBuilder constraints با پشتیبانی از عملگرهای AND/OR
+     * Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã˜Â¨Ã™â€¡ QueryBuilder constraints Ã˜Â¨Ã˜Â§ Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã˜Â¹Ã™â€¦Ã™â€žÃšÂ¯Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ AND/OR
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @return \Spatie\QueryBuilder\QueryBuilder
      */
     protected function convertModalFiltersToQueryBuilder($queryBuilder)
     {
         try {
-            // استفاده از activeFilters که توسط متد applyFilters قدیمی پر شده
+            // Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â² activeFilters ÃšÂ©Ã™â€¡ Ã˜ÂªÃ™Ë†Ã˜Â³Ã˜Â· Ã™â€¦Ã˜ÂªÃ˜Â¯ applyFilters Ã™â€šÃ˜Â¯Ã›Å’Ã™â€¦Ã›Å’ Ã™Â¾Ã˜Â± Ã˜Â´Ã˜Â¯Ã™â€¡
             $modalFilters = $this->activeFilters ?? $this->tempFilters ?? $this->filters ?? [];
 
             if (empty($modalFilters)) {
                 return $queryBuilder;
             }
 
-            Log::debug('🎯 Converting FamilySearch modal filters to QueryBuilder with AND/OR logic', [
+            Log::debug('Ã°Å¸Å½Â¯ Converting FamilySearch modal filters to QueryBuilder with AND/OR logic', [
                 'filters_count' => count($modalFilters),
                 'raw_filters' => $modalFilters,
                 'user_id' => Auth::id()
             ]);
 
-            // جداسازی فیلترها بر اساس عملگر منطقی
+            // Ã˜Â¬Ã˜Â¯Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â¹Ã™â€¦Ã™â€žÃšÂ¯Ã˜Â± Ã™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ›Å’
             $andFilters = [];
             $orFilters = [];
 
             foreach ($modalFilters as $filter) {
-                // بررسی اعتبار فیلتر
+                // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã˜Â¹Ã˜ÂªÃ˜Â¨Ã˜Â§Ã˜Â± Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
                 if (empty($filter['type'])) {
                     continue;
                 }
 
                 $operator = $filter['operator'] ?? 'and';
 
-                // برای exists و not_exists نیازی به value نداریم
+                // Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ exists Ã™Ë† not_exists Ã™â€ Ã›Å’Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â¨Ã™â€¡ value Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã™â€¦
                 if ($operator !== 'exists' && $operator !== 'not_exists' && empty($filter['value'])) {
                     continue;
                 }
 
-                // تعیین نوع شرط منطقی
+                // Ã˜ÂªÃ˜Â¹Ã›Å’Ã›Å’Ã™â€  Ã™â€ Ã™Ë†Ã˜Â¹ Ã˜Â´Ã˜Â±Ã˜Â· Ã™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ›Å’
                 if ($operator === 'or') {
                     $orFilters[] = $filter;
                 } else {
@@ -903,32 +903,32 @@ class FamilySearch extends Component
                 }
             }
 
-            Log::debug('🔍 Final processed filters', [
+            Log::debug('Ã°Å¸â€Â Final processed filters', [
                 'and_filters' => $andFilters,
                 'or_filters' => $orFilters,
                 'user_id' => Auth::id()
             ]);
 
-            // **بررسی و پردازش فیلترهای special_disease چندگانه با AND logic**
+            // **Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã™Ë† Ã™Â¾Ã˜Â±Ã˜Â¯Ã˜Â§Ã˜Â²Ã˜Â´ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ special_disease Ãšâ€ Ã™â€ Ã˜Â¯ÃšÂ¯Ã˜Â§Ã™â€ Ã™â€¡ Ã˜Â¨Ã˜Â§ AND logic**
             $queryBuilder = $this->applySpecialDiseaseAndLogic($queryBuilder, $andFilters);
 
-            // اعمال فیلترهای AND غیر special_disease
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ AND Ã˜ÂºÃ›Å’Ã˜Â± special_disease
             foreach ($andFilters as $filter) {
-                if (!in_array($filter['type'], ['special_disease', 'معیار پذیرش'])) {
-                    Log::debug('🔧 Applying AND filter', ['filter' => $filter]);
+                if (!in_array($filter['type'], ['special_disease', 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´'])) {
+                    Log::debug('Ã°Å¸â€Â§ Applying AND filter', ['filter' => $filter]);
                     $queryBuilder = $this->applySingleFilter($queryBuilder, $filter, 'and');
                 }
             }
 
-            // اعمال فیلترهای OR در یک گروه
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ OR Ã˜Â¯Ã˜Â± Ã›Å’ÃšÂ© ÃšÂ¯Ã˜Â±Ã™Ë†Ã™â€¡
             if (!empty($orFilters)) {
                 $queryBuilder = $queryBuilder->where(function($query) use ($orFilters) {
                     foreach ($orFilters as $index => $filter) {
                         if ($index === 0) {
-                            // اولین فیلتر OR با where معمولی
+                            // Ã˜Â§Ã™Ë†Ã™â€žÃ›Å’Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± OR Ã˜Â¨Ã˜Â§ where Ã™â€¦Ã˜Â¹Ã™â€¦Ã™Ë†Ã™â€žÃ›Å’
                             $query = $this->applySingleFilter($query, $filter, 'where');
                         } else {
-                            // بقیه فیلترها با orWhere
+                            // Ã˜Â¨Ã™â€šÃ›Å’Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â§ orWhere
                             $query = $this->applySingleFilter($query, $filter, 'or');
                         }
                     }
@@ -936,7 +936,7 @@ class FamilySearch extends Component
                 });
             }
 
-            Log::info('✅ FamilySearch modal filters applied successfully', [
+            Log::info('Ã¢Å“â€¦ FamilySearch modal filters applied successfully', [
                 'and_filters_count' => count($andFilters),
                 'or_filters_count' => count($orFilters),
                 'user_id' => Auth::id()
@@ -945,7 +945,7 @@ class FamilySearch extends Component
             return $queryBuilder;
 
         } catch (\Exception $e) {
-            Log::error('❌ Error applying FamilySearch modal filters', [
+            Log::error('Ã¢ÂÅ’ Error applying FamilySearch modal filters', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => Auth::id()
@@ -956,7 +956,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * پردازش فیلترهای special_disease چندگانه با منطق AND
+     * Ã™Â¾Ã˜Â±Ã˜Â¯Ã˜Â§Ã˜Â²Ã˜Â´ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ special_disease Ãšâ€ Ã™â€ Ã˜Â¯ÃšÂ¯Ã˜Â§Ã™â€ Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€ Ã˜Â·Ã™â€š AND
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @param array $andFilters
      * @return \Spatie\QueryBuilder\QueryBuilder
@@ -964,26 +964,26 @@ class FamilySearch extends Component
     protected function applySpecialDiseaseAndLogic($queryBuilder, $andFilters)
     {
         try {
-            // فیلتر فیلترهای special_disease
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ special_disease
             $specialDiseaseFilters = array_filter($andFilters, function($filter) {
-                return in_array($filter['type'], ['special_disease', 'معیار پذیرش']) && !empty($filter['value']);
+                return in_array($filter['type'], ['special_disease', 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´']) && !empty($filter['value']);
             });
 
             if (empty($specialDiseaseFilters)) {
                 return $queryBuilder;
             }
 
-            Log::debug('📊 Processing special_disease filters with AND logic', [
+            Log::debug('Ã°Å¸â€œÅ  Processing special_disease filters with AND logic', [
                 'filters_count' => count($specialDiseaseFilters),
                 'filters' => $specialDiseaseFilters
             ]);
 
-            // **پردازش رشته comma-separated و تبدیل به آرایه**
+            // **Ã™Â¾Ã˜Â±Ã˜Â¯Ã˜Â§Ã˜Â²Ã˜Â´ Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡ comma-separated Ã™Ë† Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã˜Â¨Ã™â€¡ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡**
             $allSelectedValues = [];
             foreach ($specialDiseaseFilters as $filter) {
                 $filterValue = $filter['value'];
 
-                // اگر رشته حاوی ویرگول باشد، تقسیم کن
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡ Ã˜Â­Ã˜Â§Ã™Ë†Ã›Å’ Ã™Ë†Ã›Å’Ã˜Â±ÃšÂ¯Ã™Ë†Ã™â€ž Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯Ã˜Å’ Ã˜ÂªÃ™â€šÃ˜Â³Ã›Å’Ã™â€¦ ÃšÂ©Ã™â€ 
                 if (str_contains($filterValue, ',')) {
                     $values = array_map('trim', explode(',', $filterValue));
                     foreach ($values as $value) {
@@ -1002,17 +1002,17 @@ class FamilySearch extends Component
                 return $queryBuilder;
             }
 
-            Log::debug('🔎 Parsed special_disease values for AND logic', [
+            Log::debug('Ã°Å¸â€Å½ Parsed special_disease values for AND logic', [
                 'values' => $allSelectedValues,
                 'count' => count($allSelectedValues)
             ]);
 
-            // برای هر مقدار جداگانه، یک whereHas اعمال کن (منطق AND)
+            // Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€¡Ã˜Â± Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã˜Â§ÃšÂ¯Ã˜Â§Ã™â€ Ã™â€¡Ã˜Å’ Ã›Å’ÃšÂ© whereHas Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž ÃšÂ©Ã™â€  (Ã™â€¦Ã™â€ Ã˜Â·Ã™â€š AND)
             foreach ($allSelectedValues as $value) {
-                Log::debug('🔎 Applying AND whereHas for special_disease value', ['value' => $value]);
+                Log::debug('Ã°Å¸â€Å½ Applying AND whereHas for special_disease value', ['value' => $value]);
 
                 $queryBuilder = $queryBuilder->whereHas('members', function($memberQuery) use ($value) {
-                    // تبدیل به مقادیر مختلف (فارسی و انگلیسی)
+                    // Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã˜Â¨Ã™â€¡ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â (Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â³Ã›Å’ Ã™Ë† Ã˜Â§Ã™â€ ÃšÂ¯Ã™â€žÃ›Å’Ã˜Â³Ã›Å’)
                     $persianValue = \App\Helpers\ProblemTypeHelper::englishToPersian($value);
                     $englishValue = \App\Helpers\ProblemTypeHelper::persianToEnglish($value);
 
@@ -1024,7 +1024,7 @@ class FamilySearch extends Component
                 });
             }
 
-            Log::info('✅ Special_disease AND logic applied successfully', [
+            Log::info('Ã¢Å“â€¦ Special_disease AND logic applied successfully', [
                 'values_applied' => $allSelectedValues,
                 'filters_processed' => count($specialDiseaseFilters)
             ]);
@@ -1032,7 +1032,7 @@ class FamilySearch extends Component
             return $queryBuilder;
 
         } catch (\Exception $e) {
-            Log::error('❌ Error applying special_disease AND logic', [
+            Log::error('Ã¢ÂÅ’ Error applying special_disease AND logic', [
                 'error' => $e->getMessage(),
                 'filters' => $specialDiseaseFilters ?? [],
                 'trace' => $e->getTraceAsString()
@@ -1043,7 +1043,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال یک فیلتر منفرد
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã›Å’ÃšÂ© Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™â€ Ã™ÂÃ˜Â±Ã˜Â¯
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @param array $filter
      * @param string $method
@@ -1055,18 +1055,18 @@ class FamilySearch extends Component
             $filterType = $filter['type'];
             $filterValue = $filter['value'];
 
-            // پردازش operators جدید
+            // Ã™Â¾Ã˜Â±Ã˜Â¯Ã˜Â§Ã˜Â²Ã˜Â´ operators Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
             $logicalOperator = $filter['logical_operator'] ?? 'and';
             $existenceOperator = $filter['existence_operator'] ?? 'equals';
 
-            // تعیین operator نهایی بر اساس شرط‌های جدید
+            // Ã˜ÂªÃ˜Â¹Ã›Å’Ã›Å’Ã™â€  operator Ã™â€ Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â´Ã˜Â±Ã˜Â·Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
             $operator = $existenceOperator;
             if ($existenceOperator === 'equals') {
-                // اگر مقدار خاص است، از logical operator استفاده کن
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â®Ã˜Â§Ã˜Âµ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Å’ Ã˜Â§Ã˜Â² logical operator Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ ÃšÂ©Ã™â€ 
                 $operator = 'equals';
             }
 
-            // سازگاری با operator قدیمی
+            // Ã˜Â³Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â¨Ã˜Â§ operator Ã™â€šÃ˜Â¯Ã›Å’Ã™â€¦Ã›Å’
             if (isset($filter['operator']) && in_array($filter['operator'], ['exists', 'not_exists', 'equals', 'and', 'or'])) {
                 $operator = $filter['operator'];
                 if ($operator === 'and' || $operator === 'or') {
@@ -1074,7 +1074,7 @@ class FamilySearch extends Component
                 }
             }
 
-            // تعیین نوع متد بر اساس عملگر منطقی نهایی
+            // Ã˜ÂªÃ˜Â¹Ã›Å’Ã›Å’Ã™â€  Ã™â€ Ã™Ë†Ã˜Â¹ Ã™â€¦Ã˜ÂªÃ˜Â¯ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â¹Ã™â€¦Ã™â€žÃšÂ¯Ã˜Â± Ã™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ›Å’ Ã™â€ Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’
             $finalLogicalMethod = ($logicalOperator === 'or' || $method === 'or') ? 'or' : 'and';
             $whereMethod = $finalLogicalMethod === 'or' ? 'orWhere' : 'where';
             $whereHasMethod = $finalLogicalMethod === 'or' ? 'orWhereHas' : 'whereHas';
@@ -1100,18 +1100,18 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای استان خاص: families با province_id برابر با مقدار انتخابی
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€  Ã˜Â®Ã˜Â§Ã˜Âµ: families Ã˜Â¨Ã˜Â§ province_id Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’
                             $queryBuilder = $queryBuilder->$whereMethod('families.province_id', $filterValue);
                         } else {
-                            // فیلتر برای وجود هر استان: families که province_id دارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€¡Ã˜Â± Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€ : families ÃšÂ©Ã™â€¡ province_id Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', null);
                         }
                     } elseif ($operator === 'not_exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای عدم انتخاب استان خاص: families که province_id آن‌ها برابر با مقدار انتخابی نباشد
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€  Ã˜Â®Ã˜Â§Ã˜Âµ: families ÃšÂ©Ã™â€¡ province_id Ã˜Â¢Ã™â€ Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’ Ã™â€ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.province_id', '!=', $filterValue);
                         } else {
-                            // فیلتر برای عدم وجود استان: families که province_id ندارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â§Ã™â€ : families ÃšÂ©Ã™â€¡ province_id Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.province_id', null);
                         }
                     }
@@ -1124,18 +1124,18 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای شهر خاص: families با city_id برابر با مقدار انتخابی
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â´Ã™â€¡Ã˜Â± Ã˜Â®Ã˜Â§Ã˜Âµ: families Ã˜Â¨Ã˜Â§ city_id Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’
                             $queryBuilder = $queryBuilder->$whereMethod('families.city_id', $filterValue);
                         } else {
-                            // فیلتر برای وجود هر شهر: families که city_id دارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€¡Ã˜Â± Ã˜Â´Ã™â€¡Ã˜Â±: families ÃšÂ©Ã™â€¡ city_id Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', null);
                         }
                     } elseif ($operator === 'not_exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای عدم انتخاب شهر خاص: families که city_id آن‌ها برابر با مقدار انتخابی نباشد
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã™â€¡Ã˜Â± Ã˜Â®Ã˜Â§Ã˜Âµ: families ÃšÂ©Ã™â€¡ city_id Ã˜Â¢Ã™â€ Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’ Ã™â€ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.city_id', '!=', $filterValue);
                         } else {
-                            // فیلتر برای عدم وجود شهر: families که city_id ندارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â´Ã™â€¡Ã˜Â±: families ÃšÂ©Ã™â€¡ city_id Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.city_id', null);
                         }
                     }
@@ -1148,25 +1148,25 @@ class FamilySearch extends Component
                         $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
                     } elseif ($operator === 'exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای خیریه خاص: families با charity_id برابر با مقدار انتخابی
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã˜Âµ: families Ã˜Â¨Ã˜Â§ charity_id Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’
                             $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', $filterValue);
                         } else {
-                            // فیلتر برای وجود هر خیریه: families که charity_id دارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€¡Ã˜Â± Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡: families ÃšÂ©Ã™â€¡ charity_id Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', null);
                         }
                     } elseif ($operator === 'not_exists') {
                         if (!empty($filterValue)) {
-                            // فیلتر برای عدم انتخاب خیریه خاص: families که charity_id آن‌ها برابر با مقدار انتخابی نباشد
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã˜Âµ: families ÃšÂ©Ã™â€¡ charity_id Ã˜Â¢Ã™â€ Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã›Å’ Ã™â€ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', '!=', $filterValue);
                         } else {
-                            // فیلتر برای عدم وجود خیریه: families که charity_id ندارند
+                            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡: families ÃšÂ©Ã™â€¡ charity_id Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯
                             $queryBuilder = $queryBuilder->$whereMethod('families.charity_id', null);
                         }
                     }
                     break;
 
                 case 'members_count':
-                    Log::debug('🔢 Processing members_count filter', [
+                    Log::debug('Ã°Å¸â€Â¢ Processing members_count filter', [
                         'operator' => $operator,
                         'value' => $filterValue,
                         'method' => $method
@@ -1179,7 +1179,7 @@ class FamilySearch extends Component
                     break;
 
                 case 'deprivation_rank':
-                    // فیلتر بر اساس رتبه محرومیت
+                    // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â­Ã˜Â±Ã™Ë†Ã™â€¦Ã›Å’Ã˜Âª
                     switch ($filterValue) {
                         case 'high':
                             if ($method === 'or') {
@@ -1212,17 +1212,17 @@ class FamilySearch extends Component
                     break;
 
                 case 'special_disease':
-                case 'معیار پذیرش':
-                    // پشتیبانی از هر دو نام فیلتر برای سازگاری
+                case 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´':
+                    // Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã™â€¡Ã˜Â± Ã˜Â¯Ã™Ë† Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â§Ã˜Â±Ã›Å’
                     if ($operator === 'exists') {
-                        // خانواده‌هایی که حداقل یک عضو دارای معیار پذیرش باشد
+                        // Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’ ÃšÂ©Ã™â€¡ Ã˜Â­Ã˜Â¯Ã˜Â§Ã™â€šÃ™â€ž Ã›Å’ÃšÂ© Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
                         $queryBuilder = $queryBuilder->$whereHasMethod('members', function($memberQuery) {
                             $memberQuery->whereNotNull('problem_type')
                                        ->where('problem_type', '!=', '[]')
                                        ->where('problem_type', '!=', 'null');
                         });
                     } elseif ($operator === 'not_exists') {
-                        // خانواده‌هایی که هیچ عضوی دارای معیار پذیرش نباشد
+                        // Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’ ÃšÂ©Ã™â€¡ Ã™â€¡Ã›Å’Ãšâ€  Ã˜Â¹Ã˜Â¶Ã™Ë†Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã™â€ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
                         $queryBuilder = $queryBuilder->$whereDoesntHaveMethod('members', function($memberQuery) {
                             $memberQuery->whereNotNull('problem_type')
                                        ->where('problem_type', '!=', '[]')
@@ -1230,9 +1230,9 @@ class FamilySearch extends Component
                         });
                     } elseif (!empty($filterValue)) {
                         $queryBuilder = $queryBuilder->$whereMethod(function($q) use ($filterValue) {
-                            // جستجو در اعضای خانواده با problem_type - پشتیبانی از تمام مقادیر
+                            // Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë† Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ problem_type - Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â±
                             $q->whereHas('members', function($memberQuery) use ($filterValue) {
-                                // تبدیل به مقادیر مختلف
+                                // Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã˜Â¨Ã™â€¡ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â
                                 $persianValue = ProblemTypeHelper::englishToPersian($filterValue);
                                 $englishValue = ProblemTypeHelper::persianToEnglish($filterValue);
 
@@ -1265,7 +1265,7 @@ class FamilySearch extends Component
             return $queryBuilder;
 
         } catch (\Exception $e) {
-            Log::error('❌ Error applying single filter in FamilySearch', [
+            Log::error('Ã¢ÂÅ’ Error applying single filter in FamilySearch', [
                 'filter_type' => $filter['type'] ?? 'unknown',
                 'method' => $method,
                 'error' => $e->getMessage(),
@@ -1277,7 +1277,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال فیلتر عددی
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¹Ã˜Â¯Ã˜Â¯Ã›Å’
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @param string $field
      * @param string $operator
@@ -1296,9 +1296,9 @@ class FamilySearch extends Component
         $havingMethod = $method === 'or' ? 'orHaving' : 'having';
         $havingBetweenMethod = $method === 'or' ? 'orHavingBetween' : 'havingBetween';
 
-        // برای فیلد members_count که فیلد محاسباتی است، باید از HAVING یا relation استفاده کنیم
+        // Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯ members_count ÃšÂ©Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯ Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã˜Â§Ã˜ÂªÃ›Å’ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Å’ Ã˜Â¨Ã˜Â§Ã›Å’Ã˜Â¯ Ã˜Â§Ã˜Â² HAVING Ã›Å’Ã˜Â§ relation Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ ÃšÂ©Ã™â€ Ã›Å’Ã™â€¦
         if ($field === 'members_count') {
-            Log::debug('🔧 applyNumericFilter for members_count', [
+            Log::debug('Ã°Å¸â€Â§ applyNumericFilter for members_count', [
                 'field' => $field,
                 'operator' => $operator,
                 'value' => $value,
@@ -1307,13 +1307,13 @@ class FamilySearch extends Component
 
             switch ($operator) {
                 case 'exists':
-                    Log::debug('✅ Applying whereHas for members_count exists', ['value' => $value, 'filter' => $filter]);
+                    Log::debug('Ã¢Å“â€¦ Applying whereHas for members_count exists', ['value' => $value, 'filter' => $filter]);
                     return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod);
                 case 'not_exists':
-                    Log::debug('✅ Applying whereDoesntHave for members_count not_exists', ['value' => $value, 'filter' => $filter]);
+                    Log::debug('Ã¢Å“â€¦ Applying whereDoesntHave for members_count not_exists', ['value' => $value, 'filter' => $filter]);
                     return $this->applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, true);
                 case 'equals':
-                    Log::debug('✅ Applying having equals for members_count');
+                    Log::debug('Ã¢Å“â€¦ Applying having equals for members_count');
                     return $queryBuilder->$havingMethod('members_count', '=', $value);
                 case 'not_equals':
                     return $queryBuilder->$havingMethod('members_count', '!=', $value);
@@ -1331,7 +1331,7 @@ class FamilySearch extends Component
                     }
                     break;
                 default:
-                    Log::debug('⚠️ Using default having for members_count');
+                    Log::debug('Ã¢Å¡Â Ã¯Â¸Â Using default having for members_count');
                     return $queryBuilder->$havingMethod('members_count', $value);
             }
         }
@@ -1366,26 +1366,26 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال فیلتر تعداد اعضا با پشتیبانی از بازه
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§ Ã˜Â¨Ã˜Â§ Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€¡
      *
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @param array $filter
      * @param string $havingMethod
      * @param string $whereHasMethod
-     * @param bool $isNegative آیا شرط منفی است (not_exists)
+     * @param bool $isNegative Ã˜Â¢Ã›Å’Ã˜Â§ Ã˜Â´Ã˜Â±Ã˜Â· Ã™â€¦Ã™â€ Ã™ÂÃ›Å’ Ã˜Â§Ã˜Â³Ã˜Âª (not_exists)
      * @return \Spatie\QueryBuilder\QueryBuilder
      */
     protected function applyMembersCountFilter($queryBuilder, $filter, $havingMethod, $whereHasMethod, $isNegative = false)
     {
         $whereDoesntHaveMethod = str_replace('whereHas', 'whereDoesntHave', $whereHasMethod);
 
-        // بررسی بازه
+        // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€¡
         if (!empty($filter['min_members']) || !empty($filter['max_members'])) {
             $minMembers = !empty($filter['min_members']) ? (int)$filter['min_members'] : null;
             $maxMembers = !empty($filter['max_members']) ? (int)$filter['max_members'] : null;
 
             if ($minMembers && $maxMembers) {
-                // بازه کامل: مین تا مکس
+                // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€¡ ÃšÂ©Ã˜Â§Ã™â€¦Ã™â€ž: Ã™â€¦Ã›Å’Ã™â€  Ã˜ÂªÃ˜Â§ Ã™â€¦ÃšÂ©Ã˜Â³
                 if ($isNegative) {
                     return $queryBuilder->$havingMethod('members_count', '<', $minMembers)
                                        ->orHaving('members_count', '>', $maxMembers);
@@ -1394,26 +1394,26 @@ class FamilySearch extends Component
                                        ->having('members_count', '<=', $maxMembers);
                 }
             } elseif ($minMembers) {
-                // فقط حداقل
+                // Ã™ÂÃ™â€šÃ˜Â· Ã˜Â­Ã˜Â¯Ã˜Â§Ã™â€šÃ™â€ž
                 return $queryBuilder->$havingMethod('members_count', $isNegative ? '<' : '>=', $minMembers);
             } elseif ($maxMembers) {
-                // فقط حداکثر
+                // Ã™ÂÃ™â€šÃ˜Â· Ã˜Â­Ã˜Â¯Ã˜Â§ÃšÂ©Ã˜Â«Ã˜Â±
                 return $queryBuilder->$havingMethod('members_count', $isNegative ? '>' : '<=', $maxMembers);
             }
         }
 
-        // تک عدد یا شرط عمومی
+        // Ã˜ÂªÃšÂ© Ã˜Â¹Ã˜Â¯Ã˜Â¯ Ã›Å’Ã˜Â§ Ã˜Â´Ã˜Â±Ã˜Â· Ã˜Â¹Ã™â€¦Ã™Ë†Ã™â€¦Ã›Å’
         if (!empty($filter['value'])) {
             $value = (int)$filter['value'];
             return $queryBuilder->$havingMethod('members_count', $isNegative ? '!=' : '=', $value);
         } else {
-            // بدون مقدار: فقط وجود/عدم وجود عضو
+            // Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â±: Ã™ÂÃ™â€šÃ˜Â· Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯/Ã˜Â¹Ã˜Â¯Ã™â€¦ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â¹Ã˜Â¶Ã™Ë†
             return $queryBuilder->{$isNegative ? $whereDoesntHaveMethod : $whereHasMethod}('members');
         }
     }
 
     /**
-     * اعمال فیلتر تاریخ
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â®
      * @param \Spatie\QueryBuilder\QueryBuilder $queryBuilder
      * @param string $field
      * @param string $operator
@@ -1458,128 +1458,128 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال فیلترهای مودال
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
      * @return void
      */
     public function applyFilters()
     {
         try {
-            Log::debug('🎯 FamilySearch applyFilters called', [
+            Log::debug('Ã°Å¸Å½Â¯ FamilySearch applyFilters called', [
                 'temp_filters' => $this->tempFilters,
                 'active_filters' => $this->activeFilters ?? []
             ]);
 
-            // کپی فیلترهای موقت به فیلترهای فعال
+            // ÃšÂ©Ã™Â¾Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã™â€šÃ˜Âª Ã˜Â¨Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž
             $this->activeFilters = $this->tempFilters;
 
-            // همگام‌سازی با فیلترهای اصلی برای سازگاری با کدهای قدیمی
+            // Ã™â€¡Ã™â€¦ÃšÂ¯Ã˜Â§Ã™â€¦Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â¨Ã˜Â§ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã˜ÂµÃ™â€žÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â¨Ã˜Â§ ÃšÂ©Ã˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€šÃ˜Â¯Ã›Å’Ã™â€¦Ã›Å’
             $this->filters = $this->tempFilters;
 
-            // بازنشانی صفحه به ۱
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã˜Â¨Ã™â€¡ Ã›Â±
             $this->resetPage();
 
-            // پاک کردن کش
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´
             $this->clearCache();
 
             $filterCount = count($this->activeFilters ?? []);
 
             if ($filterCount > 0) {
-                Log::info('✅ FamilySearch filters applied successfully', [
+                Log::info('Ã¢Å“â€¦ FamilySearch filters applied successfully', [
                     'filters_count' => $filterCount,
                     'has_modal_filters' => true
                 ]);
 
-                session()->flash('message', "فیلترها با موفقیت اعمال شدند ({$filterCount} فیلتر فعال)");
+                session()->flash('message', "Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â´Ã˜Â¯Ã™â€ Ã˜Â¯ ({$filterCount} Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž)");
                 session()->flash('type', 'success');
 
-                // اجبار به refresh کامپوننت
+                // Ã˜Â§Ã˜Â¬Ã˜Â¨Ã˜Â§Ã˜Â± Ã˜Â¨Ã™â€¡ refresh ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª
                 $this->dispatch('refresh-component');
             } else {
-                Log::info('⚠️ FamilySearch no filters to apply');
-                session()->flash('message', 'هیچ فیلتری برای اعمال وجود ندارد');
+                Log::info('Ã¢Å¡Â Ã¯Â¸Â FamilySearch no filters to apply');
+                session()->flash('message', 'Ã™â€¡Ã›Å’Ãšâ€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯');
                 session()->flash('type', 'warning');
             }
 
         } catch (\Exception $e) {
-            Log::error('❌ Error applying FamilySearch filters', [
+            Log::error('Ã¢ÂÅ’ Error applying FamilySearch filters', [
                 'error' => $e->getMessage(),
                 'temp_filters' => $this->tempFilters ?? [],
                 'user_id' => Auth::id()
             ]);
 
-            session()->flash('message', 'خطا در اعمال فیلترها: ' . $e->getMessage());
+            session()->flash('message', 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§: ' . $e->getMessage());
             session()->flash('type', 'error');
         }
     }
 
     /**
-     * تست فیلترهای مودال
+     * Ã˜ÂªÃ˜Â³Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
      * @return void
      */
     public function testFilters()
     {
         try {
-            Log::debug('🧪 FamilySearch testFilters called', [
+            Log::debug('Ã°Å¸Â§Âª FamilySearch testFilters called', [
                 'temp_filters' => $this->tempFilters
             ]);
 
-            // شبیه‌سازی اعمال فیلترها برای تست
+            // Ã˜Â´Ã˜Â¨Ã›Å’Ã™â€¡Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜ÂªÃ˜Â³Ã˜Âª
             $testFilters = $this->tempFilters;
 
             if (empty($testFilters)) {
-                session()->flash('message', 'هیچ فیلتری برای تست وجود ندارد');
+                session()->flash('message', 'Ã™â€¡Ã›Å’Ãšâ€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜ÂªÃ˜Â³Ã˜Âª Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯');
                 session()->flash('type', 'warning');
                 return;
             }
 
-            // ایجاد کوئری تست
+            // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ ÃšÂ©Ã™Ë†Ã˜Â¦Ã˜Â±Ã›Å’ Ã˜ÂªÃ˜Â³Ã˜Âª
             $queryBuilder = $this->buildFamiliesQuery();
 
-            // شبیه‌سازی اعمال فیلترهای مودال
+            // Ã˜Â´Ã˜Â¨Ã›Å’Ã™â€¡Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
             $originalActiveFilters = $this->activeFilters;
             $this->activeFilters = $testFilters;
 
             $queryBuilder = $this->convertModalFiltersToQueryBuilder($queryBuilder);
             $testCount = $queryBuilder->count();
 
-            // بازگردانی فیلترهای اصلی
+            // Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â±Ã˜Â¯Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã˜ÂµÃ™â€žÃ›Å’
             $this->activeFilters = $originalActiveFilters;
 
-            Log::info('✅ FamilySearch filters test completed', [
+            Log::info('Ã¢Å“â€¦ FamilySearch filters test completed', [
                 'test_count' => $testCount,
                 'filters_count' => count($testFilters)
             ]);
 
-            session()->flash('message', "تست فیلترها: {$testCount} خانواده یافت شد");
+            session()->flash('message', "Ã˜ÂªÃ˜Â³Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§: {$testCount} Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã˜Â´Ã˜Â¯");
             session()->flash('type', 'info');
 
         } catch (\Exception $e) {
-            Log::error('❌ Error testing FamilySearch filters', [
+            Log::error('Ã¢ÂÅ’ Error testing FamilySearch filters', [
                 'error' => $e->getMessage(),
                 'temp_filters' => $this->tempFilters ?? [],
                 'user_id' => Auth::id()
             ]);
 
-            session()->flash('message', 'خطا در تست فیلترها: ' . $e->getMessage());
+            session()->flash('message', 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜ÂªÃ˜Â³Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§: ' . $e->getMessage());
             session()->flash('type', 'error');
         }
     }
 
     /**
-     * بازنشانی فیلترها به حالت پیشفرض
+     * Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶
      * @return void
      */
     public function resetFilters()
     {
         try {
-            Log::debug('🔄 FamilySearch resetFilters called');
+            Log::debug('Ã°Å¸â€â€ž FamilySearch resetFilters called');
 
-            // پاک کردن تمام فیلترها
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§
             $this->tempFilters = [];
             $this->activeFilters = [];
             $this->filters = [];
 
-            // پاک کردن فیلترهای کامپوننت
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª
             $this->search = '';
             $this->status = '';
             $this->province = '';
@@ -1589,34 +1589,34 @@ class FamilySearch extends Component
             $this->specific_criteria = '';
             $this->charity = '';
 
-            // بازنشانی سورت
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª
             $this->sortField = 'created_at';
             $this->sortDirection = 'desc';
 
-            // بازنشانی صفحه
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡
             $this->resetPage();
 
-            // پاک کردن کش
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´
             $this->clearCache();
 
-            Log::info('✅ FamilySearch filters reset successfully');
+            Log::info('Ã¢Å“â€¦ FamilySearch filters reset successfully');
 
-            session()->flash('message', 'فیلترها با موفقیت بازنشانی شدند');
+            session()->flash('message', 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯Ã™â€ Ã˜Â¯');
             session()->flash('type', 'success');
 
         } catch (\Exception $e) {
-            Log::error('❌ Error resetting FamilySearch filters', [
+            Log::error('Ã¢ÂÅ’ Error resetting FamilySearch filters', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id()
             ]);
 
-            session()->flash('message', 'خطا در بازنشانی فیلترها: ' . $e->getMessage());
+            session()->flash('message', 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§: ' . $e->getMessage());
             session()->flash('type', 'error');
         }
     }
 
     /**
-     * بررسی وجود فیلترهای فعال
+     * Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž
      * @return bool
      */
     public function hasActiveFilters(): bool
@@ -1634,7 +1634,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * شمارش فیلترهای فعال
+     * Ã˜Â´Ã™â€¦Ã˜Â§Ã˜Â±Ã˜Â´ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž
      * @return int
      */
     public function getActiveFiltersCount(): int
@@ -1651,7 +1651,7 @@ class FamilySearch extends Component
         if (!empty($this->charity)) $count++;
         if (!empty($this->activeFilters)) $count += count($this->activeFilters);
         if (!empty($this->tempFilters)) {
-            // شمارش فیلترهای فعال در tempFilters
+            // Ã˜Â´Ã™â€¦Ã˜Â§Ã˜Â±Ã˜Â´ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž Ã˜Â¯Ã˜Â± tempFilters
             foreach ($this->tempFilters as $filter) {
                 if (!empty($filter['type']) &&
                     (!empty($filter['value']) || !empty($filter['min_members']) ||
@@ -1666,7 +1666,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * تولید کلید کش
+     * Ã˜ÂªÃ™Ë†Ã™â€žÃ›Å’Ã˜Â¯ ÃšÂ©Ã™â€žÃ›Å’Ã˜Â¯ ÃšÂ©Ã˜Â´
      * @return string
      */
     protected function getCacheKey(): string
@@ -1692,13 +1692,13 @@ class FamilySearch extends Component
     }
 
     /**
-     * پاک کردن کش
+     * Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´
      * @return void
      */
     protected function clearCache(): void
     {
         try {
-            // پاک کردن کش‌های مرتبط با این کاربر
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã˜Â· Ã˜Â¨Ã˜Â§ Ã˜Â§Ã›Å’Ã™â€  ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
             $pattern = 'family_search_*_' . Auth::id();
 
             // Laravel Cache doesn't support pattern deletion directly,
@@ -1706,10 +1706,10 @@ class FamilySearch extends Component
             $currentKey = $this->getCacheKey();
             Cache::forget($currentKey);
 
-            Log::debug('🧹 FamilySearch cache cleared', ['cache_key' => $currentKey]);
+            Log::debug('Ã°Å¸Â§Â¹ FamilySearch cache cleared', ['cache_key' => $currentKey]);
 
         } catch (\Exception $e) {
-            Log::warning('⚠️ Error clearing FamilySearch cache', [
+            Log::warning('Ã¢Å¡Â Ã¯Â¸Â Error clearing FamilySearch cache', [
                 'error' => $e->getMessage()
             ]);
         }
@@ -1735,17 +1735,17 @@ class FamilySearch extends Component
         } else {
             $this->expandedFamily = $familyId;
 
-            // بارگذاری کامل اعضای خانواده با تمام اطلاعات و مرتب‌سازی مناسب
+            // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ ÃšÂ©Ã˜Â§Ã™â€¦Ã™â€ž Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª Ã™Ë† Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â³Ã˜Â¨
             $family = Family::with(['members' => function($query) {
-                // مرتب‌سازی: ابتدا سرپرست و سپس به ترتیب ID
+                // Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’: Ã˜Â§Ã˜Â¨Ã˜ÂªÃ˜Â¯Ã˜Â§ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã™Ë† Ã˜Â³Ã™Â¾Ã˜Â³ Ã˜Â¨Ã™â€¡ Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ ID
                 $query->orderBy('is_head', 'desc')
                       ->orderBy('id', 'asc');
             }])->findOrFail($familyId);
 
-            // تهیه کالکشن کامل اعضای خانواده
+            // Ã˜ÂªÃ™â€¡Ã›Å’Ã™â€¡ ÃšÂ©Ã˜Â§Ã™â€žÃšÂ©Ã˜Â´Ã™â€  ÃšÂ©Ã˜Â§Ã™â€¦Ã™â€ž Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
             $this->familyMembers = $family->members;
 
-            // تنظیم selectedHead به ID سرپرست فعلی
+            // Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦ selectedHead Ã˜Â¨Ã™â€¡ ID Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’
             foreach ($this->familyMembers as $member) {
                 if ($member->is_head) {
                     $this->selectedHead = $member->id;
@@ -1753,16 +1753,16 @@ class FamilySearch extends Component
                 }
             }
 
-            // ارسال رویداد برای اسکرول به موقعیت خانواده باز شده
+            // Ã˜Â§Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ž Ã˜Â±Ã™Ë†Ã›Å’Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â³ÃšÂ©Ã˜Â±Ã™Ë†Ã™â€ž Ã˜Â¨Ã™â€¡ Ã™â€¦Ã™Ë†Ã™â€šÃ˜Â¹Ã›Å’Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â² Ã˜Â´Ã˜Â¯Ã™â€¡
             $this->dispatch('family-expanded', $familyId);
         }
     }
 
     /**
-     * تنظیم سرپرست خانواده
+     * Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
      *
-     * @param int $familyId شناسه خانواده
-     * @param int $memberId شناسه عضو
+     * @param int $familyId Ã˜Â´Ã™â€ Ã˜Â§Ã˜Â³Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
+     * @param int $memberId Ã˜Â´Ã™â€ Ã˜Â§Ã˜Â³Ã™â€¡ Ã˜Â¹Ã˜Â¶Ã™Ë†
      * @return void
      */
     public function setFamilyHead($familyId, $memberId)
@@ -1770,56 +1770,56 @@ class FamilySearch extends Component
         try {
             $family = Family::findOrFail($familyId);
 
-            // فقط اگر خانواده تایید نشده باشد، اجازه تغییر سرپرست را بدهیم
+            // Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§ÃšÂ¯Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã™â€ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯Ã˜Å’ Ã˜Â§Ã˜Â¬Ã˜Â§Ã˜Â²Ã™â€¡ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â¯Ã™â€¡Ã›Å’Ã™â€¦
             if ($family->verified_at) {
                 $this->dispatch('show-toast', [
-                    'message' => '❌ امکان تغییر سرپرست برای خانواده‌های تایید شده وجود ندارد',
+                    'message' => 'Ã¢ÂÅ’ Ã˜Â§Ã™â€¦ÃšÂ©Ã˜Â§Ã™â€  Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی اینکه عضو انتخاب شده متعلق به همین خانواده است
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã›Å’Ã™â€ ÃšÂ©Ã™â€¡ Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã™â€¦Ã˜ÂªÃ˜Â¹Ã™â€žÃ™â€š Ã˜Â¨Ã™â€¡ Ã™â€¡Ã™â€¦Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜Âª
             $member = Member::where('id', $memberId)->where('family_id', $familyId)->first();
             if (!$member) {
                 $this->dispatch('show-toast', [
-                    'message' => '❌ عضو انتخاب شده در این خانواده یافت نشد',
+                    'message' => 'Ã¢ÂÅ’ Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-                // تنظیم متغیر انتخاب شده
+                // Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦ Ã™â€¦Ã˜ÂªÃ˜ÂºÃ›Å’Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
                 $this->selectedHead = $memberId;
 
-                // مدیریت تراکنش برای اطمینان از صحت داده‌ها
+                // Ã™â€¦Ã˜Â¯Ã›Å’Ã˜Â±Ã›Å’Ã˜Âª Ã˜ÂªÃ˜Â±Ã˜Â§ÃšÂ©Ã™â€ Ã˜Â´ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã˜ÂµÃ˜Â­Ã˜Âª Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
                 DB::beginTransaction();
 
-            // به‌روزرسانی پایگاه داده - فقط یک نفر سرپرست
+            // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™Â¾Ã˜Â§Ã›Å’ÃšÂ¯Ã˜Â§Ã™â€¡ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡ - Ã™ÂÃ™â€šÃ˜Â· Ã›Å’ÃšÂ© Ã™â€ Ã™ÂÃ˜Â± Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª
                 Member::where('family_id', $familyId)->update(['is_head' => false]);
                 Member::where('id', $memberId)->update(['is_head' => true]);
 
                 DB::commit();
 
-                // به‌روزرسانی نمایش بدون بارگیری مجدد کامل
+                // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ ÃšÂ©Ã˜Â§Ã™â€¦Ã™â€ž
                 if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
-                    // به‌روزرسانی state داخلی بدون بارگیری مجدد
+                    // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ state Ã˜Â¯Ã˜Â§Ã˜Â®Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯
                 foreach ($this->familyMembers as $familyMember) {
-                        // فقط وضعیت is_head را تغییر می‌دهیم
+                        // Ã™ÂÃ™â€šÃ˜Â· Ã™Ë†Ã˜Â¶Ã˜Â¹Ã›Å’Ã˜Âª is_head Ã˜Â±Ã˜Â§ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â¯Ã™â€¡Ã›Å’Ã™â€¦
                     $familyMember->is_head = ($familyMember->id == $memberId);
                     }
                 }
 
-                // نمایش پیام موفقیت
+                // Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª
                 $this->dispatch('show-toast', [
-                'message' => '✅ سرپرست خانواده با موفقیت تغییر یافت',
+                'message' => 'Ã¢Å“â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª',
                     'type' => 'success'
                 ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('show-toast', [
-                'message' => '❌ خطا در به‌روزرسانی اطلاعات: ' . $e->getMessage(),
+                'message' => 'Ã¢ÂÅ’ Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
@@ -1827,10 +1827,10 @@ class FamilySearch extends Component
 
     public function verifyFamily($familyId)
     {
-        // بررسی دسترسی کاربر
+        // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
         if (!Auth::check() || !Gate::allows('verify-family')) {
             $this->dispatch('show-toast', [
-                'message' => '🚫 شما اجازه تایید خانواده را ندارید',
+                'message' => 'Ã°Å¸Å¡Â« Ã˜Â´Ã™â€¦Ã˜Â§ Ã˜Â§Ã˜Â¬Ã˜Â§Ã˜Â²Ã™â€¡ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã˜Â¯',
                 'type' => 'error'
             ]);
             return;
@@ -1838,21 +1838,21 @@ class FamilySearch extends Component
 
         $family = Family::findOrFail($familyId);
 
-        // اگر قبلاً تایید شده، اطلاع بدهیم
+        // Ã˜Â§ÃšÂ¯Ã˜Â± Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã™â€¹ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â´Ã˜Â¯Ã™â€¡Ã˜Å’ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹ Ã˜Â¨Ã˜Â¯Ã™â€¡Ã›Å’Ã™â€¦
         if ($family->verified_at) {
             $this->dispatch('show-toast', [
-                'message' => '⚠️ این خانواده قبلاً تایید شده است',
+                'message' => 'Ã¢Å¡Â Ã¯Â¸Â Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã™â€¹ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜Âª',
                 'type' => 'warning'
             ]);
             return;
         }
 
-        // بررسی اینکه یک سرپرست انتخاب شده باشد
+        // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã›Å’Ã™â€ ÃšÂ©Ã™â€¡ Ã›Å’ÃšÂ© Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
         $headsCount = Member::where('family_id', $familyId)->where('is_head', true)->count();
 
         if ($headsCount === 0) {
             $this->dispatch('show-toast', [
-                'message' => '❌ لطفاً قبل از تایید، یک سرپرست برای خانواده انتخاب کنید',
+                'message' => 'Ã¢ÂÅ’ Ã™â€žÃ˜Â·Ã™ÂÃ˜Â§Ã™â€¹ Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã˜Â² Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯Ã˜Å’ Ã›Å’ÃšÂ© Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯',
                 'type' => 'error'
             ]);
             return;
@@ -1860,34 +1860,34 @@ class FamilySearch extends Component
 
         if ($headsCount > 1) {
             $this->dispatch('show-toast', [
-                'message' => '⚠️ خطا: بیش از یک سرپرست انتخاب شده است. لطفاً فقط یک نفر را انتخاب کنید',
+                'message' => 'Ã¢Å¡Â Ã¯Â¸Â Ã˜Â®Ã˜Â·Ã˜Â§: Ã˜Â¨Ã›Å’Ã˜Â´ Ã˜Â§Ã˜Â² Ã›Å’ÃšÂ© Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜Âª. Ã™â€žÃ˜Â·Ã™ÂÃ˜Â§Ã™â€¹ Ã™ÂÃ™â€šÃ˜Â· Ã›Å’ÃšÂ© Ã™â€ Ã™ÂÃ˜Â± Ã˜Â±Ã˜Â§ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯',
                 'type' => 'error'
             ]);
-            // اصلاح خودکار - فقط اولین سرپرست را نگه می‌داریم
+            // Ã˜Â§Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­ Ã˜Â®Ã™Ë†Ã˜Â¯ÃšÂ©Ã˜Â§Ã˜Â± - Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã™Ë†Ã™â€žÃ›Å’Ã™â€  Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª Ã˜Â±Ã˜Â§ Ã™â€ ÃšÂ¯Ã™â€¡ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã™â€¦
             $firstHead = Member::where('family_id', $familyId)->where('is_head', true)->first();
             Member::where('family_id', $familyId)->update(['is_head' => false]);
             $firstHead->update(['is_head' => true]);
             return;
         }
 
-        // بررسی حداقل یک عضو در خانواده
+        // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â­Ã˜Â¯Ã˜Â§Ã™â€šÃ™â€ž Ã›Å’ÃšÂ© Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â¯Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
         $membersCount = Member::where('family_id', $familyId)->count();
         if ($membersCount === 0) {
             $this->dispatch('show-toast', [
-                'message' => '❌ این خانواده هیچ عضوی ندارد و قابل تایید نیست',
+                'message' => 'Ã¢ÂÅ’ Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã™â€¡Ã›Å’Ãšâ€  Ã˜Â¹Ã˜Â¶Ã™Ë†Ã›Å’ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯ Ã™Ë† Ã™â€šÃ˜Â§Ã˜Â¨Ã™â€ž Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã™â€ Ã›Å’Ã˜Â³Ã˜Âª',
                 'type' => 'error'
             ]);
             return;
         }
 
-        // تایید و ذخیره تاریخ تایید
+        // Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã™Ë† Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â® Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯
         $family->verified_at = now();
         $family->verified_by = Auth::id();
         $family->save();
 
-        // نمایش پیام موفقیت
+        // Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª
         $this->dispatch('show-toast', [
-            'message' => '✅ خانواده با موفقیت تایید شد و آماده ارسال به بیمه می‌باشد',
+            'message' => 'Ã¢Å“â€¦ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â´Ã˜Â¯ Ã™Ë† Ã˜Â¢Ã™â€¦Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ž Ã˜Â¨Ã™â€¡ Ã˜Â¨Ã›Å’Ã™â€¦Ã™â€¡ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯',
             'type' => 'success'
         ]);
     }
@@ -1896,7 +1896,7 @@ class FamilySearch extends Component
     {
         $this->dispatch('copy-text', $text);
         $this->dispatch('show-toast', [
-            'message' => '📋 متن با موفقیت کپی شد: ' . $text,
+            'message' => 'Ã°Å¸â€œâ€¹ Ã™â€¦Ã˜ÂªÃ™â€  Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª ÃšÂ©Ã™Â¾Ã›Å’ Ã˜Â´Ã˜Â¯: ' . $text,
             'type' => 'success'
         ]);
     }
@@ -1904,29 +1904,29 @@ class FamilySearch extends Component
 
 
     /**
-     * بازگشت به تنظیمات پیشفرض
+     * Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶
      */
     public function resetToDefaultSettings()
     {
-        // پاک کردن معیارهای انتخاب شده
+        // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
         $this->selectedCriteria = [];
         $this->criteriaRequireDocument = [];
 
-        // مقداردهی مجدد با مقادیر پیشفرض
+        // Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã™â€¡Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶
         foreach ($this->availableCriteria as $criterion) {
             $this->selectedCriteria[$criterion->id] = false;
             $this->criteriaRequireDocument[$criterion->id] = true;
         }
 
-        $this->dispatch('notify', ['message' => 'تنظیمات به حالت پیشفرض بازگشت.', 'type' => 'info']);
+        $this->dispatch('notify', ['message' => 'Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶ Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª.', 'type' => 'info']);
     }
 
     //======================================================================
-    //== متدهای سیستم رتبه‌بندی پویا
+    //== Ã™â€¦Ã˜ÂªÃ˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â³Ã›Å’Ã˜Â³Ã˜ÂªÃ™â€¦ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Â¾Ã™Ë†Ã›Å’Ã˜Â§
     //======================================================================
 
     /**
-     * وزن‌های یک الگوی رتبه‌بندی ذخیره‌شده را بارگیری می‌کند.
+     * Ã™Ë†Ã˜Â²Ã™â€ Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã›Å’ÃšÂ© Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡Ã¢â‚¬Å’Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯.
      */
 
     public function loadScheme($schemeId)
@@ -1947,7 +1947,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * یک الگوی رتبه‌بندی جدید را ذخیره یا یک الگوی موجود را به‌روزرسانی می‌کند.
+     * Ã›Å’ÃšÂ© Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â±Ã˜Â§ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã›Å’Ã˜Â§ Ã›Å’ÃšÂ© Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯.
      */
     public function saveScheme()
     {
@@ -1979,16 +1979,16 @@ class FamilySearch extends Component
         $this->rankingSchemes = \App\Models\RankingScheme::orderBy('name')->get();
         $this->selectedSchemeId = $scheme->id;
 
-        $this->dispatch('notify', ['message' => 'الگو با موفقیت ذخیره شد.', 'type' => 'success']);
+        $this->dispatch('notify', ['message' => 'Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë† Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯.', 'type' => 'success']);
     }
 
     /**
-     * الگوی انتخاب‌شده را برای فیلتر کردن و مرتب‌سازی اعمال می‌کند.
+     * Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨Ã¢â‚¬Å’Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™Ë† Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯.
      */
     public function applyRankingScheme()
     {
         if (!$this->selectedSchemeId) {
-             $this->dispatch('notify', ['message' => 'لطفا ابتدا یک الگو را انتخاب یا ذخیره کنید.', 'type' => 'error']);
+             $this->dispatch('notify', ['message' => 'Ã™â€žÃ˜Â·Ã™ÂÃ˜Â§ Ã˜Â§Ã˜Â¨Ã˜ÂªÃ˜Â¯Ã˜Â§ Ã›Å’ÃšÂ© Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë† Ã˜Â±Ã˜Â§ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã›Å’Ã˜Â§ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯.', 'type' => 'error']);
              return;
         }
         $this->appliedSchemeId = $this->selectedSchemeId;
@@ -1996,16 +1996,16 @@ class FamilySearch extends Component
         $this->resetPage();
         $this->showRankModal = false;
 
-        // دریافت نام الگوی انتخاب شده برای نمایش در پیام
+        // Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¯Ã˜Â± Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦
         $schemeName = \App\Models\RankingScheme::find($this->selectedSchemeId)->name ?? '';
         $this->dispatch('notify', [
-            'message' => "الگوی رتبه‌بندی «{$schemeName}» با موفقیت اعمال شد.",
+            'message' => "Ã˜Â§Ã™â€žÃšÂ¯Ã™Ë†Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã‚Â«{$schemeName}Ã‚Â» Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â´Ã˜Â¯.",
             'type' => 'success'
         ]);
     }
 
     /**
-     * رتبه‌بندی اعمال‌شده را پاک می‌کند.
+     * Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€žÃ¢â‚¬Å’Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã™Â¾Ã˜Â§ÃšÂ© Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯.
      */
     public function clearRanking()
     {
@@ -2013,35 +2013,35 @@ class FamilySearch extends Component
         $this->sortBy('created_at');
         $this->resetPage();
         $this->showRankModal = false;
-        $this->dispatch('notify', ['message' => 'فیلتر رتبه‌بندی حذف شد.', 'type' => 'info']);
+        $this->dispatch('notify', ['message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯.', 'type' => 'info']);
     }
     public function applyAndClose()
     {
         try {
-            // اطمینان از ذخیره همه تغییرات
+            // Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¡Ã™â€¦Ã™â€¡ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             $this->loadRankSettings();
 
-            // بروزرسانی لیست معیارهای در دسترس
+            // Ã˜Â¨Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¯Ã˜Â± Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³
             $this->availableRankSettings = \App\Models\RankSetting::active()->ordered()->get();
 
-            // اعمال تغییرات به خانواده‌ها
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
             if ($this->appliedSchemeId) {
-                // اگر یک طرح رتبه‌بندی انتخاب شده باشد، دوباره آن را اعمال می‌کنیم
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã›Å’ÃšÂ© Ã˜Â·Ã˜Â±Ã˜Â­ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯Ã˜Å’ Ã˜Â¯Ã™Ë†Ã˜Â¨Ã˜Â§Ã˜Â±Ã™â€¡ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã›Å’Ã™â€¦
                 $this->applyRankingScheme();
 
                 $this->sortBy('calculated_score');
             }
 
-            // بستن مودال و نمایش پیام
+            // Ã˜Â¨Ã˜Â³Ã˜ÂªÃ™â€  Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã™Ë† Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦
             $this->showRankModal = false;
             $this->dispatch('notify', [
-                'message' => 'تغییرات با موفقیت اعمال شد.',
+                'message' => 'Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â´Ã˜Â¯.',
                 'type' => 'success'
             ]);
         } catch (\Exception $e) {
-            // خطا در اعمال تغییرات
+            // Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             $this->dispatch('notify', [
-                'message' => 'خطا در اعمال تغییرات: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
@@ -2049,7 +2049,7 @@ class FamilySearch extends Component
 
     public function loadRankSettings()
     {
-        Log::info('📋 STEP 2: Loading rank settings', [
+        Log::info('Ã°Å¸â€œâ€¹ STEP 2: Loading rank settings', [
             'user_id' => Auth::id(),
             'timestamp' => now()
         ]);
@@ -2058,27 +2058,27 @@ class FamilySearch extends Component
         $this->availableCriteria = RankSetting::where('is_active', true)->orderBy('sort_order')->get();
         // Update available rank settings for display
         $this->availableRankSettings = $this->rankSettings;
-        // اصلاح count برای آرایه/کالکشن
+        // Ã˜Â§Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­ count Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡/ÃšÂ©Ã˜Â§Ã™â€žÃšÂ©Ã˜Â´Ã™â€ 
         $rankSettingsCount = is_array($this->rankSettings) ? count($this->rankSettings) : $this->rankSettings->count();
         $rankingSchemesCount = is_array($this->rankingSchemes) ? count($this->rankingSchemes) : $this->rankingSchemes->count();
         $availableCriteriaCount = is_array($this->availableCriteria) ? count($this->availableCriteria) : $this->availableCriteria->count();
         $activeCriteria = $this->availableCriteria instanceof \Illuminate\Support\Collection ? $this->availableCriteria->pluck('name', 'id')->toArray() : [];
-        Log::info('✅ STEP 2 COMPLETED: Rank settings loaded', [
+        Log::info('Ã¢Å“â€¦ STEP 2 COMPLETED: Rank settings loaded', [
             'rankSettings_count' => $rankSettingsCount,
             'rankingSchemes_count' => $rankingSchemesCount,
             'availableCriteria_count' => $availableCriteriaCount,
             'active_criteria' => $activeCriteria,
             'user_id' => Auth::id()
         ]);
-        // نمایش پیام مناسب برای باز شدن تنظیمات
+        // Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â³Ã˜Â¨ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¨Ã˜Â§Ã˜Â² Ã˜Â´Ã˜Â¯Ã™â€  Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª
         $this->dispatch('notify', [
-            'message' => 'تنظیمات معیارهای رتبه‌بندی بارگذاری شد - ' . $rankSettingsCount . ' معیار',
+            'message' => 'Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â´Ã˜Â¯ - ' . $rankSettingsCount . ' Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±',
             'type' => 'info'
         ]);
     }
 
     /**
-     * فرم افزودن معیار جدید را نمایش می‌دهد.
+     * Ã™ÂÃ˜Â±Ã™â€¦ Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â±Ã˜Â§ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â¯Ã™â€¡Ã˜Â¯.
      */
     public function showCreateForm()
     {
@@ -2093,13 +2093,13 @@ class FamilySearch extends Component
         ];
 
         $this->dispatch('notify', [
-            'message' => 'فرم ایجاد معیار جدید آماده شد',
+            'message' => 'Ã™ÂÃ˜Â±Ã™â€¦ Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â¢Ã™â€¦Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â´Ã˜Â¯',
             'type' => 'info'
         ]);
     }
 
     /**
-     * یک معیار را برای ویرایش انتخاب می‌کند.
+     * Ã›Å’ÃšÂ© Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯.
      * @param int $id
      */
     public function edit($id)
@@ -2113,7 +2113,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * تغییرات را ذخیره می‌کند (هم برای افزودن جدید و هم ویرایش).
+     * Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª Ã˜Â±Ã˜Â§ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯ (Ã™â€¡Ã™â€¦ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€  Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã™Ë† Ã™â€¡Ã™â€¦ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´).
      */
     public function save()
     {
@@ -2126,7 +2126,7 @@ class FamilySearch extends Component
         ]);
 
         try {
-            // محاسبه sort_order برای رکورد جدید
+            // Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã™â€¡ sort_order Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â±ÃšÂ©Ã™Ë†Ã˜Â±Ã˜Â¯ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
             if (!$this->editingRankSettingId) {
                 $maxOrder = RankSetting::max('sort_order') ?? 0;
                 $this->editingRankSetting['sort_order'] = $maxOrder + 10;
@@ -2134,35 +2134,35 @@ class FamilySearch extends Component
                 $this->editingRankSetting['slug'] = \Illuminate\Support\Str::slug($this->editingRankSetting['name']);
             }
 
-            // ذخیره
+            // Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡
             $setting = RankSetting::updateOrCreate(
                 ['id' => $this->editingRankSettingId],
                 $this->editingRankSetting
             );
 
-            // بازنشانی فرم
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ˜Â±Ã™â€¦
             $this->resetForm();
 
-            // بارگذاری مجدد تنظیمات
+            // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª
             $this->loadRankSettings();
 
-            // پاک کردن کش لیست خانواده‌ها
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
             $this->clearFamiliesCache();
 
             $this->dispatch('notify', [
-                'message' => 'معیار با موفقیت ذخیره شد',
+                'message' => 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯',
                 'type' => 'success'
             ]);
         } catch (\Exception $e) {
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * حذف یک معیار رتبه‌بندی
+     * Ã˜Â­Ã˜Â°Ã™Â Ã›Å’ÃšÂ© Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
      * @param int $id
      */
     public function delete($id)
@@ -2170,11 +2170,11 @@ class FamilySearch extends Component
         try {
             $setting = RankSetting::find($id);
             if ($setting) {
-                // بررسی استفاده شدن معیار
+                // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±
                 $usageCount = \App\Models\FamilyCriterion::where('rank_setting_id', $id)->count();
                 if ($usageCount > 0) {
                     $this->dispatch('notify', [
-                        'message' => "این معیار در {$usageCount} خانواده استفاده شده و قابل حذف نیست. به جای حذف می‌توانید آن را غیرفعال کنید.",
+                        'message' => "Ã˜Â§Ã›Å’Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¯Ã˜Â± {$usageCount} Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã™Ë† Ã™â€šÃ˜Â§Ã˜Â¨Ã™â€ž Ã˜Â­Ã˜Â°Ã™Â Ã™â€ Ã›Å’Ã˜Â³Ã˜Âª. Ã˜Â¨Ã™â€¡ Ã˜Â¬Ã˜Â§Ã›Å’ Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã›Å’Ã˜Â¯ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜ÂºÃ›Å’Ã˜Â±Ã™ÂÃ˜Â¹Ã˜Â§Ã™â€ž ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯.",
                         'type' => 'error'
                     ]);
                     return;
@@ -2183,36 +2183,36 @@ class FamilySearch extends Component
                 $setting->delete();
                 $this->loadRankSettings();
 
-                // پاک کردن کش لیست خانواده‌ها
+                // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
                 $this->clearFamiliesCache();
 
                 $this->dispatch('notify', [
-                    'message' => 'معیار با موفقیت حذف شد',
+                    'message' => 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯',
                     'type' => 'success'
                 ]);
             }
         } catch (\Exception $e) {
             $this->dispatch('notify', [
-                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * انصراف از ویرایش/افزودن و بازنشانی فرم
+     * Ã˜Â§Ã™â€ Ã˜ÂµÃ˜Â±Ã˜Â§Ã™Â Ã˜Â§Ã˜Â² Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´/Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€  Ã™Ë† Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ˜Â±Ã™â€¦
      */
     public function cancel()
     {
         $this->resetForm();
         $this->dispatch('notify', [
-            'message' => 'عملیات لغو شد',
+            'message' => 'Ã˜Â¹Ã™â€¦Ã™â€žÃ›Å’Ã˜Â§Ã˜Âª Ã™â€žÃ˜ÂºÃ™Ë† Ã˜Â´Ã˜Â¯',
             'type' => 'info'
         ]);
     }
 
     /**
-     * بازنشانی فرم ویرایش/افزودن
+     * Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ˜Â±Ã™â€¦ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´/Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€ 
      */
     private function resetForm()
     {
@@ -2228,18 +2228,18 @@ class FamilySearch extends Component
     }
 
     /**
-     * باز کردن مودال تنظیمات رتبه
+     * Ã˜Â¨Ã˜Â§Ã˜Â² ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
      */
     public function openRankModal()
     {
-        Log::info('🎯 STEP 1: Opening rank modal', [
+        Log::info('Ã°Å¸Å½Â¯ STEP 1: Opening rank modal', [
             'user_id' => Auth::id(),
             'timestamp' => now()
         ]);
         $this->loadRankSettings();
         $this->showRankModal = true;
         $rankSettingsCount = is_array($this->rankSettings) ? count($this->rankSettings) : $this->rankSettings->count();
-        Log::info('✅ STEP 1 COMPLETED: Rank modal opened', [
+        Log::info('Ã¢Å“â€¦ STEP 1 COMPLETED: Rank modal opened', [
             'showRankModal' => $this->showRankModal,
             'rankSettings_count' => $rankSettingsCount,
             'user_id' => Auth::id()
@@ -2247,7 +2247,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * بستن مودال تنظیمات رتبه
+     * Ã˜Â¨Ã˜Â³Ã˜ÂªÃ™â€  Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
      */
     public function closeRankModal()
     {
@@ -2255,76 +2255,76 @@ class FamilySearch extends Component
     }
 
     /**
-     * اعمال معیارهای انتخاب شده
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
      */
     public function applyCriteria()
     {
         try {
-            Log::info('🎯 STEP 3: Starting applyCriteria with ranking sort', [
+            Log::info('Ã°Å¸Å½Â¯ STEP 3: Starting applyCriteria with ranking sort', [
                 'selectedCriteria' => $this->selectedCriteria,
                 'user_id' => Auth::id(),
                 'timestamp' => now()
             ]);
 
-            // استخراج ID معیارهای انتخاب شده
+            // Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â±Ã˜Â§Ã˜Â¬ ID Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
             $selectedRankSettingIds = array_keys(array_filter($this->selectedCriteria,
                 fn($value) => $value === true
             ));
 
-            Log::info('📊 STEP 3.1: Selected criteria analysis', [
+            Log::info('Ã°Å¸â€œÅ  STEP 3.1: Selected criteria analysis', [
                 'selectedRankSettingIds' => $selectedRankSettingIds,
                 'selectedRankSettingIds_count' => count($selectedRankSettingIds),
                 'user_id' => Auth::id()
             ]);
 
             if (empty($selectedRankSettingIds)) {
-                Log::warning('❌ STEP 3 FAILED: No criteria selected for ranking', [
+                Log::warning('Ã¢ÂÅ’ STEP 3 FAILED: No criteria selected for ranking', [
                     'user_id' => Auth::id()
                 ]);
-                // پاک کردن فیلتر و سورت
+                // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™Ë† Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª
                 $this->specific_criteria = null;
                 $this->sortField = 'created_at';
                 $this->sortDirection = 'desc';
                 $this->resetPage();
                 $this->clearFamiliesCache();
-                // بستن مودال
+                // Ã˜Â¨Ã˜Â³Ã˜ÂªÃ™â€  Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
                 $this->showRankModal = false;
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر و سورت معیارها پاک شد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™Ë† Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§ Ã™Â¾Ã˜Â§ÃšÂ© Ã˜Â´Ã˜Â¯',
                     'type' => 'info'
                 ]);
                 return;
             }
 
-            // ذخیره id معیارها برای فیلتر (مانند FamiliesApproval)
+            // Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ id Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± (Ã™â€¦Ã˜Â§Ã™â€ Ã™â€ Ã˜Â¯ FamiliesApproval)
             $this->specific_criteria = implode(',', $selectedRankSettingIds);
 
-            // تنظیم سورت بر اساس رتبه‌بندی
+            // Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
             $this->sortField = 'weighted_rank';
-            $this->sortDirection = 'desc'; // امتیاز بالاتر اول
+            $this->sortDirection = 'desc'; // Ã˜Â§Ã™â€¦Ã˜ÂªÃ›Å’Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â§Ã™â€žÃ˜Â§Ã˜ÂªÃ˜Â± Ã˜Â§Ã™Ë†Ã™â€ž
 
-            Log::info('⚙️ STEP 3.3: Sort parameters set', [
+            Log::info('Ã¢Å¡â„¢Ã¯Â¸Â STEP 3.3: Sort parameters set', [
                 'sortField' => $this->sortField,
                 'sortDirection' => $this->sortDirection,
                 'specific_criteria' => $this->specific_criteria,
                 'user_id' => Auth::id()
             ]);
 
-            // Reset صفحه و cache
+            // Reset Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã™Ë† cache
             $this->resetPage();
             $this->clearFamiliesCache();
 
-            $criteriaList = implode('، ', $selectedRankSettingIds);
+            $criteriaList = implode('Ã˜Å’ ', $selectedRankSettingIds);
 
             $this->dispatch('notify', [
-                'message' => "سورت بر اساس معیارها اعمال شد: {$criteriaList}",
+                'message' => "Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â´Ã˜Â¯: {$criteriaList}",
                 'type' => 'success'
             ]);
 
-            // بستن مودال
+            // Ã˜Â¨Ã˜Â³Ã˜ÂªÃ™â€  Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
             $this->showRankModal = false;
 
-            Log::info('✅ STEP 3 COMPLETED: Ranking sort applied successfully', [
+            Log::info('Ã¢Å“â€¦ STEP 3 COMPLETED: Ranking sort applied successfully', [
                 'criteria_ids' => $selectedRankSettingIds,
                 'sort_field' => $this->sortField,
                 'sort_direction' => $this->sortDirection,
@@ -2332,32 +2332,32 @@ class FamilySearch extends Component
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ STEP 3 ERROR: Error in ranking sort: ' . $e->getMessage(), [
+            Log::error('Ã¢ÂÅ’ STEP 3 ERROR: Error in ranking sort: ' . $e->getMessage(), [
                 'exception' => $e,
                 'user_id' => Auth::id()
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در اعمال سورت رتبه‌بندی: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * ویرایش تنظیمات رتبه
+     * Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
      */
     public function editRankSetting($id)
     {
         try {
             $setting = RankSetting::find($id);
             if ($setting) {
-                // پر کردن فرم با مقادیر معیار موجود - با پشتیبانی از هر دو نام فیلد
+                // Ã™Â¾Ã˜Â± ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ˜Â±Ã™â€¦ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ - Ã˜Â¨Ã˜Â§ Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã™â€¡Ã˜Â± Ã˜Â¯Ã™Ë† Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯
                 $this->rankSettingName = $setting->name;
                 $this->rankSettingDescription = $setting->description;
                 $this->rankSettingWeight = $setting->weight;
 
-                // پشتیبانی از هر دو نام فیلد رنگ
+                // Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã™â€¡Ã˜Â± Ã˜Â¯Ã™Ë† Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯ Ã˜Â±Ã™â€ ÃšÂ¯
                 if (isset($setting->bg_color)) {
                     $this->rankSettingColor = $setting->bg_color;
                 } elseif (isset($setting->color)) {
@@ -2366,7 +2366,7 @@ class FamilySearch extends Component
                     $this->rankSettingColor = 'bg-green-100';
                 }
 
-                // پشتیبانی از هر دو نام فیلد نیاز به مدرک
+                // Ã™Â¾Ã˜Â´Ã˜ÂªÃ›Å’Ã˜Â¨Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â² Ã™â€¡Ã˜Â± Ã˜Â¯Ã™Ë† Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯ Ã™â€ Ã›Å’Ã˜Â§Ã˜Â² Ã˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â¯Ã˜Â±ÃšÂ©
                 if (isset($setting->requires_document)) {
                     $this->rankSettingNeedsDoc = $setting->requires_document ? 1 : 0;
                 } elseif (isset($setting->needs_doc)) {
@@ -2376,16 +2376,16 @@ class FamilySearch extends Component
                 }
 
                 $this->editingRankSettingId = $id;
-                $this->isEditingMode = true; // مشخص می‌کند که در حال ویرایش هستیم نه افزودن
+                $this->isEditingMode = true; // Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯ ÃšÂ©Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â§Ã™â€ž Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™â€¡Ã˜Â³Ã˜ÂªÃ›Å’Ã™â€¦ Ã™â€ Ã™â€¡ Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€ 
 
-                // ثبت در لاگ
+                // Ã˜Â«Ã˜Â¨Ã˜Âª Ã˜Â¯Ã˜Â± Ã™â€žÃ˜Â§ÃšÂ¯
                 Log::info('Editing rank setting:', [
                     'id' => $setting->id,
                     'name' => $setting->name
                 ]);
 
                 $this->dispatch('notify', [
-                    'message' => 'در حال ویرایش معیار: ' . $setting->name,
+                    'message' => 'Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â§Ã™â€ž Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $setting->name,
                     'type' => 'info'
                 ]);
             }
@@ -2396,14 +2396,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در بارگذاری اطلاعات معیار: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * ریست کردن فرم معیار - متد عمومی
+     * Ã˜Â±Ã›Å’Ã˜Â³Ã˜Âª ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ˜Â±Ã™â€¦ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± - Ã™â€¦Ã˜ÂªÃ˜Â¯ Ã˜Â¹Ã™â€¦Ã™Ë†Ã™â€¦Ã›Å’
      */
     public function resetRankSettingForm()
     {
@@ -2413,44 +2413,44 @@ class FamilySearch extends Component
         $this->rankSettingColor = '#60A5FA';
         $this->rankSettingNeedsDoc = true;
         $this->editingRankSettingId = null;
-        $this->isEditingMode = false; // مشخص می‌کند که در حال افزودن هستیم نه ویرایش
+        $this->isEditingMode = false; // Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã˜Â¯ ÃšÂ©Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â§Ã™â€ž Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€  Ã™â€¡Ã˜Â³Ã˜ÂªÃ›Å’Ã™â€¦ Ã™â€ Ã™â€¡ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´
 
-        // اطلاع‌رسانی به کاربر در صورتی که این متد مستقیماً از UI فراخوانی شده باشد
+        // Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã¢â‚¬Å’Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â¨Ã™â€¡ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â¯Ã˜Â± Ã˜ÂµÃ™Ë†Ã˜Â±Ã˜ÂªÃ›Å’ ÃšÂ©Ã™â€¡ Ã˜Â§Ã›Å’Ã™â€  Ã™â€¦Ã˜ÂªÃ˜Â¯ Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€šÃ›Å’Ã™â€¦Ã˜Â§Ã™â€¹ Ã˜Â§Ã˜Â² UI Ã™ÂÃ˜Â±Ã˜Â§Ã˜Â®Ã™Ë†Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
         if (request()->hasHeader('x-livewire')) {
             $this->dispatch('notify', [
-                'message' => 'فرم معیار بازنشانی شد',
+                'message' => 'Ã™ÂÃ˜Â±Ã™â€¦ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯',
                 'type' => 'info'
             ]);
         }
     }
 
     /**
-     * بازگشت به تنظیمات پیشفرض
+     * Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶
      */
     public function resetToDefaults()
     {
-        // پاک کردن فیلترهای رتبه
+        // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
         $this->family_rank_range = null;
         $this->specific_criteria = null;
         $this->selectedCriteria = [];
 
-        // بازنشانی صفحه‌بندی و به‌روزرسانی لیست
+        // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Ë† Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª
         $this->resetPage();
         $this->closeRankModal();
 
-        // پاک کردن کش برای اطمینان از به‌روزرسانی داده‌ها
+        // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
         if (Auth::check()) {
             cache()->forget('families_query_' . Auth::id());
         }
 
         $this->dispatch('notify', [
-            'message' => 'تنظیمات رتبه با موفقیت به حالت پیشفرض بازگردانده شد',
+            'message' => 'Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã™ÂÃ˜Â±Ã˜Â¶ Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â±Ã˜Â¯Ã˜Â§Ã™â€ Ã˜Â¯Ã™â€¡ Ã˜Â´Ã˜Â¯',
             'type' => 'success'
         ]);
     }
 
     /**
-     * حذف معیار
+     * Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±
      */
     public function deleteRankSetting($id)
     {
@@ -2461,11 +2461,11 @@ class FamilySearch extends Component
                 $setting->delete();
 
                 $this->dispatch('notify', [
-                    'message' => "معیار «{$name}» با موفقیت حذف شد",
+                    'message' => "Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã‚Â«{$name}Ã‚Â» Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯",
                     'type' => 'warning'
                 ]);
 
-                // بارگذاری مجدد لیست
+                // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª
                 $this->availableRankSettings = RankSetting::active()->ordered()->get();
             }
         } catch (\Exception $e) {
@@ -2475,26 +2475,26 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در حذف معیار: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * ذخیره معیار رتبه‌بندی
+     * Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
      */
     public function saveRankSetting()
     {
         try {
-            // اعتبارسنجی
+            // Ã˜Â§Ã˜Â¹Ã˜ÂªÃ˜Â¨Ã˜Â§Ã˜Â±Ã˜Â³Ã™â€ Ã˜Â¬Ã›Å’
             if ($this->editingRankSettingId) {
-                // در حالت ویرایش فقط وزن قابل تغییر است
+                // Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ™â€šÃ˜Â· Ã™Ë†Ã˜Â²Ã™â€  Ã™â€šÃ˜Â§Ã˜Â¨Ã™â€ž Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Âª
                 $this->validate([
                     'rankSettingWeight' => 'required|integer|min:0|max:10',
                 ]);
             } else {
-                // در حالت افزودن معیار جدید همه فیلدها الزامی هستند
+                // Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã˜Â§Ã™ÂÃ˜Â²Ã™Ë†Ã˜Â¯Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã™â€¡Ã™â€¦Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯Ã™â€¡Ã˜Â§ Ã˜Â§Ã™â€žÃ˜Â²Ã˜Â§Ã™â€¦Ã›Å’ Ã™â€¡Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯
                 $this->validate([
                     'rankSettingName' => 'required|string|max:255',
                     'rankSettingWeight' => 'required|integer|min:0|max:10',
@@ -2504,19 +2504,19 @@ class FamilySearch extends Component
             }
 
             if ($this->editingRankSettingId) {
-                // ویرایش معیار موجود - فقط وزن
+                // Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™â€¦Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ - Ã™ÂÃ™â€šÃ˜Â· Ã™Ë†Ã˜Â²Ã™â€ 
                 $setting = RankSetting::find($this->editingRankSettingId);
                 if ($setting) {
                     $setting->weight = $this->rankSettingWeight;
                     $setting->save();
 
                     $this->dispatch('notify', [
-                        'message' => 'وزن معیار با موفقیت به‌روزرسانی شد: ' . $setting->name,
+                        'message' => 'Ã™Ë†Ã˜Â²Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯: ' . $setting->name,
                         'type' => 'success'
                     ]);
                 }
             } else {
-                // ایجاد معیار جدید
+                // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
                 RankSetting::create([
                     'name' => $this->rankSettingName,
                     'weight' => $this->rankSettingWeight,
@@ -2528,28 +2528,28 @@ class FamilySearch extends Component
                 ]);
 
                 $this->dispatch('notify', [
-                    'message' => 'معیار جدید با موفقیت ایجاد شد: ' . $this->rankSettingName,
+                    'message' => 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã˜Â´Ã˜Â¯: ' . $this->rankSettingName,
                     'type' => 'success'
                 ]);
             }
 
-            // بارگذاری مجدد تنظیمات
+            // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª
             $this->availableRankSettings = RankSetting::active()->ordered()->get();
             $this->clearFamiliesCache();
             $this->resetRankSettingForm();
 
         } catch (\Exception $e) {
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره معیار: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * بارگذاری فیلتر رتبه‌بندی و اعمال آن
+     * Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™Ë† Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â¢Ã™â€ 
      *
-     * @param int $filterId شناسه فیلتر
+     * @param int $filterId Ã˜Â´Ã™â€ Ã˜Â§Ã˜Â³Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
      * @return bool
      */
     public function loadRankFilter($filterId)
@@ -2557,43 +2557,43 @@ class FamilySearch extends Component
         try {
             $user = auth()->user();
 
-            // فقط فیلترهای رتبه‌بندی را جستجو کن
+            // Ã™ÂÃ™â€šÃ˜Â· Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â±Ã˜Â§ Ã˜Â¬Ã˜Â³Ã˜ÂªÃ˜Â¬Ã™Ë† ÃšÂ©Ã™â€ 
             $filter = SavedFilter::where('filter_type', 'rank_settings')
                 ->where(function ($q) use ($user) {
-                    // فیلترهای خود کاربر
+                    // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
                     $q->where('user_id', $user->id)
-                      // یا فیلترهای سازمانی (اگر کاربر عضو سازمان باشد)
+                      // Ã›Å’Ã˜Â§ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€ Ã›Å’ (Ã˜Â§ÃšÂ¯Ã˜Â± ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â³Ã˜Â§Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€  Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯)
                       ->orWhere('organization_id', $user->organization_id);
                 })
                 ->find($filterId);
 
             if (!$filter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر رتبه‌بندی یافت نشد یا مخصوص این بخش نیست',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯ Ã›Å’Ã˜Â§ Ã™â€¦Ã˜Â®Ã˜ÂµÃ™Ë†Ã˜Âµ Ã˜Â§Ã›Å’Ã™â€  Ã˜Â¨Ã˜Â®Ã˜Â´ Ã™â€ Ã›Å’Ã˜Â³Ã˜Âª',
                     'type' => 'warning'
                 ]);
                 return false;
             }
 
-            // اعمال تنظیمات فیلتر
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
             $config = $filter->filters_config;
 
             $this->selectedCriteria = $config['selectedCriteria'] ?? [];
             $this->family_rank_range = $config['family_rank_range'] ?? '';
             $this->specific_criteria = $config['specific_criteria'] ?? '';
 
-            // بازنشانی صفحه‌بندی
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
             $this->resetPage();
 
-            // افزایش تعداد استفاده و به‌روزرسانی آخرین زمان استفاده
+            // Ã˜Â§Ã™ÂÃ˜Â²Ã˜Â§Ã›Å’Ã˜Â´ Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã™Ë† Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â¢Ã˜Â®Ã˜Â±Ã›Å’Ã™â€  Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡
             $filter->increment('usage_count');
             $filter->update(['last_used_at' => now()]);
 
-            // پاک کردن کش
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´
             $this->clearFamiliesCache();
 
             $this->dispatch('notify', [
-                'message' => 'فیلتر تنظیمات رتبه "' . $filter->name . '" با موفقیت بارگذاری شد',
+                'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ "' . $filter->name . '" Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â´Ã˜Â¯',
                 'type' => 'success'
             ]);
 
@@ -2601,7 +2601,7 @@ class FamilySearch extends Component
         } catch (\Exception $e) {
             Log::error('Error loading rank filter: ' . $e->getMessage());
             $this->dispatch('notify', [
-                'message' => 'خطا در بارگذاری فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
             return false;
@@ -2609,33 +2609,33 @@ class FamilySearch extends Component
     }
 
     /**
-     * ذخیره فیلتر تنظیمات رتبه
+     * Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
      *
-     * @param string $name نام فیلتر
-     * @param string $description توضیحات فیلتر
+     * @param string $name Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
+     * @param string $description Ã˜ÂªÃ™Ë†Ã˜Â¶Ã›Å’Ã˜Â­Ã˜Â§Ã˜Âª Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
      * @return bool
      */
     public function saveRankFilter($name, $description = '')
     {
         try {
-            // اعتبارسنجی ورودی
+            // Ã˜Â§Ã˜Â¹Ã˜ÂªÃ˜Â¨Ã˜Â§Ã˜Â±Ã˜Â³Ã™â€ Ã˜Â¬Ã›Å’ Ã™Ë†Ã˜Â±Ã™Ë†Ã˜Â¯Ã›Å’
             if (empty(trim($name))) {
                 $this->dispatch('notify', [
-                    'message' => 'نام فیلتر الزامی است',
+                    'message' => 'Ã™â€ Ã˜Â§Ã™â€¦ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â§Ã™â€žÃ˜Â²Ã˜Â§Ã™â€¦Ã›Å’ Ã˜Â§Ã˜Â³Ã˜Âª',
                     'type' => 'error'
                 ]);
                 return false;
             }
 
-            // تهیه پیکربندی فیلتر فعلی برای تنظیمات رتبه
+            // Ã˜ÂªÃ™â€¡Ã›Å’Ã™â€¡ Ã™Â¾Ã›Å’ÃšÂ©Ã˜Â±Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡
             $filtersConfig = [
                 'selectedCriteria' => $this->selectedCriteria,
                 'family_rank_range' => $this->family_rank_range,
                 'specific_criteria' => $this->specific_criteria,
-                // می‌توانید فیلدهای دیگر مربوط به رتبه‌بندی را اضافه کنید
+                // Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã›Å’Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¯Ã›Å’ÃšÂ¯Ã˜Â± Ã™â€¦Ã˜Â±Ã˜Â¨Ã™Ë†Ã˜Â· Ã˜Â¨Ã™â€¡ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â±Ã˜Â§ Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯
             ];
 
-            // بررسی اینکه فیلتری با همین نام برای این کاربر و نوع فیلتر وجود ندارد
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã›Å’Ã™â€ ÃšÂ©Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã›Å’ Ã˜Â¨Ã˜Â§ Ã™â€¡Ã™â€¦Ã›Å’Ã™â€  Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã›Å’Ã™â€  ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã™Ë† Ã™â€ Ã™Ë†Ã˜Â¹ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯
             $existingFilter = SavedFilter::where('user_id', auth()->id())
                                         ->where('name', trim($name))
                                         ->where('filter_type', 'rank_settings')
@@ -2643,13 +2643,13 @@ class FamilySearch extends Component
 
             if ($existingFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتری با این نام قبلاً ذخیره شده است',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã›Å’ Ã˜Â¨Ã˜Â§ Ã˜Â§Ã›Å’Ã™â€  Ã™â€ Ã˜Â§Ã™â€¦ Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã™â€¹ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜Âª',
                     'type' => 'error'
                 ]);
                 return false;
             }
 
-            // ایجاد فیلتر جدید
+            // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
             SavedFilter::create([
                 'name' => trim($name),
                 'description' => trim($description),
@@ -2661,7 +2661,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'فیلتر تنظیمات رتبه "' . $name . '" با موفقیت ذخیره شد',
+                'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ "' . $name . '" Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯',
                 'type' => 'success'
             ]);
 
@@ -2669,7 +2669,7 @@ class FamilySearch extends Component
         } catch (\Exception $e) {
             Log::error('Error saving rank filter: ' . $e->getMessage());
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره فیلتر رتبه‌بندی: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
             return false;
@@ -2677,25 +2677,25 @@ class FamilySearch extends Component
     }
 
     /**
-     * اضافه کردن فیلتر بیماری خاص
+     * Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã›Å’Ã™â€¦Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â®Ã˜Â§Ã˜Âµ
      */
     public function filterBySpecialDisease()
     {
         $this->status = 'special_disease';
         $this->resetPage();
         $this->dispatch('notify', [
-            'message' => 'فیلتر بیماری خاص اعمال شد',
+            'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã›Å’Ã™â€¦Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â®Ã˜Â§Ã˜Âµ Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â´Ã˜Â¯',
             'type' => 'success'
         ]);
     }
 
     /**
-     * اعمال سورت به query builder
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã™â€¡ query builder
      */
     protected function applySortToQueryBuilder($queryBuilder)
     {
         try {
-            Log::info('🎯 STEP 4: Starting applySortToQueryBuilder', [
+            Log::info('Ã°Å¸Å½Â¯ STEP 4: Starting applySortToQueryBuilder', [
                 'sortField' => $this->sortField,
                 'sortDirection' => $this->sortDirection,
                 'user_id' => Auth::id(),
@@ -2703,13 +2703,13 @@ class FamilySearch extends Component
             ]);
 
             if (empty($this->sortField)) {
-                Log::info('🔄 STEP 4: No sort field specified, using default', [
+                Log::info('Ã°Å¸â€â€ž STEP 4: No sort field specified, using default', [
                     'user_id' => Auth::id()
                 ]);
                 return $queryBuilder;
             }
 
-            // تعریف فیلدهای قابل سورت و نگاشت آنها
+            // Ã˜ÂªÃ˜Â¹Ã˜Â±Ã›Å’Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€šÃ˜Â§Ã˜Â¨Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã™Ë† Ã™â€ ÃšÂ¯Ã˜Â§Ã˜Â´Ã˜Âª Ã˜Â¢Ã™â€ Ã™â€¡Ã˜Â§
             $sortMappings = [
                 'created_at' => 'families.created_at',
                 'updated_at' => 'families.updated_at',
@@ -2725,18 +2725,18 @@ class FamilySearch extends Component
 
             $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
 
-            Log::info('⚙️ STEP 4.1: Sort parameters prepared', [
+            Log::info('Ã¢Å¡â„¢Ã¯Â¸Â STEP 4.1: Sort parameters prepared', [
                 'sortField' => $this->sortField,
                 'sortDirection' => $sortDirection,
                 'sortMappings' => array_keys($sortMappings),
                 'user_id' => Auth::id()
             ]);
 
-            // اعمال سورت بر اساس نوع فیلد
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™â€ Ã™Ë†Ã˜Â¹ Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯
             switch ($this->sortField) {
                 case 'head_name':
-                    Log::info('📋 STEP 4.2: Applying head_name sort');
-                    // سورت خاص برای نام سرپرست
+                    Log::info('Ã°Å¸â€œâ€¹ STEP 4.2: Applying head_name sort');
+                    // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â§Ã˜Âµ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã˜Â§Ã™â€¦ Ã˜Â³Ã˜Â±Ã™Â¾Ã˜Â±Ã˜Â³Ã˜Âª
                     $queryBuilder->getEloquentBuilder()
                         ->leftJoin('people as head_person', 'families.head_id', '=', 'head_person.id')
                         ->orderBy('head_person.first_name', $sortDirection)
@@ -2744,16 +2744,16 @@ class FamilySearch extends Component
                     break;
 
                 case 'final_insurances_count':
-                    Log::info('📋 STEP 4.2: Applying final_insurances_count sort');
-                    // سورت بر اساس تعداد بیمه‌های نهایی
+                    Log::info('Ã°Å¸â€œâ€¹ STEP 4.2: Applying final_insurances_count sort');
+                    // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â¨Ã›Å’Ã™â€¦Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¡Ã˜Â§Ã›Å’Ã›Å’
                     $queryBuilder->getEloquentBuilder()
                         ->withCount('finalInsurances')
                         ->orderBy('final_insurances_count', $sortDirection);
                     break;
 
                 case 'calculated_rank':
-                    Log::info('📋 STEP 4.2: Applying calculated_rank sort');
-                    // سورت بر اساس رتبه محاسبه شده
+                    Log::info('Ã°Å¸â€œâ€¹ STEP 4.2: Applying calculated_rank sort');
+                    // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡ Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
                     if ($sortDirection === 'desc') {
                         $queryBuilder->getEloquentBuilder()->orderByRaw('families.calculated_rank IS NULL, families.calculated_rank DESC');
                     } else {
@@ -2762,90 +2762,90 @@ class FamilySearch extends Component
                     break;
 
                 case 'weighted_rank':
-                    Log::info('📋 STEP 4.2: Applying weighted_rank sort');
-                    // سورت بر اساس امتیاز وزنی معیارهای انتخاب شده
+                    Log::info('Ã°Å¸â€œâ€¹ STEP 4.2: Applying weighted_rank sort');
+                    // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜Â§Ã™â€¦Ã˜ÂªÃ›Å’Ã˜Â§Ã˜Â² Ã™Ë†Ã˜Â²Ã™â€ Ã›Å’ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
                     $this->applyWeightedRankSort($queryBuilder, $sortDirection);
                     break;
 
                 default:
-                    Log::info('📋 STEP 4.2: Applying default sort');
-                    // سورت معمولی برای سایر فیلدها
+                    Log::info('Ã°Å¸â€œâ€¹ STEP 4.2: Applying default sort');
+                    // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã™â€¦Ã˜Â¹Ã™â€¦Ã™Ë†Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã›Å’Ã˜Â± Ã™ÂÃ›Å’Ã™â€žÃ˜Â¯Ã™â€¡Ã˜Â§
                     if (isset($sortMappings[$this->sortField])) {
                         $fieldName = $sortMappings[$this->sortField];
                         $queryBuilder->getEloquentBuilder()->orderBy($fieldName, $sortDirection);
                     } else {
-                        Log::warning('⚠️ STEP 4 WARNING: Unknown sort field', [
+                        Log::warning('Ã¢Å¡Â Ã¯Â¸Â STEP 4 WARNING: Unknown sort field', [
                             'sort_field' => $this->sortField,
                             'user_id' => Auth::id()
                         ]);
-                        // بازگشت به سورت پیش‌فرض
+                        // Ã˜Â¨Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â´Ã˜Âª Ã˜Â¨Ã™â€¡ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã™Â¾Ã›Å’Ã˜Â´Ã¢â‚¬Å’Ã™ÂÃ˜Â±Ã˜Â¶
                         $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
                     }
                     break;
             }
 
-            Log::info('✅ STEP 4 COMPLETED: Sort applied successfully', [
+            Log::info('Ã¢Å“â€¦ STEP 4 COMPLETED: Sort applied successfully', [
                 'sort_field' => $this->sortField,
                 'sort_direction' => $sortDirection,
                 'user_id' => Auth::id()
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ STEP 4 ERROR: Error applying sort', [
+            Log::error('Ã¢ÂÅ’ STEP 4 ERROR: Error applying sort', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // در صورت خطا، سورت بر اساس تاریخ ایجاد
+            // Ã˜Â¯Ã˜Â± Ã˜ÂµÃ™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â·Ã˜Â§Ã˜Å’ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â® Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯
             $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
         }
     }
 
     /**
-     * اعمال سورت وزنی بر اساس معیارهای انتخاب شده
+     * Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã™Ë†Ã˜Â²Ã™â€ Ã›Å’ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
      */
     protected function applyWeightedRankSort($queryBuilder, $sortDirection)
     {
         try {
-            Log::info('🎯 STEP 5: Starting applyWeightedRankSort', [
+            Log::info('Ã°Å¸Å½Â¯ STEP 5: Starting applyWeightedRankSort', [
                 'sortDirection' => $sortDirection,
                 'selectedCriteria' => $this->selectedCriteria ?? [],
                 'user_id' => Auth::id(),
                 'timestamp' => now()
             ]);
 
-            // دریافت معیارهای انتخاب شده
+            // Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
             $selectedCriteriaIds = array_keys(array_filter($this->selectedCriteria ?? [], fn($value) => $value === true));
 
-            Log::info('📊 STEP 5.1: Selected criteria analysis', [
+            Log::info('Ã°Å¸â€œÅ  STEP 5.1: Selected criteria analysis', [
                 'selectedCriteriaIds' => $selectedCriteriaIds,
                 'selectedCriteriaIds_count' => count($selectedCriteriaIds),
                 'user_id' => Auth::id()
             ]);
 
             if (empty($selectedCriteriaIds)) {
-                Log::warning('❌ STEP 5 FAILED: No criteria selected for weighted sort', [
+                Log::warning('Ã¢ÂÅ’ STEP 5 FAILED: No criteria selected for weighted sort', [
                     'user_id' => Auth::id()
                 ]);
-                // اگر معیاری انتخاب نشده، سورت بر اساس تاریخ ایجاد
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã™â€ Ã˜Â´Ã˜Â¯Ã™â€¡Ã˜Å’ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â® Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯
                 $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
                 return;
             }
 
-            // ایجاد subquery برای محاسبه امتیاز وزنی با ضرب وزن در تعداد موارد
+            // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ subquery Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã™â€¡ Ã˜Â§Ã™â€¦Ã˜ÂªÃ›Å’Ã˜Â§Ã˜Â² Ã™Ë†Ã˜Â²Ã™â€ Ã›Å’ Ã˜Â¨Ã˜Â§ Ã˜Â¶Ã˜Â±Ã˜Â¨ Ã™Ë†Ã˜Â²Ã™â€  Ã˜Â¯Ã˜Â± Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã™â€¦Ã™Ë†Ã˜Â§Ã˜Â±Ã˜Â¯
             $criteriaIds = implode(',', $selectedCriteriaIds);
             $weightedScoreSubquery = "
                 (
                     SELECT COALESCE(SUM(
                         rs.weight * (
-                            -- شمارش موارد معیار در acceptance_criteria (0 یا 1)
+                            -- Ã˜Â´Ã™â€¦Ã˜Â§Ã˜Â±Ã˜Â´ Ã™â€¦Ã™Ë†Ã˜Â§Ã˜Â±Ã˜Â¯ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¯Ã˜Â± acceptance_criteria (0 Ã›Å’Ã˜Â§ 1)
                             CASE
                                 WHEN JSON_CONTAINS(families.acceptance_criteria, CAST(rs.id AS JSON))
                                 THEN 1
                                 ELSE 0
                             END +
-                            -- شمارش تعداد اعضای دارای این معیار در problem_type
+                            -- Ã˜Â´Ã™â€¦Ã˜Â§Ã˜Â±Ã˜Â´ Ã˜ÂªÃ˜Â¹Ã˜Â¯Ã˜Â§Ã˜Â¯ Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã›Å’Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã˜Â¯Ã˜Â± problem_type
                             (
                                 SELECT COUNT(*)
                                 FROM members fm
@@ -2861,32 +2861,32 @@ class FamilySearch extends Component
                 )
             ";
 
-            Log::info('⚙️ STEP 5.2: Weighted score subquery created', [
+            Log::info('Ã¢Å¡â„¢Ã¯Â¸Â STEP 5.2: Weighted score subquery created', [
                 'criteriaIds' => $criteriaIds,
                 'weightedScoreSubquery_length' => strlen($weightedScoreSubquery),
                 'user_id' => Auth::id()
             ]);
 
-            // اضافه کردن امتیاز محاسبه شده به select
+            // Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã˜Â§Ã™â€¦Ã˜ÂªÃ›Å’Ã˜Â§Ã˜Â² Ã™â€¦Ã˜Â­Ã˜Â§Ã˜Â³Ã˜Â¨Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã™â€¡ select
             $queryBuilder->getEloquentBuilder()
                 ->addSelect(DB::raw("({$weightedScoreSubquery}) as weighted_score"))
                 ->orderBy('weighted_score', $sortDirection)
-                ->orderBy('families.created_at', 'desc'); // سورت ثانویه
+                ->orderBy('families.created_at', 'desc'); // Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â«Ã˜Â§Ã™â€ Ã™Ë†Ã›Å’Ã™â€¡
 
-            Log::info('✅ STEP 5 COMPLETED: Weighted rank sort applied successfully', [
+            Log::info('Ã¢Å“â€¦ STEP 5 COMPLETED: Weighted rank sort applied successfully', [
                 'criteria_ids' => $selectedCriteriaIds,
                 'sort_direction' => $sortDirection,
                 'user_id' => Auth::id()
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ STEP 5 ERROR: Error applying weighted rank sort', [
+            Log::error('Ã¢ÂÅ’ STEP 5 ERROR: Error applying weighted rank sort', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            // در صورت خطا، سورت بر اساس تاریخ ایجاد
+            // Ã˜Â¯Ã˜Â± Ã˜ÂµÃ™Ë†Ã˜Â±Ã˜Âª Ã˜Â®Ã˜Â·Ã˜Â§Ã˜Å’ Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã˜ÂªÃ˜Â§Ã˜Â±Ã›Å’Ã˜Â® Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯
             $queryBuilder->getEloquentBuilder()->orderBy('families.created_at', 'desc');
         }
     }
@@ -2896,68 +2896,114 @@ class FamilySearch extends Component
      */
     public function downloadPageExcel()
     {
-        $query = Family::query()->with([
-            'province', 'city', 'district', 'region', 'members', 'head', 'charity', 'organization'
-        ]);
+        try {
+            // دریافت query با تمام فیلترها و eager loading
+            $queryBuilder = $this->buildFamiliesQuery();
+            $query = $queryBuilder->getEloquentBuilder();
 
-        // اعمال فیلترهای موجود
-        if ($this->search) {
-            $query->where(function($q) {
-                $q->where('family_code', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('head', function($headQuery) {
-                      $headQuery->where('full_name', 'like', '%' . $this->search . '%')
-                               ->orWhere('national_code', 'like', '%' . $this->search . '%');
-                  });
-            });
-        }
+            // محاسبه offset برای صفحه فعلی
+            $offset = ($this->page - 1) * $this->perPage;
 
-        if ($this->province_id) {
-            $query->where('province_id', $this->province_id);
-        }
+            // محدود کردن به خانواده‌های صفحه فعلی
+            $families = $query->skip($offset)->take($this->perPage)->get();
 
-        if ($this->city_id) {
-            $query->where('city_id', $this->city_id);
-        }
+            // بررسی خالی بودن نتایج
+            if ($families->isEmpty()) {
+                session()->flash('error', 'هیچ خانواده‌ای برای دانلود یافت نشد.');
+                return;
+            }
 
-        if ($this->district_id) {
-            $query->where('district_id', $this->district_id);
-        }
+            // ساخت نام فایل
+            $filename = 'families-page-' . $this->page . '-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
 
-        if ($this->region_id) {
-            $query->where('region_id', $this->region_id);
-        }
+            // استفاده از کلاس جدید FamilySearchExport
+            return Excel::download(
+                new \App\Exports\FamilySearchExport($families, $this->status),
+                $filename
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading page Excel', [
+                'page' => $this->page,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
 
-        if ($this->organization_id) {
-            $query->where('organization_id', $this->organization_id);
-        }
-
-        if ($this->charity_id) {
-            $query->where('charity_id', $this->charity_id);
-        }
-
-        // اعمال مرتب‌سازی
-        if ($this->sortField && $this->sortDirection) {
-            $query->orderBy($this->sortField, $this->sortDirection);
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        // محدود کردن به خانواده‌های صفحه فعلی
-        $offset = ($this->page - 1) * $this->perPage;
-        $families = $query->skip($offset)->take($this->perPage)->get();
-
-        if ($families->isEmpty()) {
-            session()->flash('error', 'هیچ خانواده‌ای برای دانلود یافت نشد.');
+            session()->flash('error', 'خطا در دانلود فایل اکسل. لطفاً دوباره تلاش کنید.');
             return;
         }
-
-        $filename = 'families-page-' . $this->page . '-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
-
-        return Excel::download(new \App\Exports\FamiliesExport($families->toArray()), $filename);
     }
 
     /**
-     * شروع ویرایش عضو خانواده
+     * دانلود فایل اکسل برای تمام خانواده‌های فیلتر شده
+     */
+    public function downloadAllExcel()
+    {
+        try {
+            // دریافت query با تمام فیلترها و eager loading
+            $queryBuilder = $this->buildFamiliesQuery();
+            $query = $queryBuilder->getEloquentBuilder();
+
+            // بررسی تعداد رکوردها برای جلوگیری از timeout
+            $totalCount = $query->count();
+
+            // محدودیت برای جلوگیری از مشکلات حافظه و timeout
+            $maxRecords = 10000;
+            if ($totalCount > $maxRecords) {
+                session()->flash('error', "تعداد خانواده‌های انتخاب شده ({$totalCount}) از حد مجاز ({$maxRecords}) بیشتر است. لطفاً فیلترهای بیشتری اعمال کنید.");
+                return;
+            }
+
+            // نمایش notification برای دانلودهای بزرگ
+            if ($totalCount > 5000) {
+                session()->flash('warning', 'تعداد رکوردها زیاد است. دانلود ممکن است چند لحظه طول بکشد.');
+            }
+
+            // دریافت تمام نتایج
+            $families = $query->get();
+
+            // بررسی خالی بودن نتایج
+            if ($families->isEmpty()) {
+                session()->flash('error', 'هیچ خانواده‌ای برای دانلود یافت نشد.');
+                return;
+            }
+
+            // logging برای ردیابی دانلودهای بزرگ
+            Log::info('Downloading all families', [
+                'count' => $families->count(),
+                'user_id' => Auth::id(),
+                'status' => $this->status,
+                'filters' => [
+                    'search' => $this->search,
+                    'province_id' => $this->province_id,
+                    'city_id' => $this->city_id,
+                    'charity_id' => $this->charity_id,
+                    'status' => $this->status
+                ]
+            ]);
+
+            // ساخت نام فایل
+            $filename = 'families-all-' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+
+            // استفاده از کلاس FamilySearchExport
+            return Excel::download(
+                new \App\Exports\FamilySearchExport($families, $this->status),
+                $filename
+            );
+        } catch (\Exception $e) {
+            Log::error('Error downloading all Excel', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id()
+            ]);
+
+            session()->flash('error', 'خطا در دانلود فایل اکسل. لطفاً دوباره تلاش کنید.');
+            return;
+        }
+    }
+
+    /**
+     * Ã˜Â´Ã˜Â±Ã™Ë†Ã˜Â¹ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
      * Loads member data for editing. The problem_type array is passed to the MultiSelect component via wire:model binding.
      * @param int $memberId
      * @return void
@@ -2968,18 +3014,18 @@ class FamilySearch extends Component
             $member = Member::find($memberId);
             if (!$member) {
                 $this->dispatch('notify', [
-                    'message' => 'عضو خانواده یافت نشد',
+                    'message' => 'Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی مجوز ویرایش
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã™â€¦Ã˜Â¬Ã™Ë†Ã˜Â² Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´
             $family = $member->family;
             try {
                 Gate::authorize('updateMembers', $family);
             } catch (AuthorizationException $e) {
-                // ساخت پیام خطا بر اساس وضعیت wizard_status
+                // Ã˜Â³Ã˜Â§Ã˜Â®Ã˜Âª Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™Ë†Ã˜Â¶Ã˜Â¹Ã›Å’Ã˜Âª wizard_status
                 $statusMessage = $this->getAuthorizationErrorMessage($family);
 
                 $this->dispatch('notify', [
@@ -2999,13 +3045,13 @@ class FamilySearch extends Component
 
             $this->editingMemberId = $memberId;
 
-            // دریافت آرایه معیارهای پذیرش برای dropdown
+            // Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ dropdown
             $problemTypesArray = $member->getProblemTypesArray(); // English keys for the dropdown
 
-            // حذف تکراری‌ها (بدون sort برای حفظ ترتیب insertion order)
+            // Ã˜Â­Ã˜Â°Ã™Â Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ (Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  sort Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ insertion order)
             if (is_array($problemTypesArray)) {
                 $problemTypesArray = array_unique($problemTypesArray);
-                // sort() حذف شد: ترتیب insertion order حفظ می‌شود
+                // sort() Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯: Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ insertion order Ã˜Â­Ã™ÂÃ˜Â¸ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â´Ã™Ë†Ã˜Â¯
             }
 
             $this->editingMemberData = [
@@ -3027,14 +3073,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در شروع ویرایش: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â´Ã˜Â±Ã™Ë†Ã˜Â¹ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * ذخیره تغییرات عضو خانواده
+     * Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
      * @return void
      */
     public function saveMember()
@@ -3043,13 +3089,13 @@ class FamilySearch extends Component
             $member = Member::find($this->editingMemberId);
             if (!$member) {
                 $this->dispatch('notify', [
-                    'message' => 'عضو خانواده یافت نشد',
+                    'message' => 'Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی مجوز ویرایش قبل از validation
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã™â€¦Ã˜Â¬Ã™Ë†Ã˜Â² Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã˜Â² validation
             $family = $member->family;
             try {
                 Gate::authorize('updateMembers', $family);
@@ -3068,7 +3114,7 @@ class FamilySearch extends Component
                     'wizard_status' => $family->wizard_status
                 ]);
 
-                // لغو حالت ویرایش
+                // Ã™â€žÃ˜ÂºÃ™Ë† Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´
                 $this->editingMemberId = null;
                 $this->editingMemberData = [
                     'relationship' => '',
@@ -3086,26 +3132,26 @@ class FamilySearch extends Component
                 'editingMemberData.job_type' => 'nullable|string|max:255',
                 'editingMemberData.problem_type' => 'nullable|array'
             ], [
-                'editingMemberData.relationship.required' => 'نسبت الزامی است',
-                'editingMemberData.occupation.required' => 'شغل الزامی است',
-                'editingMemberData.problem_type.max' => 'معیار پذیرش نمی‌تواند بیش از 1000 کاراکتر باشد',
+                'editingMemberData.relationship.required' => 'Ã™â€ Ã˜Â³Ã˜Â¨Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â²Ã˜Â§Ã™â€¦Ã›Å’ Ã˜Â§Ã˜Â³Ã˜Âª',
+                'editingMemberData.occupation.required' => 'Ã˜Â´Ã˜ÂºÃ™â€ž Ã˜Â§Ã™â€žÃ˜Â²Ã˜Â§Ã™â€¦Ã›Å’ Ã˜Â§Ã˜Â³Ã˜Âª',
+                'editingMemberData.problem_type.max' => 'Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã™â€ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã˜Â¨Ã›Å’Ã˜Â´ Ã˜Â§Ã˜Â² 1000 ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â§ÃšÂ©Ã˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯',
             ]);
 
-            // آماده‌سازی داده‌ها برای ذخیره
+            // Ã˜Â¢Ã™â€¦Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡
             $updateData = [
                 'relationship' => $this->editingMemberData['relationship'],
-                'relationship_fa' => $this->editingMemberData['relationship'], // ذخیره مقدار فارسی برای relationship_fa
+                'relationship_fa' => $this->editingMemberData['relationship'], // Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ relationship_fa
                 'occupation' => $this->editingMemberData['occupation'],
             ];
 
-            // مدیریت نوع شغل
-            if ($this->editingMemberData['occupation'] === 'شاغل') {
+            // Ã™â€¦Ã˜Â¯Ã›Å’Ã˜Â±Ã›Å’Ã˜Âª Ã™â€ Ã™Ë†Ã˜Â¹ Ã˜Â´Ã˜ÂºÃ™â€ž
+            if ($this->editingMemberData['occupation'] === 'Ã˜Â´Ã˜Â§Ã˜ÂºÃ™â€ž') {
                 $updateData['job_type'] = $this->editingMemberData['job_type'] ?? null;
             } else {
                 $updateData['job_type'] = null;
             }
 
-            // مدیریت معیار پذیرش (problem_type) - پیشرفته و بهبود یافته
+            // Ã™â€¦Ã˜Â¯Ã›Å’Ã˜Â±Ã›Å’Ã˜Âª Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ (problem_type) - Ã™Â¾Ã›Å’Ã˜Â´Ã˜Â±Ã™ÂÃ˜ÂªÃ™â€¡ Ã™Ë† Ã˜Â¨Ã™â€¡Ã˜Â¨Ã™Ë†Ã˜Â¯ Ã›Å’Ã˜Â§Ã™ÂÃ˜ÂªÃ™â€¡
             // The problem_type array comes from the MultiSelect component via wire:model.live binding. It contains English keys.
             $problemTypeArray = null;
             $problemTypeInput = $this->editingMemberData['problem_type'] ?? '';
@@ -3116,18 +3162,18 @@ class FamilySearch extends Component
                 'input_value_persian' => $problemTypeInput
             ]);
 
-            // پردازش مستقیم آرایه از dropdown
+            // Ã™Â¾Ã˜Â±Ã˜Â¯Ã˜Â§Ã˜Â²Ã˜Â´ Ã™â€¦Ã˜Â³Ã˜ÂªÃ™â€šÃ›Å’Ã™â€¦ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã˜Â§Ã˜Â² dropdown
             if (is_array($problemTypeInput)) {
-                // فیلتر کردن مقادیر خالی و null و تکراری‌ها
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã™Ë† null Ã™Ë† Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
                 $problemTypesForStorage = array_filter($problemTypeInput, function($item) {
                     return !is_null($item) && trim((string)$item) !== '';
                 });
 
-                // حذف مقادیر تکراری (بدون sort برای حفظ insertion order)
+                // Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’ (Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  sort Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã™ÂÃ˜Â¸ insertion order)
                 $problemTypesForStorage = array_unique(array_values($problemTypesForStorage));
-                // sort() حذف شد: chip‌ها به ترتیب اضافه شدن نمایش داده می‌شوند
+                // sort() Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯: chipÃ¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã™â€¡ Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ Ã˜Â´Ã˜Â¯Ã™â€  Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â´Ã™Ë†Ã™â€ Ã˜Â¯
 
-                // بررسی اضافی برای حذف مقادیر مشابه
+                // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã™â€¦Ã˜Â´Ã˜Â§Ã˜Â¨Ã™â€¡
                 $finalArray = [];
                 foreach ($problemTypesForStorage as $item) {
                     $trimmedItem = trim((string)$item);
@@ -3139,22 +3185,22 @@ class FamilySearch extends Component
                 if (!empty($finalArray)) {
                     $problemTypeArray = $finalArray;
                 } else {
-                    // آرایه خالی است یا هیچ مقدار معتبری ندارد
+                    // Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã˜Â§Ã˜Â³Ã˜Âª Ã›Å’Ã˜Â§ Ã™â€¡Ã›Å’Ãšâ€  Ã™â€¦Ã™â€šÃ˜Â¯Ã˜Â§Ã˜Â± Ã™â€¦Ã˜Â¹Ã˜ÂªÃ˜Â¨Ã˜Â±Ã›Å’ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯
                     $problemTypeArray = null;
                 }
             } else if (!empty($problemTypeInput) && trim($problemTypeInput) !== '') {
-                // اگر رشته باشد (برای سازگاری با روش قبلی)
+                // Ã˜Â§ÃšÂ¯Ã˜Â± Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯ (Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã˜Â²ÃšÂ¯Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â¨Ã˜Â§ Ã˜Â±Ã™Ë†Ã˜Â´ Ã™â€šÃ˜Â¨Ã™â€žÃ›Å’)
                 $problemTypeString = trim((string) $problemTypeInput);
 
-                // تقسیم رشته با کاما
+                // Ã˜ÂªÃ™â€šÃ˜Â³Ã›Å’Ã™â€¦ Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡ Ã˜Â¨Ã˜Â§ ÃšÂ©Ã˜Â§Ã™â€¦Ã˜Â§
                 $problemTypes = array_map('trim', explode(',', $problemTypeString));
 
-                // فیلتر کردن مقادیر خالی
+                // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’
                 $problemTypes = array_filter($problemTypes, function($item) {
                     return !empty(trim($item));
                 });
 
-                // تبدیل فارسی به انگلیسی
+                // Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¨Ã™â€¡ Ã˜Â§Ã™â€ ÃšÂ¯Ã™â€žÃ›Å’Ã˜Â³Ã›Å’
                 $problemTypesForStorage = [];
                 foreach ($problemTypes as $problemType) {
                     $englishValue = \App\Helpers\ProblemTypeHelper::persianToEnglish(trim($problemType));
@@ -3163,7 +3209,7 @@ class FamilySearch extends Component
                     }
                 }
 
-                // حذف مقادیر تکراری و مرتب‌سازی
+                // Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’ Ã™Ë† Ã™â€¦Ã˜Â±Ã˜ÂªÃ˜Â¨Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’
                 $problemTypesForStorage = array_unique($problemTypesForStorage);
                 sort($problemTypesForStorage);
 
@@ -3172,10 +3218,10 @@ class FamilySearch extends Component
                 }
             }
 
-            // اگر آرایه خالی باشد، null ذخیره کن (نه آرایه خالی)
+            // Ã˜Â§ÃšÂ¯Ã˜Â± Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯Ã˜Å’ null Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ ÃšÂ©Ã™â€  (Ã™â€ Ã™â€¡ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’)
             $updateData['problem_type'] = empty($problemTypeArray) ? null : $problemTypeArray;
 
-            // لاگ نتیجه تبدیل (همیشه لاگ کن)
+            // Ã™â€žÃ˜Â§ÃšÂ¯ Ã™â€ Ã˜ÂªÃ›Å’Ã˜Â¬Ã™â€¡ Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž (Ã™â€¡Ã™â€¦Ã›Å’Ã˜Â´Ã™â€¡ Ã™â€žÃ˜Â§ÃšÂ¯ ÃšÂ©Ã™â€ )
             Log::info('Problem_type conversion completed', [
                 'member_id' => $this->editingMemberId,
                 'input_raw' => $problemTypeInput,
@@ -3186,7 +3232,7 @@ class FamilySearch extends Component
                 'will_store_in_db' => $updateData['problem_type']
             ]);
 
-            // لاگ کامل برای دیباگ و ردیابی مشکلات
+            // Ã™â€žÃ˜Â§ÃšÂ¯ ÃšÂ©Ã˜Â§Ã™â€¦Ã™â€ž Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¯Ã›Å’Ã˜Â¨Ã˜Â§ÃšÂ¯ Ã™Ë† Ã˜Â±Ã˜Â¯Ã›Å’Ã˜Â§Ã˜Â¨Ã›Å’ Ã™â€¦Ã˜Â´ÃšÂ©Ã™â€žÃ˜Â§Ã˜Âª
             Log::info('Updating member data - BEFORE UPDATE:', [
                 'member_id' => $this->editingMemberId,
                 'family_id' => $member->family_id,
@@ -3206,7 +3252,7 @@ class FamilySearch extends Component
                 'processed_update_data' => $updateData
             ]);
 
-            // لاگ داده‌های relationship برای debug
+            // Ã™â€žÃ˜Â§ÃšÂ¯ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ relationship Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ debug
             Log::info('Relationship data being saved', [
                 'member_id' => $this->editingMemberId,
                 'relationship' => $updateData['relationship'],
@@ -3215,7 +3261,7 @@ class FamilySearch extends Component
 
             $member->update($updateData);
 
-            // لاگ بعد از آپدیت برای تأیید تغییرات
+            // Ã™â€žÃ˜Â§ÃšÂ¯ Ã˜Â¨Ã˜Â¹Ã˜Â¯ Ã˜Â§Ã˜Â² Ã˜Â¢Ã™Â¾Ã˜Â¯Ã›Å’Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜ÂªÃ˜Â£Ã›Å’Ã›Å’Ã˜Â¯ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             Log::info('Member data updated successfully - AFTER UPDATE:', [
                 'member_id' => $member->id,
                 'updated_data' => $updateData,
@@ -3227,21 +3273,21 @@ class FamilySearch extends Component
                 ]
             ]);
 
-            // همگام‌سازی معیارهای پذیرش خانواده بر اساس معیارهای اعضا
+            // Ã™â€¡Ã™â€¦ÃšÂ¯Ã˜Â§Ã™â€¦Ã¢â‚¬Å’Ã˜Â³Ã˜Â§Ã˜Â²Ã›Å’ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§
             $family = $member->family;
-            $family->load('members'); // اطمینان از بارگیری اعضای به‌روزرسانی شده
+            $family->load('members'); // Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â§Ã˜Â¹Ã˜Â¶Ã˜Â§Ã›Å’ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯Ã™â€¡
             $family->syncAcceptanceCriteriaFromMembers();
 
-            // به‌روزرسانی فوری داده‌های محلی برای نمایش بلافاصله
+            // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ™Ë†Ã˜Â±Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â­Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¨Ã™â€žÃ˜Â§Ã™ÂÃ˜Â§Ã˜ÂµÃ™â€žÃ™â€¡
             if ($this->expandedFamily === $member->family_id && !empty($this->familyMembers)) {
                 foreach ($this->familyMembers as $key => $familyMember) {
                     if ($familyMember->id == $member->id) {
-                        // به‌روزرسانی داده‌های عضو
+                        // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¹Ã˜Â¶Ã™Ë†
                         $this->familyMembers[$key]->relationship = $updateData['relationship'];
                         $this->familyMembers[$key]->occupation = $updateData['occupation'];
                         $this->familyMembers[$key]->job_type = $updateData['job_type'];
                         $this->familyMembers[$key]->problem_type = $updateData['problem_type'];
-                        $this->familyMembers[$key]->relationship_fa = $updateData['relationship_fa']; // اصلاح: استفاده از relationship_fa نه relationship
+                        $this->familyMembers[$key]->relationship_fa = $updateData['relationship_fa']; // Ã˜Â§Ã˜ÂµÃ™â€žÃ˜Â§Ã˜Â­: Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â² relationship_fa Ã™â€ Ã™â€¡ relationship
 
                         Log::info('Member data updated locally for immediate display', [
                             'member_id' => $member->id,
@@ -3251,12 +3297,12 @@ class FamilySearch extends Component
                     }
                 }
 
-                // به‌روزرسانی اطلاعات خانواده در familyMembers برای نمایش فوری
-                // برای نمایش فوری، خانواده را به‌روزرسانی می‌کنیم
-                $freshFamily = $family->fresh(['members']); // بارگیری مجدد خانوادع به‌روزرسانی شده
+                // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± familyMembers Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ™Ë†Ã˜Â±Ã›Å’
+                // Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ™Ë†Ã˜Â±Ã›Å’Ã˜Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€¦Ã›Å’Ã¢â‚¬Å’ÃšÂ©Ã™â€ Ã›Å’Ã™â€¦
+                $freshFamily = $family->fresh(['members']); // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã˜Â¹ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯Ã™â€¡
                 $this->familyMembers = $this->familyMembers->map(function($familyMember) use ($freshFamily) {
                     if ($familyMember->family_id === $freshFamily->id) {
-                        $familyMember->family = $freshFamily; // به‌روزرسانی اطلاعات خانواده
+                        $familyMember->family = $freshFamily; // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
                     }
                     return $familyMember;
                 });
@@ -3267,16 +3313,16 @@ class FamilySearch extends Component
                 ]);
             }
 
-            // پاک کردن کش‌های مختلف برای اطمینان از نمایش داده‌های جدید
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯
             $this->clearFamiliesCache();
 
-            // پاک کردن کش رتبه‌بندی خانواده
+            // Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´ Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
             \Cache::forget('family_rank_' . $family->id);
 
-            // اجبار به ریفرش کامپوننت برای نمایش تغییرات
+            // Ã˜Â§Ã˜Â¬Ã˜Â¨Ã˜Â§Ã˜Â± Ã˜Â¨Ã™â€¡ Ã˜Â±Ã›Å’Ã™ÂÃ˜Â±Ã˜Â´ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             $this->refreshFamilyInList($family->id);
 
-            // به‌روزرسانی لیست اصلی خانواده‌ها برای نمایش فوری تغییرات
+            // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã˜Â§Ã˜ÂµÃ™â€žÃ›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ™Ë†Ã˜Â±Ã›Å’ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             $this->updateFamilyInMainList($family->id);
 
             $this->dispatch('family-data-updated', [
@@ -3284,11 +3330,11 @@ class FamilySearch extends Component
                 'acceptance_criteria' => $family->acceptance_criteria
             ]);
 
-            // بستن حالت ویرایش
+            // Ã˜Â¨Ã˜Â³Ã˜ÂªÃ™â€  Ã˜Â­Ã˜Â§Ã™â€žÃ˜Âª Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´
             $this->cancelMemberEdit();
 
             $this->dispatch('notify', [
-                'message' => 'اطلاعات عضو خانواده با موفقیت به‌روزرسانی شد',
+                'message' => 'Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯',
                 'type' => 'success'
             ]);
         } catch (\Exception $e) {
@@ -3299,22 +3345,22 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره اطلاعات: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â§Ã˜Â¹Ã˜Â§Ã˜Âª: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * بهروزرسانی خانواده مشخص در لیست families برای نمایش فوری تغییرات
+     * Ã˜Â¨Ã™â€¡Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ Ã˜Â¯Ã˜Â± Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª families Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã™ÂÃ™Ë†Ã˜Â±Ã›Å’ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
      * @param int $familyId
      * @return void
      */
     protected function refreshFamilyInList($familyId)
     {
-        // اگر لیست families در کامپوننت وجود دارد، آن خانواده را به‌روزرسانی کن
+        // Ã˜Â§ÃšÂ¯Ã˜Â± Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª families Ã˜Â¯Ã˜Â± ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã˜Å’ Ã˜Â¢Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ ÃšÂ©Ã™â€ 
         try {
-            // این method برای refresh کردن داده‌های کش شده کامپوننت است
+            // Ã˜Â§Ã›Å’Ã™â€  method Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ refresh ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â´ Ã˜Â´Ã˜Â¯Ã™â€¡ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã˜Â§Ã˜Â³Ã˜Âª
             $this->clearCache();
 
             Log::info('Family refreshed in component list', [
@@ -3330,7 +3376,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * دریافت پیام خطای Authorization بر اساس wizard_status خانواده
+     * Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã˜Â®Ã˜Â·Ã˜Â§Ã›Å’ Authorization Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ wizard_status Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
      * @param Family $family
      * @return string
      */
@@ -3338,10 +3384,10 @@ class FamilySearch extends Component
     {
         $wizardStatus = $family->wizard_status;
 
-        // استفاده از enum برای دریافت برچسب فارسی
+        // Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â² enum Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã˜Â¨Ã˜Â±Ãšâ€ Ã˜Â³Ã˜Â¨ Ã™ÂÃ˜Â§Ã˜Â±Ã˜Â³Ã›Å’
         try {
             if ($wizardStatus) {
-                // بررسی اینکه آیا قبلاً یک enum instance است یا خیر
+                // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â§Ã›Å’Ã™â€ ÃšÂ©Ã™â€¡ Ã˜Â¢Ã›Å’Ã˜Â§ Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã™â€¹ Ã›Å’ÃšÂ© enum instance Ã˜Â§Ã˜Â³Ã˜Âª Ã›Å’Ã˜Â§ Ã˜Â®Ã›Å’Ã˜Â±
                 if ($wizardStatus instanceof \App\Enums\InsuranceWizardStep) {
                     $statusEnum = $wizardStatus;
                     $wizardStatusValue = $wizardStatus->value;
@@ -3351,17 +3397,17 @@ class FamilySearch extends Component
                 }
                 $statusLabel = $statusEnum->label();
 
-                // پیام‌های مختلف بر اساس وضعیت
+                // Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜Â®Ã˜ÂªÃ™â€žÃ™Â Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™Ë†Ã˜Â¶Ã˜Â¹Ã›Å’Ã˜Âª
                 return match($wizardStatusValue) {
-                    'pending' => 'خطای غیرمنتظره: شما باید بتوانید این خانواده را ویرایش کنید',
-                    'reviewing' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
-                    'share_allocation' => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند",
-                    'approved' => "این خانواده تایید شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
-                    'excel_upload' => "این خانواده در انتظار صدور بیمه ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
-                    'insured' => "این خانواده بیمه شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
-                    'renewal' => "این خانواده در مرحله تمدید ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
-                    'rejected' => "این خانواده رد شده ({$statusLabel}) و فقط ادمین می‌تواند ویرایش کند",
-                    default => "این خانواده در مرحله {$statusLabel} است و فقط ادمین می‌تواند ویرایش کند"
+                    'pending' => 'Ã˜Â®Ã˜Â·Ã˜Â§Ã›Å’ Ã˜ÂºÃ›Å’Ã˜Â±Ã™â€¦Ã™â€ Ã˜ÂªÃ˜Â¸Ã˜Â±Ã™â€¡: Ã˜Â´Ã™â€¦Ã˜Â§ Ã˜Â¨Ã˜Â§Ã›Å’Ã˜Â¯ Ã˜Â¨Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã›Å’Ã˜Â¯ Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯',
+                    'reviewing' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â±Ã˜Â­Ã™â€žÃ™â€¡ {$statusLabel} Ã˜Â§Ã˜Â³Ã˜Âª Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'share_allocation' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â±Ã˜Â­Ã™â€žÃ™â€¡ {$statusLabel} Ã˜Â§Ã˜Â³Ã˜Âª Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'approved' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜ÂªÃ˜Â§Ã›Å’Ã›Å’Ã˜Â¯ Ã˜Â´Ã˜Â¯Ã™â€¡ ({$statusLabel}) Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'excel_upload' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â¸Ã˜Â§Ã˜Â± Ã˜ÂµÃ˜Â¯Ã™Ë†Ã˜Â± Ã˜Â¨Ã›Å’Ã™â€¦Ã™â€¡ ({$statusLabel}) Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'insured' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã›Å’Ã™â€¦Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡ ({$statusLabel}) Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'renewal' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â±Ã˜Â­Ã™â€žÃ™â€¡ Ã˜ÂªÃ™â€¦Ã˜Â¯Ã›Å’Ã˜Â¯ ({$statusLabel}) Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    'rejected' => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â¯ Ã˜Â´Ã˜Â¯Ã™â€¡ ({$statusLabel}) Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯",
+                    default => "Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â±Ã˜Â­Ã™â€žÃ™â€¡ {$statusLabel} Ã˜Â§Ã˜Â³Ã˜Âª Ã™Ë† Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯"
                 };
             }
         } catch (\Exception $e) {
@@ -3371,19 +3417,19 @@ class FamilySearch extends Component
             ]);
         }
 
-        // پیام پیش‌فرض اگر wizard_status خالی یا نامعتبر باشد
-        return 'شما مجوز ویرایش این خانواده را ندارید. فقط ادمین می‌تواند ویرایش کند';
+        // Ã™Â¾Ã›Å’Ã˜Â§Ã™â€¦ Ã™Â¾Ã›Å’Ã˜Â´Ã¢â‚¬Å’Ã™ÂÃ˜Â±Ã˜Â¶ Ã˜Â§ÃšÂ¯Ã˜Â± wizard_status Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã›Å’Ã˜Â§ Ã™â€ Ã˜Â§Ã™â€¦Ã˜Â¹Ã˜ÂªÃ˜Â¨Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯
+        return 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã™â€¦Ã˜Â¬Ã™Ë†Ã˜Â² Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â§Ã›Å’Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â±Ã˜Â§ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã˜Â¯. Ã™ÂÃ™â€šÃ˜Â· Ã˜Â§Ã˜Â¯Ã™â€¦Ã›Å’Ã™â€  Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã˜Â¯';
     }
 
     /**
-     * بهروزرسانی خانواده خاص در لیست اصلی خانواده‌ها
+     * Ã˜Â¨Ã™â€¡Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â®Ã˜Â§Ã˜Âµ Ã˜Â¯Ã˜Â± Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã˜Â§Ã˜ÂµÃ™â€žÃ›Å’ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
      * @param int $familyId
      * @return void
      */
     protected function updateFamilyInMainList($familyId)
     {
         try {
-            // بازیابی داده‌های جدید خانواده با تمام روابط
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã›Å’Ã˜Â§Ã˜Â¨Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§ Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€¦ Ã˜Â±Ã™Ë†Ã˜Â§Ã˜Â¨Ã˜Â·
             $updatedFamily = Family::with([
                 'head', 'province', 'city', 'district', 'region', 'charity', 'organization', 'members'
             ])->find($familyId);
@@ -3393,11 +3439,11 @@ class FamilySearch extends Component
                 return;
             }
 
-            // وادار کردن خانواده به refresh از دیتابیس تا داده‌های جدید بارگیری شوند
+            // Ã™Ë†Ã˜Â§Ã˜Â¯Ã˜Â§Ã˜Â± ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã™â€¡ refresh Ã˜Â§Ã˜Â² Ã˜Â¯Ã›Å’Ã˜ÂªÃ˜Â§Ã˜Â¨Ã›Å’Ã˜Â³ Ã˜ÂªÃ˜Â§ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â´Ã™Ë†Ã™â€ Ã˜Â¯
             $updatedFamily->refresh();
             $updatedFamily->load(['members', 'head', 'province', 'city', 'district', 'region', 'charity', 'organization']);
 
-            // اگر property families وجود دارد، آن را به‌روزرسانی کن
+            // Ã˜Â§ÃšÂ¯Ã˜Â± property families Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯Ã˜Å’ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ ÃšÂ©Ã™â€ 
             if (property_exists($this, 'families') && !empty($this->families)) {
                 $this->families = $this->families->map(function($family) use ($updatedFamily) {
                     if ($family->id === $updatedFamily->id) {
@@ -3412,7 +3458,7 @@ class FamilySearch extends Component
                 });
             }
 
-            // به‌روزرسانی familyMembers اگر خانواده باز است
+            // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ familyMembers Ã˜Â§ÃšÂ¯Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¨Ã˜Â§Ã˜Â² Ã˜Â§Ã˜Â³Ã˜Âª
             if ($this->expandedFamily === $familyId && !empty($this->familyMembers)) {
                 $this->familyMembers = $updatedFamily->members;
                 Log::info('Family members updated in expanded view', [
@@ -3421,14 +3467,14 @@ class FamilySearch extends Component
                 ]);
             }
 
-            // اجبار به ریرندر مجدد کامپوننت برای نمایش تغییرات
+            // Ã˜Â§Ã˜Â¬Ã˜Â¨Ã˜Â§Ã˜Â± Ã˜Â¨Ã™â€¡ Ã˜Â±Ã›Å’Ã˜Â±Ã™â€ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
             $this->dispatch('family-updated', [
                 'familyId' => $familyId,
                 'acceptanceCriteria' => $updatedFamily->acceptance_criteria
             ]);
 
-            // ریفرش مجدد کامپوننت برای نمایش تغییرات
-            $this->skipRender = false; // اطمینان از ریرندر مجدد
+            // Ã˜Â±Ã›Å’Ã™ÂÃ˜Â±Ã˜Â´ Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã™â€ Ã™â€¦Ã˜Â§Ã›Å’Ã˜Â´ Ã˜ÂªÃ˜ÂºÃ›Å’Ã›Å’Ã˜Â±Ã˜Â§Ã˜Âª
+            $this->skipRender = false; // Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã˜Â±Ã›Å’Ã˜Â±Ã™â€ Ã˜Â¯Ã˜Â± Ã™â€¦Ã˜Â¬Ã˜Â¯Ã˜Â¯
 
             Log::info('Family updated in main list', [
                 'family_id' => $familyId,
@@ -3446,7 +3492,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * لغو ویرایش عضو خانواده
+     * Ã™â€žÃ˜ÂºÃ™Ë† Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â¹Ã˜Â¶Ã™Ë† Ã˜Â®Ã˜Â§Ã™â€ Ã™Ë†Ã˜Â§Ã˜Â¯Ã™â€¡
      * @return void
      */
     public function cancelMemberEdit()
@@ -3461,48 +3507,48 @@ class FamilySearch extends Component
     }
 
     /**
-     * دریافت گزینه‌های نسبت
+     * Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª ÃšÂ¯Ã˜Â²Ã›Å’Ã™â€ Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€ Ã˜Â³Ã˜Â¨Ã˜Âª
      * @return array
      */
     public function getRelationshipOptions()
     {
         return [
-            'مادر' => 'مادر',
-            'پدر' => 'پدر',
-            'زن' => 'زن',
-            'شوهر' => 'شوهر',
-            'همسر' => 'همسر',
-            'پسر' => 'پسر',
-            'دختر' => 'دختر',
-            'مادربزرگ' => 'مادربزرگ',
-            'پدربزرگ' => 'پدربزرگ',
-            'سایر' => 'سایر'
+            'Ã™â€¦Ã˜Â§Ã˜Â¯Ã˜Â±' => 'Ã™â€¦Ã˜Â§Ã˜Â¯Ã˜Â±',
+            'Ã™Â¾Ã˜Â¯Ã˜Â±' => 'Ã™Â¾Ã˜Â¯Ã˜Â±',
+            'Ã˜Â²Ã™â€ ' => 'Ã˜Â²Ã™â€ ',
+            'Ã˜Â´Ã™Ë†Ã™â€¡Ã˜Â±' => 'Ã˜Â´Ã™Ë†Ã™â€¡Ã˜Â±',
+            'Ã™â€¡Ã™â€¦Ã˜Â³Ã˜Â±' => 'Ã™â€¡Ã™â€¦Ã˜Â³Ã˜Â±',
+            'Ã™Â¾Ã˜Â³Ã˜Â±' => 'Ã™Â¾Ã˜Â³Ã˜Â±',
+            'Ã˜Â¯Ã˜Â®Ã˜ÂªÃ˜Â±' => 'Ã˜Â¯Ã˜Â®Ã˜ÂªÃ˜Â±',
+            'Ã™â€¦Ã˜Â§Ã˜Â¯Ã˜Â±Ã˜Â¨Ã˜Â²Ã˜Â±ÃšÂ¯' => 'Ã™â€¦Ã˜Â§Ã˜Â¯Ã˜Â±Ã˜Â¨Ã˜Â²Ã˜Â±ÃšÂ¯',
+            'Ã™Â¾Ã˜Â¯Ã˜Â±Ã˜Â¨Ã˜Â²Ã˜Â±ÃšÂ¯' => 'Ã™Â¾Ã˜Â¯Ã˜Â±Ã˜Â¨Ã˜Â²Ã˜Â±ÃšÂ¯',
+            'Ã˜Â³Ã˜Â§Ã›Å’Ã˜Â±' => 'Ã˜Â³Ã˜Â§Ã›Å’Ã˜Â±'
         ];
     }
 
     /**
-     * دریافت گزینه‌های شغل
+     * Ã˜Â¯Ã˜Â±Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª ÃšÂ¯Ã˜Â²Ã›Å’Ã™â€ Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â´Ã˜ÂºÃ™â€ž
      * @return array
      */
     public function getOccupationOptions()
     {
         return [
-            'شاغل' => 'شاغل',
-            'بیکار' => 'بیکار',
-            'محصل' => 'محصل',
-            'دانشجو' => 'دانشجو',
-            'از کار افتاده' => 'از کار افتاده',
-            'ترک تحصیل' => 'ترک تحصیل',
-            'خانه‌دار' => 'خانه‌دار'
+            'Ã˜Â´Ã˜Â§Ã˜ÂºÃ™â€ž' => 'Ã˜Â´Ã˜Â§Ã˜ÂºÃ™â€ž',
+            'Ã˜Â¨Ã›Å’ÃšÂ©Ã˜Â§Ã˜Â±' => 'Ã˜Â¨Ã›Å’ÃšÂ©Ã˜Â§Ã˜Â±',
+            'Ã™â€¦Ã˜Â­Ã˜ÂµÃ™â€ž' => 'Ã™â€¦Ã˜Â­Ã˜ÂµÃ™â€ž',
+            'Ã˜Â¯Ã˜Â§Ã™â€ Ã˜Â´Ã˜Â¬Ã™Ë†' => 'Ã˜Â¯Ã˜Â§Ã™â€ Ã˜Â´Ã˜Â¬Ã™Ë†',
+            'Ã˜Â§Ã˜Â² ÃšÂ©Ã˜Â§Ã˜Â± Ã˜Â§Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â¯Ã™â€¡' => 'Ã˜Â§Ã˜Â² ÃšÂ©Ã˜Â§Ã˜Â± Ã˜Â§Ã™ÂÃ˜ÂªÃ˜Â§Ã˜Â¯Ã™â€¡',
+            'Ã˜ÂªÃ˜Â±ÃšÂ© Ã˜ÂªÃ˜Â­Ã˜ÂµÃ›Å’Ã™â€ž' => 'Ã˜ÂªÃ˜Â±ÃšÂ© Ã˜ÂªÃ˜Â­Ã˜ÂµÃ›Å’Ã™â€ž',
+            'Ã˜Â®Ã˜Â§Ã™â€ Ã™â€¡Ã¢â‚¬Å’Ã˜Â¯Ã˜Â§Ã˜Â±' => 'Ã˜Â®Ã˜Â§Ã™â€ Ã™â€¡Ã¢â‚¬Å’Ã˜Â¯Ã˜Â§Ã˜Â±'
         ];
     }
 
     //======================================================================
-    //== متدهای سیستم ذخیره و بارگذاری فیلترها
+    //== Ã™â€¦Ã˜ÂªÃ˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â³Ã›Å’Ã˜Â³Ã˜ÂªÃ™â€¦ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™Ë† Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§
     //======================================================================
 
     /**
-     * ذخیره فیلتر فعلی با نام و تنظیمات مشخص
+     * Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’ Ã˜Â¨Ã˜Â§ Ã™â€ Ã˜Â§Ã™â€¦ Ã™Ë† Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ
      * @param string $name
      * @param string|null $description
      * @return void
@@ -3510,20 +3556,20 @@ class FamilySearch extends Component
     public function saveFilter($name, $description = null)
     {
         try {
-            // بررسی وجود فیلترهای مودال یا معیارهای انتخاب شده
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž Ã›Å’Ã˜Â§ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â§Ã™â€ Ã˜ÂªÃ˜Â®Ã˜Â§Ã˜Â¨ Ã˜Â´Ã˜Â¯Ã™â€¡
             $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
             $hasModalFilters = !empty($currentFilters);
             $hasSelectedCriteria = !empty($this->selectedCriteria) && count(array_filter($this->selectedCriteria)) > 0;
 
             if (!$hasModalFilters && !$hasSelectedCriteria) {
                 $this->dispatch('notify', [
-                    'message' => 'هیچ فیلتر یا معیاری برای ذخیره وجود ندارد',
+                    'message' => 'Ã™â€¡Ã›Å’Ãšâ€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã›Å’Ã˜Â§ Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™Ë†Ã˜Â¬Ã™Ë†Ã˜Â¯ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã˜Â¯',
                     'type' => 'warning'
                 ]);
                 return;
             }
 
-            // ایجاد فیلتر ذخیره شده
+            // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
             $savedFilter = SavedFilter::create([
                 'name' => trim($name),
                 'description' => $description ? trim($description) : null,
@@ -3563,7 +3609,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => "فیلتر '{$name}' با موفقیت ذخیره شد",
+                'message' => "Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± '{$name}' Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯",
                 'type' => 'success'
             ]);
 
@@ -3575,14 +3621,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در ذخیره فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * حذف فیلتر ذخیره شده
+     * Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
      * @param int $filterId
      * @return void
      */
@@ -3592,53 +3638,53 @@ class FamilySearch extends Component
             $savedFilter = SavedFilter::find($filterId);
             if (!$savedFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã˜Â¸Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی دسترسی - فقط صاحب فیلتر می‌تواند آن را حذف کند
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’ - Ã™ÂÃ™â€šÃ˜Â· Ã˜ÂµÃ˜Â§Ã˜Â­Ã˜Â¨ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â­Ã˜Â°Ã™Â ÃšÂ©Ã™â€ Ã˜Â¯
             if ($savedFilter->user_id !== Auth::id()) {
                 $this->dispatch('notify', [
-                    'message' => 'شما مجاز به حذف این فیلتر نیستید',
+                    'message' => 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã™â€¦Ã˜Â¬Ã˜Â§Ã˜Â² Ã˜Â¨Ã™â€¡ Ã˜Â­Ã˜Â°Ã™Â Ã˜Â§Ã›Å’Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€ Ã›Å’Ã˜Â³Ã˜ÂªÃ›Å’Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // حذف فیلتر
+            // Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
             $filterName = $savedFilter->name;
             $savedFilter->delete();
 
-            Log::info('🗑️ Saved filter deleted successfully', [
+            Log::info('Ã°Å¸â€”â€˜Ã¯Â¸Â Saved filter deleted successfully', [
                 'filter_id' => $filterId,
                 'filter_name' => $filterName,
                 'user_id' => Auth::id()
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'فیلتر با موفقیت حذف شد',
+                'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯',
                 'type' => 'success'
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error deleting saved filter', [
+            Log::error('Ã¢ÂÅ’ Error deleting saved filter', [
                 'filter_id' => $filterId,
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id()
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * بارگذاری فیلترهای ذخیره شده کاربر
-     * @param string $filterType نوع فیلتر - 'family_search' یا 'rank_settings'
+     * Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
+     * @param string $filterType Ã™â€ Ã™Ë†Ã˜Â¹ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± - 'family_search' Ã›Å’Ã˜Â§ 'rank_settings'
      * @return array
      */
     public function loadSavedFilters($filterType = 'family_search')
@@ -3649,10 +3695,10 @@ class FamilySearch extends Component
                 return [];
             }
 
-            // تعیین نوع فیلتر بر اساس پارامتر ورودی
+            // Ã˜ÂªÃ˜Â¹Ã›Å’Ã›Å’Ã™â€  Ã™â€ Ã™Ë†Ã˜Â¹ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ Ã™Â¾Ã˜Â§Ã˜Â±Ã˜Â§Ã™â€¦Ã˜ÂªÃ˜Â± Ã™Ë†Ã˜Â±Ã™Ë†Ã˜Â¯Ã›Å’
             $actualFilterType = $filterType;
 
-            // تبدیل نام‌های متداول به نوع فیلتر واقعی
+            // Ã˜ÂªÃ˜Â¨Ã˜Â¯Ã›Å’Ã™â€ž Ã™â€ Ã˜Â§Ã™â€¦Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã˜ÂªÃ˜Â¯Ã˜Â§Ã™Ë†Ã™â€ž Ã˜Â¨Ã™â€¡ Ã™â€ Ã™Ë†Ã˜Â¹ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™Ë†Ã˜Â§Ã™â€šÃ˜Â¹Ã›Å’
             switch ($filterType) {
                 case 'rank_modal':
                     $actualFilterType = 'rank_settings';
@@ -3666,19 +3712,19 @@ class FamilySearch extends Component
                     break;
             }
 
-            // فیلترهای قابل دسترس برای کاربر
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€šÃ˜Â§Ã˜Â¨Ã™â€ž Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³ Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
             $query = SavedFilter::where('filter_type', $actualFilterType)
                 ->where(function ($q) use ($user) {
-                    // فیلترهای خود کاربر
+                    // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
                     $q->where('user_id', $user->id);
 
-                    // اگر کاربر بیمه است، می‌تواند همه فیلترهای کاربران سازمانش را ببیند
+                    // Ã˜Â§ÃšÂ¯Ã˜Â± ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â¨Ã›Å’Ã™â€¦Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Å’ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã™â€¡Ã™â€¦Ã™â€¡ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±Ã˜Â§Ã™â€  Ã˜Â³Ã˜Â§Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€ Ã˜Â´ Ã˜Â±Ã˜Â§ Ã˜Â¨Ã˜Â¨Ã›Å’Ã™â€ Ã˜Â¯
                     if ($user->isInsurance() && $user->organization_id) {
                         $q->orWhereHas('user', function($userQuery) use ($user) {
                             $userQuery->where('organization_id', $user->organization_id);
                         });
                     }
-                    // اگر کاربر خیریه است، فقط فیلترهای خودش را می‌بیند (که در بالا اضافه شده)
+                    // Ã˜Â§ÃšÂ¯Ã˜Â± ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â®Ã›Å’Ã˜Â±Ã›Å’Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Å’ Ã™ÂÃ™â€šÃ˜Â· Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯Ã˜Â´ Ã˜Â±Ã˜Â§ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â¨Ã›Å’Ã™â€ Ã˜Â¯ (ÃšÂ©Ã™â€¡ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã™â€žÃ˜Â§ Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡)
                 })
                 ->orderBy('usage_count', 'desc')
                 ->orderBy('name')
@@ -3716,7 +3762,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * بارگذاری و اعمال فیلتر ذخیره شده
+     * Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™Ë† Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
      * @param int $filterId
      * @return void
      */
@@ -3726,44 +3772,44 @@ class FamilySearch extends Component
             $savedFilter = SavedFilter::find($filterId);
             if (!$savedFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã˜Â¸Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی دسترسی بر اساس user_id و organization_id
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’ Ã˜Â¨Ã˜Â± Ã˜Â§Ã˜Â³Ã˜Â§Ã˜Â³ user_id Ã™Ë† organization_id
             $user = Auth::user();
             $hasAccess = false;
 
-            // فیلترهای خود کاربر
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â±
             if ($savedFilter->user_id === $user->id) {
                 $hasAccess = true;
             }
-            // فیلترهای سازمانی (اگر کاربر عضو همان سازمان باشد)
+            // Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â³Ã˜Â§Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€ Ã›Å’ (Ã˜Â§ÃšÂ¯Ã˜Â± ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â¹Ã˜Â¶Ã™Ë† Ã™â€¡Ã™â€¦Ã˜Â§Ã™â€  Ã˜Â³Ã˜Â§Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€  Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â¯)
             elseif ($savedFilter->organization_id && $savedFilter->organization_id === $user->organization_id) {
                 $hasAccess = true;
             }
 
             if (!$hasAccess) {
                 $this->dispatch('notify', [
-                    'message' => 'شما به این فیلتر دسترسی ندارید',
+                    'message' => 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã˜Â¨Ã™â€¡ Ã˜Â§Ã›Å’Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بارگذاری داده‌های فیلتر
+            // Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
             $filterData = $savedFilter->filters_config;
 
-            // اعمال فیلترهای مودال
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™â€¦Ã™Ë†Ã˜Â¯Ã˜Â§Ã™â€ž
             if (isset($filterData['filters']) && is_array($filterData['filters'])) {
                 $this->tempFilters = $filterData['filters'];
                 $this->activeFilters = $filterData['filters'];
                 $this->filters = $filterData['filters'];
             }
 
-            // اعمال فیلترهای کامپوننت
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã™â€¦Ã™Â¾Ã™Ë†Ã™â€ Ã™â€ Ã˜Âª
             if (isset($filterData['component_filters'])) {
                 $componentFilters = $filterData['component_filters'];
                 $this->search = $componentFilters['search'] ?? '';
@@ -3776,24 +3822,24 @@ class FamilySearch extends Component
                 $this->charity = $componentFilters['charity'] ?? '';
             }
 
-            // اعمال تنظیمات رتبه‌بندی
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â±Ã˜ÂªÃ˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â¨Ã™â€ Ã˜Â¯Ã›Å’
             if (isset($filterData['rank_settings'])) {
                 $rankSettings = $filterData['rank_settings'];
                 $this->selectedCriteria = $rankSettings['selected_criteria'] ?? [];
                 $this->appliedSchemeId = $rankSettings['applied_scheme_id'] ?? null;
             }
 
-            // اعمال تنظیمات سورت
+            // Ã˜Â§Ã˜Â¹Ã™â€¦Ã˜Â§Ã™â€ž Ã˜ÂªÃ™â€ Ã˜Â¸Ã›Å’Ã™â€¦Ã˜Â§Ã˜Âª Ã˜Â³Ã™Ë†Ã˜Â±Ã˜Âª
             if (isset($filterData['sort'])) {
                 $this->sortField = $filterData['sort']['field'] ?? 'created_at';
                 $this->sortDirection = $filterData['sort']['direction'] ?? 'desc';
             }
 
-            // افزایش شمارنده استفاده
+            // Ã˜Â§Ã™ÂÃ˜Â²Ã˜Â§Ã›Å’Ã˜Â´ Ã˜Â´Ã™â€¦Ã˜Â§Ã˜Â±Ã™â€ Ã˜Â¯Ã™â€¡ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡
             $savedFilter->increment('usage_count');
             $savedFilter->update(['last_used_at' => now()]);
 
-            // بازنشانی صفحه و پاک کردن کش
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ Ã˜ÂµÃ™ÂÃ˜Â­Ã™â€¡ Ã™Ë† Ã™Â¾Ã˜Â§ÃšÂ© ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  ÃšÂ©Ã˜Â´
             $this->resetPage();
             $this->clearCache();
 
@@ -3804,7 +3850,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => "فیلتر '{$savedFilter->name}' با موفقیت بارگذاری شد",
+                'message' => "Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± '{$savedFilter->name}' Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã˜Â´Ã˜Â¯",
                 'type' => 'success'
             ]);
 
@@ -3816,14 +3862,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در بارگذاری فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã˜Â§Ã˜Â±ÃšÂ¯Ã˜Â°Ã˜Â§Ã˜Â±Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * حذف فیلتر ذخیره شده
+     * Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
      * @param int $filterId
      * @return void
      */
@@ -3833,16 +3879,16 @@ class FamilySearch extends Component
             $savedFilter = SavedFilter::find($filterId);
             if (!$savedFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã˜Â¸Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // فقط صاحب فیلتر می‌تواند آن را حذف کند
+            // Ã™ÂÃ™â€šÃ˜Â· Ã˜ÂµÃ˜Â§Ã˜Â­Ã˜Â¨ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â­Ã˜Â°Ã™Â ÃšÂ©Ã™â€ Ã˜Â¯
             if ($savedFilter->user_id !== Auth::id()) {
                 $this->dispatch('notify', [
-                    'message' => 'شما فقط می‌توانید فیلترهای خود را حذف کنید',
+                    'message' => 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã™ÂÃ™â€šÃ˜Â· Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã›Å’Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ Ã˜Â±Ã˜Â§ Ã˜Â­Ã˜Â°Ã™Â ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
@@ -3858,7 +3904,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => "فیلتر '{$filterName}' با موفقیت حذف شد",
+                'message' => "Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± '{$filterName}' Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯",
                 'type' => 'success'
             ]);
 
@@ -3870,14 +3916,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در حذف فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â­Ã˜Â°Ã™Â Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * به‌روزرسانی فیلتر ذخیره شده
+     * Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â°Ã˜Â®Ã›Å’Ã˜Â±Ã™â€¡ Ã˜Â´Ã˜Â¯Ã™â€¡
      * @param int $filterId
      * @param string $name
      * @param string|null $description
@@ -3890,22 +3936,22 @@ class FamilySearch extends Component
             $savedFilter = SavedFilter::find($filterId);
             if (!$savedFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã˜Â¸Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // فقط صاحب فیلتر می‌تواند آن را به‌روزرسانی کند
+            // Ã™ÂÃ™â€šÃ˜Â· Ã˜ÂµÃ˜Â§Ã˜Â­Ã˜Â¨ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã˜Â¯ Ã˜Â¢Ã™â€  Ã˜Â±Ã˜Â§ Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ ÃšÂ©Ã™â€ Ã˜Â¯
             if ($savedFilter->user_id !== Auth::id()) {
                 $this->dispatch('notify', [
-                    'message' => 'شما فقط می‌توانید فیلترهای خود را ویرایش کنید',
+                    'message' => 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã™ÂÃ™â€šÃ˜Â· Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜ÂªÃ™Ë†Ã˜Â§Ã™â€ Ã›Å’Ã˜Â¯ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ Ã˜Â±Ã˜Â§ Ã™Ë†Ã›Å’Ã˜Â±Ã˜Â§Ã›Å’Ã˜Â´ ÃšÂ©Ã™â€ Ã›Å’Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // به‌روزرسانی داده‌های فیلتر با فیلترهای فعلی
+            // Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â¯Ã˜Â§Ã˜Â¯Ã™â€¡Ã¢â‚¬Å’Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â§ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±Ã™â€¡Ã˜Â§Ã›Å’ Ã™ÂÃ˜Â¹Ã™â€žÃ›Å’
             $currentFilters = $this->tempFilters ?? $this->activeFilters ?? [];
 
             $savedFilter->update([
@@ -3942,7 +3988,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => "فیلتر '{$name}' با موفقیت به‌روزرسانی شد",
+                'message' => "Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± '{$name}' Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â´Ã˜Â¯",
                 'type' => 'success'
             ]);
 
@@ -3955,14 +4001,14 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در به‌روزرسانی فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * کپی فیلتر برای کاربر جاری
+     * ÃšÂ©Ã™Â¾Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ ÃšÂ©Ã˜Â§Ã˜Â±Ã˜Â¨Ã˜Â± Ã˜Â¬Ã˜Â§Ã˜Â±Ã›Å’
      * @param int $filterId
      * @return void
      */
@@ -3972,13 +4018,13 @@ class FamilySearch extends Component
             $originalFilter = SavedFilter::find($filterId);
             if (!$originalFilter) {
                 $this->dispatch('notify', [
-                    'message' => 'فیلتر مورد نظر یافت نشد',
+                    'message' => 'Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã™â€¦Ã™Ë†Ã˜Â±Ã˜Â¯ Ã™â€ Ã˜Â¸Ã˜Â± Ã›Å’Ã˜Â§Ã™ÂÃ˜Âª Ã™â€ Ã˜Â´Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // بررسی دسترسی
+            // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’
             $user = Auth::user();
             $hasAccess = false;
 
@@ -3993,20 +4039,20 @@ class FamilySearch extends Component
 
             if (!$hasAccess) {
                 $this->dispatch('notify', [
-                    'message' => 'شما به این فیلتر دسترسی ندارید',
+                    'message' => 'Ã˜Â´Ã™â€¦Ã˜Â§ Ã˜Â¨Ã™â€¡ Ã˜Â§Ã›Å’Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± Ã˜Â¯Ã˜Â³Ã˜ÂªÃ˜Â±Ã˜Â³Ã›Å’ Ã™â€ Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’Ã˜Â¯',
                     'type' => 'error'
                 ]);
                 return;
             }
 
-            // ایجاد کپی از فیلتر
-            $newFilterName = $originalFilter->name . ' (کپی)';
+            // Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ ÃšÂ©Ã™Â¾Ã›Å’ Ã˜Â§Ã˜Â² Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±
+            $newFilterName = $originalFilter->name . ' (ÃšÂ©Ã™Â¾Ã›Å’)';
             $duplicatedFilter = SavedFilter::create([
                 'name' => $newFilterName,
                 'description' => $originalFilter->description,
                 'filters_config' => $originalFilter->filters_config,
                 'filter_type' => $originalFilter->filter_type,
-                'visibility' => 'private', // کپی‌ها همیشه خصوصی هستند
+                'visibility' => 'private', // ÃšÂ©Ã™Â¾Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã™â€¡Ã™â€¦Ã›Å’Ã˜Â´Ã™â€¡ Ã˜Â®Ã˜ÂµÃ™Ë†Ã˜ÂµÃ›Å’ Ã™â€¡Ã˜Â³Ã˜ÂªÃ™â€ Ã˜Â¯
                 'user_id' => $user->id,
                 'organization_id' => $user->organization_id,
                 'usage_count' => 0
@@ -4019,7 +4065,7 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => "کپی فیلتر '{$newFilterName}' با موفقیت ایجاد شد",
+                'message' => "ÃšÂ©Ã™Â¾Ã›Å’ Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â± '{$newFilterName}' Ã˜Â¨Ã˜Â§ Ã™â€¦Ã™Ë†Ã™ÂÃ™â€šÃ›Å’Ã˜Âª Ã˜Â§Ã›Å’Ã˜Â¬Ã˜Â§Ã˜Â¯ Ã˜Â´Ã˜Â¯",
                 'type' => 'success'
             ]);
 
@@ -4031,15 +4077,15 @@ class FamilySearch extends Component
             ]);
 
             $this->dispatch('notify', [
-                'message' => 'خطا در کپی کردن فیلتر: ' . $e->getMessage(),
+                'message' => 'Ã˜Â®Ã˜Â·Ã˜Â§ Ã˜Â¯Ã˜Â± ÃšÂ©Ã™Â¾Ã›Å’ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™ÂÃ›Å’Ã™â€žÃ˜ÂªÃ˜Â±: ' . $e->getMessage(),
                 'type' => 'error'
             ]);
         }
     }
 
     /**
-     * حذف یک معیار پذیرش از لیست آرایه
-     * برای استفاده در multi-select dropdown
+     * Ã˜Â­Ã˜Â°Ã™Â Ã›Å’ÃšÂ© Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã˜Â§Ã˜Â² Ã™â€žÃ›Å’Ã˜Â³Ã˜Âª Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡
+     * Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™ÂÃ˜Â§Ã˜Â¯Ã™â€¡ Ã˜Â¯Ã˜Â± multi-select dropdown
      *
      * @deprecated This method is no longer used after refactoring to MultiSelect component.
      *             The component handles toggling internally. Kept for backward compatibility.
@@ -4053,15 +4099,15 @@ class FamilySearch extends Component
         ]);
 
         if (isset($this->editingMemberData['problem_type']) && is_array($this->editingMemberData['problem_type'])) {
-            // حذف کلید مشخص
+            // Ã˜Â­Ã˜Â°Ã™Â ÃšÂ©Ã™â€žÃ›Å’Ã˜Â¯ Ã™â€¦Ã˜Â´Ã˜Â®Ã˜Âµ
             $this->editingMemberData['problem_type'] = array_filter(
                 $this->editingMemberData['problem_type'],
                 function($item) use ($key) {
-                    return (string)$item !== (string)$key; // اطمینان از مقایسه رشته‌ای
+                    return (string)$item !== (string)$key; // Ã˜Â§Ã˜Â·Ã™â€¦Ã›Å’Ã™â€ Ã˜Â§Ã™â€  Ã˜Â§Ã˜Â² Ã™â€¦Ã™â€šÃ˜Â§Ã›Å’Ã˜Â³Ã™â€¡ Ã˜Â±Ã˜Â´Ã˜ÂªÃ™â€¡Ã¢â‚¬Å’Ã˜Â§Ã›Å’
                 }
             );
 
-            // بازنشانی کلیدهای آرایه و حذف تکراری‌ها
+            // Ã˜Â¨Ã˜Â§Ã˜Â²Ã™â€ Ã˜Â´Ã˜Â§Ã™â€ Ã›Å’ ÃšÂ©Ã™â€žÃ›Å’Ã˜Â¯Ã™â€¡Ã˜Â§Ã›Å’ Ã˜Â¢Ã˜Â±Ã˜Â§Ã›Å’Ã™â€¡ Ã™Ë† Ã˜Â­Ã˜Â°Ã™Â Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§
             $this->editingMemberData['problem_type'] = array_unique(array_values($this->editingMemberData['problem_type']));
 
             Log::info('Problem type removed successfully', [
@@ -4076,7 +4122,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * اضافه کردن معیار پذیرش جدید با بررسی تکرار
+     * Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€  Ã™â€¦Ã˜Â¹Ã›Å’Ã˜Â§Ã˜Â± Ã™Â¾Ã˜Â°Ã›Å’Ã˜Â±Ã˜Â´ Ã˜Â¬Ã˜Â¯Ã›Å’Ã˜Â¯ Ã˜Â¨Ã˜Â§ Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±
      *
      * @deprecated This method is no longer used after refactoring to MultiSelect component.
      *             The component handles toggling internally. Kept for backward compatibility.
@@ -4089,13 +4135,13 @@ class FamilySearch extends Component
             $this->editingMemberData['problem_type'] = [];
         }
 
-        // بررسی تکرار قبل از اضافه کردن
+        // Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â± Ã™â€šÃ˜Â¨Ã™â€ž Ã˜Â§Ã˜Â² Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ ÃšÂ©Ã˜Â±Ã˜Â¯Ã™â€ 
         if (!in_array($key, $this->editingMemberData['problem_type'])) {
             $this->editingMemberData['problem_type'][] = $key;
 
-            // حذف احتمالی تکراری‌ها (بدون sort برای حفظ insertion order)
+            // Ã˜Â­Ã˜Â°Ã™Â Ã˜Â§Ã˜Â­Ã˜ÂªÃ™â€¦Ã˜Â§Ã™â€žÃ›Å’ Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ (Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  sort Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã™ÂÃ˜Â¸ insertion order)
             $this->editingMemberData['problem_type'] = array_unique($this->editingMemberData['problem_type']);
-            // sort() حذف شد: ترتیب اضافه شدن حفظ می‌شود
+            // sort() Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯: Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ Ã˜Â§Ã˜Â¶Ã˜Â§Ã™ÂÃ™â€¡ Ã˜Â´Ã˜Â¯Ã™â€  Ã˜Â­Ã™ÂÃ˜Â¸ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â´Ã™Ë†Ã˜Â¯
 
             Log::info('Problem type added successfully', [
                 'added_key' => $key,
@@ -4106,7 +4152,7 @@ class FamilySearch extends Component
     }
 
     /**
-     * به‌روزرسانی خودکار problem_type برای حذف تکراری‌ها در زمان واقعی
+     * Ã˜Â¨Ã™â€¡Ã¢â‚¬Å’Ã˜Â±Ã™Ë†Ã˜Â²Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€ Ã›Å’ Ã˜Â®Ã™Ë†Ã˜Â¯ÃšÂ©Ã˜Â§Ã˜Â± problem_type Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Ã˜Â­Ã˜Â°Ã™Â Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’Ã¢â‚¬Å’Ã™â€¡Ã˜Â§ Ã˜Â¯Ã˜Â± Ã˜Â²Ã™â€¦Ã˜Â§Ã™â€  Ã™Ë†Ã˜Â§Ã™â€šÃ˜Â¹Ã›Å’
      * This hook fires when the MultiSelect component updates the parent's editingMemberData.problem_type via wire:model.
      * Provides automatic deduplication.
      * @param mixed $value
@@ -4115,16 +4161,16 @@ class FamilySearch extends Component
     public function updatedEditingMemberDataProblemType($value)
     {
         if (is_array($value)) {
-            // حذف مقادیر خالی و تکراری
+            // Ã˜Â­Ã˜Â°Ã™Â Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â± Ã˜Â®Ã˜Â§Ã™â€žÃ›Å’ Ã™Ë† Ã˜ÂªÃšÂ©Ã˜Â±Ã˜Â§Ã˜Â±Ã›Å’
             $cleanedArray = array_filter($value, function($item) {
                 return !is_null($item) && trim((string)$item) !== '';
             });
 
             $cleanedArray = array_unique($cleanedArray);
             $cleanedArray = array_values($cleanedArray);
-            // sort() حذف شد: ترتیب insertion order حفظ می‌شود (به جای comparison sorted)
+            // sort() Ã˜Â­Ã˜Â°Ã™Â Ã˜Â´Ã˜Â¯: Ã˜ÂªÃ˜Â±Ã˜ÂªÃ›Å’Ã˜Â¨ insertion order Ã˜Â­Ã™ÂÃ˜Â¸ Ã™â€¦Ã›Å’Ã¢â‚¬Å’Ã˜Â´Ã™Ë†Ã˜Â¯ (Ã˜Â¨Ã™â€¡ Ã˜Â¬Ã˜Â§Ã›Å’ comparison sorted)
 
-            // Comparison بدون sort - بررسی count و مقادیر
+            // Comparison Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  sort - Ã˜Â¨Ã˜Â±Ã˜Â±Ã˜Â³Ã›Å’ count Ã™Ë† Ã™â€¦Ã™â€šÃ˜Â§Ã˜Â¯Ã›Å’Ã˜Â±
             $reindexedOriginal = array_values($value);
 
             if ($cleanedArray !== $reindexedOriginal) {
@@ -4138,7 +4184,7 @@ class FamilySearch extends Component
                 ]);
             }
 
-            // Dispatch event برای Alpine.js
+            // Dispatch event Ã˜Â¨Ã˜Â±Ã˜Â§Ã›Å’ Alpine.js
             $this->dispatch('problem-types-updated', [
                 'count' => count($this->editingMemberData['problem_type'])
             ]);
